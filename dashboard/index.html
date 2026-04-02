@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mach3 Tracker - Dashboard CNC</title>
+    <meta name="description" content="Dashboard de monitoramento de jobs CNC Mach3 com relatórios em tempo real">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">🔩</div>
+                <div>
+                    <h1>MACH3</h1>
+                    <span>TRACKER V4.2</span>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-section="dashboard" id="nav-dashboard">
+                <span class="nav-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item" data-section="jobs" id="nav-jobs">
+                <span class="nav-icon">📋</span>
+                <span>Histórico</span>
+            </a>
+            <a href="#" class="nav-item" data-section="charts" id="nav-charts">
+                <span class="nav-icon">📈</span>
+                <span>Gráficos</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="server-status" id="serverStatus">
+                <span class="status-dot online"></span>
+                <span id="serverStatusText">Servidor Online</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="top-header">
+            <button class="menu-toggle" id="menuToggle">☰</button>
+            <div class="header-title">
+                <h2 id="pageTitle">Dashboard</h2>
+                <p id="pageSubtitle">Visão geral dos jobs CNC</p>
+            </div>
+            <div class="header-actions">
+                <div class="date-display" id="currentDate"></div>
+            </div>
+        </header>
+
+        <!-- Dashboard Section -->
+        <section class="content-section active" id="section-dashboard">
+            <!-- Live Job Banner -->
+            <div class="live-banner" id="liveBanner" style="display: none;">
+                <div class="live-dot"></div>
+                <div class="live-info">
+                    <span class="live-label">EM ANDAMENTO</span>
+                    <span class="live-file" id="liveFileName">—</span>
+                    <span class="live-folder" id="liveFolderName">—</span>
+                </div>
+                <div class="live-timer" id="liveTimer">00:00:00</div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card" id="card-total">
+                    <div class="stat-icon">🏭</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total de Jobs</span>
+                        <span class="stat-value" id="statTotalJobs">0</span>
+                    </div>
+                    <div class="stat-trend up" id="trendJobs">—</div>
+                </div>
+                <div class="stat-card" id="card-hours">
+                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Horas Totais</span>
+                        <span class="stat-value" id="statTotalHours">0h</span>
+                    </div>
+                    <div class="stat-trend " id="trendHours">—</div>
+                </div>
+                <div class="stat-card" id="card-avg">
+                    <div class="stat-icon">📐</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Média por Job</span>
+                        <span class="stat-value" id="statAvgTime">0h</span>
+                    </div>
+                    <div class="stat-trend" id="trendAvg">—</div>
+                </div>
+                <div class="stat-card highlight" id="card-today">
+                    <div class="stat-icon">🔥</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Jobs Hoje</span>
+                        <span class="stat-value" id="statTodayJobs">0</span>
+                    </div>
+                    <div class="stat-glow"></div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="charts-row">
+                <div class="chart-card wide">
+                    <div class="chart-header">
+                        <h3>Horas por Dia</h3>
+                        <span class="chart-badge">Últimos 30 dias</span>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="hoursChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Arquivos Mais Usados</h3>
+                        <span class="chart-badge">Top 5</span>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="topFilesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Jobs Mini-Table -->
+            <div class="card table-card">
+                <div class="card-header">
+                    <h3>Últimos Jobs</h3>
+                    <button class="btn btn-sm" onclick="showSection('jobs')">Ver Todos →</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="recentJobsTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Arquivo</th>
+                                <th>Pasta</th>
+                                <th>Início</th>
+                                <th>Fim</th>
+                                <th>Duração</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentJobsBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Jobs History Section -->
+        <section class="content-section" id="section-jobs">
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <label>Buscar Arquivo</label>
+                    <input type="text" id="searchInput" placeholder="Digite o nome do arquivo..." class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label>Mês</label>
+                    <select id="filterMonth" class="filter-input">
+                        <option value="">Todos</option>
+                        <option value="1">Janeiro</option>
+                        <option value="2">Fevereiro</option>
+                        <option value="3">Março</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Maio</option>
+                        <option value="6">Junho</option>
+                        <option value="7">Julho</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Setembro</option>
+                        <option value="10">Outubro</option>
+                        <option value="11">Novembro</option>
+                        <option value="12">Dezembro</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Ano</label>
+                    <select id="filterYear" class="filter-input">
+                        <option value="">Todos</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="loadJobs()" id="btnFilter">🔍 Filtrar</button>
+                <button class="btn btn-outline" onclick="clearFilters()" id="btnClear">✕ Limpar</button>
+            </div>
+
+            <div class="card table-card">
+                <div class="card-header">
+                    <h3>Histórico Completo</h3>
+                    <span class="badge" id="jobsCount">0 jobs</span>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="allJobsTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Arquivo</th>
+                                <th>Pasta</th>
+                                <th>Início</th>
+                                <th>Fim</th>
+                                <th>Duração</th>
+                                <th>Data</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allJobsBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="content-section" id="section-charts">
+            <div class="charts-grid-full">
+                <div class="chart-card full-width">
+                    <div class="chart-header">
+                        <h3>Horas Trabalhadas por Dia</h3>
+                    </div>
+                    <div class="chart-body large">
+                        <canvas id="hoursChartFull"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Jobs por Dia</h3>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="jobsPerDayChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Top 10 Arquivos</h3>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="topFilesChartFull"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-icon">🗑️</div>
+            <h3>Excluir Registro</h3>
+            <p>Tem certeza que deseja excluir esse registro?</p>
+            <div class="modal-actions">
+                <button class="btn btn-outline" id="modalCancel">Cancelar</button>
+                <button class="btn btn-danger-solid" id="modalConfirm">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=4.2"></script>
+</body>
+</html>

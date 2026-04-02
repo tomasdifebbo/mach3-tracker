@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Databases and configuration
+*.db
+tracker.json
+fila_sincronizacao.json
+.env
+
+# Mach3 / Temporary files
+temp_macros/
+*.m1s
+*.txt
+*.csv
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
