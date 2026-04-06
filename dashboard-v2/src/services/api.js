@@ -1,5 +1,5 @@
 // API Base Configuration
-const API_URL = ''; // Relative path (served by local node server)
+const API_URL = 'https://mach3-tracker-production.up.railway.app'; // Fixed production URL
 
 export const getAuthHeaders = () => {
   const token = localStorage.getItem('mach3_token');
