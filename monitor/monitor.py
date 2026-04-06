@@ -8,23 +8,67 @@ import datetime
 # CONFIGURAÇÕES DA FILA DE OFFLINE SYNC
 # ==========================================
 # ==========================================
-# CONFIGURAÇÕES SUPABASE CLOUD
+# CONFIGURAÇÕES SAAS (LOCAL/NUVEM)
 # ==========================================
-LOG_FILE = r"\\DESKTOP-1CSKMNT\Mach3\log_oficial.csv"
+BASE_URL = "http://localhost:3000"
+URL_JOBS = f"{BASE_URL}/api/jobs"
+URL_HEALTH = f"{BASE_URL}/health"
+URL_LOGIN = f"{BASE_URL}/api/auth/login"
+
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")
 QUEUE_FILE = os.path.join(os.path.dirname(__file__), "fila_sincronizacao.json")
 
-SUPABASE_URL = "https://ifoiivttteufbtydnbyk.supabase.co"
-SUPABASE_KEY = "sb_publishable_pu4zjObjq1NQ0vcG3yciTQ_HU1K0AJl"
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r") as f:
+            return json.load(f)
+    return {"email": "", "password": "", "token": ""}
 
-URL_JOBS = f"{SUPABASE_URL}/rest/v1/jobs"
-URL_HEALTH = f"{SUPABASE_URL}/rest/v1/" # Simples teste de conexão
+def get_log_file():
+    config = load_config()
+    return config.get("log_file", "C:\\Mach3\\Mach3Track.csv")
 
-HEADERS = {
-    "apikey": SUPABASE_KEY,
-    "Authorization": f"Bearer {SUPABASE_KEY}",
-    "Content-Type": "application/json",
-    "Prefer": "return=minimal"
-}
+LOG_FILE = get_log_file()
+
+def save_config(config):
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=4)
+
+def get_token():
+    config = load_config()
+    if config.get("token"):
+        return config["token"]
+    
+    # Se não houver token, tenta logar
+    print("[!] Monitor não autenticado. Tentando login...")
+    email = config.get("email") or input("Email do SaaS: ")
+    password = config.get("password") or input("Senha do SaaS: ")
+    
+    try:
+        resp = requests.post(URL_LOGIN, json={"email": email, "password": password})
+        if resp.status_code == 200:
+            data = resp.json()
+            config["token"] = data["token"]
+            config["email"] = email
+            config["password"] = password
+            save_config(config)
+            print("[✓] Login realizado com sucesso!")
+            return data["token"]
+        else:
+            print(f"[X] Erro no login: {resp.text}")
+    except Exception as e:
+        print(f"[X] Erro de conexão: {e}")
+    return None
+
+TOKEN = get_token()
+
+def get_headers():
+    return {
+        "Authorization": f"Bearer {get_token()}",
+        "Content-Type": "application/json"
+    }
+
+HEADERS = get_headers()
 
 def load_queue():
     if not os.path.exists(QUEUE_FILE):
@@ -57,7 +101,7 @@ def process_queue():
         return
 
     try:
-        requests.get(URL_HEALTH, headers=HEADERS, timeout=2)
+        requests.get(URL_HEALTH, timeout=2)
     except:
         return 
 
@@ -67,9 +111,9 @@ def process_queue():
     for req in queue:
         try:
             if req["method"] == "POST":
-                resp = requests.post(req["url"], json=req["payload"], headers=HEADERS, timeout=5)
+                resp = requests.post(req["url"], json=req["payload"], headers=get_headers(), timeout=5)
             elif req["method"] == "PATCH":
-                resp = requests.patch(req["url"], json=req["payload"], headers=HEADERS, timeout=5)
+                resp = requests.patch(req["url"], json=req["payload"], headers=get_headers(), timeout=5)
             
             if resp.status_code in (200, 201, 204, 404, 400):
                 sucessos += 1
@@ -90,40 +134,18 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem):
     # 🕵️ TRAVA DE DUPLICAÇÃO E COOLDOWN (30 segundos)
     exibicao_folder = f"{origem} | {caminho}" if origem else caminho
     
-    try:
-        # Busca o último job iniciado desta máquina para este arquivo que ainda esteja aberto
-        check_url = f"{URL_JOBS}?file_name=eq.{nome_arquivo}&folder=eq.{exibicao_folder}&end_time=is.null&order=start_time.desc&limit=1"
-        resp_check = requests.get(check_url, headers=HEADERS, timeout=3)
-        if resp_check.status_code == 200 and len(resp_check.json()) > 0:
-            last_job = resp_check.json()[0]
-            last_start = datetime.datetime.fromisoformat(last_job['start_time'].replace('Z', '+00:00'))
-            diff = (dt.astimezone() - last_start.astimezone()).total_seconds()
-            
-            # Se for o mesmo arquivo e menos de 30 segundos, ignore.
-            if diff < 30:
-                print(f"[!] {origem} ignorou Início duplicado (Cooldown 30s): {nome_arquivo}")
-                return
-            else:
-                # Se passou de 30s mas ainda está aberto, mantemos a trava original de "já ativo"
-                print(f"[!] {origem} ignorou Início duplicado (Já está Ativo): {nome_arquivo}")
-                return
-    except:
-        pass 
-    
     payload = {
         "file_name": nome_arquivo,
-        "folder": exibicao_folder, 
+        "folder": exibicao_folder,
         "file_path": caminho,
-        "start_time": iso_time,
-        "day": dt.day,
-        "month": dt.month,
-        "year": dt.year
+        "start_time": iso_time
     }
     
+    # Enviar para o SaaS local
     if len(load_queue()) == 0:
         try:
-            resp = requests.post(URL_JOBS, json=payload, headers=HEADERS, timeout=5)
-            if resp.status_code in (201, 204, 400):
+            resp = requests.post(URL_JOBS, json=payload, headers=get_headers(), timeout=5)
+            if resp.status_code in (200, 201, 204, 400):
                 print(f"[+] {origem} Iniciou: {nome_arquivo}")
                 return
         except Exception as e:
@@ -134,12 +156,12 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem):
 def processa_fim(iso_time, origem):
     payload = { "end_time": iso_time }
     
-    # FILTRO: Apenas jobs sem data de fim desta máquina específica
-    PATCH_URL = f"{URL_JOBS}?end_time=is.null&folder=ilike.{origem}%25"
+    # SaaS local use target endpoint
+    PATCH_URL = f"{BASE_URL}/api/jobs/latest"
     
     if len(load_queue()) == 0:
         try:
-            resp = requests.patch(PATCH_URL, json=payload, headers=HEADERS, timeout=5)
+            resp = requests.patch(PATCH_URL, json=payload, headers=get_headers(), timeout=5)
             if resp.status_code in (200, 204, 404):
                 print(f"[√] {origem} Finalizou.")
                 return

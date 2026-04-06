@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-main: #0a0e1a;
+  --color-bg-sidebar: #0f1524;
+  --color-bg-card: rgba(15, 21, 36, 0.7);
+  --color-border: rgba(65, 84, 126, 0.3);
+  
+  --color-accent-blue: #3b82f6;
+  --color-accent-cyan: #06b6d4;
+  --color-accent-danger: #ef4444;
+  --color-accent-success: #10b981;
+  --color-accent-warning: #f59e0b;
+
+  --font-inter: "Inter", sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg-main);
+    color: #f1f5f9;
+    font-family: var(--font-inter);
+  }
+}
+
+/* Custom Utilities */
+@layer utilities {
+  .glass {
+    @apply bg-[var(--color-bg-card)] backdrop-blur-md border border-[var(--color-border)];
+  }
+}
