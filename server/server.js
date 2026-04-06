@@ -324,11 +324,19 @@ app.get('/api/materials', authenticateToken, (req, res) => {
 });
 
 app.post('/api/materials', authenticateToken, (req, res) => {
-    const { name, price } = req.body;
-    if (!name || price === undefined) return res.status(400).json({ error: "Name and price required" });
-    
-    const result = db.prepare('INSERT INTO materials (name, price, userId) VALUES (?, ?, ?)').run(name, parseFloat(price), req.user.id);
-    res.json({ success: true, material: { id: result.lastInsertRowid, name, price, userId: req.user.id } });
+    try {
+        const { name, price } = req.body;
+        if (!name || price === undefined || price === null) return res.status(400).json({ error: "Name and price required" });
+        
+        let parsedPrice = parseFloat(price);
+        if (isNaN(parsedPrice)) return res.status(400).json({ error: "Invalid price format" });
+
+        const result = db.prepare('INSERT INTO materials (name, price, userId) VALUES (?, ?, ?)').run(name, parsedPrice, req.user.id);
+        res.json({ success: true, material: { id: result.lastInsertRowid, name, price: parsedPrice, userId: req.user.id } });
+    } catch (err) {
+        console.error("Error saving material:", err);
+        res.status(500).json({ error: "Internal server error" });
+    }
 });
 
 app.delete('/api/materials/:id', authenticateToken, (req, res) => {

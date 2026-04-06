@@ -244,13 +244,16 @@
             const password = document.getElementById('password').value;
             const errorBox = document.getElementById('errorBox');
             
-            const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:3000' : 'https://mach3-backend.up.railway.app';
+            const API_URL = 'https://mach3-tracker-production.up.railway.app';
             const endpoint = mode === 'login' ? `${API_URL}/api/auth/login` : `${API_URL}/api/auth/register`;
             
             try {
                 const response = await fetch(endpoint, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Bypass-Tunnel-Reminder': 'true'
+                    },
                     body: JSON.stringify({ email, password })
                 });
 

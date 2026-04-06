@@ -1,5 +1,5 @@
 // API Configuration
-const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:3000' : 'https://mach3-backend.up.railway.app';
+const API_URL = 'https://mach3-tracker-production.up.railway.app';
 
 // Auth Check
 if (!localStorage.getItem('mach3_token') && !window.location.href.includes('login.html')) {
@@ -7,9 +7,11 @@ if (!localStorage.getItem('mach3_token') && !window.location.href.includes('logi
 }
 
 function getAuthHeaders() {
+    const token = localStorage.getItem('mach3_token');
     return {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('mach3_token')}`
+        'Authorization': token ? `Bearer ${token}` : '',
+        'Bypass-Tunnel-Reminder': 'true' // Bypasses localtunnel warning page
     };
 }
 
@@ -330,7 +332,7 @@ async function addMaterial() {
     if (!name || !price) return alert("Preencha nome e preço!");
     
     try {
-        const resp = await fetch('/api/materials', {
+        const resp = await fetch(API_URL + '/api/materials', {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify({ name, price })

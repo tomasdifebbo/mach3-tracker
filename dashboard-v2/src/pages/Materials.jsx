@@ -25,22 +25,31 @@ export function Materials({ materials = [], onRefresh }) {
 
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (!name || !price) return;
+    if (!name || price === '') return;
+    
+    // Convert e.g. "1,50" to 1.50 if user types comma
+    let numPrice = typeof price === 'string' ? parseFloat(price.replace(',', '.')) : Number(price);
+    
+    if (isNaN(numPrice)) {
+      setStatus({ type: 'error', message: 'Preço inválido.' });
+      setTimeout(() => setStatus(null), 3000);
+      return;
+    }
     
     setLoading(true);
     setStatus(null);
     try {
-      const resp = await api.addMaterial(name, Number(price));
-      if (resp.success) {
+      const resp = await api.addMaterial(name, numPrice);
+      if (resp && resp.success) {
         setName('');
         setPrice('');
         setStatus({ type: 'success', message: 'Material cadastrado!' });
         onRefresh();
       } else {
-        throw new Error('Falha ao salvar');
+        throw new Error(resp?.error || 'Falha ao salvar');
       }
     } catch (err) {
-      setStatus({ type: 'error', message: 'Erro ao cadastrar.' });
+      setStatus({ type: 'error', message: err.message || 'Erro ao cadastrar.' });
     }
     setLoading(false);
     setTimeout(() => setStatus(null), 3000);
@@ -99,11 +108,10 @@ export function Materials({ materials = [], onRefresh }) {
               <div className="relative group">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted font-bold group-focus-within:text-accent-cyan">R$</span>
                 <input 
-                  type="number" 
-                  step="0.01"
+                  type="text" 
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  placeholder="0.00" 
+                  placeholder="0,00 ou 0.00" 
                   className="w-full bg-white/5 border border-border px-12 py-3.5 rounded-2xl outline-none focus:border-accent-cyan/50 transition-all text-white font-bold"
                   required
                 />
