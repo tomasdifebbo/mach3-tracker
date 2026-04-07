@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "public": true,
+  "name": "mach3-tracker",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://mach3-tracker-production.up.railway.app/api/$1" }
+  ],
+  "cleanUrls": true,
+  "framework": null,
+  "installCommand": "echo 'No install needed'",
+  "buildCommand": "echo 'No build needed'",
+  "outputDirectory": "dashboard"
+}
