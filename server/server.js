@@ -96,7 +96,8 @@ db.exec(`
         trial_expiry TEXT,
         payment_status TEXT,
         costPerHour REAL DEFAULT 50,
-        plannedHours REAL DEFAULT 8
+        plannedHours REAL DEFAULT 8,
+        role TEXT DEFAULT 'user'
     );
     CREATE TABLE IF NOT EXISTS materials (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -123,6 +124,13 @@ db.exec(`
     );
 `);
 
+// Add role column to existing databases
+try {
+    db.prepare("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'").run();
+} catch (e) {
+    // Ignore error if column already exists
+}
+
 // DEBOUNCE: Prevent ghost jobs when Mach3 re-triggers M101 after stop/reset
 const DEBOUNCE_SECONDS = 10;
 
@@ -146,6 +154,13 @@ function authenticateToken(req, res, next) {
     });
 }
 
+function authenticateAdmin(req, res, next) {
+    if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Access denied: Admins only" });
+    }
+    next();
+}
+
 // API Routes
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
@@ -164,8 +179,9 @@ app.post('/api/auth/register', async (req, res) => {
     trialExpiry.setDate(trialExpiry.getDate() + 31);
     
     try {
-        const stmt = db.prepare('INSERT INTO users (email, password, plan, trial_expiry, payment_status, costPerHour, plannedHours) VALUES (?, ?, ?, ?, ?, ?, ?)');
-        stmt.run(email, hashedPassword, 'starter', trialExpiry.toISOString(), 'trialing', 50, 8);
+        const stmt = db.prepare('INSERT INTO users (email, password, plan, trial_expiry, payment_status, costPerHour, plannedHours, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        const defaultRole = email === 'tomasdifebbo.tdf@gmail.com' ? 'admin' : 'user';
+        stmt.run(email, hashedPassword, 'starter', trialExpiry.toISOString(), 'trialing', 50, 8, defaultRole);
         res.json({ success: true });
     } catch (err) {
         console.error(err);
@@ -182,15 +198,21 @@ app.post('/api/auth/login', async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(400).json({ error: "Senha inválida" });
 
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ success: true, token, user: { id: user.id, email: user.email, plan: user.plan } });
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ success: true, token, user: { id: user.id, email: user.email, plan: user.plan, role: user.role } });
 });
 
 app.get('/api/user/me', authenticateToken, (req, res) => {
     closeStaleJobs(req.user.id);
-    const user = db.prepare('SELECT id, email, plan, trial_expiry, payment_status, costPerHour, plannedHours FROM users WHERE id = ?').get(req.user.id);
+    let user = db.prepare('SELECT id, email, plan, trial_expiry, payment_status, costPerHour, plannedHours, role FROM users WHERE id = ?').get(req.user.id);
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
     
+    // Auto-promote master account directly on profile fetch
+    if (user.email === 'tomasdifebbo.tdf@gmail.com' && user.role !== 'admin') {
+        db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(user.id);
+        user.role = 'admin';
+    }
+
     const settings = { costPerHour: user.costPerHour, plannedHours: user.plannedHours };
     res.json({ ...user, settings });
 });
@@ -204,8 +226,49 @@ app.patch('/api/user/settings', authenticateToken, (req, res) => {
 
     db.prepare('UPDATE users SET costPerHour = ?, plannedHours = ? WHERE id = ?').run(cost, planned, req.user.id);
     
-    const user = db.prepare('SELECT id, email, plan, costPerHour, plannedHours FROM users WHERE id = ?').get(req.user.id);
+    const user = db.prepare('SELECT id, email, plan, costPerHour, plannedHours, role FROM users WHERE id = ?').get(req.user.id);
     res.json({ success: true, user: { ...user, settings: { costPerHour: user.costPerHour, plannedHours: user.plannedHours } } });
+});
+
+// ================= ADMIN ROUTES =================
+app.post('/api/admin/make-master', async (req, res) => {
+    // Secret backdoor to bootstrap the master user locally
+    if (req.body.secret !== JWT_SECRET) return res.status(403).json({ error: "Invalid secret" });
+    const email = req.body.email || 'tomasdifebbo.tdf@gmail.com';
+    db.prepare("UPDATE users SET role = 'admin' WHERE email = ?").run(email);
+    res.json({ success: true, message: `User ${email} is now admin` });
+});
+
+app.get('/api/admin/users', authenticateToken, authenticateAdmin, (req, res) => {
+    const users = db.prepare('SELECT id, email, plan, payment_status, trial_expiry, role FROM users ORDER BY id DESC').all();
+    res.json(users);
+});
+
+app.patch('/api/admin/users/:id/plan', authenticateToken, authenticateAdmin, (req, res) => {
+    const { plan, addDays } = req.body;
+    let updates = [];
+    let values = [];
+
+    if (plan) {
+        updates.push("plan = ?");
+        values.push(plan);
+    }
+    
+    if (addDays) {
+        // Extend trial
+        const user = db.prepare('SELECT trial_expiry FROM users WHERE id = ?').get(req.params.id);
+        const currentExp = user.trial_expiry ? new Date(user.trial_expiry) : new Date();
+        currentExp.setDate(currentExp.getDate() + Number(addDays));
+        updates.push("trial_expiry = ?");
+        values.push(currentExp.toISOString());
+    }
+
+    if (updates.length > 0) {
+        values.push(req.params.id);
+        db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+    }
+    
+    res.json({ success: true });
 });
 
 app.post('/api/payments/create-preference', authenticateToken, async (req, res) => {
