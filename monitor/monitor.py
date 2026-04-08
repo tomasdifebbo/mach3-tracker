@@ -10,7 +10,7 @@ import datetime
 # ==========================================
 # CONFIGURAÇÕES SAAS (LOCAL/NUVEM)
 # ==========================================
-BASE_URL = "http://localhost:3000"
+BASE_URL = "https://mach3-tracker-production.up.railway.app"
 URL_JOBS = f"{BASE_URL}/api/jobs"
 URL_HEALTH = f"{BASE_URL}/health"
 URL_LOGIN = f"{BASE_URL}/api/auth/login"

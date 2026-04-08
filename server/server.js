@@ -18,13 +18,32 @@ const preference = new Preference(client);
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../dashboard')));
+// Serve the NEW dashboard-v2 dist folder
+app.use(express.static(path.join(__dirname, '../dashboard-v2/dist')));
 
 // Database setup using SQLite (Support for Railway Persistent Volumes)
 const dbFolder = process.env.DATA_PATH || __dirname;
 const dbPath = path.join(dbFolder, 'mach3.db');
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
+
+// Helper to close stale jobs (> 12 hours)
+function closeStaleJobs(userId) {
+    try {
+        const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+        const staleJobs = db.prepare('SELECT id, start_time FROM jobs WHERE userId = ? AND end_time IS NULL AND start_time < ?').all(userId, twelveHoursAgo);
+        
+        for (const job of staleJobs) {
+            const start = new Date(job.start_time);
+            // Set end_time to start_time + 10 mins (fallback duration for stale jobs)
+            const end = new Date(start.getTime() + 10 * 60 * 1000).toISOString();
+            db.prepare('UPDATE jobs SET end_time = ?, duration_minutes = 10 WHERE id = ?').run(end, job.id);
+            console.log(`[CLEANUP] Locked stale job #${job.id} (stuck for > 12h)`);
+        }
+    } catch (e) {
+        console.error("Cleanup stale jobs error:", e);
+    }
+}
 
 // Tentar criar tabelas se o arquivo estiver vazio
 db.exec(`
@@ -127,6 +146,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.get('/api/user/me', authenticateToken, (req, res) => {
+    closeStaleJobs(req.user.id);
     const user = db.prepare('SELECT id, email, plan, trial_expiry, payment_status, costPerHour, plannedHours FROM users WHERE id = ?').get(req.user.id);
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
     
@@ -299,6 +319,7 @@ app.patch('/api/jobs/latest', authenticateToken, (req, res) => {
 });
 
 app.get('/api/jobs', authenticateToken, (req, res) => {
+    closeStaleJobs(req.user.id);
     const jobs = db.prepare('SELECT * FROM jobs WHERE userId = ? ORDER BY id DESC').all(req.user.id);
     res.json(jobs);
 });
@@ -347,6 +368,7 @@ app.delete('/api/materials/:id', authenticateToken, (req, res) => {
 
 app.get('/api/stats', authenticateToken, (req, res) => {
     try {
+        closeStaleJobs(req.user.id);
         const jobs = db.prepare('SELECT * FROM jobs WHERE userId = ?').all(req.user.id);
         const totalJobs = jobs.length;
         let totalHours = 0;

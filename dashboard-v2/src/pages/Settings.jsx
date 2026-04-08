@@ -15,6 +15,7 @@ import { api } from '../services/api';
 export function Settings({ user, onRefresh }) {
   const [costPerHour, setCostPerHour] = useState(user?.settings?.costPerHour || 50.0);
   const [plannedHours, setPlannedHours] = useState(user?.settings?.plannedHours || 8);
+  const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(null);
 
   const handleSubscribe = async (plan) => {
@@ -29,19 +30,26 @@ export function Settings({ user, onRefresh }) {
   };
 
   const handleSaveSettings = async () => {
+    if (!costPerHour || !plannedHours) return;
+    setLoading(true);
     setStatus(null);
     try {
-      // Logic for saving settings would go here. 
-      // For now we simulate success and update local state
-      const settings = { costPerHour: Number(costPerHour), plannedHours: Number(plannedHours) };
-      localStorage.setItem('mach3_settings', JSON.stringify(settings));
+      const resp = await api.updateUserSettings({ 
+        costPerHour: Number(costPerHour), 
+        plannedHours: Number(plannedHours) 
+      });
       
-      setStatus({ type: 'success', message: 'Configurações salvas!' });
-      setTimeout(() => setStatus(null), 3000);
-      onRefresh();
+      if (resp && resp.success) {
+        setStatus({ type: 'success', message: 'Configurações salvas na nuvem!' });
+        onRefresh();
+      } else {
+        throw new Error(resp?.error || 'Erro ao salvar');
+      }
     } catch (err) {
-      setStatus({ type: 'error', message: 'Erro ao salvar.' });
+      setStatus({ type: 'error', message: err.message || 'Erro de conexão com o servidor.' });
     }
+    setLoading(false);
+    setTimeout(() => setStatus(null), 3000);
   };
 
   return (
@@ -153,9 +161,10 @@ export function Settings({ user, onRefresh }) {
 
             <button 
               onClick={handleSaveSettings}
-              className="flex items-center justify-center gap-2 w-full py-4 bg-accent-cyan text-black rounded-2xl hover:scale-[1.02] active:scale-95 transition-all font-black uppercase tracking-widest text-xs shadow-lg shadow-accent-cyan/20"
+              disabled={loading}
+              className="flex items-center justify-center gap-2 w-full py-4 bg-accent-cyan text-black rounded-2xl hover:scale-[1.02] active:scale-95 transition-all font-black uppercase tracking-widest text-xs shadow-lg shadow-accent-cyan/20 disabled:opacity-50"
             >
-               <Save size={18} /> Salvar Parâmetros
+               <Save size={18} /> {loading ? 'Salvando...' : 'Salvar Parâmetros'}
             </button>
 
             {status && (

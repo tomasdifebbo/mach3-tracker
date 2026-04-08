@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   Clock, 
@@ -37,7 +37,7 @@ ChartJS.register(
 
 // Helper for Duration
 const formatDuration = (minutes) => {
-  if (!minutes) return "00:00:00";
+  if (minutes === null || minutes === undefined) return "00:00:00";
   const h = Math.floor(minutes / 60);
   const m = Math.floor(minutes % 60);
   const s = Math.floor((minutes * 60) % 60);
@@ -47,18 +47,69 @@ const formatDuration = (minutes) => {
 const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
 export function Dashboard({ jobs = [], user }) {
+  const [elapsed, setElapsed] = useState(0);
   const activeJob = jobs.find(j => !j.end_time);
   
+  // Live Timer Effect
+  useEffect(() => {
+    if (!activeJob) {
+      setElapsed(0);
+      return;
+    }
+    
+    const startDt = new Date(activeJob.start_time);
+    const update = () => {
+      const diffSec = Math.floor((Date.now() - startDt) / 1000);
+      setElapsed(diffSec > 0 ? diffSec / 60 : 0);
+    };
+    
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [activeJob]);
+
+  // Settings
+  const costPerHour = user?.settings?.costPerHour || 50;
+  const plannedHours = user?.settings?.plannedHours || 8;
+
   // Calculate Stats
-  const totalHours = jobs.reduce((acc, j) => acc + (j.duration_minutes || 0), 0) / 60;
-  const totalCost = jobs.reduce((acc, j) => acc + (j.duration_minutes / 60 * 50) + (j.material_price || 0), 0);
+  const totalMinutes = jobs.reduce((acc, j) => {
+    const dur = j.duration_minutes || (j.end_time ? (new Date(j.end_time) - new Date(j.start_time)) / 60000 : 0);
+    return acc + (dur > 0 ? dur : 0);
+  }, 0);
   
+  const totalCost = jobs.reduce((acc, j) => {
+    const dur = j.duration_minutes || (j.end_time ? (new Date(j.end_time) - new Date(j.start_time)) / 60000 : 0);
+    const machineCost = (dur / 60) * costPerHour;
+    const matCost = j.material_price || 0;
+    return acc + machineCost + matCost;
+  }, 0);
+
+  // Stats for Cards
+  const today = new Date().toISOString().split('T')[0];
+  const jobsToday = jobs.filter(j => j.start_time.startsWith(today)).length;
+  const minutesToday = jobs.filter(j => j.start_time.startsWith(today)).reduce((acc, j) => acc + (j.duration_minutes || 0), 0);
+  const oee = Math.min(100, (minutesToday / (plannedHours * 60)) * 100);
+
   const stats = [
-    { label: 'Total de Jobs', value: jobs.length, icon: Users, color: 'text-accent-blue', trend: '+12%' },
-    { label: 'Horas Totais', value: formatDuration(totalHours * 60).split(':')[0] + 'h', icon: Clock, color: 'text-accent-cyan', trend: '+8h' },
-    { label: 'Custo Total', value: formatCurrency(totalCost), icon: DollarSign, color: 'text-accent-warning', trend: '-2%' },
-    { label: 'OEE (Hoje)', value: '85.4%', icon: Activity, color: 'text-accent-success', trend: '+5%' },
+    { label: 'Total de Jobs', value: jobs.length, icon: Users, color: 'text-accent-blue', trend: 'Total' },
+    { label: 'Horas Totais', value: Math.floor(totalMinutes / 60) + 'h', icon: Clock, color: 'text-accent-cyan', trend: `${(totalMinutes/60).toFixed(1)}h` },
+    { label: 'Produção Estimada', value: formatCurrency(totalCost), icon: DollarSign, color: 'text-accent-warning', trend: 'R$' },
+    { label: 'OEE (Hoje)', value: oee.toFixed(1) + '%', icon: Activity, color: 'text-accent-success', trend: today.split('-').reverse().join('/') },
   ];
+
+  // Chart Data Preparation
+  const last7Days = [...Array(7)].map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().split('T')[0];
+  });
+
+  const chartData = last7Days.map(date => {
+    const dayJobs = jobs.filter(j => j.start_time.startsWith(date));
+    const dayMins = dayJobs.reduce((acc, j) => acc + (j.duration_minutes || 0), 0);
+    return dayMins / 60;
+  });
 
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
@@ -76,14 +127,13 @@ export function Dashboard({ jobs = [], user }) {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/20 px-2 py-0.5 rounded">Em Andamento</span>
-                <h3 className="text-lg font-bold text-white uppercase">{activeJob.file_name}</h3>
+                <h3 className="text-lg font-bold text-white uppercase truncate max-w-xs">{activeJob.file_name}</h3>
               </div>
               <p className="text-xs text-text-muted font-medium opacity-60 truncate max-w-sm">{activeJob.folder}</p>
             </div>
           </div>
           <div className="text-3xl font-mono font-bold text-accent-cyan tracking-tighter tabular-nums">
-             {/* Simple ticker logic omitted for brevity in Dash - handled in App or use a hook */}
-             01:12:45
+             {formatDuration(elapsed)}
           </div>
         </motion.div>
       )}
@@ -100,7 +150,7 @@ export function Dashboard({ jobs = [], user }) {
               <div className={`p-3 rounded-xl bg-white/5 ${s.color} transition-colors group-hover:bg-white/10 group-hover:scale-110 duration-300`}>
                 <s.icon size={24} />
               </div>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${s.trend.startsWith('+') ? 'bg-accent-success/10 text-accent-success' : 'bg-accent-danger/10 text-accent-danger'}`}>
+              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded bg-white/5 text-text-muted`}>
                 {s.trend}
               </span>
             </div>
@@ -114,17 +164,17 @@ export function Dashboard({ jobs = [], user }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 glass p-8 rounded-3xl h-[400px]">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-lg font-bold">Produção (Últimos 30 dias)</h3>
+            <h3 className="text-lg font-bold">Produção (Últimos 7 dias)</h3>
             <div className="flex items-center gap-2 text-xs text-text-muted font-bold">
               <div className="w-3 h-3 bg-accent-cyan rounded-sm"></div> Horas Máquina
             </div>
           </div>
           <Bar 
             data={{
-              labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'],
+              labels: last7Days.map(d => d.split('-').slice(1).reverse().join('/')),
               datasets: [{
                 label: 'Horas',
-                data: [4, 6, 5, 8, 4, 3, 2],
+                data: chartData,
                 backgroundColor: '#06b6d4',
                 borderRadius: 8,
                 barThickness: 24,
@@ -134,7 +184,7 @@ export function Dashboard({ jobs = [], user }) {
               responsive: true,
               maintainAspectRatio: false,
               scales: {
-                y: { grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false } },
+                y: { grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false }, ticks: { callback: v => v + 'h' } },
                 x: { grid: { display: false }, border: { display: false } }
               },
               plugins: { legend: { display: false } }
@@ -143,25 +193,31 @@ export function Dashboard({ jobs = [], user }) {
         </div>
 
         <div className="glass p-8 rounded-3xl h-[400px]">
-          <h3 className="text-lg font-bold mb-8">Top Projetos</h3>
+          <h3 className="text-lg font-bold mb-8">Materiais Usados</h3>
           <div className="h-[250px] flex items-center justify-center">
-            <Doughnut 
-              data={{
-                labels: ['Peças CNC', 'Móveis', 'Letreiros', 'Outros'],
-                datasets: [{
-                  data: [45, 25, 20, 10],
-                  backgroundColor: ['#3b82f6', '#06b6d4', '#10b981', '#f59e0b'],
-                  borderWidth: 0,
-                  hoverOffset: 20
-                }]
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '75%',
-                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 20, font: { weight: '600' } } } }
-              }}
-            />
+            {jobs.some(j => j.material_name) ? (
+              <Doughnut 
+                data={{
+                  labels: [...new Set(jobs.filter(j => j.material_name).map(j => j.material_name))].slice(0, 4),
+                  datasets: [{
+                    data: [...new Set(jobs.filter(j => j.material_name).map(j => j.material_name))].slice(0, 4).map(name => 
+                      jobs.filter(j => j.material_name === name).length
+                    ),
+                    backgroundColor: ['#3b82f6', '#06b6d4', '#10b981', '#f59e0b'],
+                    borderWidth: 0,
+                    hoverOffset: 20
+                  }]
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  cutout: '75%',
+                  plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 20, font: { weight: '600' } } } }
+                }}
+              />
+            ) : (
+              <div className="text-center text-text-muted text-sm opacity-50">Nenhum material <br/> atrelado aos jobs</div>
+            )}
           </div>
         </div>
       </div>

@@ -93,6 +93,16 @@ export const api = {
     return resp.json();
   },
 
+  // User Settings
+  updateUserSettings: async (settings) => {
+    const resp = await fetch(`${API_URL}/api/user/settings`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(settings)
+    });
+    return resp.json();
+  },
+
   // Payments
   createPreference: async (planType) => {
     const resp = await fetch(`${API_URL}/api/payments/create-preference`, {
