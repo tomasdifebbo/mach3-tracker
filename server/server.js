@@ -208,7 +208,8 @@ app.get('/api/user/me', authenticateToken, (req, res) => {
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
     
     // Auto-promote master account directly on profile fetch
-    if (user.email === 'tomasdifebbo.tdf@gmail.com' && user.role !== 'admin') {
+    const masterEmails = ['tomasdifebbo.tdf@gmail.com', 'admin@mach3.com', 'casadotrem@gmail.com'];
+    if (masterEmails.includes(user.email) && user.role !== 'admin') {
         db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(user.id);
         user.role = 'admin';
     }
