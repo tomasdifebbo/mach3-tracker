@@ -58,7 +58,7 @@ export function Login({ onLoginSuccess }) {
                  💠
               </div>
               <div>
-                <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">Mach3 Tracker</h1>
+                <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">2576 - GLOBOTOY</h1>
                 <p className="text-sm text-text-muted font-medium">Gestão Premium de Produção CNC</p>
               </div>
            </div>
