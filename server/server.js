@@ -69,19 +69,6 @@ const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
 // AUTO-SEED: Ensure Casadotrem exists as admin on startup
-// AUTO-SEED: Ensure Casadotrem exists as admin on startup
-try {
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get('casadotrem@gmail.com');
-    if (!user) {
-        console.log("[SEED] Criando conta administradora casadotrem@gmail.com...");
-        const hash = bcrypt.hashSync('123456', 10);
-        db.prepare('INSERT INTO users (email, password, role) VALUES (?, ?, ?)')
-          .run('casadotrem@gmail.com', hash, 'admin');
-    }
-} catch (e) {
-    console.error("[SEED] Erro ao verificar/criar usuário master:", e);
-}
-
 // Helper to close stale jobs (> 12 hours)
 function closeStaleJobs(userId) {
     try {
@@ -137,6 +124,19 @@ db.exec(`
         material_price REAL
     );
 `);
+
+// AUTO-SEED: Ensure Casadotrem exists as admin on startup
+try {
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get('casadotrem@gmail.com');
+    if (!user) {
+        console.log("[SEED] Criando conta administradora casadotrem@gmail.com...");
+        const hash = bcrypt.hashSync('123456', 10);
+        db.prepare('INSERT INTO users (email, password, role) VALUES (?, ?, ?)')
+          .run('casadotrem@gmail.com', hash, 'admin');
+    }
+} catch (e) {
+    console.error("[SEED] Erro ao verificar/criar usuário master:", e);
+}
 
 // Add role column to existing databases
 try {
