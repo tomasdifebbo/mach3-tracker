@@ -2,9 +2,17 @@
   "name": "mach3-tracker-full",
   "version": "1.0.0",
   "scripts": {
-    "install": "npm install && cd server && npm install && cd ../dashboard-v2 && npm install",
-    "build": "cd dashboard-v2 && npm run build && cd .. && mkdir -p server/public && cp -r dashboard-v2/dist/* server/public/",
-    "start": "cd server && node server.js"
+    "start": "node server/server.js",
+    "build": "echo 'Building...'"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.8.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.0",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "mercadopago": "^2.12.0"
   },
   "engines": {
     "node": ">=20.0.0"
