@@ -11,6 +11,7 @@ const { MercadoPagoConfig, Preference } = require('mercadopago');
 const Database = require('better-sqlite3');
 
 const app = express();
+app.set('trust proxy', 1); // Crucial for rate limiting and IP detection behind Railway proxy
 const port = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'mach3_secret_2026';
 const DOMAIN = process.env.DOMAIN || 'https://mach3-tracker-production.up.railway.app';
@@ -466,6 +467,6 @@ app.get('/api/stats', authenticateToken, (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`Premium Server (SQLite) running at http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Premium Server (SQLite) running on port ${port}`);
 });
