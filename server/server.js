@@ -18,8 +18,8 @@ const preference = new Preference(client);
 
 app.use(cors());
 app.use(express.json());
-// Serve the NEW dashboard-v2 dist folder
-app.use(express.static(path.join(__dirname, '../dashboard-v2/dist')));
+// Serve the NEW dashboard-v2 from internal public folder
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Database setup using SQLite (Support for Railway Persistent Volumes)
 const dbFolder = process.env.DATA_PATH || __dirname;

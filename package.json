@@ -1,10 +1,9 @@
 {
-  "name": "mach3-backend-root",
+  "name": "mach3-tracker-full",
   "version": "1.0.0",
-  "description": "Root package config for Auto-Deploy on Railway",
   "scripts": {
-    "install": "cd server && npm install",
-    "build": "cd server && npm install",
+    "install": "npm install && cd server && npm install && cd ../dashboard-v2 && npm install",
+    "build": "cd dashboard-v2 && npm run build && cd .. && mkdir -p server/public && cp -r dashboard-v2/dist/* server/public/",
     "start": "cd server && node server.js"
   },
   "engines": {
