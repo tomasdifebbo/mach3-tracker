@@ -10,6 +10,7 @@ import { Charts } from './pages/Charts';
 import { Materials } from './pages/Materials';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
+import { Admin } from './pages/Admin';
 
 function App() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -68,6 +69,7 @@ function App() {
       case 'charts': return <Charts jobs={jobs} />;
       case 'materials': return <Materials materials={materials} onRefresh={fetchData} />;
       case 'settings': return <Settings user={user} onRefresh={loadUser} />;
+      case 'admin': return <Admin user={user} />;
       default: return <Dashboard jobs={jobs} user={user} />;
     }
   };
@@ -77,12 +79,13 @@ function App() {
     'jobs': ['Histórico', 'Registro completo de atividades'],
     'charts': ['Gráficos', 'Análise aprofundada de produção'],
     'materials': ['Materiais', 'Cadastro de insumos e preços'],
-    'settings': ['Configurações', 'Ajustes de custo e produção']
+    'settings': ['Configurações', 'Ajustes de custo e produção'],
+    'admin': ['Painel Master', 'Gerenciamento avançado do SaaS']
   };
 
   return (
     <div className="flex h-screen bg-bg-main overflow-hidden text-slate-200">
-      <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} user={user} />
       
       <main className="flex-1 flex flex-col overflow-hidden">
         <Header 

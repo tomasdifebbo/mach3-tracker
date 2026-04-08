@@ -7,7 +7,8 @@ import {
   Settings, 
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Crown
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -16,16 +17,20 @@ function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'jobs', label: 'Histórico', icon: History },
-  { id: 'charts', label: 'Gráficos', icon: BarChart3 },
-  { id: 'materials', label: 'Materiais', icon: Box },
-  { id: 'settings', label: 'Configurações', icon: Settings },
-];
-
-export function Sidebar({ activeSection, onSectionChange }) {
+export function Sidebar({ activeSection, onSectionChange, user }) {
   const [isOpen, setIsOpen] = React.useState(true);
+
+  const navItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'jobs', label: 'Histórico', icon: History },
+    { id: 'charts', label: 'Gráficos', icon: BarChart3 },
+    { id: 'materials', label: 'Materiais', icon: Box },
+    { id: 'settings', label: 'Configurações', icon: Settings },
+  ];
+
+  if (user?.role === 'admin') {
+    navItems.push({ id: 'admin', label: 'Painel Master', icon: Crown });
+  }
 
   return (
     <aside className={cn(
