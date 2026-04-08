@@ -5,9 +5,6 @@ import requests
 import datetime
 
 # ==========================================
-# CONFIGURAÇÕES DA FILA DE OFFLINE SYNC
-# ==========================================
-# ==========================================
 # CONFIGURAÇÕES SAAS (LOCAL/NUVEM)
 # ==========================================
 BASE_URL = "https://mach3-tracker-production.up.railway.app"
@@ -22,13 +19,7 @@ def load_config():
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "r") as f:
             return json.load(f)
-    return {"email": "", "password": "", "token": ""}
-
-def get_log_file():
-    config = load_config()
-    return config.get("log_file", "C:\\Mach3\\Mach3Track.csv")
-
-LOG_FILE = get_log_file()
+    return {"email": "", "password": "", "token": "", "routers": []}
 
 def save_config(config):
     with open(CONFIG_FILE, "w") as f:
@@ -39,18 +30,19 @@ def get_token():
     if config.get("token"):
         return config["token"]
     
-    # Se não houver token, tenta logar
     print("[!] Monitor não autenticado. Tentando login...")
-    email = config.get("email") or input("Email do SaaS: ")
-    password = config.get("password") or input("Senha do SaaS: ")
+    email = config.get("email")
+    password = config.get("password")
     
+    if not email or not password:
+        print("[X] Email ou senha não configurados no config.json")
+        return None
+        
     try:
         resp = requests.post(URL_LOGIN, json={"email": email, "password": password})
         if resp.status_code == 200:
             data = resp.json()
             config["token"] = data["token"]
-            config["email"] = email
-            config["password"] = password
             save_config(config)
             print("[✓] Login realizado com sucesso!")
             return data["token"]
@@ -60,15 +52,11 @@ def get_token():
         print(f"[X] Erro de conexão: {e}")
     return None
 
-TOKEN = get_token()
-
 def get_headers():
     return {
         "Authorization": f"Bearer {get_token()}",
         "Content-Type": "application/json"
     }
-
-HEADERS = get_headers()
 
 def load_queue():
     if not os.path.exists(QUEUE_FILE):
@@ -92,10 +80,9 @@ def enqueue_request(method, url, payload):
         "payload": payload
     })
     save_queue(queue)
-    print(f"[!] Supabase Offline. Comando salvo na fila de segurança.")
+    print(f"[!] Erro de conexão. Evento salvo na fila offline.")
 
 def process_queue():
-    """Tenta enviar pacotes atrasados em ordem cronológica"""
     queue = load_queue()
     if not queue:
         return
@@ -105,15 +92,16 @@ def process_queue():
     except:
         return 
 
-    print(f"[*] Conexão Cloud restabelecida! Sincronizando {len(queue)} registros...")
+    print(f"[*] Sincronizando {len(queue)} registros pendentes...")
     
     sucessos = 0
     for req in queue:
         try:
+            headers = get_headers()
             if req["method"] == "POST":
-                resp = requests.post(req["url"], json=req["payload"], headers=get_headers(), timeout=5)
+                resp = requests.post(req["url"], json=req["payload"], headers=headers, timeout=5)
             elif req["method"] == "PATCH":
-                resp = requests.patch(req["url"], json=req["payload"], headers=get_headers(), timeout=5)
+                resp = requests.patch(req["url"], json=req["payload"], headers=headers, timeout=5)
             
             if resp.status_code in (200, 201, 204, 404, 400):
                 sucessos += 1
@@ -125,28 +113,21 @@ def process_queue():
     if sucessos > 0:
         fila_restante = queue[sucessos:]
         save_queue(fila_restante)
-        print(f"[✓] {sucessos} eventos sincronizados com a nuvem!")
-
+        print(f"[✓] {sucessos} eventos sincronizados!")
 
 def processa_inicio(caminho, nome_arquivo, iso_time, origem):
-    dt = datetime.datetime.fromisoformat(iso_time)
-    
-    # 🕵️ TRAVA DE DUPLICAÇÃO E COOLDOWN (30 segundos)
-    exibicao_folder = f"{origem} | {caminho}" if origem else caminho
-    
     payload = {
         "file_name": nome_arquivo,
-        "folder": exibicao_folder,
+        "folder": f"{origem} | {caminho}",
         "file_path": caminho,
         "start_time": iso_time
     }
     
-    # Enviar para o SaaS local
     if len(load_queue()) == 0:
         try:
             resp = requests.post(URL_JOBS, json=payload, headers=get_headers(), timeout=5)
             if resp.status_code in (200, 201, 204, 400):
-                print(f"[+] {origem} Iniciou: {nome_arquivo}")
+                print(f"[+] {origem} -> Iniciou: {nome_arquivo}")
                 return
         except Exception as e:
             print(f"Erro POST: {e}")
@@ -155,21 +136,21 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem):
 
 def processa_fim(iso_time, origem):
     payload = { "end_time": iso_time }
-    
-    # SaaS local use target endpoint
     PATCH_URL = f"{BASE_URL}/api/jobs/latest"
+    
+    # Nota: Em sistemas multirouter, o PATCH /latest pode ser impreciso se ambas terminarem ao mesmo tempo.
+    # Mas como o userId é o mesmo e o comportamento do Mach3 é sequencial por máquina, geralmente funciona.
     
     if len(load_queue()) == 0:
         try:
             resp = requests.patch(PATCH_URL, json=payload, headers=get_headers(), timeout=5)
             if resp.status_code in (200, 204, 404):
-                print(f"[√] {origem} Finalizou.")
+                print(f"[√] {origem} -> Finalizou.")
                 return
         except Exception as e:
             print(f"Erro PATCH: {e}")
         
     enqueue_request("PATCH", PATCH_URL, payload)
-
 
 def parse_mach3_time(data_str, hora_str):
     try:
@@ -178,66 +159,67 @@ def parse_mach3_time(data_str, hora_str):
     except Exception:
         return datetime.datetime.now().astimezone().isoformat()
 
-
 def main():
-    print("Iniciando Monitor Inteligente Offline Sync (Store-And-Forward)...")
+    print("==================================================")
+    print("   MONITOR MULTI-ROUTER 2026 (GLOBOTOY)")
+    print("==================================================")
     
-    # Se o CSV original da Router não existir, espera
-    while not os.path.exists(LOG_FILE):
-        time.sleep(2)
-        print(f"Aguardando a criação do log na Mach3 ({LOG_FILE})...")
+    config = load_config()
+    routers = config.get("routers", [])
+    
+    if not routers:
+        print("[X] Nenhuma router configurada no config.json!")
+        return
 
-    # Monitora ativamente abrindo e fechando o arquivo rápido para NÃO bloquear o Mach3 no Windows
-    last_pos = os.path.getsize(LOG_FILE)
-    print(f"[*] Monitorando {LOG_FILE} ativamente com sistema de retenção anti-quedas!")
+    # Inicializa estado de cada fime
+    router_states = {}
+    for r in routers:
+        name = r["name"]
+        path = r["log_file"]
+        last_pos = 0
+        if os.path.exists(path):
+            last_pos = os.path.getsize(path)
+        router_states[name] = {"path": path, "last_pos": last_pos}
+        print(f"[*] Monitorando {name}: {path}")
+
+    print("[*] Sistema de retenção anti-quedas ativo.")
 
     while True:
-        # Tenta sincronizar registros que deram erro de internet no passado
         process_queue()
-        time.sleep(1) # Aguarda 1 segundo a cada ciclo
+        time.sleep(1)
 
-        try:
-            current_size = os.path.getsize(LOG_FILE)
-            if current_size > last_pos:
-                with open(LOG_FILE, 'r', encoding='utf-8', errors='ignore') as f:
-                    f.seek(last_pos)
-                    lines = f.readlines()
-                    last_pos = f.tell()
+        for name, state in router_states.items():
+            path = state["path"]
+            
+            if not os.path.exists(path):
+                continue
                 
-                # Se encontrou novas linhas (Mach3 salvou novos logs)
-                for line in lines:
-                    if not line.strip(): continue
-                    parts = line.strip().split(',')
+            try:
+                current_size = os.path.getsize(path)
+                if current_size > state["last_pos"]:
+                    with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                        f.seek(state["last_pos"])
+                        lines = f.readlines()
+                        state["last_pos"] = f.tell()
                     
-                    if len(parts) >= 4:
-                        data_str = parts[0].strip()
-                        hora_str = parts[1].strip()
+                    for line in lines:
+                        if not line.strip(): continue
+                        parts = line.strip().split(',')
                         
-                        # New Multi-Router Parser:
-                        # Format 1 (Legacy): Date,Time,Path,Status
-                        # Format 2 (V2): Date,Time,Path,Machine,Status
-                        
-                        tipo = parts[-1].strip().upper()
-                        origem = "TOMAS" # Valor padrão se não detectado
-                        
-                        if len(parts) == 4:
-                            caminho_completo = parts[2].strip()
-                        else:
-                            # Tenta pegar o penúltimo como máquina se houver 5+ partes
-                            origem = parts[3].strip()
-                            caminho_completo = parts[2].strip()
-                        
-                        nome_arquivo = caminho_completo.split("\\")[-1] if "\\" in caminho_completo else caminho_completo
-                        
-                        iso_time = parse_mach3_time(data_str, hora_str)
-                        
-                        if "INICIO" in tipo:
-                            processa_inicio(caminho_completo, nome_arquivo, iso_time, origem)
-                        elif "FIM" in tipo:
-                            processa_fim(iso_time, origem)
-        except Exception as e:
-            pass # Ignora bloqueios temporários se a Mach3 estiver salvando naquele exato milissegundo
-
+                        if len(parts) >= 4:
+                            data_str, hora_str, caminho_completo = parts[0], parts[1], parts[2]
+                            tipo = parts[-1].strip().upper()
+                            
+                            nome_arquivo = caminho_completo.split("\\")[-1] if "\\" in caminho_completo else caminho_completo
+                            iso_time = parse_mach3_time(data_str, hora_str)
+                            
+                            if "INICIO" in tipo:
+                                processa_inicio(caminho_completo, nome_arquivo, iso_time, name)
+                            elif "FIM" in tipo:
+                                processa_fim(iso_time, name)
+            except Exception as e:
+                # Silencioso para não poluir o terminal Windows se o arquivo estiver bloqueado rápido
+                pass
 
 if __name__ == "__main__":
     main()

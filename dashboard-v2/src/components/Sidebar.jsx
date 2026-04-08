@@ -44,8 +44,8 @@ export function Sidebar({ activeSection, onSectionChange, user }) {
             🔩
           </div>
           <div>
-            <h1 className="text-lg font-bold tracking-tight text-white leading-tight">MACH3</h1>
-            <span className="text-[10px] text-accent-cyan font-bold tracking-[0.2em]">TRACKER V5.0</span>
+            <h1 className="text-lg font-bold tracking-tight text-white leading-tight">2576 - GLOBOTOY</h1>
+            <span className="text-[10px] text-accent-cyan font-bold tracking-[0.2em]">TRACKER V1.0</span>
           </div>
         </div>
         <button 

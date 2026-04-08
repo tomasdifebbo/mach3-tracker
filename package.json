@@ -1,5 +1,5 @@
 {
-  "name": "mach3-tracker-full",
+  "name": "2576 - GLOBOTOY",
   "version": "1.0.0",
   "scripts": {
     "start": "node server/server.js",

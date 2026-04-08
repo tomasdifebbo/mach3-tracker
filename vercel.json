@@ -1,7 +1,7 @@
 {
   "version": 2,
   "public": true,
-  "name": "mach3-tracker",
+  "name": "2576 - GLOBOTOY",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "https://mach3-tracker-production.up.railway.app/api/$1" }
   ],

@@ -1,6 +1,15 @@
 {
-    "log_file": "C:\\Mach3\\Mach3Track.csv",
+    "routers": [
+        {
+            "name": "Router 1 (DESKTOP-1CSKMNT)",
+            "log_file": "\\\\DESKTOP-1CSKMNT\\Mach3\\Mach3Track.csv"
+        },
+        {
+            "name": "Router 2 (ACT10)",
+            "log_file": "\\\\ACT10\\Mach3\\Mach3Track.csv"
+        }
+    ],
     "email": "casadotrem@gmail.com",
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJjYXNhZG90cmVtQGdtYWlsLmNvbSIsImlhdCI6MTc3NTYxNDA4OSwiZXhwIjoxNzc2MjE4ODg5fQ.r7Fxw7N2bZ7XiQWAPA9hj3NiN1JlT0A3L2W5vfMBVgw",
-    "password": "123456"
+    "password": "123456",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJjYXNhZG90cmVtQGdtYWlsLmNvbSIsImlhdCI6MTc3NTYxNDA4OSwiZXhwIjoxNzc2MjE4ODg5fQ.r7Fxw7N2bZ7XiQWAPA9hj3NiN1JlT0A3L2W5vfMBVgw"
 }
