@@ -153,7 +153,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                   </td>
                   <td className="px-8 py-5 min-w-[150px]">
                      <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2.5 py-1 rounded-lg border border-accent-cyan/20">
-                       {job.folder?.split('|').pop()?.split('\\').pop() || '-'}
+                       {job.folder?.includes('GLOBOTOY') ? job.folder : (job.folder?.split('|').pop()?.split('\\').pop() || '-')}
                      </span>
                   </td>
                   <td className="px-8 py-5 text-xs font-bold text-white/80">{formatTime(job.start_time)}</td>

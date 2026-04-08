@@ -361,7 +361,11 @@ app.post('/api/jobs', authenticateToken, (req, res) => {
     } else {
         if (cleanFolder && cleanFolder !== 'Desconhecido') {
             const parts = cleanFolder.replace(/\\\\\\\\/g, '/').split('/').filter(p => p.length > 0);
-            if (parts.length > 0) cleanFolder = parts[parts.length - 1];
+            if (parts.length > 0) {
+                // Se o primeiro item for o nome do projeto (ex: GLOBOTOY), mantém ele todo
+                if (parts[0].includes('GLOBOTOY')) cleanFolder = parts[0];
+                else cleanFolder = parts[parts.length - 1];
+            }
         }
     }
     
