@@ -1,5 +1,5 @@
 {
-  "name": "2576 - GLOBOTOY",
+  "name": "globotoy-tracker",
   "version": "1.0.0",
   "scripts": {
     "start": "node server/server.js",

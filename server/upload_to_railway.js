@@ -1,98 +1,82 @@
-const Database = require('better-sqlite3');
 const fetch = require('node-fetch') || globalThis.fetch;
-const db = new Database('mach3.db');
+const Database = require('better-sqlite3');
+const path = require('path');
 
 const BASE_URL = 'https://mach3-tracker-production.up.railway.app';
 const EMAIL = 'casadotrem@gmail.com';
 const PASSWORD = '123456';
 
-async function upload() {
-    console.log(`Baixando do SQLite local...`);
-    const jobs = db.prepare('SELECT * FROM jobs').all();
-    const materials = db.prepare('SELECT * FROM materials').all();
-    
-    console.log(`Encontrados ${jobs.length} jobs, ${materials.length} materiais.`);
-    
-    let resp = await fetch(`${BASE_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: EMAIL, password: PASSWORD })
-    });
-    let loginData = await resp.json();
-    let token = loginData.token;
+async function migrate() {
+    console.log("Baixando do SQLite local...");
+    const dbPath = path.join(__dirname, 'mach3.db');
+    const db = new Database(dbPath);
+    const localJobs = db.prepare('SELECT * FROM jobs').all();
+    console.log(`Encontrados ${localJobs.length} jobs.`);
 
-    if (!token) {
-        console.log(`Login falhou. Criando conta no Railway...`);
-        await fetch(`${BASE_URL}/api/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: EMAIL, password: PASSWORD })
-        });
-        resp = await fetch(`${BASE_URL}/api/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: EMAIL, password: PASSWORD })
-        });
-        loginData = await resp.json();
-        token = loginData.token;
+    let token = '';
+    console.log("Tentando login na Railway (com retries)...");
+    for (let i = 0; i < 10; i++) {
+        try {
+            const resp = await fetch(`${BASE_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: EMAIL, password: PASSWORD })
+            });
+            const data = await resp.json();
+            if (data.token) {
+                token = data.token;
+                console.log("Logado com sucesso!");
+                break;
+            } else {
+                console.log(`Erro login: ${data.error || 'Desconhecido'}. Tentativa ${i+1}/10...`);
+            }
+        } catch (e) {
+            console.log(`Erro conexão: ${e.message}. Tentativa ${i+1}/10...`);
+        }
+        await new Promise(r => setTimeout(r, 10000)); // Espera 10s
     }
-    
-    if (!token) {
-        console.log(`Erro crítico de login no servidor e nâo foi possível continuar.`);
-        return;
-    }
-    
-    console.log(`Logado com sucesso. Iniciando upload para Railway...`);
-    
-    const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
-    
-    const matMap = {};
-    for (const m of materials) {
-        let r = await (await fetch(`${BASE_URL}/api/materials`, {
-            method: 'POST', headers, body: JSON.stringify({ name: m.name, price: m.price })
-        })).json();
-        if (r.success && r.material) {
-            matMap[m.id] = r.material.id;
+
+    if (!token) return console.log("Can't login after retries.");
+
+    console.log("Iniciando upload para Railway...");
+    let count = 0;
+    for (const job of localJobs) {
+        try {
+            const resp = await fetch(`${BASE_URL}/api/jobs`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    file_name: job.file_name,
+                    folder: job.folder,
+                    file_path: job.file_path,
+                    start_time: job.start_time
+                })
+            });
+            if (resp.status < 300) {
+                // Update to set end_time if exists
+                if (job.end_time) {
+                    await fetch(`${BASE_URL}/api/jobs/latest`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            end_time: job.end_time
+                        })
+                    });
+                }
+                count++;
+                if (count % 5 === 0) console.log(`${count} jobs enviados...`);
+            }
+        } catch (e) {
+            console.error("Erro no job:", job.id, e.message);
         }
     }
-    
-    const sortedJobs = jobs.sort((a,b) => new Date(a.start_time) - new Date(b.start_time));
-    let cont = 0;
-    for (const j of sortedJobs) {
-        // start job
-        let startRes = await (await fetch(`${BASE_URL}/api/jobs`, {
-            method: 'POST', headers, body: JSON.stringify({
-                file_name: j.file_name,
-                folder: j.folder,
-                file_path: j.file_path,
-                start_time: j.start_time
-            })
-        })).json();
-        
-        if (startRes.id && !startRes.debounced) {
-            if (j.end_time) {
-                await fetch(`${BASE_URL}/api/jobs/latest`, {
-                    method: 'PATCH', headers, body: JSON.stringify({ end_time: j.end_time })
-                });
-            }
-            if (j.material_id && j.material_name) {
-                let mId = matMap[j.material_id] || j.material_id;
-                await fetch(`${BASE_URL}/api/jobs/${startRes.id}`, {
-                    method: 'PATCH', headers, body: JSON.stringify({
-                        material_id: mId,
-                        material_name: j.material_name,
-                        material_price: j.material_price || 0
-                    })
-                });
-            }
-            cont++;
-            if (cont % 5 === 0) console.log(`${cont} jobs enviados...`);
-            
-            // Pequeno delay para debounce/limite de API
-            await new Promise(r => setTimeout(r, 200));
-        }
-    }
-    console.log(`Migração Completa! Enviados: ${cont} jobs para a Railway.`);
+    console.log(`Migração Completa! Enviados: ${count} jobs.`);
 }
 
-upload();
+migrate();

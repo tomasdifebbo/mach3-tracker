@@ -145,7 +145,7 @@ export function Login({ onLoginSuccess }) {
            </form>
 
            <div className="mt-8 text-center text-[11px] text-text-muted font-medium opacity-50">
-             © 2026 Mach3 Tracker Pro. Todos os direitos reservados.
+             © 2026 2576 - GLOBOTOY Pro. Todos os direitos reservados.
            </div>
         </div>
       </motion.div>
