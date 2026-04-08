@@ -4,6 +4,8 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const { MercadoPagoConfig, Preference } = require('mercadopago');
 const Database = require('better-sqlite3');
@@ -11,12 +13,50 @@ const Database = require('better-sqlite3');
 const app = express();
 const port = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'mach3_secret_2026';
+const DOMAIN = process.env.DOMAIN || 'https://mach3-tracker-production.up.railway.app';
 
 // Config Mercado Pago
 const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || 'test_token' });
 const preference = new Preference(client);
 
-app.use(cors());
+// P2: Security headers
+app.use(helmet({ contentSecurityPolicy: false }));
+
+// P0: Restricted CORS (production + localhost dev)
+const allowedOrigins = [
+  DOMAIN,
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:4173'
+];
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, monitor script)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('CORS não permitido'));
+  },
+  credentials: true
+}));
+
+// P1: Rate limiting
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Muitas requisições. Tente novamente em 15 minutos.' }
+});
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' }
+});
+app.use('/api/', generalLimiter);
+app.use('/api/auth/', authLimiter);
+
 app.use(express.json());
 // Serve the NEW dashboard-v2 from internal public folder
 app.use(express.static(path.join(__dirname, 'public')));
@@ -190,11 +230,11 @@ app.post('/api/payments/create-preference', authenticateToken, async (req, res) 
             ],
             external_reference: req.user.id.toString(),
             metadata: { user_id: req.user.id, plan_type: planType },
-            notification_url: `${process.env.DOMAIN || 'https://sua-empresa.com'}/api/payments/webhook`,
+            notification_url: `${DOMAIN}/api/payments/webhook`,
             back_urls: {
-                success: `http://localhost:${port}/#dashboard`,
-                failure: `http://localhost:${port}/#settings`,
-                pending: `http://localhost:${port}/#settings`
+                success: `${DOMAIN}/#dashboard`,
+                failure: `${DOMAIN}/#settings`,
+                pending: `${DOMAIN}/#settings`
             },
             auto_return: 'approved'
         };

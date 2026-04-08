@@ -1,5 +1,6 @@
 {
     "log_file": "C:\\Mach3\\Mach3Track.csv",
-    "email": "CASADOTREM@GMAIL.COM",
-    "token": ""
+    "email": "casadotrem@gmail.com",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJjYXNhZG90cmVtQGdtYWlsLmNvbSIsImlhdCI6MTc3NTYxNDA4OSwiZXhwIjoxNzc2MjE4ODg5fQ.r7Fxw7N2bZ7XiQWAPA9hj3NiN1JlT0A3L2W5vfMBVgw",
+    "password": "123456"
 }

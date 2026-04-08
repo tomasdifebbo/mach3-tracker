@@ -64,7 +64,7 @@ function App() {
   const renderSection = () => {
     switch (activeSection) {
       case 'dashboard': return <Dashboard jobs={jobs} user={user} />;
-      case 'jobs': return <History jobs={jobs} materials={materials} onRefresh={fetchData} />;
+      case 'jobs': return <History jobs={jobs} materials={materials} onRefresh={fetchData} user={user} />;
       case 'charts': return <Charts jobs={jobs} />;
       case 'materials': return <Materials materials={materials} onRefresh={fetchData} />;
       case 'settings': return <Settings user={user} onRefresh={loadUser} />;

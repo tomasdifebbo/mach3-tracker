@@ -19,7 +19,8 @@ const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currenc
 const formatTime = (iso) => iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-';
 const formatDate = (iso) => iso ? new Date(iso).toLocaleDateString('pt-BR') : '-';
 
-export function History({ jobs = [], materials = [], onRefresh }) {
+export function History({ jobs = [], materials = [], onRefresh, user }) {
+  const costPerHour = user?.settings?.costPerHour || 50;
   const [searchTerm, setSearchTerm] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -40,7 +41,7 @@ export function History({ jobs = [], materials = [], onRefresh }) {
       j.end_time ? formatTime(j.end_time) : 'Ativo',
       (j.duration_minutes || 0).toFixed(2),
       j.material_name || '-',
-      ((j.duration_minutes / 60 * 50) + (j.material_price || 0)).toFixed(2),
+      ((j.duration_minutes / 60 * costPerHour) + (j.material_price || 0)).toFixed(2),
       formatDate(j.start_time)
     ]);
 
@@ -199,7 +200,7 @@ export function History({ jobs = [], materials = [], onRefresh }) {
                     </AnimatePresence>
                   </td>
                   <td className="px-8 py-5 font-black text-white text-sm tracking-tighter">
-                    {formatCurrency((job.duration_minutes / 60 * 50) + (job.material_price || 0))}
+                    {formatCurrency((job.duration_minutes / 60 * costPerHour) + (job.material_price || 0))}
                   </td>
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-2 text-[10px] text-text-muted font-black tracking-widest uppercase">
