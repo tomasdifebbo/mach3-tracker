@@ -9,7 +9,6 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const { MercadoPagoConfig, Preference } = require('mercadopago');
 const Database = require('better-sqlite3');
-const { Pool } = require('pg');
 
 const app = express();
 app.set('trust proxy', 1); // Crucial for rate limiting and IP detection behind Railway proxy
