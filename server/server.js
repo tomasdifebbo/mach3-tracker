@@ -9,6 +9,7 @@ const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const { MercadoPagoConfig, Preference } = require('mercadopago');
 const Database = require('better-sqlite3');
+const { Pool } = require('pg');
 
 const app = express();
 app.set('trust proxy', 1); // Crucial for rate limiting and IP detection behind Railway proxy
@@ -361,26 +362,13 @@ app.post('/api/jobs', authenticateToken, (req, res) => {
     let cleanFolder = folder || 'Desconhecido';
     let cleanFileName = file_name || 'Desconhecido';
     
-    if (cleanFileName.includes('\\\\') || cleanFileName.includes('/')) {
-        const pathParts = cleanFileName.replace(/\\\\\\\\/g, '/').split('/').filter(p => p.length > 0);
+    if (cleanFileName.includes('\\') || cleanFileName.includes('/')) {
+        const pathParts = cleanFileName.replace(/\\/g, '/').split('/').filter(p => p.length > 0);
         if (pathParts.length > 0) cleanFileName = pathParts[pathParts.length - 1];
-        if (pathParts.length > 1) {
-            const relevantParts = pathParts.slice(-3, -1);
-            const genericRoots = ['router', 'arquivos 2024', 'ARQUIVOS 2026', 'TOMAS', 'GCODE'];
-            if (relevantParts.length > 1 && genericRoots.some(r => relevantParts[0].toLowerCase() === r.toLowerCase())) relevantParts.shift();
-            cleanFolder = relevantParts.join(' / ');
-        } else {
-            cleanFolder = 'Raiz';
-        }
-    } else {
-        if (cleanFolder && cleanFolder !== 'Desconhecido') {
-            const parts = cleanFolder.replace(/\\\\\\\\/g, '/').split('/').filter(p => p.length > 0);
-            if (parts.length > 0) {
-                // Se o primeiro item for o nome do projeto (ex: GLOBOTOY), mantém ele todo
-                if (parts[0].includes('GLOBOTOY')) cleanFolder = parts[0];
-                else cleanFolder = parts[parts.length - 1];
-            }
-        }
+    }
+    // Now keep cleanFolder as the provided path, but cleaned of the router prefix if it exists
+    if (cleanFolder && cleanFolder.includes(' | ')) {
+        cleanFolder = cleanFolder.split(' | ').pop();
     }
     
     // DEBOUNCE: Check if this START is too close to the last event
