@@ -1,7 +1,7 @@
 {
-  "name": "globotoy-tracker",
+  "name": "mach3-tracker",
   "version": "2.0.0",
-  "description": "Premium 2576 - GLOBOTOY Tracker Backend",
+  "description": "Mach3 Tracker - CNC Production Monitor Backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

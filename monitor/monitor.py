@@ -181,7 +181,7 @@ def parse_mach3_time(data_str, hora_str):
 
 def main():
     print("==================================================")
-    print("   MONITOR MULTI-ROUTER 2026 (GLOBOTOY)")
+    print("   MACH3 TRACKER - MONITOR MULTI-ROUTER V2.0")
     print("==================================================")
     
     # Forçar login no inicio para teste
