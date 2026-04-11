@@ -11,6 +11,16 @@ export const getAuthHeaders = () => {
   };
 };
 
+// Safe JSON parser: handles non-JSON responses (e.g., HTML error pages from proxy)
+async function safeJson(resp) {
+  const text = await resp.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: `Resposta inválida do servidor (${resp.status})` };
+  }
+}
+
 export const api = {
   // Auth
   login: async (email, password) => {
@@ -19,7 +29,9 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
-    return resp.json();
+    const data = await safeJson(resp);
+    if (!resp.ok) throw new Error(data.error || `Erro ${resp.status}`);
+    return data;
   },
   
   register: async (email, password) => {
@@ -28,7 +40,9 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
-    return resp.json();
+    const data = await safeJson(resp);
+    if (!resp.ok) throw new Error(data.error || `Erro ${resp.status}`);
+    return data;
   },
 
   // User
@@ -47,6 +61,7 @@ export const api = {
       headers: getAuthHeaders(),
       cache: 'no-store' 
     });
+    if (!resp.ok) throw new Error(`Erro ao buscar jobs (${resp.status})`);
     return resp.json();
   },
 
@@ -55,7 +70,7 @@ export const api = {
       method: 'DELETE', 
       headers: getAuthHeaders() 
     });
-    return resp.json();
+    return safeJson(resp);
   },
 
   updateJobMaterial: async (jobId, payload) => {
@@ -64,7 +79,7 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify(payload)
     });
-    return resp.json();
+    return safeJson(resp);
   },
 
   // Materials
@@ -73,6 +88,7 @@ export const api = {
       headers: getAuthHeaders(),
       cache: 'no-store' 
     });
+    if (!resp.ok) throw new Error(`Erro ao buscar materiais (${resp.status})`);
     return resp.json();
   },
 
@@ -82,7 +98,7 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ name, price })
     });
-    return resp.json();
+    return safeJson(resp);
   },
 
   deleteMaterial: async (id) => {
@@ -90,7 +106,7 @@ export const api = {
       method: 'DELETE', 
       headers: getAuthHeaders() 
     });
-    return resp.json();
+    return safeJson(resp);
   },
 
   // User Settings
@@ -100,6 +116,16 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify(settings)
     });
+    return safeJson(resp);
+  },
+
+  // Stats
+  getStats: async () => {
+    const resp = await fetch(`${API_URL}/api/stats`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store'
+    });
+    if (!resp.ok) throw new Error(`Erro ao buscar estatísticas (${resp.status})`);
     return resp.json();
   },
 
@@ -110,6 +136,6 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ planType })
     });
-    return resp.json();
+    return safeJson(resp);
   }
 };

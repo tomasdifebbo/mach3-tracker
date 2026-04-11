@@ -41,13 +41,17 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       j.end_time ? formatTime(j.end_time) : 'Ativo',
       (j.duration_minutes || 0).toFixed(2),
       j.material_name || '-',
-      ((j.duration_minutes / 60 * costPerHour) + (j.material_price || 0)).toFixed(2),
+      (((j.duration_minutes || 0) / 60 * costPerHour) + (j.material_price || 0)).toFixed(2),
       formatDate(j.start_time)
     ]);
 
+    const escapeCSV = (val) => {
+      const str = String(val);
+      return str.includes(',') || str.includes('"') || str.includes('\n') ? `"${str.replace(/"/g, '""')}"` : str;
+    };
     const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
       + headers.join(",") + "\n"
-      + rows.map(e => e.join(",")).join("\n");
+      + rows.map(e => e.map(escapeCSV).join(",")).join("\n");
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -200,7 +204,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                     </AnimatePresence>
                   </td>
                   <td className="px-8 py-5 font-black text-white text-sm tracking-tighter">
-                    {formatCurrency((job.duration_minutes / 60 * costPerHour) + (job.material_price || 0))}
+                    {formatCurrency(((job.duration_minutes || 0) / 60 * costPerHour) + (job.material_price || 0))}
                   </td>
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-2 text-[10px] text-text-muted font-black tracking-widest uppercase">

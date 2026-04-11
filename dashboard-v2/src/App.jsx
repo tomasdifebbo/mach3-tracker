@@ -51,8 +51,11 @@ function App() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      loadUser();
-      fetchData();
+      const init = async () => {
+        await loadUser();
+        await fetchData();
+      };
+      init();
       const interval = setInterval(fetchData, 10000);
       return () => clearInterval(interval);
     }

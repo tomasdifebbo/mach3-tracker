@@ -86,9 +86,13 @@ export function Dashboard({ jobs = [], user }) {
   }, 0);
 
   // Stats for Cards
-  const today = new Date().toISOString().split('T')[0];
-  const jobsToday = jobs.filter(j => j.start_time.startsWith(today)).length;
-  const minutesToday = jobs.filter(j => j.start_time.startsWith(today)).reduce((acc, j) => acc + (j.duration_minutes || 0), 0);
+  const now = new Date();
+  const isToday = (isoStr) => {
+    const d = new Date(isoStr);
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+  };
+  const jobsToday = jobs.filter(j => isToday(j.start_time)).length;
+  const minutesToday = jobs.filter(j => isToday(j.start_time)).reduce((acc, j) => acc + (j.duration_minutes || 0), 0);
   const oee = Math.min(100, (minutesToday / (plannedHours * 60)) * 100);
 
   const stats = [

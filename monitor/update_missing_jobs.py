@@ -1,3 +1,17 @@
+#!/usr/bin/env python3
+"""
+╔══════════════════════════════════════════════════════════╗
+║  ⚠️  DEPRECATED - NÃO EXECUTAR                          ║
+║  Este script aponta para o Supabase antigo.              ║
+║  O sistema migrou para Railway/SQLite em Abril 2026.     ║
+║  Executar este script pode corromper dados!               ║
+╚══════════════════════════════════════════════════════════╝
+"""
+import sys
+print("⚠️  SCRIPT DEPRECATED! O sistema agora usa Railway/SQLite.")
+print("Este script aponta para o Supabase antigo e NÃO deve ser executado.")
+sys.exit(1)
+
 import requests
 import datetime
 import json

@@ -29,7 +29,22 @@ def save_config(config):
 def get_token():
     config = load_config()
     if config.get("token"):
-        return config["token"]
+        # Validate token before using (JWT expires after 7 days)
+        try:
+            resp = requests.get(f"{BASE_URL}/api/user/me",
+                                headers={"Authorization": f"Bearer {config['token']}",
+                                         "Content-Type": "application/json"},
+                                timeout=3)
+            if resp.status_code == 200:
+                return config["token"]
+            elif resp.status_code in (401, 403):
+                print("[!] Token expirado, renovando...")
+                config["token"] = ""
+                save_config(config)
+            else:
+                return config["token"]  # Server issue, use existing
+        except Exception:
+            return config["token"]  # Offline, use what we have
     
     print("[!] Autenticando com a nuvem...")
     email = config.get("email")
@@ -67,7 +82,7 @@ def load_queue():
     try:
         with open(QUEUE_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
-    except:
+    except Exception:
         return []
 
 def save_queue(queue):
@@ -118,11 +133,15 @@ def process_queue():
         print(f"[✓] {sucessos} eventos sincronizados com a nuvem!")
 
 def processa_inicio(caminho, nome_arquivo, iso_time, origem):
+    # Extract actual folder from full file path
+    pasta = caminho.rsplit("\\", 1)[0] if "\\" in caminho else caminho
+    
     payload = {
         "file_name": nome_arquivo,
-        "folder": f"{origem} | {caminho}",
+        "folder": f"{origem} | {pasta}",
         "file_path": caminho,
-        "start_time": iso_time
+        "start_time": iso_time,
+        "router_name": origem
     }
     
     headers = get_headers()
@@ -132,13 +151,13 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem):
             if resp.status_code in (200, 201, 204, 400):
                 print(f"[+] {origem} -> INICIOU: {nome_arquivo}")
                 return
-        except Exception as e:
+        except Exception:
             pass
     
     enqueue_request("POST", URL_JOBS, payload)
 
 def processa_fim(iso_time, origem):
-    payload = { "end_time": iso_time }
+    payload = { "end_time": iso_time, "router_name": origem }
     PATCH_URL = f"{BASE_URL}/api/jobs/latest"
     
     headers = get_headers()
@@ -148,7 +167,7 @@ def processa_fim(iso_time, origem):
             if resp.status_code in (200, 204, 404):
                 print(f"[√] {origem} -> FINALIZOU.")
                 return
-        except Exception as e:
+        except Exception:
             pass
         
     enqueue_request("PATCH", PATCH_URL, payload)
