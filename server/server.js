@@ -20,8 +20,8 @@ const DOMAIN = process.env.DOMAIN || 'https://mach3-tracker-production.up.railwa
 const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || 'test_token' });
 const preference = new Preference(client);
 
-// P2: Security headers (CSP disabled for SPA compatibility)
-app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+// P2: Security headers temporarily disabled to fix Vite CSP issues
+// app.use(helmet(...));
 
 // P0: Restricted CORS (production + localhost dev)
 const allowedOrigins = [
