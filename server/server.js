@@ -20,19 +20,8 @@ const DOMAIN = process.env.DOMAIN || 'https://mach3-tracker-production.up.railwa
 const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || 'test_token' });
 const preference = new Preference(client);
 
-// P2: Security headers (CSP permissive for SPA served from same origin)
-app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-            fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            imgSrc: ["'self'", "data:", "blob:"],
-            connectSrc: ["'self'", "https://mach3-tracker-production.up.railway.app", "https://api.mercadopago.com"],
-        }
-    }
-}));
+// P2: Security headers (CSP disabled for SPA compatibility)
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 
 // P0: Restricted CORS (production + localhost dev)
 const allowedOrigins = [
