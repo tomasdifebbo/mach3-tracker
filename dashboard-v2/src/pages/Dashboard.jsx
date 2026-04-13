@@ -99,7 +99,7 @@ export function Dashboard({ jobs = [], user }) {
     { label: 'Total de Jobs', value: jobs.length, icon: Users, color: 'text-accent-blue', trend: 'Total' },
     { label: 'Horas Totais', value: Math.floor(totalMinutes / 60) + 'h', icon: Clock, color: 'text-accent-cyan', trend: `${(totalMinutes/60).toFixed(1)}h` },
     { label: 'Produção Estimada', value: formatCurrency(totalCost), icon: DollarSign, color: 'text-accent-warning', trend: 'R$' },
-    { label: 'OEE (Hoje)', value: oee.toFixed(1) + '%', icon: Activity, color: 'text-accent-success', trend: today.split('-').reverse().join('/') },
+    { label: 'OEE (Hoje)', value: oee.toFixed(1) + '%', icon: Activity, color: 'text-accent-success', trend: now.toLocaleDateString('pt-BR') },
   ];
 
   // Chart Data Preparation
