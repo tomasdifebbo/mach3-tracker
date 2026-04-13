@@ -58,7 +58,7 @@ export function Login({ onLoginSuccess }) {
                  💠
               </div>
               <div>
-                <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">2576 - GLOBOTOY</h1>
+                <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">MACH3 TRACKER</h1>
                 <p className="text-sm text-text-muted font-medium">Gestão Premium de Produção CNC</p>
               </div>
            </div>
@@ -145,7 +145,7 @@ export function Login({ onLoginSuccess }) {
            </form>
 
            <div className="mt-8 text-center text-[11px] text-text-muted font-medium opacity-50">
-             © 2026 2576 - GLOBOTOY Pro. Todos os direitos reservados.
+             © 2026 Mach3 Tracker Pro. Todos os direitos reservados.
            </div>
         </div>
       </motion.div>
