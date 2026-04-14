@@ -40,23 +40,25 @@ app.use(cors({
     credentials: true
 }));
 
-// P1: Rate limiting
+// P1: Rate limiting (Temporarily disabled to fix synchronization issues)
+/*
 const generalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 200,
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 1000, 
     standardHeaders: true,
     legacyHeaders: false,
-    message: { error: 'Muitas requisições. Tente novamente em 15 minutos.' }
+    message: { error: 'Muitas requisições. Tente novamente em 1 minuto.' }
 });
 const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 15,
+    windowMs: 1 * 60 * 1000,
+    max: 50,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' }
+    message: { error: 'Muitas tentativas de login. Tente novamente em breve.' }
 });
 app.use('/api/', generalLimiter);
 app.use('/api/auth/', authLimiter);
+*/
 
 app.use(express.json());
 // Serve the NEW dashboard-v2 from internal public folder

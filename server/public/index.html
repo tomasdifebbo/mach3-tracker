@@ -5,10 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mach3 Tracker</title>
-    <script type="module" crossorigin src="/assets/index-s-ZWmXUo.js"></script>
+    <script type="module" crossorigin src="/assets/index-DlT_OpmT.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-AJ-cESNw.css">
   </head>
   <body>
+    <script>
+      console.log('Debug - localStorage type:', typeof localStorage);
+      console.log('Debug - Intl type:', typeof Intl);
+      window.onerror = function(msg, url, line, col, error) {
+        console.log('GLOBAL ERROR CAUGHT:', msg, 'at', url, ':', line);
+      };
+    </script>
     <div id="root"></div>
   </body>
 </html>
