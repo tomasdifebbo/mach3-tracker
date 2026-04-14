@@ -139,5 +139,31 @@ export const api = {
       body: JSON.stringify({ planType })
     });
     return safeJson(resp);
+  },
+
+  // Generic REST methods
+  get: async (url) => {
+    const resp = await fetch(`${API_URL}/api${url}`, { headers: getAuthHeaders() });
+    return safeJson(resp);
+  },
+  post: async (url, body) => {
+    const resp = await fetch(`${API_URL}/api${url}`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(body)
+    });
+    return safeJson(resp);
+  },
+  patch: async (url, body) => {
+    const resp = await fetch(`${API_URL}/api${url}`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(body)
+    });
+    return safeJson(resp);
+  },
+  deleteCustom: async (url) => {
+    const resp = await fetch(`${API_URL}/api${url}`, { method: 'DELETE', headers: getAuthHeaders() });
+    return safeJson(resp);
   }
 };

@@ -8,8 +8,12 @@ export function Admin({ user }) {
 
   const fetchUsers = async () => {
     try {
-      const { data } = await api.get('/admin/users');
-      setUsers(data);
+      const data = await api.get('/admin/users');
+      if (Array.isArray(data)) {
+        setUsers(data);
+      } else if (data && data.error) {
+        console.error(data.error);
+      }
     } catch (e) {
       console.error(e);
     } finally {
