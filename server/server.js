@@ -87,6 +87,31 @@ function closeStaleJobs(userId) {
     }
 }
 
+// Maintenance: Keep only X days of history (optional pruning)
+function runMaintenance() {
+    try {
+        // Set RETENTION_DAYS to a value > 0 to enable auto-cleanup. 
+        // Example: 7 means keep only the last week. Default is 60 days for safety.
+        const RETENTION_DAYS = 60; 
+        if (RETENTION_DAYS > 0) {
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - RETENTION_DAYS);
+            const cutoffStr = cutoffDate.toISOString();
+            
+            const result = db.prepare('DELETE FROM jobs WHERE start_time < ? AND end_time IS NOT NULL').run(cutoffStr);
+            if (result.changes > 0) {
+                console.log(`[MAINTENANCE] Removed ${result.changes} old jobs (beyond ${RETENTION_DAYS} days)`);
+            }
+        }
+    } catch (e) {
+        console.error("Maintenance error:", e);
+    }
+}
+
+// Run maintenance once on startup and then every 24 hours
+runMaintenance();
+setInterval(runMaintenance, 24 * 60 * 60 * 1000);
+
 // Tentar criar tabelas se o arquivo estiver vazio
 db.exec(`
     CREATE TABLE IF NOT EXISTS users (

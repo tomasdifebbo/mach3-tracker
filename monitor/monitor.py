@@ -8,13 +8,27 @@ import sys
 # ==========================================
 # CONFIGURAÇÕES SAAS (LOCAL/NUVEM)
 # ==========================================
-BASE_URL = "https://mach3-tracker-production.up.railway.app"
+BASE_URL = "http://localhost:3000"
+# BASE_URL = "https://mach3-tracker-production.up.railway.app" 
 URL_JOBS = f"{BASE_URL}/api/jobs"
 URL_HEALTH = f"{BASE_URL}/health"
 URL_LOGIN = f"{BASE_URL}/api/auth/login"
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")
 QUEUE_FILE = os.path.join(os.path.dirname(__file__), "fila_sincronizacao.json")
+STATE_FILE = os.path.join(os.path.dirname(__file__), "monitor_state.json")
+
+def load_state():
+    if os.path.exists(STATE_FILE):
+        try:
+            with open(STATE_FILE, "r") as f:
+                return json.load(f)
+        except: pass
+    return {}
+
+def save_state(state):
+    with open(STATE_FILE, "w") as f:
+        json.dump(state, f, indent=4)
 
 def load_config():
     if os.path.exists(CONFIG_FILE):
@@ -194,22 +208,32 @@ def main():
         print("[X] Nenhuma router configurada.")
         return
 
+    print("[*] Monitor Ativo e Aguardando Cortes...")
+
     router_states = {}
+    states = load_state()
     for r in routers:
         name = r["name"]
         path = r["log_file"]
-        last_pos = 0
-        if os.path.exists(path):
-            last_pos = os.path.getsize(path)
+        # Se no tem estado salvo, comea do fim para evitar duplicidade histrica antiga,
+        # MAS se o arquivo existir, podemos tentar ler os últimos 7 dias.
+        # Por padrão, vamos salvar a posição para que amanhã ele saiba onde parou.
+        last_pos = states.get(name, {}).get("last_pos")
+        
+        if last_pos is None:
+            if os.path.exists(path):
+                last_pos = os.path.getsize(path)
+            else:
+                last_pos = 0
+                
         router_states[name] = {"path": path, "last_pos": last_pos}
-        print(f"[*] Monitorando {name}: {path}")
-
-    print("[*] Monitor Ativo e Aguardando Cortes...")
+        print(f"[*] Monitorando {name} (Início em: {last_pos} bytes)")
 
     while True:
         try:
             process_queue()
             
+            changed = False
             for name, state in router_states.items():
                 path = state["path"]
                 
@@ -219,26 +243,42 @@ def main():
                 current_size = os.path.getsize(path)
                 if current_size < state["last_pos"]: # Arquivo foi resetado
                     state["last_pos"] = 0
+                    changed = True
                 
                 if current_size > state["last_pos"]:
                     with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                         f.seek(state["last_pos"])
                         lines = f.readlines()
                         state["last_pos"] = f.tell()
+                        changed = True
                     
                     for line in lines:
                         if not line.strip(): continue
                         parts = line.strip().split(',')
                         if len(parts) >= 4:
                             data_str, hora_str, caminho_completo = parts[0], parts[1], parts[2]
+                            
+                            # Logica de identificação de Router:
+                            # Se tiver 5 partes, a 4a é o nome da Router (ex: ACT10)
+                            # Se tiver 4 partes e o config for compartilhado, o nome vem da config
+                            identidade_router = name
+                            if len(parts) >= 5:
+                                # A penultima parte em logs de 5 campos é a router (ex: ACT10)
+                                # A ultima parte é sempre INICIO/FIM
+                                if parts[-2].strip().upper() in ["ACT10", "ROUTER 1", "ROUTER 2"]:
+                                    identidade_router = parts[-2].strip()
+                            
                             tipo = parts[-1].strip().upper()
                             nome_arquivo = caminho_completo.split("\\")[-1] if "\\" in caminho_completo else caminho_completo
                             iso_time = parse_mach3_time(data_str, hora_str)
                             
                             if "INICIO" in tipo:
-                                processa_inicio(caminho_completo, nome_arquivo, iso_time, name)
+                                processa_inicio(caminho_completo, nome_arquivo, iso_time, identidade_router)
                             elif "FIM" in tipo:
-                                processa_fim(iso_time, name)
+                                processa_fim(iso_time, identidade_router)
+            
+            if changed:
+                save_state({n: {"last_pos": s["last_pos"]} for n, s in router_states.items()})
         except Exception as e:
             print(f"[!] Erro no loop: {e}")
         

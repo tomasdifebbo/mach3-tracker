@@ -1,15 +1,11 @@
 {
     "routers": [
         {
-            "name": "Router 1 (DESKTOP-1CSKMNT)",
+            "name": "Router Central",
             "log_file": "\\\\DESKTOP-1CSKMNT\\Mach3\\log_oficial.csv"
-        },
-        {
-            "name": "Router 2 (ACT10)",
-            "log_file": "\\\\ACT10\\Mach3\\log_oficial.csv"
         }
     ],
     "email": "casadotrem@gmail.com",
     "password": "123456",
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJjYXNhZG90cmVtQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3NTY3Mjc0NiwiZXhwIjoxNzc2Mjc3NTQ2fQ.aVnNPCpSyyPZuYdJ7biJq18QoWUDGI8_MvqzfsnF2Xk"
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwiZW1haWwiOiJjYXNhZG90cmVtQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3NjE3MTQ5MywiZXhwIjoxNzc2Nzc2MjkzfQ.LFb8ZTA6Vaotk79OGhYgzvVtPsrSEa64sq1XzWQ0BOU"
 }

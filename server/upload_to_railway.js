@@ -52,7 +52,8 @@ async function migrate() {
                     file_name: job.file_name,
                     folder: job.folder,
                     file_path: job.file_path,
-                    start_time: job.start_time
+                    start_time: job.start_time,
+                    router_name: job.router_name
                 })
             });
             if (resp.status < 300) {

@@ -1,5 +1,7 @@
 // API Base Configuration
-const API_URL = 'https://mach3-tracker-production.up.railway.app'; // Fixed production URL
+const API_URL = window.location.origin.includes('localhost') 
+  ? 'http://localhost:3000' 
+  : 'https://mach3-tracker-production.up.railway.app';
 
 export const getAuthHeaders = () => {
   const token = localStorage.getItem('mach3_token');
