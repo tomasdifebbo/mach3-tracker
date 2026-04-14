@@ -1,7 +1,7 @@
 import os
 
-folder = r"E:\arquivos 2024\ARQUIVOS 2026\router\2576 - GLOBOTOY\3 - OFICINA\ROUTER\ISOPOR"
-files_to_patch = [f"{i} pvc100mm b10mm.txt" for i in range(36, 46)]
+folder = r"E:\arquivos 2024\ARQUIVOS 2026\router\2578I -  Donatello\ROUTER\ISOPOR"
+files_to_patch = [f for f in os.listdir(folder) if f.endswith(".txt")]
 
 def patch_file(filepath):
     if not os.path.exists(filepath):

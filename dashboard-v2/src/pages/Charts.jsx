@@ -70,14 +70,14 @@ export function Charts({ jobs = [] }) {
   // ─── Productivity Line Chart (last 7 days) ───
   const last7 = getLastNDays(7);
   const weeklyHours = last7.map(date => {
-    const dayJobs = jobs.filter(j => j.start_time?.startsWith(date) && j.end_time);
+    const dayJobs = jobs.filter(j => j.start_time && j.start_time.startsWith(date) && j.end_time);
     return dayJobs.reduce((acc, j) => acc + (j.duration_minutes || 0), 0) / 60;
   });
   const weeklyLabels = last7.map(d => getDayLabel(d));
 
   // ─── Jobs per Day Bar (last 7 days) ───
   const weeklyJobCounts = last7.map(date => {
-    return jobs.filter(j => j.start_time?.startsWith(date)).length;
+    return jobs.filter(j => j.start_time && j.start_time.startsWith(date)).length;
   });
 
   // ─── Monthly Distribution (last 6 months) ───

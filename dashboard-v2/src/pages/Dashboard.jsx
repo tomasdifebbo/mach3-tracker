@@ -113,7 +113,7 @@ export function Dashboard({ jobs = [], user }) {
   });
 
   const chartData = last7Days.map(date => {
-    const dayJobs = jobs.filter(j => j.start_time.startsWith(date));
+    const dayJobs = jobs.filter(j => j.start_time && j.start_time.startsWith(date));
     const dayMins = dayJobs.reduce((acc, j) => acc + (j.duration_minutes || 0), 0);
     return dayMins / 60;
   });
