@@ -7,6 +7,13 @@
     <title>Mach3 Tracker</title>
   </head>
   <body>
+    <script>
+      console.log('Debug - localStorage type:', typeof localStorage);
+      console.log('Debug - Intl type:', typeof Intl);
+      window.onerror = function(msg, url, line, col, error) {
+        console.log('GLOBAL ERROR CAUGHT:', msg, 'at', url, ':', line);
+      };
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
