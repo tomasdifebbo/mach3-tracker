@@ -8,8 +8,8 @@ import sys
 # ==========================================
 # CONFIGURAÇÕES SAAS (LOCAL/NUVEM)
 # ==========================================
-BASE_URL = "http://localhost:3000"
-# BASE_URL = "https://mach3-tracker-production.up.railway.app" 
+# BASE_URL = "http://localhost:3000"
+BASE_URL = "https://mach3-tracker-production.up.railway.app" 
 URL_JOBS = f"{BASE_URL}/api/jobs"
 URL_HEALTH = f"{BASE_URL}/health"
 URL_LOGIN = f"{BASE_URL}/api/auth/login"
@@ -74,7 +74,7 @@ def get_token():
             data = resp.json()
             config["token"] = data["token"]
             save_config(config)
-            print("[✓] Autenticação realizada!")
+            print("[[v]] Autenticação realizada!")
             return data["token"]
         else:
             print(f"[X] Erro de login: {resp.status_code}")
@@ -144,11 +144,21 @@ def process_queue():
     if sucessos > 0:
         fila_restante = queue[sucessos:]
         save_queue(fila_restante)
-        print(f"[✓] {sucessos} eventos sincronizados com a nuvem!")
+        print(f"[v] {sucessos} eventos sincronizados com a nuvem!")
 
 def processa_inicio(caminho, nome_arquivo, iso_time, origem):
     # Extract actual folder from full file path
-    pasta = caminho.rsplit("\\", 1)[0] if "\\" in caminho else caminho
+    # Extract actual folder from full file path
+    # Example: \\TOMAS\arquivos 2024\ARQUIVOS 2026\router\Project\Folder -> Project\Folder
+    parts = caminho.split("\\")
+    if len(parts) > 2:
+        # Try to get the project name (e.g., 2578I - Donatello)
+        # Usually projects are 3 levels deep from the root share
+        project = parts[-3] if len(parts) >= 3 else "Desconhecido"
+        subfolder = parts[-2] if len(parts) >= 2 else ""
+        pasta = f"{project} / {subfolder}"
+    else:
+        pasta = caminho.rsplit("\\", 1)[0] if "\\" in caminho else caminho
     
     payload = {
         "file_name": nome_arquivo,
@@ -179,7 +189,7 @@ def processa_fim(iso_time, origem):
         try:
             resp = requests.patch(PATCH_URL, json=payload, headers=headers, timeout=5)
             if resp.status_code in (200, 204, 404):
-                print(f"[√] {origem} -> FINALIZOU.")
+                print(f"[OK] {origem} -> FINALIZOU.")
                 return
         except Exception:
             pass
@@ -222,7 +232,9 @@ def main():
         
         if last_pos is None:
             if os.path.exists(path):
-                last_pos = os.path.getsize(path)
+                # Se for novo, vamos ler os últimos 5000 bytes para pegar o que está rodando agora
+                file_size = os.path.getsize(path)
+                last_pos = max(0, file_size - 5000) 
             else:
                 last_pos = 0
                 

@@ -48,17 +48,20 @@ const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currenc
 
 export function Dashboard({ jobs = [], user }) {
   const [elapsed, setElapsed] = useState(0);
-  const activeJob = jobs.find(j => !j.end_time);
+  const activeJobs = jobs.filter(j => !j.end_time);
   
-  // Live Timer Effect
+  // Live Timer Effect for multiple jobs
   useEffect(() => {
-    if (!activeJob) {
+    if (activeJobs.length === 0) {
       setElapsed(0);
       return;
     }
     
-    const startDt = new Date(activeJob.start_time);
     const update = () => {
+      // For simplicity, we track the elapsed time of the most recent active job for the main display
+      // but in the UI we can show multiple trackers.
+      const newestJob = [...activeJobs].sort((a, b) => new Date(b.start_time) - new Date(a.start_time))[0];
+      const startDt = new Date(newestJob.start_time);
       const diffSec = Math.floor((Date.now() - startDt) / 1000);
       setElapsed(diffSec > 0 ? diffSec / 60 : 0);
     };
@@ -66,7 +69,7 @@ export function Dashboard({ jobs = [], user }) {
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, [activeJob]);
+  }, [activeJobs.length]);
 
   // Settings
   const costPerHour = user?.settings?.costPerHour || 50;
@@ -117,30 +120,35 @@ export function Dashboard({ jobs = [], user }) {
 
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
-      {/* Active Job Banner */}
-      {activeJob && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-accent-cyan/10 border border-accent-cyan/30 rounded-2xl p-6 flex items-center justify-between shadow-[0_0_30px_rgba(6,182,212,0.1)]"
-        >
-          <div className="flex items-center gap-6">
-            <div className="w-12 h-12 bg-accent-cyan rounded-xl flex items-center justify-center text-black animate-pulse">
-              <Play size={24} fill="currentColor" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/20 px-2 py-0.5 rounded">Em Andamento</span>
-                <h3 className="text-lg font-bold text-white uppercase truncate max-w-xs">{activeJob.file_name}</h3>
+      {/* Active Jobs Banners */}
+      <div className="space-y-4">
+        {activeJobs.map(job => (
+          <motion.div 
+            key={job.id}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-accent-cyan/10 border border-accent-cyan/30 rounded-2xl p-6 flex items-center justify-between shadow-[0_0_30px_rgba(6,182,212,0.1)]"
+          >
+            <div className="flex items-center gap-6">
+              <div className="w-12 h-12 bg-accent-cyan rounded-xl flex items-center justify-center text-black animate-pulse">
+                <Play size={24} fill="currentColor" />
               </div>
-              <p className="text-xs text-text-muted font-medium opacity-60 truncate max-w-sm">{activeJob.folder}</p>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/20 px-2 py-0.5 rounded">
+                    {job.router_name || 'ROUTER'} - EM ANDAMENTO
+                  </span>
+                  <h3 className="text-lg font-bold text-white uppercase truncate max-w-xs">{job.file_name}</h3>
+                </div>
+                <p className="text-xs text-text-muted font-medium opacity-60 truncate max-w-sm">{job.folder}</p>
+              </div>
             </div>
-          </div>
-          <div className="text-3xl font-mono font-bold text-accent-cyan tracking-tighter tabular-nums">
-             {formatDuration(elapsed)}
-          </div>
-        </motion.div>
-      )}
+            <div className="text-3xl font-mono font-bold text-accent-cyan tracking-tighter tabular-nums">
+               {formatDuration((Math.floor((Date.now() - new Date(job.start_time)) / 1000) / 60))}
+            </div>
+          </motion.div>
+        ))}
+      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
