@@ -41,8 +41,8 @@ function App() {
         api.getJobs(),
         api.getMaterials()
       ]);
-      setJobs(jobsData);
-      setMaterials(materialsData);
+      if (Array.isArray(jobsData)) setJobs(jobsData);
+      if (Array.isArray(materialsData)) setMaterials(materialsData);
       setLoading(false);
     } catch (err) {
       console.error("Fetch failed:", err);
