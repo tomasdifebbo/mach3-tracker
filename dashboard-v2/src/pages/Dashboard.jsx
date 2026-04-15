@@ -267,9 +267,6 @@ export function Dashboard({ jobs = [], user }) {
         </div>
       </div>
 
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Grouped Totals Table (Files) */}
         <div className="glass p-8 rounded-3xl overflow-hidden flex flex-col">
