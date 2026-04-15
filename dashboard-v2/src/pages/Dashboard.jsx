@@ -132,6 +132,24 @@ export function Dashboard({ jobs = [], user }) {
   }, {});
   
   const sortedGrouped = Object.values(groupedJobs).sort((a, b) => b.totalMinutes - a.totalMinutes).slice(0, 10);
+  
+  // Group by folder and sum duration
+  const groupedFolders = jobs.reduce((acc, j) => {
+    // Keep only the project name (last part of the path)
+    const folderPath = j.folder || 'Desconhecido';
+    const name = folderPath.includes('|') ? folderPath.split('|').pop().trim() : 
+                 folderPath.split('\\').pop() || folderPath;
+                 
+    if (!acc[name]) {
+      acc[name] = { name, count: 0, totalMinutes: 0 };
+    }
+    const dur = j.duration_minutes || (j.end_time ? (new Date(j.end_time) - new Date(j.start_time)) / 60000 : 0);
+    acc[name].count += 1;
+    acc[name].totalMinutes += dur;
+    return acc;
+  }, {});
+  
+  const sortedFolders = Object.values(groupedFolders).sort((a, b) => b.totalMinutes - a.totalMinutes).slice(0, 10);
 
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
@@ -249,57 +267,84 @@ export function Dashboard({ jobs = [], user }) {
         </div>
       </div>
 
-      {/* Grouped Totals Table */}
-      <div className="glass p-8 rounded-3xl overflow-hidden">
-        <div className="flex items-center justify-between mb-8">
-          <h3 className="text-lg font-bold">Resumo por Arquivo (Tempo Somado)</h3>
-          <span className="text-xs text-text-muted">Totalizando trabalhos com nomes idênticos</span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-separate border-spacing-y-2">
-            <thead>
-              <tr className="text-text-muted text-[10px] font-black uppercase tracking-widest">
-                <th className="px-4 py-2">Nome do Arquivo</th>
-                <th className="px-4 py-2">Repetições</th>
-                <th className="px-4 py-2">Tempo Total Acumulado</th>
-                <th className="px-4 py-2">Barra de Produtividade</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedGrouped.map((item, idx) => {
-                const maxTime = sortedGrouped[0].totalMinutes || 1;
-                const percentage = (item.totalMinutes / maxTime) * 100;
-                
-                return (
-                  <tr key={idx} className="group hover:bg-white/5 transition-colors bg-white/5 rounded-xl">
-                    <td className="px-4 py-4 font-bold text-sm rounded-l-xl">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-accent-blue/20 flex items-center justify-center text-accent-blue">
-                          <FileText size={16} />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {/* Grouped Totals Table (Files) */}
+        <div className="glass p-8 rounded-3xl overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-lg font-bold">Resumo por Arquivo</h3>
+            <span className="text-[10px] text-text-muted font-bold uppercase tracking-tighter">Tempo Somado</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-separate border-spacing-y-2">
+              <tbody>
+                {sortedGrouped.map((item, idx) => {
+                  const maxTime = Math.max(1, sortedGrouped[0].totalMinutes);
+                  const percentage = (item.totalMinutes / maxTime) * 100;
+                  return (
+                    <tr key={idx} className="group hover:bg-white/5 transition-colors bg-white/5">
+                      <td className="px-4 py-3 rounded-l-xl">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-accent-blue/10 flex items-center justify-center text-accent-blue">
+                             <FileText size={14} />
+                          </div>
+                          <span className="text-xs font-bold text-white truncate max-w-[150px]">{item.name}</span>
                         </div>
-                        {item.name}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-sm font-medium">{item.count}x</td>
-                    <td className="px-4 py-4 text-sm font-bold text-accent-cyan">
-                      {item.totalMinutes > 60 
-                        ? `${Math.floor(item.totalMinutes / 60)}h ${Math.round(item.totalMinutes % 60)}min` 
-                        : `${Math.round(item.totalMinutes)} min`}
-                    </td>
-                    <td className="px-4 py-4 rounded-r-xl w-64">
-                      <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${percentage}%` }}
-                          className="h-full bg-gradient-to-r from-accent-blue to-accent-cyan"
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td className="px-4 py-3 text-xs font-bold text-accent-cyan">
+                        {Math.floor(item.totalMinutes / 60)}h {Math.round(item.totalMinutes % 60)}m
+                      </td>
+                      <td className="px-4 py-3 rounded-r-xl w-32">
+                        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                          <motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} className="h-full bg-accent-blue" />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Grouped Totals Table (Folders) */}
+        <div className="glass p-8 rounded-3xl overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between mb-8">
+            <h3 className="text-lg font-bold">Resumo por Pasta/Projeto</h3>
+            <span className="text-[10px] text-text-muted font-bold uppercase tracking-tighter">Total por Pasta</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-separate border-spacing-y-2">
+              <tbody>
+                {sortedFolders.map((item, idx) => {
+                  const maxTime = Math.max(1, sortedFolders[0].totalMinutes);
+                  const percentage = (item.totalMinutes / maxTime) * 100;
+                  return (
+                    <tr key={idx} className="group hover:bg-white/5 transition-colors bg-white/5">
+                      <td className="px-4 py-3 rounded-l-xl">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-accent-cyan/10 flex items-center justify-center text-accent-cyan">
+                             <TrendingUp size={14} />
+                          </div>
+                          <span className="text-xs font-bold text-white truncate max-w-[150px]">{item.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-xs font-bold text-accent-success">
+                        {Math.floor(item.totalMinutes / 60)}h {Math.round(item.totalMinutes % 60)}m
+                      </td>
+                      <td className="px-4 py-3 rounded-r-xl w-32">
+                        <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                          <motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} className="h-full bg-accent-success" />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
