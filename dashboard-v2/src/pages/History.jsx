@@ -3,14 +3,11 @@ import {
   Filter, 
   Download, 
   Trash2, 
-  ExternalLink, 
-  Calendar,
-  Layers,
   ChevronDown,
   Search,
-  CheckCircle2,
-  X,
-  AlertTriangle
+  Calendar,
+  Layers,
+  FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
@@ -26,14 +23,49 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   
-  const filteredJobs = jobs.filter(j => 
+  // Helper to group jobs by File + Folder + Day
+  const consolidateJobs = (jobList) => {
+    const groups = jobList.reduce((acc, j) => {
+      const dateKey = j.start_time ? new Date(j.start_time).toISOString().split('T')[0] : 'und';
+      const key = `${j.file_name}-${j.folder}-${dateKey}`;
+      
+      if (!acc[key]) {
+        acc[key] = { 
+          ...j, 
+          duration_minutes: 0, 
+          count: 0, 
+          ids: [],
+          isSomeActive: false
+        };
+      }
+      
+      const dur = j.duration_minutes || (j.end_time ? (new Date(j.end_time) - new Date(j.start_time)) / 60000 : 0);
+      acc[key].duration_minutes += Math.max(0, dur);
+      acc[key].count += 1;
+      acc[key].ids.push(j.id);
+      if (!j.end_time) acc[key].isSomeActive = true;
+      
+      // Keep the most recent data for display
+      if (new Date(j.start_time) > new Date(acc[key].start_time)) {
+        acc[key].id = j.id;
+        acc[key].start_time = j.start_time;
+        acc[key].end_time = j.end_time;
+      }
+      
+      return acc;
+    }, {});
+    
+    return Object.values(groups).sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+  };
+
+  const filteredJobs = consolidateJobs(jobs).filter(j => 
     j.file_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     j.folder?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleExportCSV = () => {
     const headers = ['ID', 'Arquivo', 'Projeto', 'Inicio', 'Fim', 'Duracao (min)', 'Material', 'Custo (R$)', 'Data'];
-    const rows = jobs.map(j => [
+    const rows = filteredJobs.map(j => [
       j.id,
       j.file_name,
       j.folder?.split('|').pop()?.split('\\').pop() || '-',
@@ -62,23 +94,23 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
     document.body.removeChild(link);
   };
 
-  const handleDelete = async (id) => {
-    setDeletingId(id);
+  const handleDelete = async (job) => {
+    setDeletingId(job.id);
     try {
-      const data = await api.deleteJob(id);
-      if (data && data.success) {
-        onRefresh();
-        setConfirmDeleteId(null);
-      } else {
-        alert('Erro ao excluir: ' + (data?.error || 'Desconhecido'));
+      // If consolidated, delete all IDs in the group
+      const targetIds = job.ids || [job.id];
+      for (const id of targetIds) {
+        await api.deleteJob(id);
       }
+      onRefresh();
+      setConfirmDeleteId(null);
     } catch (err) {
-      alert('Erro de conexão ao excluir job');
+      alert('Erro ao excluir jobs');
     }
     setDeletingId(null);
   };
 
-  const handleUpdateMaterial = async (jobId, mat) => {
+  const handleUpdateMaterial = async (job, mat) => {
     try {
       const payload = mat ? {
         material_id: mat.id,
@@ -89,15 +121,15 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
         material_name: null,
         material_price: 0
       };
-      const data = await api.updateJobMaterial(jobId, payload);
-      if (data && data.success) {
-        setActiveDropdown(null);
-        onRefresh();
-      } else {
-        alert('Erro ao vincular: ' + (data?.error || 'Desconhecido'));
+      // Update all IDs if consolidated
+      const targetIds = job.ids || [job.id];
+      for (const id of targetIds) {
+        await api.updateJobMaterial(id, payload);
       }
+      setActiveDropdown(null);
+      onRefresh();
     } catch (err) {
-      alert('Erro de conexão ao atualizar material');
+      alert('Erro ao atualizar material');
     }
   };
 
@@ -139,11 +171,10 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
               <tr className="bg-white/5 text-text-muted text-[10px] font-black uppercase tracking-[0.2em] border-b border-border">
                 <th className="px-8 py-5">Arquivo</th>
                 <th className="px-8 py-5">Projeto</th>
-                <th className="px-8 py-5">Início</th>
-                <th className="px-8 py-5">Fim</th>
-                <th className="px-8 py-5">Duração</th>
+                <th className="px-8 py-5">Cronograma</th>
+                <th className="px-8 py-5">Duração Total</th>
                 <th className="px-8 py-5 text-center">Insumo</th>
-                <th className="px-8 py-5">Custo</th>
+                <th className="px-8 py-5">Custo Estimado</th>
                 <th className="px-8 py-5">Data</th>
                 <th className="px-8 py-5 text-right">Ações</th>
               </tr>
@@ -151,22 +182,35 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
             <tbody className="divide-y divide-border/30">
               {filteredJobs.map((job) => (
                 <tr key={job.id} className="hover:bg-white/[0.03] transition-colors group">
-                  <td className="px-8 py-5 max-w-[200px]">
-                    <div className="font-bold text-white text-sm truncate">{job.file_name}</div>
-                    <div className="text-[10px] text-text-muted opacity-50 font-black tracking-widest">#{job.id}</div>
+                  <td className="px-8 py-5 max-w-[250px]">
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-white text-sm truncate">{job.file_name}</span>
+                        {job.count > 1 && (
+                          <span className="text-[10px] bg-accent-blue/20 text-accent-blue px-1.5 py-0.5 rounded-lg font-black tracking-tighter">
+                            {job.count}X REPETIÇÕES
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-text-muted opacity-50 font-black tracking-widest">
+                        PRINCIPAL ID: #{job.id}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-8 py-5 min-w-[150px]">
                      <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2.5 py-1 rounded-lg border border-accent-cyan/20">
                        {job.folder?.includes('|') ? job.folder.split('|').pop().trim() : job.folder}
                      </span>
                   </td>
-                  <td className="px-8 py-5 text-xs font-bold text-white/80">{formatTime(job.start_time)}</td>
-                  <td className="px-8 py-5 text-xs font-bold">
-                    {job.end_time ? <span className="text-white/80">{formatTime(job.end_time)}</span> : <span className="text-accent-warning animate-pulse flex items-center gap-2"><div className="w-1.5 h-1.5 bg-accent-warning rounded-full"></div> ATIVO</span>}
+                  <td className="px-8 py-5">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-xs font-bold text-white/80">{formatTime(job.start_time)} → {job.isSomeActive ? 'AGORA' : formatTime(job.end_time)}</span>
+                      {job.isSomeActive && <span className="text-[9px] text-accent-success font-black animate-pulse">EM ANDAMENTO</span>}
+                    </div>
                   </td>
                   <td className="px-8 py-5">
                     <div className="text-xs font-mono font-black text-white bg-white/5 py-1 px-3 rounded-lg w-fit border border-white/5 shadow-inner">
-                      {Math.floor(job.duration_minutes || 0)} MIN
+                      {Math.floor(job.duration_minutes)} MIN
                     </div>
                   </td>
                   <td className="px-8 py-5 text-center relative overflow-visible">
@@ -184,7 +228,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                           className="absolute left-1/2 -translate-x-1/2 mt-2 w-48 glass border border-border rounded-2xl shadow-2xl z-[100] p-1.5"
                         >
                           <button 
-                            onClick={() => handleUpdateMaterial(job.id, null)}
+                            onClick={() => handleUpdateMaterial(job, null)}
                             className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest text-text-muted hover:bg-white/5 hover:text-white rounded-lg transition-all"
                           >
                             × Sem Material
@@ -192,7 +236,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                           {materials.map(m => (
                             <button 
                               key={m.id}
-                              onClick={() => handleUpdateMaterial(job.id, m)}
+                              onClick={() => handleUpdateMaterial(job, m)}
                               className="w-full text-left px-4 py-2 text-xs font-bold text-white hover:bg-accent-cyan hover:text-black rounded-lg transition-all flex justify-between group"
                             >
                               <span>{m.name}</span>
@@ -207,8 +251,8 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                     {formatCurrency(((job.duration_minutes || 0) / 60 * costPerHour) + (job.material_price || 0))}
                   </td>
                   <td className="px-8 py-5">
-                    <div className="flex items-center gap-2 text-[10px] text-text-muted font-black tracking-widest uppercase">
-                      <Calendar size={12} className="opacity-50 text-accent-cyan" /> {formatDate(job.start_time)}
+                    <div className="flex items-center gap-2 text-[10px] text-text-muted font-black tracking-widest uppercase text-accent-cyan">
+                       {formatDate(job.start_time)}
                     </div>
                   </td>
                   <td className="px-8 py-5 text-right">
@@ -216,10 +260,10 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                        {confirmDeleteId === job.id ? (
                         <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-right-2">
                           <button 
-                            onClick={() => handleDelete(job.id)}
+                            onClick={() => handleDelete(job)}
                             disabled={deletingId === job.id}
                             className="p-2 bg-accent-danger text-white rounded-xl hover:bg-accent-danger/80 transition-all shadow-lg shadow-accent-danger/20"
-                            title="Confirmar exclusão"
+                            title="Confirmar exclusão (Todos repetidos)"
                           >
                             <Trash2 size={16} />
                           </button>
