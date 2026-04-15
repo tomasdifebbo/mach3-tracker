@@ -412,8 +412,15 @@ app.post('/api/jobs', authenticateToken, (req, res) => {
         }
     }
 
-    // AUTO-CLOSE PREVIOUS JOBS
-    const openJobs = db.prepare('SELECT id, start_time FROM jobs WHERE userId = ? AND end_time IS NULL').all(userId);
+    // AUTO-CLOSE PREVIOUS JOBS FROM THE SAME ROUTER
+    const routerName = router_name || null;
+    let queryArgs = [userId];
+    let openJobsQuery = 'SELECT id, start_time FROM jobs WHERE userId = ? AND end_time IS NULL';
+    if (routerName) {
+        openJobsQuery += ' AND router_name = ?';
+        queryArgs.push(routerName);
+    }
+    const openJobs = db.prepare(openJobsQuery).all(...queryArgs);
     const updateJob = db.prepare('UPDATE jobs SET end_time = ?, duration_minutes = ? WHERE id = ?');
     const deleteShortJob = db.prepare('DELETE FROM jobs WHERE id = ?');
 
@@ -421,14 +428,14 @@ app.post('/api/jobs', authenticateToken, (req, res) => {
         for (const j of openJobs) {
             const prevStart = new Date(j.start_time);
             const duration = Math.max(0, (dt - prevStart) / (1000 * 60));
-            if (duration < 0.16) {
+            // Only delete if it's ridiculously short (e.g. less than 5 seconds), to avoid deleting fast jobs
+            if (duration < 0.08) {
                 deleteShortJob.run(j.id);
             } else {
                 updateJob.run(dt.toISOString(), duration, j.id);
             }
         }
 
-        const routerName = router_name || null;
         const r = db.prepare('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, userId, router_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
             .run(cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, routerName);
         return r.lastInsertRowid;
