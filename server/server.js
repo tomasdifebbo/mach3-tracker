@@ -172,7 +172,7 @@ try { db.prepare("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'").run();
 try { db.prepare("ALTER TABLE jobs ADD COLUMN router_name TEXT").run(); } catch (e) { /* already exists */ }
 
 // DEBOUNCE: Prevent ghost jobs when Mach3 re-triggers M101 after stop/reset
-const DEBOUNCE_SECONDS = 10;
+const DEBOUNCE_SECONDS = 2; // Relaxed from 10s to allow fast cycles
 
 // STARTUP CLEANUP: Remove ghost jobs (duration 0 or < 10 seconds) from previous runs
 try {
@@ -427,12 +427,18 @@ app.post('/api/jobs', authenticateToken, (req, res) => {
     const tx = db.transaction(() => {
         for (const j of openJobs) {
             const prevStart = new Date(j.start_time);
-            const duration = Math.max(0, (dt - prevStart) / (1000 * 60));
-            // Only delete if it's ridiculously short (e.g. less than 5 seconds), to avoid deleting fast jobs
-            if (duration < 0.08) {
-                deleteShortJob.run(j.id);
+            // If the next job starts AFTER this one, close this one at that time.
+            if (dt > prevStart) {
+                const duration = Math.max(0, (dt - prevStart) / (1000 * 60));
+                if (duration < 0.05) {
+                    deleteShortJob.run(j.id);
+                } else {
+                    updateJob.run(dt.toISOString(), duration, j.id);
+                }
             } else {
-                updateJob.run(dt.toISOString(), duration, j.id);
+                // If the next job somehow has an earlier timestamp (log out of order), 
+                // just close it with a 1-second duration to clear the queue without breaking logic
+                updateJob.run(new Date(prevStart.getTime() + 1000).toISOString(), 0.01, j.id);
             }
         }
 
@@ -454,20 +460,25 @@ app.patch('/api/jobs/latest', authenticateToken, (req, res) => {
     // Match by router_name first (multi-router support), fallback to any open job
     let row;
     if (router_name) {
-        row = db.prepare('SELECT * FROM jobs WHERE userId = ? AND end_time IS NULL AND router_name = ? ORDER BY start_time DESC LIMIT 1').get(userId, router_name);
+        // Find the LATEST open job for THIS router that started BEFORE the provided end_time
+        row = db.prepare('SELECT * FROM jobs WHERE userId = ? AND end_time IS NULL AND router_name = ? AND start_time <= ? ORDER BY start_time DESC LIMIT 1').get(userId, router_name, dt.toISOString());
     }
     if (!row) {
-        row = db.prepare('SELECT * FROM jobs WHERE userId = ? AND end_time IS NULL ORDER BY start_time DESC LIMIT 1').get(userId);
+        row = db.prepare('SELECT * FROM jobs WHERE userId = ? AND end_time IS NULL AND start_time <= ? ORDER BY start_time DESC LIMIT 1').get(userId, dt.toISOString());
     }
-    if (!row) return res.status(404).json({ error: "No open jobs found" });
+    if (!row) {
+        console.log(`[404] No open job to close for user ${userId} / router ${router_name || 'ANY'} at ${dt.toISOString()}`);
+        return res.status(404).json({ error: "No open jobs found (or start_time is in the future relative to end_time)" });
+    }
 
     const startDt = new Date(row.start_time);
     const durationMinutes = (dt - startDt) / (1000 * 60);
 
-    if (durationMinutes < 0.16) {
+    // Relaxed ghost deletion: Only delete if duration is less than 3 seconds (0.05 mins)
+    if (durationMinutes < 0.05) {
         db.prepare('DELETE FROM jobs WHERE id = ?').run(row.id);
-        console.log(`GHOST JOB DELETED: ${row.file_name}`);
-        return res.json({ id: row.id, deleted: true, reason: "< 10s" });
+        console.log(`GHOST JOB DELETED: ${row.file_name} (${(durationMinutes * 60).toFixed(1)}s)`);
+        return res.json({ id: row.id, deleted: true, reason: "< 3s" });
     }
 
     db.prepare('UPDATE jobs SET end_time = ?, duration_minutes = ? WHERE id = ?').run(dt.toISOString(), durationMinutes, row.id);
