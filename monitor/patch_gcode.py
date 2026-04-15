@@ -1,6 +1,6 @@
 import os
 
-folder = r"E:\arquivos 2024\ARQUIVOS 2026\router\2578I -  Donatello\ROUTER\ISOPOR"
+folder = r"E:\arquivos 2024\ARQUIVOS 2026\router\tartarugas ninjas\SOFÁ  ESTILO LUIZ XV (MEZZ PHOTO OPP)\ROUTER\ISOPOR"
 files_to_patch = [f for f in os.listdir(folder) if f.endswith(".txt")]
 
 def patch_file(filepath):

@@ -117,6 +117,20 @@ export function Dashboard({ jobs = [], user }) {
     const dayMins = dayJobs.reduce((acc, j) => acc + (j.duration_minutes || 0), 0);
     return dayMins / 60;
   });
+  
+  // Group by filename and sum duration
+  const groupedJobs = jobs.reduce((acc, j) => {
+    const name = j.file_name || 'Desconhecido';
+    if (!acc[name]) {
+      acc[name] = { name, count: 0, totalMinutes: 0 };
+    }
+    const dur = j.duration_minutes || (j.end_time ? (new Date(j.end_time) - new Date(j.start_time)) / 60000 : 0);
+    acc[name].count += 1;
+    acc[name].totalMinutes += dur;
+    return acc;
+  }, {});
+  
+  const sortedGrouped = Object.values(groupedJobs).sort((a, b) => b.totalMinutes - a.totalMinutes).slice(0, 10);
 
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
@@ -231,6 +245,58 @@ export function Dashboard({ jobs = [], user }) {
               <div className="text-center text-text-muted text-sm opacity-50">Nenhum material <br/> atrelado aos jobs</div>
             )}
           </div>
+        </div>
+      {/* Grouped Totals Table */}
+      <div className="glass p-8 rounded-3xl overflow-hidden">
+        <div className="flex items-center justify-between mb-8">
+          <h3 className="text-lg font-bold">Resumo por Arquivo (Tempo Somado)</h3>
+          <span className="text-xs text-text-muted">Totalizando trabalhos com nomes idênticos</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-separate border-spacing-y-2">
+            <thead>
+              <tr className="text-text-muted text-[10px] font-black uppercase tracking-widest">
+                <th className="px-4 py-2">Nome do Arquivo</th>
+                <th className="px-4 py-2">Repetições</th>
+                <th className="px-4 py-2">Tempo Total Acumulado</th>
+                <th className="px-4 py-2">Barra de Produtividade</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedGrouped.map((item, idx) => {
+                const maxTime = sortedGrouped[0].totalMinutes || 1;
+                const percentage = (item.totalMinutes / maxTime) * 100;
+                
+                return (
+                  <tr key={idx} className="group hover:bg-white/5 transition-colors bg-white/5 rounded-xl">
+                    <td className="px-4 py-4 font-bold text-sm rounded-l-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-accent-blue/20 flex items-center justify-center text-accent-blue">
+                          <FileText size={16} />
+                        </div>
+                        {item.name}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-sm font-medium">{item.count}x</td>
+                    <td className="px-4 py-4 text-sm font-bold text-accent-cyan">
+                      {item.totalMinutes > 60 
+                        ? `${Math.floor(item.totalMinutes / 60)}h ${Math.round(item.totalMinutes % 60)}min` 
+                        : `${Math.round(item.totalMinutes)} min`}
+                    </td>
+                    <td className="px-4 py-4 rounded-r-xl w-64">
+                      <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${percentage}%` }}
+                          className="h-full bg-gradient-to-r from-accent-blue to-accent-cyan"
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
