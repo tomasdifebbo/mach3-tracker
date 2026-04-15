@@ -6,7 +6,8 @@ import {
   TrendingUp, 
   DollarSign, 
   Activity,
-  Play
+  Play,
+  FileText
 } from 'lucide-react';
 import { 
   Chart as ChartJS, 
@@ -246,6 +247,8 @@ export function Dashboard({ jobs = [], user }) {
             )}
           </div>
         </div>
+      </div>
+
       {/* Grouped Totals Table */}
       <div className="glass p-8 rounded-3xl overflow-hidden">
         <div className="flex items-center justify-between mb-8">
