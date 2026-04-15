@@ -198,8 +198,13 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                     </div>
                   </td>
                   <td className="px-8 py-5 min-w-[150px]">
-                     <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2.5 py-1 rounded-lg border border-accent-cyan/20">
-                       {job.folder?.includes('|') ? job.folder.split('|').pop().trim() : job.folder}
+                     <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2.5 py-1 rounded-lg border border-accent-cyan/20 truncate block max-w-sm">
+                       {(() => {
+                         const rawPath = job.folder?.includes('|') ? job.folder.split('|').pop().trim() : (job.folder || '');
+                         const parts = rawPath.split('\\');
+                         if (parts.length > 1) parts.pop(); // Remove last segment (filename)
+                         return parts.join('\\') || rawPath;
+                       })()}
                      </span>
                   </td>
                   <td className="px-8 py-5">
