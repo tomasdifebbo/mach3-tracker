@@ -119,15 +119,26 @@ export function Dashboard({ jobs = [], user }) {
     return dayMins / 60;
   });
   
-  // Group by filename and sum duration
+  // Group by filename AND project to avoid mixing identically named files from different projects
   const groupedJobs = jobs.reduce((acc, j) => {
     const name = j.file_name || 'Desconhecido';
-    if (!acc[name]) {
-      acc[name] = { name, count: 0, totalMinutes: 0 };
+    
+    // Extract neat project name
+    const rawPath = j.folder?.includes('|') ? j.folder.split('|').pop().trim() : (j.folder || 'Desconhecido');
+    const pathParts = rawPath.split('\\');
+    if (pathParts.length > 1 && pathParts[pathParts.length-1].toUpperCase().includes('.TXT')) {
+      pathParts.pop(); // Remove filename if it's there
+    }
+    const projectName = pathParts.pop() || rawPath; // Get the parent folder as project name
+    
+    const key = `${name}-${projectName}`;
+    
+    if (!acc[key]) {
+      acc[key] = { name, projectName, count: 0, totalMinutes: 0 };
     }
     const dur = j.duration_minutes || (j.end_time ? (new Date(j.end_time) - new Date(j.start_time)) / 60000 : 0);
-    acc[name].count += 1;
-    acc[name].totalMinutes += dur;
+    acc[key].count += 1;
+    acc[key].totalMinutes += dur;
     return acc;
   }, {});
   
@@ -276,6 +287,14 @@ export function Dashboard({ jobs = [], user }) {
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-separate border-spacing-y-2">
+              <thead>
+                <tr className="text-[10px] text-text-muted font-black uppercase tracking-widest border-b border-white/5">
+                  <th className="px-4 pb-3">Nome do Arquivo</th>
+                  <th className="px-4 pb-3 text-center">Repetições</th>
+                  <th className="px-4 pb-3">Tempo Total Acumulado</th>
+                  <th className="px-4 pb-3 text-right">Barra de Produtividade</th>
+                </tr>
+              </thead>
               <tbody>
                 {sortedGrouped.map((item, idx) => {
                   const maxTime = Math.max(1, sortedGrouped[0].totalMinutes);
@@ -284,14 +303,20 @@ export function Dashboard({ jobs = [], user }) {
                     <tr key={idx} className="group hover:bg-white/5 transition-colors bg-white/5">
                       <td className="px-4 py-3 rounded-l-xl">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-accent-blue/10 flex items-center justify-center text-accent-blue">
+                          <div className="w-8 h-8 rounded-lg bg-accent-blue/10 flex items-center justify-center text-accent-blue shrink-0">
                              <FileText size={14} />
                           </div>
-                          <span className="text-xs font-bold text-white truncate max-w-[150px]">{item.name}</span>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-white truncate max-w-[200px]">{item.name}</span>
+                            <span className="text-[9px] text-text-muted font-black tracking-widest uppercase truncate max-w-[200px]">{item.projectName}</span>
+                          </div>
                         </div>
                       </td>
+                      <td className="px-4 py-3 text-xs font-bold text-text-muted text-center">
+                        {item.count}x
+                      </td>
                       <td className="px-4 py-3 text-xs font-bold text-accent-cyan">
-                        {Math.floor(item.totalMinutes / 60)}h {Math.round(item.totalMinutes % 60)}m
+                        {Math.floor(item.totalMinutes / 60)}h {Math.round(item.totalMinutes % 60)}min
                       </td>
                       <td className="px-4 py-3 rounded-r-xl w-32">
                         <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
