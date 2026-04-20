@@ -424,7 +424,6 @@ app.post('/api/jobs', authenticateToken, (req, res) => {
     }
 
     // AUTO-CLOSE PREVIOUS JOBS FROM THE SAME ROUTER
-    const routerName = router_name || null;
     let queryArgs = [userId];
     let openJobsQuery = 'SELECT id, start_time FROM jobs WHERE userId = ? AND end_time IS NULL';
     if (routerName) {

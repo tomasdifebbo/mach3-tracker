@@ -221,10 +221,23 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem):
 
         # Simulate machining time for progress bar
         estimated = None
-        if os.path.exists(caminho):
-            estimated = simulate_gcode_time(caminho)
+        # Map UNC paths to local paths (\\TOMAS\arquivos 2024\... -> E:\arquivos 2024\...)
+        local_path = caminho
+        unc_mappings = {
+            r"\\TOMAS\arquivos 2024": r"E:\arquivos 2024",
+            r"\\DESKTOP-1CSKMNT\Mach3": r"C:\mach3",
+        }
+        for unc_prefix, local_prefix in unc_mappings.items():
+            if local_path.upper().startswith(unc_prefix.upper()):
+                local_path = local_prefix + local_path[len(unc_prefix):]
+                break
+        
+        if os.path.exists(local_path):
+            estimated = simulate_gcode_time(local_path)
             if estimated:
                 print(f"[~] Tempo estimado: {estimated:.1f} min ({estimated/60:.1f}h)")
+        else:
+            print(f"[!] Arquivo não encontrado para simulação: {local_path}")
 
         payload = {
             "file_name": nome_arquivo,
