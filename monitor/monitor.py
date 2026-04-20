@@ -4,6 +4,8 @@ import json
 import requests
 import datetime
 import sys
+import math
+import re
 
 # ==========================================
 # CONFIGURAÇÕES SAAS (LOCAL/NUVEM)
@@ -146,6 +148,42 @@ def process_queue():
         save_queue(fila_restante)
         print(f"[v] {sucessos} eventos sincronizados com a nuvem!")
 
+def simulate_gcode_time(filepath):
+    """Estimate machining time from a G-code file (in minutes)."""
+    try:
+        feed_rate = 1000.0
+        rapid_rate = 10000.0
+        total_time = 0.0
+        lx, ly, lz = 0.0, 0.0, 0.0
+        
+        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+            for line in f:
+                line = line.strip().upper()
+                if not line or line.startswith('('): continue
+                
+                fm = re.search(r'F([\d.]+)', line)
+                if fm: feed_rate = float(fm.group(1))
+                
+                xm = re.search(r'X(-?[\d.]+)', line)
+                ym = re.search(r'Y(-?[\d.]+)', line)
+                zm = re.search(r'Z(-?[\d.]+)', line)
+                
+                nx = float(xm.group(1)) if xm else lx
+                ny = float(ym.group(1)) if ym else ly
+                nz = float(zm.group(1)) if zm else lz
+                
+                dist = math.sqrt((nx-lx)**2 + (ny-ly)**2 + (nz-lz)**2)
+                if dist > 0:
+                    rate = rapid_rate if ('G00' in line or ('G0 ' in line and 'G01' not in line)) else feed_rate
+                    if rate > 0: total_time += dist / rate
+                
+                lx, ly, lz = nx, ny, nz
+        
+        return round(total_time * 1.15, 2)  # 15% overhead for accel/decel
+    except Exception as e:
+        print(f"[!] Erro ao simular tempo: {e}")
+        return None
+
 def processa_inicio(caminho, nome_arquivo, iso_time, origem):
     # Extract actual folder from full file path
     # Extract actual folder from full file path
@@ -156,25 +194,58 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem):
         # Usually projects are 3 levels deep from the root share
         project = parts[-3] if len(parts) >= 3 else "Desconhecido"
         subfolder = parts[-2] if len(parts) >= 2 else ""
-        pasta = f"{project} / {subfolder}"
-    else:
-        pasta = caminho.rsplit("\\", 1)[0] if "\\" in caminho else caminho
-    
-    payload = {
-        "file_name": nome_arquivo,
-        "folder": f"{origem} | {pasta}",
-        "file_path": caminho,
-        "start_time": iso_time,
-        "router_name": origem
-    }
+         # Skip diagnostic PING lines
+        if "PING" in nome_arquivo.upper():
+            return
+
+        # Improved project folder extraction for deep UNC paths
+        # Goal: Find the folder name that represents the project (e.g., "2578g - Bancada tubo")
+        # Logic: Skip generic end-folders like "ROUTER", "ISOPOR", "ARQUIVO"
+        full_parts = [p for p in caminho.split("\\") if p]
+        
+        # Exclude the filename (last part)
+        folder_parts = full_parts[:-1] if len(full_parts) > 1 else full_parts
+        
+        project_name = "Desconhecido"
+        skip_list = ["ROUTER", "ISOPOR", "ARQUIVO", "CNC", "ARQUIVOS", "2024", "2026", "TOMAS", "MACH3"]
+        
+        # Traverse backwards to find the first non-generic name
+        for p in reversed(folder_parts):
+            # Also skip anything that looks like a file (has extension)
+            if p.upper() not in skip_list and len(p) > 2 and "." not in p:
+                project_name = p
+                break
+        
+        if project_name == "Desconhecido" and folder_parts:
+            project_name = folder_parts[-1] # Fallback to last folder
+
+        # Simulate machining time for progress bar
+        estimated = None
+        if os.path.exists(caminho):
+            estimated = simulate_gcode_time(caminho)
+            if estimated:
+                print(f"[~] Tempo estimado: {estimated:.1f} min ({estimated/60:.1f}h)")
+
+        payload = {
+            "file_name": nome_arquivo,
+            "folder": f"{origem} | {project_name}",
+            "file_path": caminho,
+            "start_time": iso_time,
+            "router_name": origem,
+            "estimated_minutes": estimated
+        }
     
     headers = get_headers()
     if headers and len(load_queue()) == 0:
         try:
             resp = requests.post(URL_JOBS, json=payload, headers=headers, timeout=5)
-            if resp.status_code in (200, 201, 204, 400):
-                print(f"[+] {origem} -> INICIOU: {nome_arquivo}")
+            if resp.status_code in (200, 201, 204):
+                data = resp.json()
+                job_id = data.get("id")
+                print(f"[+] {origem} -> INICIOU: {nome_arquivo} (ID: {job_id})")
                 return
+            else:
+                print(f"[!] Erro ao iniciar {origem}: {resp.status_code} - {resp.text}")
         except Exception:
             pass
     
@@ -191,6 +262,8 @@ def processa_fim(iso_time, origem):
             if resp.status_code in (200, 204, 404):
                 print(f"[OK] {origem} -> FINALIZOU.")
                 return
+            else:
+                print(f"[!] Erro ao finalizar {origem}: {resp.status_code} - {resp.text}")
         except Exception:
             pass
         
@@ -271,18 +344,26 @@ def main():
                             data_str, hora_str, caminho_completo = parts[0], parts[1], parts[2]
                             
                             # Logica de identificação de Router:
-                            # Se tiver 5 partes, a 4a é o nome da Router (ex: ACT10)
-                            # Se tiver 4 partes e o config for compartilhado, o nome vem da config
                             identidade_router = name
                             if len(parts) >= 5:
-                                # A penultima parte em logs de 5 campos é a router (ex: ACT10)
-                                # A ultima parte é sempre INICIO/FIM
-                                if parts[-2].strip().upper() in ["ACT10", "ROUTER 1", "ROUTER 2"]:
-                                    identidade_router = parts[-2].strip()
+                                # A penultima parte em logs de 5 campos é a router
+                                r_name = parts[-2].strip().upper()
+                                # Router Naming Standardization
+                                if r_name == "ACT10":
+                                    identidade_router = "Router 2"
+                                elif "ROUTER CENTRAL" in str(r_name).upper():
+                                    identidade_router = "Router 1"
+                                else:
+                                    identidade_router = r_name or "Desconhecido"
                             
                             tipo = parts[-1].strip().upper()
                             nome_arquivo = caminho_completo.split("\\")[-1] if "\\" in caminho_completo else caminho_completo
                             iso_time = parse_mach3_time(data_str, hora_str)
+                            
+                            log_msg = f"[{iso_time}] {identidade_router} | {tipo} | {nome_arquivo}"
+                            with open(os.path.join(os.path.dirname(__file__), "monitor.log"), "a", encoding="utf-8") as lf:
+                                lf.write(log_msg + "\n")
+                            print(log_msg)
                             
                             if "INICIO" in tipo:
                                 processa_inicio(caminho_completo, nome_arquivo, iso_time, identidade_router)

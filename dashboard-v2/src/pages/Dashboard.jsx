@@ -166,32 +166,84 @@ export function Dashboard({ jobs = [], user }) {
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
       {/* Active Jobs Banners */}
       <div className="space-y-4">
-        {activeJobs.map(job => (
+        {activeJobs.map(job => {
+          const startDt = new Date(job.start_time);
+          const elapsedMin = Math.max(0, (Date.now() - startDt) / 60000);
+          const estMin = job.estimated_minutes;
+          const hasEstimate = estMin && estMin > 0;
+          const progress = hasEstimate ? Math.min(100, (elapsedMin / estMin) * 100) : null;
+          const remaining = hasEstimate ? Math.max(0, estMin - elapsedMin) : null;
+          const eta = hasEstimate ? new Date(startDt.getTime() + estMin * 60000) : null;
+          const isNearEnd = progress !== null && progress >= 85;
+
+          return (
           <motion.div 
             key={job.id}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-accent-cyan/10 border border-accent-cyan/30 rounded-2xl p-6 flex items-center justify-between shadow-[0_0_30px_rgba(6,182,212,0.1)]"
+            className="bg-accent-cyan/10 border border-accent-cyan/30 rounded-2xl p-6 shadow-[0_0_30px_rgba(6,182,212,0.1)]"
           >
-            <div className="flex items-center gap-6">
-              <div className="w-12 h-12 bg-accent-cyan rounded-xl flex items-center justify-center text-black animate-pulse">
-                <Play size={24} fill="currentColor" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/20 px-2 py-0.5 rounded">
-                    {job.router_name || 'ROUTER'} - EM ANDAMENTO
-                  </span>
-                  <h3 className="text-lg font-bold text-white uppercase truncate max-w-xs">{job.file_name}</h3>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-6">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-black ${isNearEnd ? 'bg-accent-success animate-pulse' : 'bg-accent-cyan animate-pulse'}`}>
+                  <Play size={24} fill="currentColor" />
                 </div>
-                <p className="text-xs text-text-muted font-medium opacity-60 truncate max-w-sm">{job.folder}</p>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/20 px-2 py-0.5 rounded">
+                      {job.router_name || 'ROUTER'} - EM ANDAMENTO
+                    </span>
+                    <h3 className="text-lg font-bold text-white uppercase truncate max-w-xs">{job.file_name}</h3>
+                  </div>
+                  <p className="text-xs text-text-muted font-medium opacity-60 truncate max-w-sm">{job.folder}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-mono font-bold text-accent-cyan tracking-tighter tabular-nums">
+                   {formatDuration(elapsedMin)}
+                </div>
+                {hasEstimate && (
+                  <div className="text-[10px] font-bold text-text-muted mt-1">
+                    Estimado: {formatDuration(estMin)}
+                  </div>
+                )}
               </div>
             </div>
-            <div className="text-3xl font-mono font-bold text-accent-cyan tracking-tighter tabular-nums">
-               {formatDuration((Math.floor((Date.now() - new Date(job.start_time)) / 1000) / 60))}
-            </div>
+
+            {/* Progress Bar */}
+            {hasEstimate && (
+              <div className="mt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-xs font-bold ${isNearEnd ? 'text-accent-success' : 'text-accent-cyan'}`}>
+                    {progress.toFixed(1)}% concluído
+                  </span>
+                  <span className="text-xs font-bold text-text-muted">
+                    {remaining > 0 
+                      ? `Faltam ${Math.floor(remaining)}min · ETA ${eta.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}` 
+                      : '✅ Finalização prevista atingida!'
+                    }
+                  </span>
+                </div>
+                <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden relative">
+                  <motion.div 
+                    initial={{ width: 0 }} 
+                    animate={{ width: `${Math.min(progress, 100)}%` }}
+                    transition={{ duration: 1, ease: 'easeOut' }}
+                    className={`h-full rounded-full ${
+                      isNearEnd 
+                        ? 'bg-gradient-to-r from-accent-cyan to-accent-success shadow-[0_0_12px_rgba(16,185,129,0.5)]' 
+                        : 'bg-gradient-to-r from-accent-blue to-accent-cyan shadow-[0_0_12px_rgba(6,182,212,0.3)]'
+                    }`}
+                  />
+                  {progress >= 100 && (
+                    <div className="absolute inset-0 bg-accent-success/20 animate-pulse rounded-full" />
+                  )}
+                </div>
+              </div>
+            )}
           </motion.div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Stats Grid */}

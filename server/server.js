@@ -170,6 +170,8 @@ try {
 try { db.prepare("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'").run(); } catch (e) { /* already exists */ }
 // Add router_name column to existing databases
 try { db.prepare("ALTER TABLE jobs ADD COLUMN router_name TEXT").run(); } catch (e) { /* already exists */ }
+// Add estimated_minutes column for progress bar feature
+try { db.prepare("ALTER TABLE jobs ADD COLUMN estimated_minutes REAL").run(); } catch (e) { /* already exists */ }
 
 // DEBOUNCE: Prevent ghost jobs when Mach3 re-triggers M101 after stop/reset
 const DEBOUNCE_SECONDS = 2; // Relaxed from 10s to allow fast cycles
@@ -385,7 +387,7 @@ app.post('/api/payments/webhook', async (req, res) => {
 });
 
 app.post('/api/jobs', authenticateToken, (req, res) => {
-    const { file_name, folder, file_path, start_time, router_name } = req.body;
+    const { file_name, folder, file_path, start_time, router_name, estimated_minutes } = req.body;
     const userId = req.user.id;
 
     let dt = start_time ? new Date(start_time) : new Date();
@@ -401,13 +403,22 @@ app.post('/api/jobs', authenticateToken, (req, res) => {
         cleanFolder = cleanFolder.split(' | ').pop();
     }
 
-    // DEBOUNCE: Check if this START is too close to the last event
-    const lastJob = db.prepare('SELECT start_time, end_time FROM jobs WHERE userId = ? ORDER BY id DESC LIMIT 1').get(userId);
+    // DEBOUNCE: Check if this START is too close to the last event for THIS router
+    const routerName = router_name || null;
+    let lastJobQuery = 'SELECT start_time, end_time FROM jobs WHERE userId = ?';
+    let lastJobArgs = [userId];
+    if (routerName) {
+        lastJobQuery += ' AND router_name = ?';
+        lastJobArgs.push(routerName);
+    }
+    lastJobQuery += ' ORDER BY id DESC LIMIT 1';
+
+    const lastJob = db.prepare(lastJobQuery).get(...lastJobArgs);
     if (lastJob) {
         const lastEventTime = new Date(lastJob.end_time || lastJob.start_time);
         const diffSeconds = (dt - lastEventTime) / 1000;
         if (diffSeconds >= 0 && diffSeconds < DEBOUNCE_SECONDS) {
-            console.log(`DEBOUNCE: Ignoring START (${diffSeconds.toFixed(1)}s < ${DEBOUNCE_SECONDS}s)`);
+            console.log(`DEBOUNCE [${routerName}]: Ignoring START (${diffSeconds.toFixed(1)}s < ${DEBOUNCE_SECONDS}s)`);
             return res.json({ id: null, success: true, debounced: true });
         }
     }
@@ -442,8 +453,9 @@ app.post('/api/jobs', authenticateToken, (req, res) => {
             }
         }
 
-        const r = db.prepare('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, userId, router_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-            .run(cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, routerName);
+        const estMin = estimated_minutes ? parseFloat(estimated_minutes) : null;
+        const r = db.prepare('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, userId, router_name, estimated_minutes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+            .run(cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, routerName, estMin);
         return r.lastInsertRowid;
     });
 
