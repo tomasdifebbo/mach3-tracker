@@ -182,7 +182,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
             </thead>
             <tbody className="divide-y divide-border/30">
               {filteredJobs.map((job) => (
-                <tr key={job.id} className="hover:bg-white/[0.03] transition-colors group">
+                <tr key={job.id} className="border-b border-border/40 hover:bg-white/5 transition-colors group">
                   <td className="px-6 py-5 max-w-[220px]">
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
@@ -198,15 +198,28 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-5">
-                     <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2.5 py-1 rounded-lg border border-accent-cyan/20 truncate block max-w-[200px]">
-                       {(() => {
-                         const rawPath = job.folder?.includes('|') ? job.folder.split('|').pop().trim() : (job.folder || '');
-                         const parts = rawPath.split('\\');
-                         if (parts.length > 1) parts.pop();
-                         return parts.join('\\') || rawPath;
-                       })()}
-                     </span>
+                  <td className="px-6 py-4">
+                    {(() => {
+                      const rawPath = job.folder?.includes('|') ? job.folder.split('|').pop().trim() : (job.folder || 'Desconhecido');
+                      const pathParts = rawPath.split('\\').filter(p => p && !p.toUpperCase().includes('.TXT'));
+                      const skipList = ["ROUTER", "ISOPOR", "ARQUIVO", "CNC", "ARQUIVOS", "2024", "2026", "TOMAS", "MACH3", "PROGRAMA", "FILES"];
+                      let projectName = "Desconhecido";
+                      for (let i = pathParts.length - 1; i >= 0; i--) {
+                        const part = pathParts[i].toUpperCase();
+                        if (!skipList.includes(part) && part.length > 2) {
+                          projectName = pathParts[i];
+                          break;
+                        }
+                      }
+                      if (projectName === "Desconhecido" && pathParts.length > 0) {
+                        projectName = pathParts[pathParts.length - 1];
+                      }
+                      return (
+                        <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20">
+                          {projectName}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-6 py-5">
                     <span className={`text-[10px] font-black px-2 py-1 rounded-md border ${job.router_name?.includes('2') ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-orange-500/10 text-orange-400 border-orange-500/20'}`}>
