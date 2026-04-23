@@ -1,26 +1,73 @@
-import requests
-import datetime
-import time
-import os
-import math
-import re
+import requests, json, datetime, time, re, os, math
 
 BASE_URL = "https://mach3-tracker-production.up.railway.app"
-LOG_FILE = r"\\DESKTOP-1CSKMNT\Mach3\log_oficial.csv"
+LOG_PATH = r"\\DESKTOP-1CSKMNT\Mach3\log_oficial.csv"
+CONFIG_FILE = "config.json"
 
-# UNC-to-local path mapping for time simulation
-UNC_MAPPINGS = {
-    "\\\\TOMAS\\arquivos 2024": "E:\\arquivos 2024",
+config = json.load(open(CONFIG_FILE))
+headers = {
+    'Authorization': 'Bearer ' + config['token'],
+    'Content-Type': 'application/json'
 }
 
+cached_materials = []
+
+def update_materials():
+    global cached_materials
+    try:
+        resp = requests.get(f"{BASE_URL}/api/materials", headers=headers, timeout=5)
+        if resp.status_code == 200:
+            cached_materials = resp.json()
+            print(f"[*] {len(cached_materials)} materiais carregados para auto-vínculo.")
+    except Exception as e:
+        print(f"[!] Erro ao carregar materiais: {e}")
+
+def find_material_match(filename):
+    if not cached_materials: return None
+    clean_name = filename.lower()
+    name_no_ext = clean_name.rsplit('.', 1)[0]
+    words = re.split(r'[ _\-]', name_no_ext)
+    words = [w.strip() for w in words if w.strip()]
+    if not words: return None
+    
+    w1 = words[0]
+    w2 = words[1] if len(words) > 1 else ""
+    phrase_2 = f"{w1} {w2}".strip()
+    
+    sorted_mats = sorted(cached_materials, key=lambda x: len(x['name']), reverse=True)
+    
+    for mat in sorted_mats:
+        mat_name = mat['name'].lower()
+        if mat_name == phrase_2: return mat
+            
+    for mat in sorted_mats:
+        mat_name = mat['name'].lower()
+        if w1 in mat_name and w2 and w2 in mat_name: return mat
+
+    for mat in sorted_mats:
+        mat_name = mat['name'].lower()
+        if mat_name == w1 or mat_name.startswith(w1 + " "): return mat
+                
+    return None
+
 def simulate_gcode_time(filepath):
-    """Estimate machining time from a G-code file (in minutes)."""
+    local_path = filepath
+    unc_mappings = {
+        r"\\TOMAS\arquivos 2024": r"E:\arquivos 2024",
+        r"\\DESKTOP-1CSKMNT\Mach3": r"C:\mach3",
+    }
+    for unc_prefix, local_prefix in unc_mappings.items():
+        if local_path.upper().startswith(unc_prefix.upper()):
+            local_path = local_prefix + local_path[len(unc_prefix):]
+            break
+            
+    if not os.path.exists(local_path): return None
+    
     try:
         feed_rate = 1000.0
-        rapid_rate = 10000.0
         total_time = 0.0
-        lx, ly, lz = 0.0, 0.0, 0.0
-        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+        lx, ly = 0.0, 0.0
+        with open(local_path, 'r', encoding='cp1252', errors='ignore') as f:
             for line in f:
                 line = line.strip().upper()
                 if not line or line.startswith('('): continue
@@ -28,192 +75,102 @@ def simulate_gcode_time(filepath):
                 if fm: feed_rate = float(fm.group(1))
                 xm = re.search(r'X(-?[\d.]+)', line)
                 ym = re.search(r'Y(-?[\d.]+)', line)
-                zm = re.search(r'Z(-?[\d.]+)', line)
                 nx = float(xm.group(1)) if xm else lx
                 ny = float(ym.group(1)) if ym else ly
-                nz = float(zm.group(1)) if zm else lz
-                dist = math.sqrt((nx-lx)**2 + (ny-ly)**2 + (nz-lz)**2)
-                if dist > 0:
-                    rate = rapid_rate if 'G00' in line else feed_rate
-                    if rate > 0: total_time += dist / rate
-                lx, ly, lz = nx, ny, nz
+                dist = math.sqrt((nx-lx)**2 + (ny-ly)**2)
+                if dist > 0: total_time += dist / feed_rate
+                lx, ly = nx, ny
         return round(total_time * 1.15, 2)
-    except:
-        return None
+    except: return None
 
-def get_local_path(unc_path):
-    for unc, local in UNC_MAPPINGS.items():
-        if unc_path.upper().startswith(unc.upper()):
-            return local + unc_path[len(unc):]
-    return unc_path
-
-def parse_time(date_str, time_str):
+def sync_job(payload_start, end_time):
     try:
-        dt = datetime.datetime.strptime(f"{date_str.strip()} {time_str.strip()}", "%d/%m/%Y %H:%M:%S")
-        return dt.replace(tzinfo=datetime.timezone(datetime.timedelta(hours=-3))).isoformat()
-    except:
-        return None
+        r = requests.post(f"{BASE_URL}/api/jobs", json=payload_start, headers=headers, timeout=10)
+        if r.status_code in (200, 201):
+            job_id = r.json().get('id')
+            if job_id and end_time:
+                requests.patch(f"{BASE_URL}/api/jobs/latest", json={"end_time": end_time, "router_name": payload_start.get('router_name')}, headers=headers, timeout=10)
+            return True
+        else:
+            print(f"Erro ao subir job: {r.status_code} - {r.text}")
+    except Exception as e:
+        print(f"Exceção no sync: {e}")
+    return False
 
-def main():
-    print("[*] Lendo log completo...")
-    with open(LOG_FILE, 'r', encoding='utf-8', errors='ignore') as f:
-        raw_lines = f.readlines()
+def recover():
+    update_materials()
+    if not os.path.exists(LOG_PATH):
+        print("Arquivo de log não encontrado!")
+        return
+
+    with open(LOG_PATH, 'r', encoding='utf-8', errors='ignore') as f:
+        lines = f.readlines()
+
+    print(f"Analisando {len(lines)} linhas de histórico...")
     
-    print(f"[*] {len(raw_lines)} linhas no log")
+    jobs_found = []
+    current_opens = {}
     
-    # Parse all events
-    events = []
-    for line in raw_lines:
-        line = line.strip()
-        if not line: continue
-        parts = line.split(',')
+    for line in lines:
+        parts = line.strip().split(',')
         if len(parts) < 4: continue
         
-        date_str = parts[0]
-        time_str = parts[1]
-        caminho = parts[2]
+        date_str, time_str, file_path, status = parts[0], parts[1], parts[2], parts[-1]
+        router = parts[3] if len(parts) == 5 else "Central"
         
-        # Detect router identity
-        router = "Router 1"
-        if len(parts) >= 5:
-            r_name = parts[-2].strip().upper()
-            tipo = parts[-1].strip().upper()
-            if r_name == "ACT10":
-                router = "Router 2"
-            elif "ROUTER CENTRAL" in r_name:
-                router = "Router 1"
-            else:
-                tipo = parts[-1].strip().upper()
-        else:
-            tipo = parts[-1].strip().upper()
+        try:
+            dt = datetime.datetime.strptime(f"{date_str} {time_str}", "%d/%m/%Y %H:%M:%S")
+            iso_time = dt.strftime("%Y-%m-%dT%H:%M:%S-03:00")
+        except: continue
         
-        iso = parse_time(date_str, time_str)
-        if not iso: continue
-        
-        nome = caminho.split("\\")[-1] if "\\" in caminho else caminho
-        
-        # Skip ping/test
-        if "PING" in nome.upper() or "DESCONHECIDO" in nome.upper():
-            if "FIM" not in tipo:
-                continue
-        
-        # Extract project name
-        full_parts = [p for p in caminho.split("\\") if p]
-        folder_parts = full_parts[:-1] if len(full_parts) > 1 else full_parts
-        skip_list = ["ROUTER", "ISOPOR", "ARQUIVO", "CNC", "ARQUIVOS", "2024", "2026", "TOMAS", "MACH3"]
-        project_name = "Desconhecido"
-        for p in reversed(folder_parts):
-            if p.upper() not in skip_list and len(p) > 2 and "." not in p:
-                project_name = p
-                break
-        
-        events.append({
-            "type": tipo,
-            "time": iso,
-            "file_name": nome,
-            "path": caminho,
-            "router": router,
-            "project": project_name
-        })
-    
-    print(f"[*] {len(events)} eventos parseados")
-    
-    # Build job pairs (INICIO -> FIM)
-    jobs = []
-    open_jobs = {}  # key = router
-    
-    for ev in events:
-        if "INICIO" in ev["type"]:
-            # Close any previous open job on same router
-            key = ev["router"]
-            if key in open_jobs:
-                prev = open_jobs[key]
-                prev["end_time"] = ev["time"]
-                jobs.append(prev)
-            
-            open_jobs[key] = {
-                "file_name": ev["file_name"],
-                "start_time": ev["time"],
-                "end_time": None,
-                "router": ev["router"],
-                "project": ev["project"],
-                "path": ev["path"]
+        if status == "INICIO":
+            current_opens[router] = {
+                "file_name": os.path.basename(file_path),
+                "folder": file_path,
+                "file_path": file_path,
+                "start_time": iso_time,
+                "router_name": router,
+                "dt": dt
             }
-        elif "FIM" in ev["type"]:
-            key = ev["router"]
-            if key in open_jobs:
-                open_jobs[key]["end_time"] = ev["time"]
-                jobs.append(open_jobs[key])
-                del open_jobs[key]
+        elif status == "FIM" and router in current_opens:
+            job = current_opens.pop(router)
+            duration = (dt - job['dt']).total_seconds() / 60
+            if duration > 0.1:
+                job['end_time'] = iso_time
+                jobs_found.append(job)
+
+    print(f"Encontrados {len(jobs_found)} trabalhos completos para resgate.")
+    jobs_found.sort(key=lambda x: x['start_time'])
     
-    # Add any still-open jobs
-    for key, job in open_jobs.items():
-        jobs.append(job)
-    
-    # Filter out ghost jobs (< 1 minute)
-    real_jobs = []
-    for j in jobs:
-        if j["end_time"]:
-            start = datetime.datetime.fromisoformat(j["start_time"])
-            end = datetime.datetime.fromisoformat(j["end_time"])
-            dur = (end - start).total_seconds() / 60
-            if dur < 1:
-                continue
-        if "DESCONHECIDO" in j["file_name"].upper():
-            continue
-        if "PING" in j["file_name"].upper():
-            continue
-        real_jobs.append(j)
-    
-    print(f"[*] {len(real_jobs)} jobs reais encontrados")
-    
-    # Login
-    r = requests.post(f"{BASE_URL}/api/auth/login", json={"email": "casadotrem@gmail.com", "password": "123456"})
-    token = r.json()["token"]
-    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-    
-    # First, clear any existing jobs to avoid duplicates
-    existing = requests.get(f"{BASE_URL}/api/jobs", headers=headers).json()
-    if existing:
-        print(f"[*] Limpando {len(existing)} jobs existentes...")
-        for j in existing:
-            requests.delete(f"{BASE_URL}/api/jobs/{j['id']}", headers=headers)
-    
-    # Sort by start_time
-    real_jobs.sort(key=lambda x: x["start_time"])
-    
-    # Upload each job
-    for i, job in enumerate(real_jobs):
-        # Try to simulate time
-        local_path = get_local_path(job["path"])
-        est = None
-        if os.path.exists(local_path):
-            est = simulate_gcode_time(local_path)
+    count = 0
+    for job in jobs_found:
+        # Detect Material
+        mat = find_material_match(job['file_name'])
+        mat_id = mat['id'] if mat else None
+        mat_name = mat['name'] if mat else None
+        mat_price = mat['price'] if mat else None
+        
+        # Simulate Time
+        est = simulate_gcode_time(job['file_path'])
         
         payload = {
-            "file_name": job["file_name"],
-            "folder": f"{job['router']} | {job['project']}",
-            "file_path": job["path"],
-            "start_time": job["start_time"],
-            "router_name": job["router"],
-            "estimated_minutes": est
+            "file_name": job['file_name'],
+            "folder": job['folder'],
+            "file_path": job['file_path'],
+            "start_time": job['start_time'],
+            "router_name": job['router_name'],
+            "estimated_minutes": est,
+            "material_id": mat_id,
+            "material_name": mat_name,
+            "material_price": mat_price
         }
         
-        resp = requests.post(f"{BASE_URL}/api/jobs", json=payload, headers=headers)
-        new_id = resp.json().get("id") if resp.status_code in (200, 201) else None
-        
-        if new_id and job["end_time"]:
-            requests.patch(f"{BASE_URL}/api/jobs/latest", json={
-                "end_time": job["end_time"],
-                "router_name": job["router"]
-            }, headers=headers)
-        
-        status = "ABERTO" if not job["end_time"] else "OK"
-        est_str = f" (~{est:.0f}min)" if est else ""
-        print(f"[{i+1}/{len(real_jobs)}] {job['file_name']} | {job['router']} | {job['start_time'][:10]} [{status}]{est_str}")
-        time.sleep(0.2)
-    
-    print(f"\n[v] RECUPERACAO COMPLETA! {len(real_jobs)} jobs restaurados.")
+        if sync_job(payload, job['end_time']):
+            count += 1
+            if count % 10 == 0:
+                print(f"[*] {count} jobs recuperados e vinculados.")
+            
+    print(f"\n✅ SUCESSO: {count} trabalhos históricos foram restaurados e vinculados a materiais!")
 
 if __name__ == "__main__":
-    main()
+    recover()

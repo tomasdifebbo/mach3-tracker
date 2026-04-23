@@ -65,7 +65,11 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Database setup using SQLite (Support for Railway Persistent Volumes)
-const dbFolder = process.env.DATA_PATH || __dirname;
+let dbFolder = process.env.DATA_PATH || __dirname;
+// Força uso do volume montado se existir (Padrão Railway)
+if (fs.existsSync('/data')) {
+    dbFolder = '/data';
+}
 const dbPath = path.join(dbFolder, 'mach3.db');
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
@@ -162,8 +166,32 @@ try {
         db.prepare('INSERT INTO users (email, password, role) VALUES (?, ?, ?)')
             .run('casadotrem@gmail.com', hash, 'admin');
     }
+
+    // SEED MATERIALS: Evita que sumam em redeploys sem volume persistente
+    const materialsCount = db.prepare('SELECT count(*) as count FROM materials').get().count;
+    if (materialsCount === 0) {
+        console.log("[SEED] Populando materiais padrão...");
+        const masterUser = db.prepare('SELECT id FROM users WHERE email = ?').get('casadotrem@gmail.com');
+        if (masterUser) {
+            const defaultMaterials = [
+                { name: "mdf 15mm", price: 180 },
+                { name: "mdf 9mm", price: 100 },
+                { name: "mdf 9mm naval", price: 250 },
+                { name: "mdf 6mm", price: 90 },
+                { name: "mdf 3mm", price: 80 },
+                { name: "pvc", price: 60 },
+                { name: "pvc +", price: 120 },
+                { name: "isopor N", price: 60 },
+                { name: "isopor +", price: 120 }
+            ];
+            const insertMat = db.prepare('INSERT INTO materials (name, price, userId) VALUES (?, ?, ?)');
+            for (const m of defaultMaterials) {
+                insertMat.run(m.name, m.price, masterUser.id);
+            }
+        }
+    }
 } catch (e) {
-    console.error("[SEED] Erro ao verificar/criar usuário master:", e);
+    console.error("[SEED] Erro ao verificar/criar usuário/materiais master:", e);
 }
 
 // Add role column to existing databases
