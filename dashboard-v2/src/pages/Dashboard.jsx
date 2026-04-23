@@ -143,10 +143,16 @@ export function Dashboard({ jobs = [], user }) {
       projectName = pathParts[pathParts.length - 1]; // Fallback to last part
     }
     
-    const key = `${name}-${projectName}`;
+    const key = `${name}-${projectName}-${j.router_name || 'Central'}`;
     
     if (!acc[key]) {
-      acc[key] = { name, projectName, count: 0, totalMinutes: 0 };
+      acc[key] = { 
+        name, 
+        projectName, 
+        routerName: j.router_name || 'Central',
+        count: 0, 
+        totalMinutes: 0 
+      };
     }
     const dur = j.duration_minutes || (j.end_time ? (new Date(j.end_time) - new Date(j.start_time)) / 60000 : 0);
     acc[key].count += 1;
@@ -355,6 +361,7 @@ export function Dashboard({ jobs = [], user }) {
                 <tr className="text-[10px] text-text-muted font-black uppercase tracking-widest border-b border-white/5">
                   <th className="px-4 pb-3">Nome do Arquivo</th>
                   <th className="px-4 pb-3">Projeto</th>
+                  <th className="px-4 pb-3">Router</th>
                   <th className="px-4 pb-3 text-center">Repetições</th>
                   <th className="px-4 pb-3">Tempo Total Acumulado</th>
                   <th className="px-4 pb-3 text-right">Produtividade</th>
@@ -371,12 +378,17 @@ export function Dashboard({ jobs = [], user }) {
                           <div className="w-8 h-8 rounded-lg bg-accent-blue/10 flex items-center justify-center text-accent-blue shrink-0">
                              <FileText size={14} />
                           </div>
-                          <span className="text-xs font-bold text-white truncate max-w-[200px]" title={item.name}>{item.name}</span>
+                          <span className="text-xs font-bold text-white truncate max-w-[180px]" title={item.name}>{item.name}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-0.5 rounded border border-accent-cyan/20">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-0.5 rounded border border-accent-cyan/20 block truncate max-w-[120px]">
                           {item.projectName}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${item.routerName?.includes('2') ? 'bg-purple-500/10 text-purple-400' : 'bg-orange-500/10 text-orange-400'}`}>
+                          {item.routerName}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-xs font-bold text-text-muted text-center">
@@ -385,7 +397,7 @@ export function Dashboard({ jobs = [], user }) {
                       <td className="px-4 py-3 text-xs font-bold text-accent-cyan whitespace-nowrap">
                         {Math.floor(item.totalMinutes / 60)}h {Math.round(item.totalMinutes % 60)}min
                       </td>
-                      <td className="px-4 py-3 rounded-r-xl w-32">
+                      <td className="px-4 py-3 rounded-r-xl w-28">
                         <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
                           <motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} className="h-full bg-accent-blue" />
                         </div>
