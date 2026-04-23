@@ -1,8 +1,8 @@
 import os
 import re
 
-directory = r"E:\arquivos 2024\ARQUIVOS 2026\router\2580 - Italac\ROUTER\ISOPOR"
-files = [f for f in os.listdir(directory) if f.endswith('.txt')]
+directory = r"E:\arquivos 2024\ARQUIVOS 2026\router\2591 - PIRACANJUBA\ROUTER\ISOPOR - SORVETE"
+files = [f for f in os.listdir(directory) if f.lower().endswith('.txt') or f.lower().endswith('.tap') or f.lower().endswith('.nc')]
 
 for filename in files:
     path = os.path.join(directory, filename)

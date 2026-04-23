@@ -3,9 +3,13 @@
         {
             "name": "Router Central",
             "log_file": "\\\\DESKTOP-1CSKMNT\\Mach3\\log_oficial.csv"
+        },
+        {
+            "name": "Router 2",
+            "log_file": "\\\\ACT10\\Mach3\\log_oficial.csv"
         }
     ],
     "email": "casadotrem@gmail.com",
     "password": "123456",
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJjYXNhZG90cmVtQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3NjM1MDYxMywiZXhwIjoxNzc2OTU1NDEzfQ.BukSD3NLFbStkmfTLZbMg1OvQ1Rn-PHQmu9-gnFXS8k"
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJjYXNhZG90cmVtQGdtYWlsLmNvbSIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc3Njk1NzY3NCwiZXhwIjoxNzc3NTYyNDc0fQ.Q8aMtyE37Baq_lDYrf9-dG9iiXwMP7fI5vzgOW3IJs8"
 }

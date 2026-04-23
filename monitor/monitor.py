@@ -20,6 +20,61 @@ CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")
 QUEUE_FILE = os.path.join(os.path.dirname(__file__), "fila_sincronizacao.json")
 STATE_FILE = os.path.join(os.path.dirname(__file__), "monitor_state.json")
 
+cached_materials = []
+
+def update_materials():
+    global cached_materials
+    headers = get_headers()
+    if not headers: return
+    try:
+        resp = requests.get(f"{BASE_URL}/api/materials", headers=headers, timeout=5)
+        if resp.status_code == 200:
+            cached_materials = resp.json()
+            print(f"[*] {len(cached_materials)} materiais carregados para auto-seleção.")
+    except Exception as e:
+        print(f"[!] Erro ao carregar materiais: {e}")
+
+def find_material_match(filename):
+    if not cached_materials: return None
+    
+    # Normaliza o nome do arquivo e extrai as primeiras palavras
+    clean_name = filename.lower()
+    # Remove a extensão para não interferir na segunda palavra
+    name_no_ext = clean_name.rsplit('.', 1)[0]
+    words = re.split(r'[ _\-]', name_no_ext)
+    words = [w.strip() for w in words if w.strip()]
+    
+    if not words: return None
+    
+    # Pega as duas primeiras palavras e a combinação delas
+    w1 = words[0]
+    w2 = words[1] if len(words) > 1 else ""
+    phrase_2 = f"{w1} {w2}".strip()
+    
+    # Ordena os materiais pelo tamanho do nome (do mais longo para o mais curto)
+    # Isso garante que "MDF 15mm" seja testado antes de "MDF"
+    sorted_mats = sorted(cached_materials, key=lambda x: len(x['name']), reverse=True)
+    
+    # 1ª Passada: Busca por combinação exata das duas primeiras palavras
+    for mat in sorted_mats:
+        mat_name = mat['name'].lower()
+        if mat_name == phrase_2:
+            return mat
+            
+    # 2ª Passada: Busca se o nome do material contém tanto a primeira quanto a segunda palavra
+    for mat in sorted_mats:
+        mat_name = mat['name'].lower()
+        if w1 in mat_name and w2 and w2 in mat_name:
+            return mat
+
+    # 3ª Passada: Busca apenas pela primeira palavra (ex: apenas "MDF")
+    for mat in sorted_mats:
+        mat_name = mat['name'].lower()
+        if mat_name == w1 or mat_name.startswith(w1 + " "):
+            return mat
+                
+    return None
+
 def load_state():
     if os.path.exists(STATE_FILE):
         try:
@@ -156,7 +211,7 @@ def simulate_gcode_time(filepath):
         total_time = 0.0
         lx, ly, lz = 0.0, 0.0, 0.0
         
-        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+        with open(filepath, 'r', encoding='cp1252', errors='ignore') as f:
             for line in f:
                 line = line.strip().upper()
                 if not line or line.startswith('('): continue
@@ -238,6 +293,15 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem):
                 print(f"[~] Tempo estimado: {estimated:.1f} min ({estimated/60:.1f}h)")
         else:
             print(f"[!] Arquivo não encontrado para simulação: {local_path}")
+        
+        # Auto-detect material from filename
+        mat = find_material_match(nome_arquivo)
+        mat_id = mat['id'] if mat else None
+        mat_name = mat['name'] if mat else None
+        mat_price = mat['price'] if mat else None
+        
+        if mat:
+            print(f"[+] Material detectado: {mat_name}")
 
         payload = {
             "file_name": nome_arquivo,
@@ -245,7 +309,10 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem):
             "file_path": caminho,
             "start_time": iso_time,
             "router_name": origem,
-            "estimated_minutes": estimated
+            "estimated_minutes": estimated,
+            "material_id": mat_id,
+            "material_name": mat_name,
+            "material_price": mat_price
         }
     
     headers = get_headers()
@@ -327,6 +394,9 @@ def main():
         router_states[name] = {"path": path, "last_pos": last_pos}
         print(f"[*] Monitorando {name} (Início em: {last_pos} bytes)")
 
+    # Carregar materiais para auto-seleção
+    update_materials()
+
     while True:
         try:
             process_queue()
@@ -344,7 +414,7 @@ def main():
                     changed = True
                 
                 if current_size > state["last_pos"]:
-                    with open(path, 'r', encoding='utf-8', errors='ignore') as f:
+                    with open(path, 'r', encoding='cp1252', errors='replace') as f:
                         f.seek(state["last_pos"])
                         lines = f.readlines()
                         state["last_pos"] = f.tell()

@@ -453,8 +453,12 @@ app.post('/api/jobs', authenticateToken, (req, res) => {
         }
 
         const estMin = estimated_minutes ? parseFloat(estimated_minutes) : null;
-        const r = db.prepare('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, userId, router_name, estimated_minutes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-            .run(cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, routerName, estMin);
+        const matId = req.body.material_id || null;
+        const matName = req.body.material_name || null;
+        const matPrice = req.body.material_price || null;
+
+        const r = db.prepare('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, userId, router_name, estimated_minutes, material_id, material_name, material_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+            .run(cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, routerName, estMin, matId, matName, matPrice);
         return r.lastInsertRowid;
     });
 

@@ -123,13 +123,25 @@ export function Dashboard({ jobs = [], user }) {
   const groupedJobs = jobs.reduce((acc, j) => {
     const name = j.file_name || 'Desconhecido';
     
-    // Extract neat project name
+    // Extract neat project name (skipping generic folders like ROUTER, ISOPOR, etc)
     const rawPath = j.folder?.includes('|') ? j.folder.split('|').pop().trim() : (j.folder || 'Desconhecido');
-    const pathParts = rawPath.split('\\');
-    if (pathParts.length > 1 && pathParts[pathParts.length-1].toUpperCase().includes('.TXT')) {
-      pathParts.pop(); // Remove filename if it's there
+    const pathParts = rawPath.split('\\').filter(p => p && !p.toUpperCase().includes('.TXT'));
+    
+    const skipList = ["ROUTER", "ISOPOR", "ARQUIVO", "CNC", "ARQUIVOS", "2024", "2026", "TOMAS", "MACH3", "PROGRAMA", "FILES"];
+    let projectName = "Desconhecido";
+    
+    // Search from right to left for the first non-generic folder name
+    for (let i = pathParts.length - 1; i >= 0; i--) {
+      const part = pathParts[i].toUpperCase();
+      if (!skipList.includes(part) && part.length > 2) {
+        projectName = pathParts[i];
+        break;
+      }
     }
-    const projectName = pathParts.pop() || rawPath; // Get the parent folder as project name
+    
+    if (projectName === "Desconhecido" && pathParts.length > 0) {
+      projectName = pathParts[pathParts.length - 1]; // Fallback to last part
+    }
     
     const key = `${name}-${projectName}`;
     

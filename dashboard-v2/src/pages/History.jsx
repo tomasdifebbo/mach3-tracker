@@ -169,59 +169,65 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-white/5 text-text-muted text-[10px] font-black uppercase tracking-[0.2em] border-b border-border">
-                <th className="px-8 py-5">Arquivo</th>
-                <th className="px-8 py-5">Projeto</th>
-                <th className="px-8 py-5">Cronograma</th>
-                <th className="px-8 py-5">Duração Total</th>
-                <th className="px-8 py-5 text-center">Insumo</th>
-                <th className="px-8 py-5">Custo Estimado</th>
-                <th className="px-8 py-5">Data</th>
-                <th className="px-8 py-5 text-right">Ações</th>
+                <th className="px-6 py-5">Arquivo</th>
+                <th className="px-6 py-5">Projeto</th>
+                <th className="px-6 py-5">Router</th>
+                <th className="px-6 py-5">Cronograma</th>
+                <th className="px-6 py-5">Duração</th>
+                <th className="px-6 py-5 text-center">Insumo</th>
+                <th className="px-6 py-5">Custo Estimado</th>
+                <th className="px-6 py-5">Data</th>
+                <th className="px-6 py-5 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
               {filteredJobs.map((job) => (
                 <tr key={job.id} className="hover:bg-white/[0.03] transition-colors group">
-                  <td className="px-8 py-5 max-w-[250px]">
+                  <td className="px-6 py-5 max-w-[220px]">
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-white text-sm truncate">{job.file_name}</span>
+                        <span className="font-bold text-white text-sm truncate" title={job.file_name}>{job.file_name}</span>
                         {job.count > 1 && (
-                          <span className="text-[10px] bg-accent-blue/20 text-accent-blue px-1.5 py-0.5 rounded-lg font-black tracking-tighter">
-                            {job.count}X REPETIÇÕES
+                          <span className="text-[10px] bg-accent-blue/20 text-accent-blue px-1.5 py-0.5 rounded-lg font-black tracking-tighter shrink-0">
+                            {job.count}X
                           </span>
                         )}
                       </div>
-                      <div className="text-[10px] text-text-muted opacity-50 font-black tracking-widest">
-                        PRINCIPAL ID: #{job.id}
+                      <div className="text-[9px] text-text-muted opacity-50 font-black tracking-widest">
+                        ID: #{job.id}
                       </div>
                     </div>
                   </td>
-                  <td className="px-8 py-5 min-w-[150px]">
-                     <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2.5 py-1 rounded-lg border border-accent-cyan/20 truncate block max-w-sm">
+                  <td className="px-6 py-5">
+                     <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2.5 py-1 rounded-lg border border-accent-cyan/20 truncate block max-w-[200px]">
                        {(() => {
                          const rawPath = job.folder?.includes('|') ? job.folder.split('|').pop().trim() : (job.folder || '');
                          const parts = rawPath.split('\\');
-                         if (parts.length > 1) parts.pop(); // Remove last segment (filename)
+                         if (parts.length > 1) parts.pop();
                          return parts.join('\\') || rawPath;
                        })()}
                      </span>
                   </td>
-                  <td className="px-8 py-5">
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-bold text-white/80">{formatTime(job.start_time)} → {job.isSomeActive ? 'AGORA' : formatTime(job.end_time)}</span>
+                  <td className="px-6 py-5">
+                    <span className={`text-[10px] font-black px-2 py-1 rounded-md border ${job.router_name?.includes('2') ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-orange-500/10 text-orange-400 border-orange-500/20'}`}>
+                      {job.router_name || 'Central'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-5">
+                    <div className="flex flex-col gap-0.5 min-w-[100px]">
+                      <span className="text-xs font-bold text-white/80">{formatTime(job.start_time)} {job.end_time && `→ ${formatTime(job.end_time)}`}</span>
                       {job.isSomeActive && <span className="text-[9px] text-accent-success font-black animate-pulse">EM ANDAMENTO</span>}
                     </div>
                   </td>
-                  <td className="px-8 py-5">
+                  <td className="px-6 py-5">
                     <div className="text-xs font-mono font-black text-white bg-white/5 py-1 px-3 rounded-lg w-fit border border-white/5 shadow-inner">
                       {Math.floor(job.duration_minutes)} MIN
                     </div>
                   </td>
-                  <td className="px-8 py-5 text-center relative overflow-visible">
+                  <td className="px-6 py-5 text-center relative overflow-visible">
                     <button 
                       onClick={() => setActiveDropdown(activeDropdown === job.id ? null : job.id)}
-                      className="text-[10px] font-black uppercase tracking-widest py-1.5 px-3 rounded-xl border border-border bg-white/5 hover:border-accent-cyan transition-all text-text-muted hover:text-white flex items-center gap-2 mx-auto shadow-sm"
+                      className="text-[10px] font-black uppercase tracking-widest py-1.5 px-3 rounded-xl border border-border bg-white/5 hover:border-accent-cyan transition-all text-text-muted hover:text-white flex items-center gap-2 mx-auto shadow-sm whitespace-nowrap"
                     >
                       {job.material_name || 'Vincular'} <ChevronDown size={12} className={activeDropdown === job.id ? "rotate-180 transition-transform" : "transition-transform"} />
                     </button>
@@ -252,15 +258,15 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                       )}
                     </AnimatePresence>
                   </td>
-                  <td className="px-8 py-5 font-black text-white text-sm tracking-tighter">
+                  <td className="px-6 py-5 font-black text-white text-sm tracking-tighter whitespace-nowrap">
                     {formatCurrency(((job.duration_minutes || 0) / 60 * costPerHour) + (job.material_price || 0))}
                   </td>
-                  <td className="px-8 py-5">
-                    <div className="flex items-center gap-2 text-[10px] text-text-muted font-black tracking-widest uppercase text-accent-cyan">
+                  <td className="px-6 py-5">
+                    <div className="text-[10px] text-text-muted font-black tracking-widest uppercase text-accent-cyan whitespace-nowrap">
                        {formatDate(job.start_time)}
                     </div>
                   </td>
-                  <td className="px-8 py-5 text-right">
+                  <td className="px-6 py-5 text-right">
                     <div className="flex items-center justify-end gap-2">
                        {confirmDeleteId === job.id ? (
                         <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-right-2">
