@@ -354,9 +354,10 @@ export function Dashboard({ jobs = [], user }) {
               <thead>
                 <tr className="text-[10px] text-text-muted font-black uppercase tracking-widest border-b border-white/5">
                   <th className="px-4 pb-3">Nome do Arquivo</th>
+                  <th className="px-4 pb-3">Projeto</th>
                   <th className="px-4 pb-3 text-center">Repetições</th>
                   <th className="px-4 pb-3">Tempo Total Acumulado</th>
-                  <th className="px-4 pb-3 text-right">Barra de Produtividade</th>
+                  <th className="px-4 pb-3 text-right">Produtividade</th>
                 </tr>
               </thead>
               <tbody>
@@ -370,16 +371,18 @@ export function Dashboard({ jobs = [], user }) {
                           <div className="w-8 h-8 rounded-lg bg-accent-blue/10 flex items-center justify-center text-accent-blue shrink-0">
                              <FileText size={14} />
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-xs font-bold text-white truncate max-w-[200px]">{item.name}</span>
-                            <span className="text-[9px] text-text-muted font-black tracking-widest uppercase truncate max-w-[200px]">{item.projectName}</span>
-                          </div>
+                          <span className="text-xs font-bold text-white truncate max-w-[200px]" title={item.name}>{item.name}</span>
                         </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-0.5 rounded border border-accent-cyan/20">
+                          {item.projectName}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-xs font-bold text-text-muted text-center">
                         {item.count}x
                       </td>
-                      <td className="px-4 py-3 text-xs font-bold text-accent-cyan">
+                      <td className="px-4 py-3 text-xs font-bold text-accent-cyan whitespace-nowrap">
                         {Math.floor(item.totalMinutes / 60)}h {Math.round(item.totalMinutes % 60)}min
                       </td>
                       <td className="px-4 py-3 rounded-r-xl w-32">
