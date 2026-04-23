@@ -200,24 +200,21 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                   </td>
                     <td className="px-6 py-4">
                       {(() => {
-                        const folderPath = job.folder || 'Desconhecido';
-                        // Remove network prefixes and generic parts
+                        // Extract project name from folder path
+                        let folderPath = job.folder || 'Desconhecido';
+                        folderPath = folderPath.replace(/^Router \d+ \| /, '');
                         const cleanPath = folderPath.replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
+                        
                         const parts = cleanPath.split('\\').filter(p => {
                           const up = p.toUpperCase();
-                          return p && 
-                                 !up.includes('.TXT') && 
-                                 !up.includes('TOMAS') && 
-                                 !up.includes('ARQUIVOS') &&
-                                 !up.includes('ROUTER') &&
-                                 !up.includes('ISOPOR') &&
-                                 !up.includes('2024') &&
-                                 !up.includes('2026') &&
-                                 up !== 'CNC' &&
-                                 up !== 'PROGRAMA';
+                          const isFile = up.endsWith('.TXT') || up.endsWith('.TAP') || up.endsWith('.NC') || up.includes('.TXT');
+                          const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
+                                            up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
+                                            up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
+                          return p && !isFile && !isGeneric;
                         });
                         
-                        const projectName = parts.length > 0 ? parts[parts.length - 1] : cleanPath.split('\\').pop() || 'Projeto';
+                        const projectName = parts.length > 0 ? parts[parts.length - 1] : (cleanPath.split('\\').filter(p => !p.toUpperCase().includes('.TXT')).pop() || 'Produção Geral');
                         
                         return (
                           <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20 truncate block max-w-[150px]" title={projectName}>
