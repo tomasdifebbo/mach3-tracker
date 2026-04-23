@@ -164,17 +164,31 @@ export function Dashboard({ jobs = [], user }) {
   
   // Group by folder and sum duration
   const groupedFolders = jobs.reduce((acc, j) => {
-    // Keep only the project name (last part of the path)
-    const folderPath = j.folder || 'Desconhecido';
-    const name = folderPath.includes('|') ? folderPath.split('|').pop().trim() : 
-                 folderPath.split('\\').pop() || folderPath;
+    // Use the same intelligent project name extraction
+    const rawPath = j.folder?.includes('|') ? j.folder.split('|').pop().trim() : (j.folder || 'Desconhecido');
+    const pathParts = rawPath.split('\\').filter(p => p && !p.toUpperCase().includes('.TXT'));
+    
+    const skipList = ["ROUTER", "ISOPOR", "ARQUIVO", "CNC", "ARQUIVOS", "2024", "2026", "TOMAS", "MACH3", "PROGRAMA", "FILES"];
+    let projectName = "Desconhecido";
+    
+    for (let i = pathParts.length - 1; i >= 0; i--) {
+      const part = pathParts[i].toUpperCase();
+      if (!skipList.includes(part) && part.length > 2) {
+        projectName = pathParts[i];
+        break;
+      }
+    }
+    
+    if (projectName === "Desconhecido" && pathParts.length > 0) {
+      projectName = pathParts[pathParts.length - 1];
+    }
                  
-    if (!acc[name]) {
-      acc[name] = { name, count: 0, totalMinutes: 0 };
+    if (!acc[projectName]) {
+      acc[projectName] = { name: projectName, count: 0, totalMinutes: 0 };
     }
     const dur = j.duration_minutes || (j.end_time ? (new Date(j.end_time) - new Date(j.start_time)) / 60000 : 0);
-    acc[name].count += 1;
-    acc[name].totalMinutes += dur;
+    acc[projectName].count += 1;
+    acc[projectName].totalMinutes += dur;
     return acc;
   }, {});
   
