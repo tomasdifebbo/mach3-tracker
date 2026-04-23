@@ -124,7 +124,11 @@ export function Dashboard({ jobs = [], user }) {
     const name = j.file_name || 'Desconhecido';
     
     // Extract neat project name (skipping generic folders like ROUTER, ISOPOR, etc)
-    const folderPath = j.folder || 'Desconhecido';
+    // Extract project name from folder path
+    let folderPath = j.folder || 'Desconhecido';
+    // Remove "Router X | " prefix if it exists
+    folderPath = folderPath.replace(/^Router \d+ \| /, '');
+    // Remove network and disk prefixes
     const cleanPath = folderPath.replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
     const parts = cleanPath.split('\\').filter(p => {
       const up = p.toUpperCase();
@@ -163,7 +167,11 @@ export function Dashboard({ jobs = [], user }) {
   // Group by folder and sum duration
   const groupedFolders = jobs.reduce((acc, j) => {
     // Use the same intelligent project name extraction
-    const folderPath = j.folder || 'Desconhecido';
+    // Extract project name from folder path
+    let folderPath = j.folder || 'Desconhecido';
+    // Remove "Router X | " prefix if it exists
+    folderPath = folderPath.replace(/^Router \d+ \| /, '');
+    // Remove network and disk prefixes
     const cleanPath = folderPath.replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
     const parts = cleanPath.split('\\').filter(p => {
       const up = p.toUpperCase();
