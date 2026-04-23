@@ -124,24 +124,22 @@ export function Dashboard({ jobs = [], user }) {
     const name = j.file_name || 'Desconhecido';
     
     // Extract neat project name (skipping generic folders like ROUTER, ISOPOR, etc)
-    const rawPath = j.folder?.includes('|') ? j.folder.split('|').pop().trim() : (j.folder || 'Desconhecido');
-    const pathParts = rawPath.split('\\').filter(p => p && !p.toUpperCase().includes('.TXT'));
-    
-    const skipList = ["ROUTER", "ISOPOR", "ARQUIVO", "CNC", "ARQUIVOS", "2024", "2026", "TOMAS", "MACH3", "PROGRAMA", "FILES"];
-    let projectName = "Desconhecido";
-    
-    // Search from right to left for the first non-generic folder name
-    for (let i = pathParts.length - 1; i >= 0; i--) {
-      const part = pathParts[i].toUpperCase();
-      if (!skipList.includes(part) && part.length > 2) {
-        projectName = pathParts[i];
-        break;
-      }
-    }
-    
-    if (projectName === "Desconhecido" && pathParts.length > 0) {
-      projectName = pathParts[pathParts.length - 1]; // Fallback to last part
-    }
+    const folderPath = j.folder || 'Desconhecido';
+    const cleanPath = folderPath.replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
+    const parts = cleanPath.split('\\').filter(p => {
+      const up = p.toUpperCase();
+      return p && 
+             !up.includes('.TXT') && 
+             !up.includes('TOMAS') && 
+             !up.includes('ARQUIVOS') &&
+             !up.includes('ROUTER') &&
+             !up.includes('ISOPOR') &&
+             !up.includes('2024') &&
+             !up.includes('2026') &&
+             up !== 'CNC' &&
+             up !== 'PROGRAMA';
+    });
+    const projectName = parts.length > 0 ? parts[parts.length - 1] : cleanPath.split('\\').pop() || 'Projeto';
     
     const key = `${name}-${projectName}-${j.router_name || 'Central'}`;
     
@@ -165,23 +163,22 @@ export function Dashboard({ jobs = [], user }) {
   // Group by folder and sum duration
   const groupedFolders = jobs.reduce((acc, j) => {
     // Use the same intelligent project name extraction
-    const rawPath = j.folder?.includes('|') ? j.folder.split('|').pop().trim() : (j.folder || 'Desconhecido');
-    const pathParts = rawPath.split('\\').filter(p => p && !p.toUpperCase().includes('.TXT'));
-    
-    const skipList = ["ROUTER", "ISOPOR", "ARQUIVO", "CNC", "ARQUIVOS", "2024", "2026", "TOMAS", "MACH3", "PROGRAMA", "FILES"];
-    let projectName = "Desconhecido";
-    
-    for (let i = pathParts.length - 1; i >= 0; i--) {
-      const part = pathParts[i].toUpperCase();
-      if (!skipList.includes(part) && part.length > 2) {
-        projectName = pathParts[i];
-        break;
-      }
-    }
-    
-    if (projectName === "Desconhecido" && pathParts.length > 0) {
-      projectName = pathParts[pathParts.length - 1];
-    }
+    const folderPath = j.folder || 'Desconhecido';
+    const cleanPath = folderPath.replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
+    const parts = cleanPath.split('\\').filter(p => {
+      const up = p.toUpperCase();
+      return p && 
+             !up.includes('.TXT') && 
+             !up.includes('TOMAS') && 
+             !up.includes('ARQUIVOS') &&
+             !up.includes('ROUTER') &&
+             !up.includes('ISOPOR') &&
+             !up.includes('2024') &&
+             !up.includes('2026') &&
+             up !== 'CNC' &&
+             up !== 'PROGRAMA';
+    });
+    const projectName = parts.length > 0 ? parts[parts.length - 1] : cleanPath.split('\\').pop() || 'Projeto';
                  
     if (!acc[projectName]) {
       acc[projectName] = { name: projectName, count: 0, totalMinutes: 0 };
