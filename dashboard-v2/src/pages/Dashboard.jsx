@@ -126,22 +126,26 @@ export function Dashboard({ jobs = [], user }) {
     // Extract neat project name (skipping generic folders like ROUTER, ISOPOR, etc)
     // Extract project name from folder path
     // Aggressive project name extraction
-    let folderPath = (j.folder || 'Geral').replace(/^Router \d+ \| /, '');
-    // Remove filename from path if present (anything with an extension)
-    const pathParts = folderPath.split('\\');
-    const folderOnlyParts = pathParts.filter(p => !p.toUpperCase().includes('.TXT') && !p.toUpperCase().includes('.TAP') && !p.toUpperCase().includes('.NC'));
-    const folderOnlyPath = folderOnlyParts.join('\\');
+    const pathParts = (j.folder || 'Geral').replace(/^Router \d+ \| /, '').split('\\');
+    // Specialized Log Logic: Find the folder immediately AFTER 'router'
+    const routerIdx = pathParts.findIndex(p => p.toUpperCase() === 'ROUTER');
+    let projectName = '';
     
-    const cleanPath = folderOnlyPath.replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
-    const parts = cleanPath.split('\\').filter(p => {
-      const up = p.toUpperCase();
-      const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
-                        up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
-                        up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
-      return p && !isGeneric;
-    });
-    
-    const projectName = parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || 'Produção Geral');
+    if (routerIdx !== -1 && routerIdx < pathParts.length - 1) {
+      projectName = pathParts[routerIdx + 1];
+    } else {
+      // Fallback for non-log paths (like Globotoy)
+      const folderOnlyParts = pathParts.filter(p => !p.toUpperCase().includes('.TXT') && !p.toUpperCase().includes('.TAP') && !p.toUpperCase().includes('.NC'));
+      const cleanPath = folderOnlyParts.join('\\').replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
+      const parts = cleanPath.split('\\').filter(p => {
+        const up = p.toUpperCase();
+        const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
+                          up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
+                          up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
+        return p && !isGeneric;
+      });
+      projectName = parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || 'Produção Geral');
+    }
     
     const key = `${name}-${projectName}-${j.router_name || 'Central'}`;
     
@@ -166,21 +170,24 @@ export function Dashboard({ jobs = [], user }) {
   const groupedFolders = jobs.reduce((acc, j) => {
     // Use the same intelligent project name extraction
     // Aggressive project name extraction
-    let folderPath = (j.folder || 'Geral').replace(/^Router \d+ \| /, '');
-    const pathParts = folderPath.split('\\');
-    const folderOnlyParts = pathParts.filter(p => !p.toUpperCase().includes('.TXT') && !p.toUpperCase().includes('.TAP') && !p.toUpperCase().includes('.NC'));
-    const folderOnlyPath = folderOnlyParts.join('\\');
+    const pathParts = (j.folder || 'Geral').replace(/^Router \d+ \| /, '').split('\\');
+    const routerIdx = pathParts.findIndex(p => p.toUpperCase() === 'ROUTER');
+    let projectName = '';
     
-    const cleanPath = folderOnlyPath.replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
-    const parts = cleanPath.split('\\').filter(p => {
-      const up = p.toUpperCase();
-      const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
-                        up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
-                        up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
-      return p && !isGeneric;
-    });
-    
-    const projectName = parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || 'Produção Geral');
+    if (routerIdx !== -1 && routerIdx < pathParts.length - 1) {
+      projectName = pathParts[routerIdx + 1];
+    } else {
+      const folderOnlyParts = pathParts.filter(p => !p.toUpperCase().includes('.TXT') && !p.toUpperCase().includes('.TAP') && !p.toUpperCase().includes('.NC'));
+      const cleanPath = folderOnlyParts.join('\\').replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
+      const parts = cleanPath.split('\\').filter(p => {
+        const up = p.toUpperCase();
+        const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
+                          up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
+                          up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
+        return p && !isGeneric;
+      });
+      projectName = parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || 'Produção Geral');
+    }
                  
     if (!acc[projectName]) {
       acc[projectName] = { name: projectName, count: 0, totalMinutes: 0 };
