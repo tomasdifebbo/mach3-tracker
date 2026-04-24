@@ -200,21 +200,22 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                   </td>
                     <td className="px-6 py-4">
                       {(() => {
-                        // Extract project name from folder path
-                        let folderPath = job.folder || 'Desconhecido';
-                        folderPath = folderPath.replace(/^Router \d+ \| /, '');
-                        const cleanPath = folderPath.replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
+                        // Aggressive project name extraction
+                        let folderPath = (job.folder || 'Geral').replace(/^Router \d+ \| /, '');
+                        const pathParts = folderPath.split('\\');
+                        const folderOnlyParts = pathParts.filter(p => !p.toUpperCase().includes('.TXT') && !p.toUpperCase().includes('.TAP') && !p.toUpperCase().includes('.NC'));
+                        const folderOnlyPath = folderOnlyParts.join('\\');
                         
+                        const cleanPath = folderOnlyPath.replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
                         const parts = cleanPath.split('\\').filter(p => {
                           const up = p.toUpperCase();
-                          const isFile = up.endsWith('.TXT') || up.endsWith('.TAP') || up.endsWith('.NC') || up.includes('.TXT');
                           const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
                                             up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
                                             up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
-                          return p && !isFile && !isGeneric;
+                          return p && !isGeneric;
                         });
                         
-                        const projectName = parts.length > 0 ? parts[0] : (cleanPath.split('\\').filter(p => !p.toUpperCase().includes('.TXT')).pop() || 'Produção Geral');
+                        const projectName = parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || 'Produção Geral');
                         
                         return (
                           <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20 truncate block max-w-[150px]" title={projectName}>

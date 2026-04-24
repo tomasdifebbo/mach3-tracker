@@ -125,22 +125,23 @@ export function Dashboard({ jobs = [], user }) {
     
     // Extract neat project name (skipping generic folders like ROUTER, ISOPOR, etc)
     // Extract project name from folder path
-    let folderPath = j.folder || 'Desconhecido';
-    // Remove "Router X | " prefix if it exists
-    folderPath = folderPath.replace(/^Router \d+ \| /, '');
-    // Remove network and disk prefixes
-    const cleanPath = folderPath.replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
+    // Aggressive project name extraction
+    let folderPath = (j.folder || 'Geral').replace(/^Router \d+ \| /, '');
+    // Remove filename from path if present (anything with an extension)
+    const pathParts = folderPath.split('\\');
+    const folderOnlyParts = pathParts.filter(p => !p.toUpperCase().includes('.TXT') && !p.toUpperCase().includes('.TAP') && !p.toUpperCase().includes('.NC'));
+    const folderOnlyPath = folderOnlyParts.join('\\');
+    
+    const cleanPath = folderOnlyPath.replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
     const parts = cleanPath.split('\\').filter(p => {
       const up = p.toUpperCase();
-      const isFile = up.endsWith('.TXT') || up.endsWith('.TAP') || up.endsWith('.NC') || up.includes('.TXT');
       const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
                         up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
                         up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
-      return p && !isFile && !isGeneric;
+      return p && !isGeneric;
     });
     
-    // Prioritize the FIRST non-generic folder (likely the main project folder)
-    const projectName = parts.length > 0 ? parts[0] : (cleanPath.split('\\').filter(p => !p.toUpperCase().includes('.TXT')).pop() || 'Produção Geral');
+    const projectName = parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || 'Produção Geral');
     
     const key = `${name}-${projectName}-${j.router_name || 'Central'}`;
     
@@ -164,23 +165,22 @@ export function Dashboard({ jobs = [], user }) {
   // Group by folder and sum duration
   const groupedFolders = jobs.reduce((acc, j) => {
     // Use the same intelligent project name extraction
-    // Extract project name from folder path
-    let folderPath = j.folder || 'Desconhecido';
-    // Remove "Router X | " prefix if it exists
-    folderPath = folderPath.replace(/^Router \d+ \| /, '');
-    // Remove network and disk prefixes
-    const cleanPath = folderPath.replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
+    // Aggressive project name extraction
+    let folderPath = (j.folder || 'Geral').replace(/^Router \d+ \| /, '');
+    const pathParts = folderPath.split('\\');
+    const folderOnlyParts = pathParts.filter(p => !p.toUpperCase().includes('.TXT') && !p.toUpperCase().includes('.TAP') && !p.toUpperCase().includes('.NC'));
+    const folderOnlyPath = folderOnlyParts.join('\\');
+    
+    const cleanPath = folderOnlyPath.replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
     const parts = cleanPath.split('\\').filter(p => {
       const up = p.toUpperCase();
-      const isFile = up.endsWith('.TXT') || up.endsWith('.TAP') || up.endsWith('.NC') || up.includes('.TXT');
       const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
                         up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
                         up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
-      return p && !isFile && !isGeneric;
+      return p && !isGeneric;
     });
     
-    // Prioritize the root project folder (first part after generic folders)
-    const projectName = parts.length > 0 ? parts[0] : (cleanPath.split('\\').filter(p => !p.toUpperCase().includes('.TXT')).pop() || 'Produção Geral');
+    const projectName = parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || 'Produção Geral');
                  
     if (!acc[projectName]) {
       acc[projectName] = { name: projectName, count: 0, totalMinutes: 0 };
