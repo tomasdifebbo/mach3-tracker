@@ -402,7 +402,7 @@ export function Dashboard({ jobs = [], user }) {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20 block truncate max-w-[150px]" title={item.projectName}>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20 block min-w-[100px]" title={item.projectName}>
                           {item.projectName}
                         </span>
                       </td>
@@ -449,7 +449,7 @@ export function Dashboard({ jobs = [], user }) {
                           <div className="w-8 h-8 rounded-lg bg-accent-cyan/10 flex items-center justify-center text-accent-cyan">
                              <TrendingUp size={14} />
                           </div>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20 truncate block max-w-[250px]" title={item.name}>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20 block min-w-[150px]" title={item.name}>
                             {item.name}
                           </span>
                         </div>

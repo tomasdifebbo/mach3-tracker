@@ -220,7 +220,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                         }
                         
                         return (
-                          <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20 truncate block max-w-[150px]" title={projectName}>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20 block whitespace-normal min-w-[120px]" title={projectName}>
                             {projectName}
                           </span>
                         );
