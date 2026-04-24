@@ -214,7 +214,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                           return p && !isFile && !isGeneric;
                         });
                         
-                        const projectName = parts.length > 0 ? parts[parts.length - 1] : (cleanPath.split('\\').filter(p => !p.toUpperCase().includes('.TXT')).pop() || 'Produção Geral');
+                        const projectName = parts.length > 0 ? parts[0] : (cleanPath.split('\\').filter(p => !p.toUpperCase().includes('.TXT')).pop() || 'Produção Geral');
                         
                         return (
                           <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20 truncate block max-w-[150px]" title={projectName}>
