@@ -1,7 +1,7 @@
 import os
 import re
 
-directory = r"E:\arquivos 2024\ARQUIVOS 2026\router\2591 - PIRACANJUBA\ROUTER\ISOPOR - SORVETE"
+directory = r"E:\arquivos 2024\ARQUIVOS 2026\router\2584 - expositores capsulas e frasco de medicamentos\ROUTER\ISOPOR+"
 files = [f for f in os.listdir(directory) if f.lower().endswith('.txt') or f.lower().endswith('.tap') or f.lower().endswith('.nc')]
 
 for filename in files:
