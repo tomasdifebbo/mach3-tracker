@@ -535,9 +535,23 @@ app.get('/api/jobs', authenticateToken, (req, res) => {
 });
 
 app.patch('/api/jobs/:id', authenticateToken, (req, res) => {
-    const { material_id, material_name, material_price } = req.body;
-    const info = db.prepare('UPDATE jobs SET material_id = ?, material_name = ?, material_price = ? WHERE id = ? AND userId = ?')
-        .run(material_id, material_name, material_price, req.params.id, req.user.id);
+    const { material_id, material_name, material_price, folder, file_name, start_time, end_time } = req.body;
+    
+    let updates = [];
+    let values = [];
+    
+    if (material_id !== undefined) { updates.push("material_id = ?"); values.push(material_id); }
+    if (material_name !== undefined) { updates.push("material_name = ?"); values.push(material_name); }
+    if (material_price !== undefined) { updates.push("material_price = ?"); values.push(material_price); }
+    if (folder !== undefined) { updates.push("folder = ?"); values.push(folder); }
+    if (file_name !== undefined) { updates.push("file_name = ?"); values.push(file_name); }
+    if (start_time !== undefined) { updates.push("start_time = ?"); values.push(start_time); }
+    if (end_time !== undefined) { updates.push("end_time = ?"); values.push(end_time); }
+    
+    if (updates.length === 0) return res.status(400).json({ error: "No fields to update" });
+    
+    values.push(req.params.id, req.user.id);
+    const info = db.prepare(`UPDATE jobs SET ${updates.join(', ')} WHERE id = ? AND userId = ?`).run(...values);
 
     if (info.changes > 0) res.json({ success: true });
     else res.status(404).json({ error: "Job not found" });

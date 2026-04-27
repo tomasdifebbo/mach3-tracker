@@ -72,7 +72,7 @@ def recover_globotoy():
         
         time.sleep(0.1)
 
-    print(f"\n✅ PROJETO GLOBOTOY RESTAURADO COM SUCESSO!")
+    print(f"\nPROJETO GLOBOTOY RESTAURADO COM SUCESSO!")
     conn.close()
 
 if __name__ == "__main__":
