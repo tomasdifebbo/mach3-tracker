@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   Clock, 
@@ -7,11 +7,8 @@ import {
   DollarSign, 
   Activity,
   Play,
-  FileText,
-  Download,
-  ChevronDown
+  FileText
 } from 'lucide-react';
-import { generateProductionReport } from '../utils/generateReport';
 import { 
   Chart as ChartJS, 
   CategoryScale, 
@@ -52,33 +49,6 @@ const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currenc
 
 export function Dashboard({ jobs = [], user }) {
   const [elapsed, setElapsed] = useState(0);
-  const [showExportMenu, setShowExportMenu] = useState(false);
-  const [exportingPdf, setExportingPdf] = useState(false);
-  const exportMenuRef = useRef(null);
-
-  // Close export menu on outside click
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target)) {
-        setShowExportMenu(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleExportPdf = (filterType) => {
-    setExportingPdf(true);
-    setShowExportMenu(false);
-    setTimeout(() => {
-      try {
-        generateProductionReport({ jobs, user, filterType });
-      } catch (err) {
-        console.error('Erro ao gerar PDF:', err);
-      }
-      setExportingPdf(false);
-    }, 100);
-  };
   const activeJobs = jobs.filter(j => !j.end_time);
   
   // Live Timer Effect for multiple jobs
@@ -232,52 +202,6 @@ export function Dashboard({ jobs = [], user }) {
 
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
-      {/* Export PDF Button */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Dashboard de Produção</h2>
-          <p className="text-xs text-text-muted mt-1">Visão geral da operação CNC</p>
-        </div>
-        <div className="relative" ref={exportMenuRef}>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowExportMenu(!showExportMenu)}
-            disabled={exportingPdf}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-accent-blue to-accent-cyan text-white font-bold text-sm shadow-lg shadow-accent-cyan/20 hover:shadow-accent-cyan/40 transition-all disabled:opacity-50"
-          >
-            <Download size={16} />
-            {exportingPdf ? 'Gerando...' : 'Exportar PDF'}
-            <ChevronDown size={14} className={`transition-transform ${showExportMenu ? 'rotate-180' : ''}`} />
-          </motion.button>
-          {showExportMenu && (
-            <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              className="absolute right-0 mt-2 w-56 rounded-xl bg-[#1e293b] border border-white/10 shadow-2xl shadow-black/50 overflow-hidden z-50"
-            >
-              <div className="p-2 space-y-0.5">
-                <div className="px-3 py-2 text-[10px] text-text-muted font-black uppercase tracking-widest">Selecione o período</div>
-                {[
-                  { label: 'Hoje', type: 'today', icon: '📅' },
-                  { label: 'Últimos 7 dias', type: 'week', icon: '📊' },
-                  { label: 'Este mês', type: 'month', icon: '📈' },
-                  { label: 'Histórico Completo', type: 'all', icon: '📋' },
-                ].map(opt => (
-                  <button
-                    key={opt.type}
-                    onClick={() => handleExportPdf(opt.type)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-white/80 hover:bg-accent-cyan/10 hover:text-accent-cyan transition-all text-left font-medium"
-                  >
-                    <span className="text-base">{opt.icon}</span>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </div>
-      </div>
       {/* Active Jobs Banners */}
       <div className="space-y-4">
         {activeJobs.map(job => {

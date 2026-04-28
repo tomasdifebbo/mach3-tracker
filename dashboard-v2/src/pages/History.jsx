@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Filter, 
   Download, 
@@ -7,10 +7,12 @@ import {
   Search,
   Calendar,
   Layers,
-  FileText
+  FileText,
+  FileDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
+import { generateProductionReport } from '../utils/generateReport';
 
 const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 const formatTime = (iso) => iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-';
@@ -22,6 +24,33 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [showPdfMenu, setShowPdfMenu] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const pdfMenuRef = useRef(null);
+
+  // Close PDF menu on outside click
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (pdfMenuRef.current && !pdfMenuRef.current.contains(e.target)) {
+        setShowPdfMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleExportPdf = (filterType) => {
+    setExportingPdf(true);
+    setShowPdfMenu(false);
+    setTimeout(() => {
+      try {
+        generateProductionReport({ jobs, user, filterType });
+      } catch (err) {
+        console.error('Erro ao gerar PDF:', err);
+      }
+      setExportingPdf(false);
+    }, 100);
+  };
   
   // Helper to group jobs by File + Folder + Day
   const consolidateJobs = (jobList) => {
@@ -153,13 +182,53 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button 
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-6 py-2.5 bg-accent-cyan text-black font-black uppercase tracking-widest text-[11px] rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-accent-cyan/20"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white/5 border border-border text-white font-black uppercase tracking-widest text-[11px] rounded-xl hover:bg-white/10 hover:scale-105 active:scale-95 transition-all"
           >
-            <Download size={18} /> Exportar CSV
+            <Download size={16} /> CSV
           </button>
+          <div className="relative" ref={pdfMenuRef}>
+            <button 
+              onClick={() => setShowPdfMenu(!showPdfMenu)}
+              disabled={exportingPdf}
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-accent-blue to-accent-cyan text-white font-black uppercase tracking-widest text-[11px] rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-accent-cyan/20 disabled:opacity-50"
+            >
+              <FileDown size={16} />
+              {exportingPdf ? 'Gerando...' : 'Exportar PDF'}
+              <ChevronDown size={12} className={`transition-transform ${showPdfMenu ? 'rotate-180' : ''}`} />
+            </button>
+            <AnimatePresence>
+              {showPdfMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  className="absolute right-0 mt-2 w-56 rounded-xl bg-[#1e293b] border border-white/10 shadow-2xl shadow-black/50 overflow-hidden z-50"
+                >
+                  <div className="p-2 space-y-0.5">
+                    <div className="px-3 py-2 text-[10px] text-text-muted font-black uppercase tracking-widest">Selecione o per\u00edodo</div>
+                    {[
+                      { label: 'Hoje', type: 'today', desc: 'Apenas o dia atual' },
+                      { label: 'Ultimos 7 dias', type: 'week', desc: 'Semana corrente' },
+                      { label: 'Este mes', type: 'month', desc: 'Mes atual completo' },
+                      { label: 'Historico Completo', type: 'all', desc: 'Todos os registros' },
+                    ].map(opt => (
+                      <button
+                        key={opt.type}
+                        onClick={() => handleExportPdf(opt.type)}
+                        className="w-full flex flex-col px-3 py-2.5 rounded-lg text-left hover:bg-accent-cyan/10 transition-all"
+                      >
+                        <span className="text-sm text-white/90 font-bold">{opt.label}</span>
+                        <span className="text-[10px] text-text-muted">{opt.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
