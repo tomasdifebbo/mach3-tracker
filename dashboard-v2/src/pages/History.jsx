@@ -165,7 +165,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   return (
     <div className="p-8 space-y-6">
       {/* Filters Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 glass p-4 rounded-2xl">
+      <div className="flex flex-wrap items-center justify-between gap-4 glass p-4 rounded-2xl relative z-10">
         <div className="flex items-center gap-4 flex-1 min-w-[300px]">
           <div className="flex items-center gap-2 bg-white/5 border border-border px-4 py-2 rounded-xl focus-within:border-accent-cyan/50 flex-1">
             <Search size={18} className="text-text-muted" />
