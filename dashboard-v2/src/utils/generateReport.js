@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 /**
  * Extracts the clean project name from a folder path
@@ -190,7 +190,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
   doc.setFont('helvetica', 'bold');
   doc.text('Resumo por Projeto', 20, tableStartY);
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: tableStartY + 5,
     head: [['Projeto', 'Jobs', 'Tempo Total', 'Custo Estimado', '% do Total']],
     body: projectSummary.map(p => [
@@ -250,7 +250,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
   doc.setFontSize(9);
   doc.text(`${filtered.length} registros | ${periodLabel}`, pageWidth - 20, 18, { align: 'right' });
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: 38,
     head: [['#', 'Data', 'Hora Inicio', 'Hora Fim', 'Arquivo', 'Projeto', 'Router', 'Duracao', 'Custo Est.']],
     body: filtered.map((j, idx) => {
