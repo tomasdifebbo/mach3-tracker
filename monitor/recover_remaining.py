@@ -1,7 +1,6 @@
 import requests, json, datetime, time, re, os, math
 
 BASE_URL = "https://mach3-tracker-production.up.railway.app"
-LOG_PATH = r"\\DESKTOP-1CSKMNT\Mach3\log_oficial.csv"
 CONFIG_FILE = "config.json"
 
 config = json.load(open(CONFIG_FILE))
@@ -23,7 +22,8 @@ def simulate_gcode_time(filepath):
     unc_mappings = { 
         r"\\TOMAS\arquivos 2024": r"E:\arquivos 2024", 
         r"\\DESKTOP-1CSKMNT\Mach3": r"C:\mach3",
-        r"\\TOMAS\ARQUIVOS 2026": r"E:\ARQUIVOS 2026"
+        r"\\TOMAS\ARQUIVOS 2026": r"E:\ARQUIVOS 2026",
+        r"\\ACT10\Mach3": r"C:\mach3"
     }
     for unc_prefix, local_prefix in unc_mappings.items():
         if local_path.upper().startswith(unc_prefix.upper()):
@@ -52,49 +52,65 @@ def simulate_gcode_time(filepath):
 
 def recover():
     update_materials()
-    if not os.path.exists(LOG_PATH): return
-    with open(LOG_PATH, 'r', encoding='utf-8', errors='ignore') as f:
-        lines = f.readlines()
-
     all_found = []
-    current_opens = {}
-    for line in lines:
-        parts = line.strip().split(',')
-        if len(parts) < 4: continue
-        date_str, time_str, file_path, status = parts[0], parts[1], parts[2], parts[-1]
-        router = parts[3] if len(parts) == 5 else "Central"
-        
-        if "GLOBOTOY" in file_path.upper(): continue
-        
-        try:
-            dt = datetime.datetime.strptime(f"{date_str} {time_str}", "%d/%m/%Y %H:%M:%S")
-        except: continue
+    
+    # Process each router from config.json
+    routers_cfg = config.get('routers', [])
+    if not routers_cfg:
+        print("Erro: Nenhuma router configurada no config.json")
+        return
 
-        if status == "INICIO":
-            current_opens[router] = {
-                "file_name": os.path.basename(file_path),
-                "folder": file_path,
-                "file_path": file_path,
-                "start_time": dt,
-                "router_name": router
-            }
-        elif status == "FIM" and router in current_opens:
-            job = current_opens.pop(router)
-            duration_sec = (dt - job['start_time']).total_seconds()
-            if duration_sec < 20: continue
+    for r_cfg in routers_cfg:
+        log_path = r_cfg['log_file']
+        router_default_name = r_cfg['name']
+        
+        if not os.path.exists(log_path):
+            print(f"Aviso: Arquivo de log nao encontrado para {router_default_name}: {log_path}")
+            continue
             
-            duration_min = duration_sec / 60
-            est = simulate_gcode_time(job['file_path'])
+        print(f"Processando logs de: {router_default_name}...")
+        with open(log_path, 'r', encoding='utf-8', errors='ignore') as f:
+            lines = f.readlines()
+
+        current_opens = {}
+        for line in lines:
+            parts = line.strip().split(',')
+            if len(parts) < 4: continue
+            date_str, time_str, file_path, status = parts[0], parts[1], parts[2], parts[-1]
+            router = parts[3] if len(parts) == 5 else router_default_name
             
-            if duration_min > 120:
-                job['end_time'] = job['start_time'] + datetime.timedelta(minutes=est)
-            else:
-                job['end_time'] = dt
+            if "GLOBOTOY" in file_path.upper(): continue
+            
+            try:
+                dt = datetime.datetime.strptime(f"{date_str} {time_str}", "%d/%m/%Y %H:%M:%S")
+            except: continue
+
+            if status == "INICIO":
+                current_opens[router] = {
+                    "file_name": os.path.basename(file_path),
+                    "folder": file_path,
+                    "file_path": file_path,
+                    "start_time": dt,
+                    "router_name": router
+                }
+            elif status == "FIM" and router in current_opens:
+                job = current_opens.pop(router)
+                duration_sec = (dt - job['start_time']).total_seconds()
+                if duration_sec < 20: continue
                 
-            job['duration_min'] = duration_min
-            job['estimated_minutes'] = est
-            all_found.append(job)
+                duration_min = duration_sec / 60
+                est = simulate_gcode_time(job['file_path'])
+                
+                if duration_min > 120:
+                    job['end_time'] = job['start_time'] + datetime.timedelta(minutes=est)
+                else:
+                    job['end_time'] = dt
+                    
+                job['duration_min'] = duration_min
+                job['estimated_minutes'] = est
+                all_found.append(job)
 
+    # De-duplicate across ALL routers if needed, but usually routers are separate
     final_jobs = []
     all_found.sort(key=lambda x: x['start_time'])
     i = 0
@@ -102,13 +118,13 @@ def recover():
         best_job = all_found[i]
         j = i + 1
         while j < len(all_found) and (all_found[j]['start_time'] - best_job['start_time']).total_seconds() < 180:
-            if all_found[j]['file_name'] == best_job['file_name']:
+            if all_found[j]['file_name'] == best_job['file_name'] and all_found[j]['router_name'] == best_job['router_name']:
                 if all_found[j]['duration_min'] > best_job['duration_min']: best_job = all_found[j]
             j += 1
         final_jobs.append(best_job)
         i = j
 
-    print(f"Subindo {len(final_jobs)} trabalhos restantes higienizados...")
+    print(f"Subindo {len(final_jobs)} trabalhos higienizados de TODAS as routers...")
     count = 0
     for job in final_jobs:
         payload = {
@@ -128,7 +144,7 @@ def recover():
                 count += 1
                 if count % 20 == 0: print(f"{count} jobs restaurados...")
         except: pass
-    print(f"Sucesso: {count} jobs adicionais restaurados!")
+    print(f"Sucesso: {count} jobs totais restaurados!")
 
 if __name__ == "__main__":
     recover()
