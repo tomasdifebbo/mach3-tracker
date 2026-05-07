@@ -6,6 +6,8 @@ import datetime
 import sys
 import math
 import re
+import threading
+import traceback
 
 # ==========================================
 # CONFIGURAÇÕES SAAS (LOCAL/NUVEM)
@@ -397,28 +399,68 @@ def main():
     # Carregar materiais para auto-seleção
     update_materials()
 
+    last_heartbeat = 0
+    HEARTBEAT_INTERVAL = 300  # 5 minutos
+
     while True:
         try:
-            process_queue()
+            # Heartbeat - log a cada 5 minutos para saber que o monitor está vivo
+            now = time.time()
+            if now - last_heartbeat > HEARTBEAT_INTERVAL:
+                hb_msg = f"[HEARTBEAT] {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Monitor ativo"
+                print(hb_msg)
+                with open(os.path.join(os.path.dirname(__file__), "monitor.log"), "a", encoding="utf-8") as lf:
+                    lf.write(hb_msg + "\n")
+                last_heartbeat = now
+
+            try:
+                process_queue()
+            except Exception as e:
+                print(f"[!] Erro ao processar fila: {e}")
             
             changed = False
             for name, state in router_states.items():
                 path = state["path"]
                 
-                if not os.path.exists(path):
+                try:
+                    # Timeout protection para UNC paths que podem travar
+                    path_exists = False
+                    current_size = 0
+                    
+                    def check_path():
+                        nonlocal path_exists, current_size
+                        if os.path.exists(path):
+                            path_exists = True
+                            current_size = os.path.getsize(path)
+                    
+                    t = threading.Thread(target=check_path)
+                    t.start()
+                    t.join(timeout=5)  # Max 5 segundos para checar UNC path
+                    
+                    if t.is_alive():
+                        print(f"[!] Timeout ao acessar {name} ({path}) - rede lenta?")
+                        continue
+                    
+                    if not path_exists:
+                        continue
+                except Exception as e:
+                    print(f"[!] Erro ao verificar {name}: {e}")
                     continue
                     
-                current_size = os.path.getsize(path)
                 if current_size < state["last_pos"]: # Arquivo foi resetado
                     state["last_pos"] = 0
                     changed = True
                 
                 if current_size > state["last_pos"]:
-                    with open(path, 'r', encoding='cp1252', errors='replace') as f:
-                        f.seek(state["last_pos"])
-                        lines = f.readlines()
-                        state["last_pos"] = f.tell()
-                        changed = True
+                    try:
+                        with open(path, 'r', encoding='cp1252', errors='replace') as f:
+                            f.seek(state["last_pos"])
+                            lines = f.readlines()
+                            state["last_pos"] = f.tell()
+                            changed = True
+                    except Exception as e:
+                        print(f"[!] Erro ao ler log de {name}: {e}")
+                        continue
                     
                     for line in lines:
                         if not line.strip(): continue
@@ -448,15 +490,19 @@ def main():
                                 lf.write(log_msg + "\n")
                             print(log_msg)
                             
-                            if "INICIO" in tipo:
-                                processa_inicio(caminho_completo, nome_arquivo, iso_time, identidade_router)
-                            elif "FIM" in tipo:
-                                processa_fim(iso_time, identidade_router)
+                            try:
+                                if "INICIO" in tipo:
+                                    processa_inicio(caminho_completo, nome_arquivo, iso_time, identidade_router)
+                                elif "FIM" in tipo:
+                                    processa_fim(iso_time, identidade_router)
+                            except Exception as e:
+                                print(f"[!] Erro ao processar evento {tipo} de {name}: {e}")
             
             if changed:
                 save_state({n: {"last_pos": s["last_pos"]} for n, s in router_states.items()})
         except Exception as e:
             print(f"[!] Erro no loop: {e}")
+            traceback.print_exc()
         
         time.sleep(1)
 
