@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: mach3-tracker
+    runtime: docker
+    rootDir: server
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        value: mach3_secret_2026
+      - key: PORT
+        value: "3000"

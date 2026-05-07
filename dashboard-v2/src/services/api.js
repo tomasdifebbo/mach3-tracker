@@ -1,7 +1,8 @@
 // API Base Configuration
+// In production, frontend is served by the same Express server (same-origin)
 const API_URL = window.location.origin.includes('localhost') 
   ? 'http://localhost:3000' 
-  : 'https://mach3-tracker-production.up.railway.app';
+  : '';
 
 export const getAuthHeaders = () => {
   const token = localStorage.getItem('mach3_token');

@@ -43,8 +43,10 @@ def recover_globotoy():
     c.execute("SELECT * FROM jobs WHERE folder LIKE '%GLOBOTOY%' ORDER BY start_time ASC")
     rows = c.fetchall()
 
-    print(f"[*] Enviando {len(rows)} trabalhos GLOBOTOY com auto-vínculo de materiais...")
+    print(f"[*] Enviando {len(rows)} trabalhos GLOBOTOY...")
 
+    ok_count = 0
+    fail_count = 0
     for i, row in enumerate(rows):
         job = dict(row)
         mat = find_material_match(job['file_name'])
@@ -60,19 +62,55 @@ def recover_globotoy():
             "material_price": 0
         }
         
-        resp = requests.post(f"{BASE_URL}/api/jobs", json=payload, headers=headers)
-        new_id = resp.json().get('id') if resp.status_code in (200, 201) else None
-        
-        if new_id and job["end_time"]:
-            requests.patch(f"{BASE_URL}/api/jobs/latest", json={
-                "end_time": job["end_time"],
-                "router_name": job.get("router_name") or "Router 1"
-            }, headers=headers)
-            print(f"[{i+1}/{len(rows)}] {job['file_name']} -> OK")
-        
-        time.sleep(0.1)
+        # Step 1: Create the job
+        try:
+            resp = requests.post(f"{BASE_URL}/api/jobs", json=payload, headers=headers, timeout=10)
+            data = resp.json() if resp.status_code in (200, 201) else {}
+            new_id = data.get('id')
+            debounced = data.get('debounced', False)
+        except Exception as e:
+            print(f"[{i+1}/{len(rows)}] {job['file_name']} -> ERRO POST: {e}")
+            fail_count += 1
+            continue
 
-    print(f"\nPROJETO GLOBOTOY RESTAURADO COM SUCESSO!")
+        if debounced or not new_id:
+            print(f"[{i+1}/{len(rows)}] {job['file_name']} -> DEBOUNCED/SKIP")
+            fail_count += 1
+            time.sleep(0.3)
+            continue
+        
+        # Step 2: Wait a moment, then close the job with end_time
+        time.sleep(0.5)
+        
+        if job["end_time"]:
+            try:
+                patch_resp = requests.patch(f"{BASE_URL}/api/jobs/latest", json={
+                    "end_time": job["end_time"],
+                    "router_name": job.get("router_name") or "Router 1"
+                }, headers=headers, timeout=10)
+                
+                patch_data = patch_resp.json() if patch_resp.status_code == 200 else {}
+                if patch_data.get('deleted'):
+                    print(f"[{i+1}/{len(rows)}] {job['file_name']} -> GHOST DELETED (too short)")
+                    fail_count += 1
+                else:
+                    print(f"[{i+1}/{len(rows)}] {job['file_name']} -> OK (ID #{new_id})")
+                    ok_count += 1
+            except Exception as e:
+                print(f"[{i+1}/{len(rows)}] {job['file_name']} -> ERRO PATCH: {e}")
+                fail_count += 1
+        else:
+            print(f"[{i+1}/{len(rows)}] {job['file_name']} -> OK sem end_time (ID #{new_id})")
+            ok_count += 1
+        
+        # Wait before next job to avoid debounce/auto-close conflicts
+        time.sleep(0.3)
+
+    print(f"\nRESULTADO: {ok_count} OK, {fail_count} falhas de {len(rows)} total")
+    if ok_count == len(rows):
+        print("PROJETO GLOBOTOY RESTAURADO COM SUCESSO!")
+    else:
+        print(f"AVISO: {fail_count} jobs nao foram restaurados!")
     conn.close()
 
 if __name__ == "__main__":

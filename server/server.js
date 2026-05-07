@@ -14,7 +14,7 @@ const app = express();
 app.set('trust proxy', 1); // Crucial for rate limiting and IP detection behind Railway proxy
 const port = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'mach3_secret_2026';
-const DOMAIN = process.env.DOMAIN || 'https://mach3-tracker-production.up.railway.app';
+const DOMAIN = process.env.RENDER_EXTERNAL_URL || process.env.DOMAIN || `http://localhost:${port}`;
 
 // Config Mercado Pago
 const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || 'test_token' });
