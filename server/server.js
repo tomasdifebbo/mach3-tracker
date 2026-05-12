@@ -4,35 +4,25 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 require('dotenv').config();
-const { MercadoPagoConfig, Preference } = require('mercadopago');
-const Database = require('better-sqlite3');
+const { Pool } = require('pg');
 
 const app = express();
-app.set('trust proxy', 1); // Crucial for rate limiting and IP detection behind Railway proxy
+app.set('trust proxy', 1);
 const port = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'mach3_secret_2026';
 const DOMAIN = process.env.RENDER_EXTERNAL_URL || process.env.DOMAIN || `http://localhost:${port}`;
 
-// Config Mercado Pago
-const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || 'test_token' });
-const preference = new Preference(client);
-
-// P2: Security headers temporarily disabled to fix Vite CSP issues
-// app.use(helmet(...));
-
 // P0: Restricted CORS (production + localhost dev)
 const allowedOrigins = [
     DOMAIN,
+    'https://mach3-tracker.onrender.com',
     'http://localhost:3000',
     'http://localhost:5173',
     'http://localhost:4173'
 ];
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, curl, monitor script)
         if (!origin) return callback(null, true);
         if (allowedOrigins.includes(origin)) return callback(null, true);
         callback(new Error('CORS não permitido'));
@@ -40,52 +30,25 @@ app.use(cors({
     credentials: true
 }));
 
-// P1: Rate limiting (Temporarily disabled to fix synchronization issues)
-/*
-const generalLimiter = rateLimit({
-    windowMs: 1 * 60 * 1000, // 1 minute
-    max: 1000, 
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: 'Muitas requisições. Tente novamente em 1 minuto.' }
-});
-const authLimiter = rateLimit({
-    windowMs: 1 * 60 * 1000,
-    max: 50,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: 'Muitas tentativas de login. Tente novamente em breve.' }
-});
-app.use('/api/', generalLimiter);
-app.use('/api/auth/', authLimiter);
-*/
-
 app.use(express.json());
-// Serve the NEW dashboard-v2 from internal public folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Database setup using SQLite (Support for Railway Persistent Volumes)
-let dbFolder = process.env.DATA_PATH || __dirname;
-// Força uso do volume montado se existir (Padrão Railway)
-if (fs.existsSync('/data')) {
-    dbFolder = '/data';
-}
-const dbPath = path.join(dbFolder, 'mach3.db');
-const db = new Database(dbPath);
-db.pragma('journal_mode = WAL');
+// Database setup using PostgreSQL (Supabase)
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+});
 
-// AUTO-SEED: Ensure Casadotrem exists as admin on startup
 // Helper to close stale jobs (> 12 hours)
-function closeStaleJobs(userId) {
+async function closeStaleJobs(userId) {
     try {
         const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
-        const staleJobs = db.prepare('SELECT id, start_time FROM jobs WHERE userId = ? AND end_time IS NULL AND start_time < ?').all(userId, twelveHoursAgo);
+        const staleJobs = (await pool.query('SELECT id, start_time FROM jobs WHERE "userId" = $1 AND end_time IS NULL AND start_time < $2', [userId, twelveHoursAgo])).rows;
 
         for (const job of staleJobs) {
             const start = new Date(job.start_time);
-            // Set end_time to start_time + 10 mins (fallback duration for stale jobs)
             const end = new Date(start.getTime() + 10 * 60 * 1000).toISOString();
-            db.prepare('UPDATE jobs SET end_time = ?, duration_minutes = 10 WHERE id = ?').run(end, job.id);
+            await pool.query('UPDATE jobs SET end_time = $1, duration_minutes = 10 WHERE id = $2', [end, job.id]);
             console.log(`[CLEANUP] Locked stale job #${job.id} (stuck for > 12h)`);
         }
     } catch (e) {
@@ -93,20 +56,18 @@ function closeStaleJobs(userId) {
     }
 }
 
-// Maintenance: Keep only X days of history (optional pruning)
-function runMaintenance() {
+// Maintenance: Keep only X days of history
+async function runMaintenance() {
     try {
-        // Set RETENTION_DAYS to a value > 0 to enable auto-cleanup. 
-        // Example: 7 means keep only the last week. Default is 60 days for safety.
         const RETENTION_DAYS = 60; 
         if (RETENTION_DAYS > 0) {
             const cutoffDate = new Date();
             cutoffDate.setDate(cutoffDate.getDate() - RETENTION_DAYS);
             const cutoffStr = cutoffDate.toISOString();
             
-            const result = db.prepare('DELETE FROM jobs WHERE start_time < ? AND end_time IS NOT NULL').run(cutoffStr);
-            if (result.changes > 0) {
-                console.log(`[MAINTENANCE] Removed ${result.changes} old jobs (beyond ${RETENTION_DAYS} days)`);
+            const result = await pool.query('DELETE FROM jobs WHERE start_time < $1 AND end_time IS NOT NULL', [cutoffStr]);
+            if (result.rowCount > 0) {
+                console.log(`[MAINTENANCE] Removed ${result.rowCount} old jobs (beyond ${RETENTION_DAYS} days)`);
             }
         }
     } catch (e) {
@@ -114,104 +75,88 @@ function runMaintenance() {
     }
 }
 
-// Run maintenance once on startup and then every 24 hours
-runMaintenance();
-setInterval(runMaintenance, 24 * 60 * 60 * 1000);
+// Initialize tables
+async function initDb() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                email TEXT UNIQUE,
+                password TEXT,
+                plan TEXT,
+                trial_expiry TEXT,
+                payment_status TEXT,
+                "costPerHour" REAL DEFAULT 50,
+                "plannedHours" REAL DEFAULT 8,
+                role TEXT DEFAULT 'user'
+            );
+            CREATE TABLE IF NOT EXISTS materials (
+                id SERIAL PRIMARY KEY,
+                name TEXT,
+                price REAL,
+                "userId" INTEGER
+            );
+            CREATE TABLE IF NOT EXISTS jobs (
+                id SERIAL PRIMARY KEY,
+                file_name TEXT,
+                folder TEXT,
+                file_path TEXT,
+                start_time TEXT,
+                end_time TEXT,
+                duration_minutes REAL,
+                day INTEGER,
+                month INTEGER,
+                year INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "userId" INTEGER,
+                material_id INTEGER,
+                material_name TEXT,
+                material_price REAL,
+                router_name TEXT,
+                estimated_minutes REAL
+            );
+        `);
 
-// Tentar criar tabelas se o arquivo estiver vazio
-db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT UNIQUE,
-        password TEXT,
-        plan TEXT,
-        trial_expiry TEXT,
-        payment_status TEXT,
-        costPerHour REAL DEFAULT 50,
-        plannedHours REAL DEFAULT 8,
-        role TEXT DEFAULT 'user'
-    );
-    CREATE TABLE IF NOT EXISTS materials (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        price REAL,
-        userId INTEGER
-    );
-    CREATE TABLE IF NOT EXISTS jobs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        file_name TEXT,
-        folder TEXT,
-        file_path TEXT,
-        start_time TEXT,
-        end_time TEXT,
-        duration_minutes REAL,
-        day INTEGER,
-        month INTEGER,
-        year INTEGER,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        userId INTEGER,
-        material_id INTEGER,
-        material_name TEXT,
-        material_price REAL,
-        router_name TEXT
-    );
-`);
+        // SEED: Ensure Casadotrem exists
+        const userRes = await pool.query('SELECT * FROM users WHERE email = $1', ['casadotrem@gmail.com']);
+        if (userRes.rowCount === 0) {
+            console.log("[SEED] Criando conta administradora casadotrem@gmail.com...");
+            const hash = bcrypt.hashSync('123456', 10);
+            await pool.query('INSERT INTO users (email, password, role) VALUES ($1, $2, $3)', ['casadotrem@gmail.com', hash, 'admin']);
+        }
 
-// AUTO-SEED: Ensure Casadotrem exists as admin on startup
-try {
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get('casadotrem@gmail.com');
-    if (!user) {
-        console.log("[SEED] Criando conta administradora casadotrem@gmail.com...");
-        const hash = bcrypt.hashSync('123456', 10);
-        db.prepare('INSERT INTO users (email, password, role) VALUES (?, ?, ?)')
-            .run('casadotrem@gmail.com', hash, 'admin');
-    }
-
-    // SEED MATERIALS: Evita que sumam em redeploys sem volume persistente
-    const materialsCount = db.prepare('SELECT count(*) as count FROM materials').get().count;
-    if (materialsCount === 0) {
-        console.log("[SEED] Populando materiais padrão...");
-        const masterUser = db.prepare('SELECT id FROM users WHERE email = ?').get('casadotrem@gmail.com');
-        if (masterUser) {
-            const defaultMaterials = [
-                { name: "mdf 15mm", price: 180 },
-                { name: "mdf 9mm", price: 100 },
-                { name: "mdf 9mm naval", price: 250 },
-                { name: "mdf 6mm", price: 90 },
-                { name: "mdf 3mm", price: 80 },
-                { name: "pvc", price: 60 },
-                { name: "pvc +", price: 120 },
-                { name: "isopor N", price: 60 },
-                { name: "isopor +", price: 120 }
-            ];
-            const insertMat = db.prepare('INSERT INTO materials (name, price, userId) VALUES (?, ?, ?)');
-            for (const m of defaultMaterials) {
-                insertMat.run(m.name, m.price, masterUser.id);
+        // SEED MATERIALS
+        const matRes = await pool.query('SELECT count(*) as count FROM materials');
+        if (parseInt(matRes.rows[0].count) === 0) {
+            console.log("[SEED] Populando materiais padrão...");
+            const masterUser = (await pool.query('SELECT id FROM users WHERE email = $1', ['casadotrem@gmail.com'])).rows[0];
+            if (masterUser) {
+                const defaultMaterials = [
+                    ["mdf 15mm", 180, masterUser.id],
+                    ["mdf 9mm", 100, masterUser.id],
+                    ["mdf 9mm naval", 250, masterUser.id],
+                    ["mdf 6mm", 90, masterUser.id],
+                    ["mdf 3mm", 80, masterUser.id],
+                    ["pvc", 60, masterUser.id],
+                    ["pvc +", 120, masterUser.id],
+                    ["isopor N", 60, masterUser.id],
+                    ["isopor +", 120, masterUser.id]
+                ];
+                for (const m of defaultMaterials) {
+                    await pool.query('INSERT INTO materials (name, price, "userId") VALUES ($1, $2, $3)', m);
+                }
             }
         }
+        
+        console.log("Banco de dados PostgreSQL inicializado com sucesso.");
+        runMaintenance();
+        setInterval(runMaintenance, 24 * 60 * 60 * 1000);
+    } catch (e) {
+        console.error("Erro ao inicializar banco de dados:", e);
     }
-} catch (e) {
-    console.error("[SEED] Erro ao verificar/criar usuário/materiais master:", e);
 }
 
-// Add role column to existing databases
-try { db.prepare("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'").run(); } catch (e) { /* already exists */ }
-// Add router_name column to existing databases
-try { db.prepare("ALTER TABLE jobs ADD COLUMN router_name TEXT").run(); } catch (e) { /* already exists */ }
-// Add estimated_minutes column for progress bar feature
-try { db.prepare("ALTER TABLE jobs ADD COLUMN estimated_minutes REAL").run(); } catch (e) { /* already exists */ }
-
-// DEBOUNCE: Prevent ghost jobs when Mach3 re-triggers M101 after stop/reset
-const DEBOUNCE_SECONDS = 2; // Relaxed from 10s to allow fast cycles
-
-// STARTUP CLEANUP: Remove ghost jobs (duration 0 or < 10 seconds) from previous runs
-try {
-    const ghosts = db.prepare(`SELECT id, file_name FROM jobs WHERE (end_time IS NOT NULL AND duration_minutes < 0.16)`).all();
-    if (ghosts.length > 0) {
-        console.log(`Cleanup: removing ${ghosts.length} ghost jobs:`, ghosts.map(g => `#${g.id} ${g.file_name}`).join(', '));
-        db.prepare(`DELETE FROM jobs WHERE (end_time IS NOT NULL AND duration_minutes < 0.16)`).run();
-    }
-} catch (e) { console.error('Cleanup error:', e); }
+initDb();
 
 // Middleware to protect routes
 function authenticateToken(req, res, next) {
@@ -238,12 +183,10 @@ app.get('/health', (req, res) => res.status(200).send('OK'));
 
 app.post('/api/auth/register', async (req, res) => {
     const { email, password } = req.body;
-
-    // Validations
     if (!email || !email.includes('@')) return res.status(400).json({ error: "Email inválido" });
     if (!password || password.length < 6) return res.status(400).json({ error: "A senha deve ter no mínimo 6 caracteres" });
 
-    const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    const existingUser = (await pool.query('SELECT id FROM users WHERE email = $1', [email])).rows[0];
     if (existingUser) return res.status(400).json({ error: "Email já cadastrado" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -251,9 +194,9 @@ app.post('/api/auth/register', async (req, res) => {
     trialExpiry.setDate(trialExpiry.getDate() + 31);
 
     try {
-        const stmt = db.prepare('INSERT INTO users (email, password, plan, trial_expiry, payment_status, costPerHour, plannedHours, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
         const defaultRole = email === 'tomasdifebbo.tdf@gmail.com' ? 'admin' : 'user';
-        stmt.run(email, hashedPassword, 'starter', trialExpiry.toISOString(), 'trialing', 50, 8, defaultRole);
+        await pool.query('INSERT INTO users (email, password, plan, trial_expiry, payment_status, "costPerHour", "plannedHours", role) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', 
+            [email, hashedPassword, 'starter', trialExpiry.toISOString(), 'trialing', 50, 8, defaultRole]);
         res.json({ success: true });
     } catch (err) {
         console.error(err);
@@ -263,8 +206,7 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
-
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    const user = (await pool.query('SELECT * FROM users WHERE email = $1', [email])).rows[0];
     if (!user) return res.status(400).json({ error: "Usuário não encontrado" });
 
     const validPassword = await bcrypt.compare(password, user.password);
@@ -274,15 +216,14 @@ app.post('/api/auth/login', async (req, res) => {
     res.json({ success: true, token, user: { id: user.id, email: user.email, plan: user.plan, role: user.role } });
 });
 
-app.get('/api/user/me', authenticateToken, (req, res) => {
-    closeStaleJobs(req.user.id);
-    let user = db.prepare('SELECT id, email, plan, trial_expiry, payment_status, costPerHour, plannedHours, role FROM users WHERE id = ?').get(req.user.id);
+app.get('/api/user/me', authenticateToken, async (req, res) => {
+    await closeStaleJobs(req.user.id);
+    let user = (await pool.query('SELECT id, email, plan, trial_expiry, payment_status, "costPerHour", "plannedHours", role FROM users WHERE id = $1', [req.user.id])).rows[0];
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
 
-    // Auto-promote master account directly on profile fetch
     const masterEmails = ['tomasdifebbo.tdf@gmail.com', 'admin@mach3.com', 'casadotrem@gmail.com'];
     if (masterEmails.includes(user.email) && user.role !== 'admin') {
-        db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(user.id);
+        await pool.query("UPDATE users SET role = 'admin' WHERE id = $1", [user.id]);
         user.role = 'admin';
     }
 
@@ -290,361 +231,175 @@ app.get('/api/user/me', authenticateToken, (req, res) => {
     res.json({ ...user, settings });
 });
 
-app.patch('/api/user/settings', authenticateToken, (req, res) => {
+app.patch('/api/user/settings', authenticateToken, async (req, res) => {
     const { costPerHour, plannedHours } = req.body;
     let cost = Number(costPerHour);
     let planned = Number(plannedHours);
-
     if (isNaN(cost) || isNaN(planned)) return res.status(400).json({ error: "Valores inválidos" });
 
-    db.prepare('UPDATE users SET costPerHour = ?, plannedHours = ? WHERE id = ?').run(cost, planned, req.user.id);
-
-    const user = db.prepare('SELECT id, email, plan, costPerHour, plannedHours, role FROM users WHERE id = ?').get(req.user.id);
+    await pool.query('UPDATE users SET "costPerHour" = $1, "plannedHours" = $2 WHERE id = $3', [cost, planned, req.user.id]);
+    const user = (await pool.query('SELECT id, email, plan, "costPerHour", "plannedHours", role FROM users WHERE id = $1', [req.user.id])).rows[0];
     res.json({ success: true, user: { ...user, settings: { costPerHour: user.costPerHour, plannedHours: user.plannedHours } } });
 });
 
-// ================= ADMIN ROUTES =================
-app.post('/api/admin/make-master', async (req, res) => {
-    // Bootstrap endpoint: localhost only (blocked in production behind proxy)
-    const ip = req.ip || '';
-    const isLocal = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
-    if (!isLocal) return res.status(403).json({ error: "Only available from localhost" });
-    if (req.body.secret !== JWT_SECRET) return res.status(403).json({ error: "Invalid secret" });
-    const email = req.body.email || 'tomasdifebbo.tdf@gmail.com';
-    db.prepare("UPDATE users SET role = 'admin' WHERE email = ?").run(email);
-    res.json({ success: true, message: `User ${email} is now admin` });
-});
-
-app.get('/api/admin/users', authenticateToken, authenticateAdmin, (req, res) => {
-    const users = db.prepare('SELECT id, email, plan, payment_status, trial_expiry, role FROM users ORDER BY id DESC').all();
+app.get('/api/admin/users', authenticateToken, authenticateAdmin, async (req, res) => {
+    const users = (await pool.query('SELECT id, email, plan, payment_status, trial_expiry, role FROM users ORDER BY id DESC')).rows;
     res.json(users);
 });
 
-app.patch('/api/admin/users/:id/plan', authenticateToken, authenticateAdmin, (req, res) => {
+app.patch('/api/admin/users/:id/plan', authenticateToken, authenticateAdmin, async (req, res) => {
     const { plan, addDays } = req.body;
-    let updates = [];
-    let values = [];
-
-    if (plan) {
-        updates.push("plan = ?");
-        values.push(plan);
-    }
-
+    if (plan) await pool.query('UPDATE users SET plan = $1 WHERE id = $2', [plan, req.params.id]);
     if (addDays) {
-        // Extend trial
-        const user = db.prepare('SELECT trial_expiry FROM users WHERE id = ?').get(req.params.id);
+        const user = (await pool.query('SELECT trial_expiry FROM users WHERE id = $1', [req.params.id])).rows[0];
         const currentExp = user.trial_expiry ? new Date(user.trial_expiry) : new Date();
         currentExp.setDate(currentExp.getDate() + Number(addDays));
-        updates.push("trial_expiry = ?");
-        values.push(currentExp.toISOString());
+        await pool.query('UPDATE users SET trial_expiry = $1 WHERE id = $2', [currentExp.toISOString(), req.params.id]);
     }
-
-    if (updates.length > 0) {
-        values.push(req.params.id);
-        db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...values);
-    }
-
     res.json({ success: true });
 });
 
-app.post('/api/payments/create-preference', authenticateToken, async (req, res) => {
-    const { planType } = req.body;
-    const plans = {
-        'starter': { title: 'Plano Starter (Mensal)', price: 49.00 },
-        'pro': { title: 'Plano Profissional (Mensal)', price: 149.00 },
-        'business': { title: 'Plano Business (Mensal)', price: 349.00 }
-    };
-
-    const selectedPlan = plans[planType];
-    if (!selectedPlan) return res.status(400).json({ error: "Plano inválido" });
-
-    try {
-        const body = {
-            items: [
-                {
-                    title: selectedPlan.title,
-                    quantity: 1,
-                    unit_price: selectedPlan.price,
-                    currency_id: 'BRL'
-                }
-            ],
-            external_reference: req.user.id.toString(),
-            metadata: { user_id: req.user.id, plan_type: planType },
-            notification_url: `${DOMAIN}/api/payments/webhook`,
-            back_urls: {
-                success: `${DOMAIN}/#dashboard`,
-                failure: `${DOMAIN}/#settings`,
-                pending: `${DOMAIN}/#settings`
-            },
-            auto_return: 'approved'
-        };
-
-        const response = await preference.create({ body });
-        res.json({ id: response.id, init_point: response.init_point });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Erro ao criar preferência" });
-    }
-});
-
-app.post('/api/payments/webhook', async (req, res) => {
-    const { type, data } = req.body;
-    if (type === 'payment') {
-        const paymentId = data.id;
-        try {
-            const paymentInfo = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-                headers: { 'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}` }
-            }).then(r => r.json());
-
-            const userId = parseInt(paymentInfo.external_reference);
-            const planType = paymentInfo.metadata?.plan_type;
-
-            if (paymentInfo.status === 'approved' && userId && planType) {
-                const expiry = new Date();
-                expiry.setMonth(expiry.getMonth() + 1);
-
-                db.prepare('UPDATE users SET plan = ?, payment_status = ?, trial_expiry = ? WHERE id = ?')
-                    .run(planType, 'paid', expiry.toISOString(), userId);
-                console.log(`PAGAMENTO APROVADO: User ${userId} agora é ${planType}`);
-            }
-        } catch (err) {
-            console.error('Webhook Error:', err);
-        }
-    }
-    res.sendStatus(200);
-});
-
-app.post('/api/jobs', authenticateToken, (req, res) => {
+app.post('/api/jobs', authenticateToken, async (req, res) => {
     const { file_name, folder, file_path, start_time, router_name, estimated_minutes } = req.body;
     const userId = req.user.id;
-
     let dt = start_time ? new Date(start_time) : new Date();
     let cleanFolder = folder || 'Desconhecido';
     let cleanFileName = file_name || 'Desconhecido';
+    const DEBOUNCE_SECONDS = 2;
 
     if (cleanFileName.includes('\\') || cleanFileName.includes('/')) {
         const pathParts = cleanFileName.replace(/\\/g, '/').split('/').filter(p => p.length > 0);
         if (pathParts.length > 0) cleanFileName = pathParts[pathParts.length - 1];
     }
-    // Now keep cleanFolder as the provided path, but cleaned of the router prefix if it exists
-    if (cleanFolder && cleanFolder.includes(' | ')) {
-        cleanFolder = cleanFolder.split(' | ').pop();
-    }
+    if (cleanFolder && cleanFolder.includes(' | ')) cleanFolder = cleanFolder.split(' | ').pop();
 
-    // DEBOUNCE: Check if this START is too close to the last event for THIS router
-    const routerName = router_name || null;
-    let lastJobQuery = 'SELECT start_time, end_time FROM jobs WHERE userId = ?';
-    let lastJobArgs = [userId];
-    if (routerName) {
-        lastJobQuery += ' AND router_name = ?';
-        lastJobArgs.push(routerName);
-    }
-    lastJobQuery += ' ORDER BY id DESC LIMIT 1';
-
-    const lastJob = db.prepare(lastJobQuery).get(...lastJobArgs);
+    const lastJob = (await pool.query('SELECT start_time, end_time FROM jobs WHERE "userId" = $1 AND router_name = $2 ORDER BY id DESC LIMIT 1', [userId, router_name || null])).rows[0];
     if (lastJob) {
         const lastEventTime = new Date(lastJob.end_time || lastJob.start_time);
         const diffSeconds = (dt - lastEventTime) / 1000;
         if (diffSeconds >= 0 && diffSeconds < DEBOUNCE_SECONDS) {
-            console.log(`DEBOUNCE [${routerName}]: Ignoring START (${diffSeconds.toFixed(1)}s < ${DEBOUNCE_SECONDS}s)`);
             return res.json({ id: null, success: true, debounced: true });
         }
     }
 
-    // AUTO-CLOSE PREVIOUS JOBS FROM THE SAME ROUTER
-    let queryArgs = [userId];
-    let openJobsQuery = 'SELECT id, start_time FROM jobs WHERE userId = ? AND end_time IS NULL';
-    if (routerName) {
-        openJobsQuery += ' AND router_name = ?';
-        queryArgs.push(routerName);
-    }
-    const openJobs = db.prepare(openJobsQuery).all(...queryArgs);
-    const updateJob = db.prepare('UPDATE jobs SET end_time = ?, duration_minutes = ? WHERE id = ?');
-    const deleteShortJob = db.prepare('DELETE FROM jobs WHERE id = ?');
-
-    const tx = db.transaction(() => {
-        for (const j of openJobs) {
-            const prevStart = new Date(j.start_time);
-            // If the next job starts AFTER this one, close this one at that time.
-            if (dt > prevStart) {
-                const duration = Math.max(0, (dt - prevStart) / (1000 * 60));
-                if (duration < 0.05) {
-                    deleteShortJob.run(j.id);
-                } else {
-                    updateJob.run(dt.toISOString(), duration, j.id);
-                }
-            } else {
-                // If the next job somehow has an earlier timestamp (log out of order), 
-                // just close it with a 1-second duration to clear the queue without breaking logic
-                updateJob.run(new Date(prevStart.getTime() + 1000).toISOString(), 0.01, j.id);
-            }
+    const openJobs = (await pool.query('SELECT id, start_time FROM jobs WHERE "userId" = $1 AND end_time IS NULL AND router_name = $2', [userId, router_name || null])).rows;
+    for (const j of openJobs) {
+        const prevStart = new Date(j.start_time);
+        if (dt > prevStart) {
+            const duration = Math.max(0, (dt - prevStart) / (1000 * 60));
+            if (duration < 0.05) await pool.query('DELETE FROM jobs WHERE id = $1', [j.id]);
+            else await pool.query('UPDATE jobs SET end_time = $1, duration_minutes = $2 WHERE id = $3', [dt.toISOString(), duration, j.id]);
+        } else {
+            await pool.query('UPDATE jobs SET end_time = $1, duration_minutes = 0.01 WHERE id = $2', [new Date(prevStart.getTime() + 1000).toISOString(), j.id]);
         }
+    }
 
-        const estMin = estimated_minutes ? parseFloat(estimated_minutes) : null;
-        const matId = req.body.material_id || null;
-        const matName = req.body.material_name || null;
-        const matPrice = req.body.material_price || null;
-
-        const r = db.prepare('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, userId, router_name, estimated_minutes, material_id, material_name, material_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-            .run(cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, routerName, estMin, matId, matName, matPrice);
-        return r.lastInsertRowid;
-    });
-
-    const newId = tx();
-    console.log(`NEW JOB #${newId}: ${cleanFileName} (${cleanFolder})`);
-    res.json({ id: newId, success: true });
+    const estMin = estimated_minutes ? parseFloat(estimated_minutes) : null;
+    const result = await pool.query('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, "userId", router_name, estimated_minutes, material_id, material_name, material_price) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id', 
+        [cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, router_name || null, estMin, req.body.material_id || null, req.body.material_name || null, req.body.material_price || null]);
+    
+    res.json({ id: result.rows[0].id, success: true });
 });
 
-app.patch('/api/jobs/latest', authenticateToken, (req, res) => {
+app.patch('/api/jobs/latest', authenticateToken, async (req, res) => {
     const { end_time, router_name } = req.body;
     const userId = req.user.id;
     const dt = end_time ? new Date(end_time) : new Date();
 
-    // Match by router_name first (multi-router support), fallback to any open job
-    let row;
-    if (router_name) {
-        // Find the LATEST open job for THIS router that started BEFORE the provided end_time
-        row = db.prepare('SELECT * FROM jobs WHERE userId = ? AND end_time IS NULL AND router_name = ? AND start_time <= ? ORDER BY start_time DESC LIMIT 1').get(userId, router_name, dt.toISOString());
-    }
-    if (!row) {
-        row = db.prepare('SELECT * FROM jobs WHERE userId = ? AND end_time IS NULL AND start_time <= ? ORDER BY start_time DESC LIMIT 1').get(userId, dt.toISOString());
-    }
-    if (!row) {
-        console.log(`[404] No open job to close for user ${userId} / router ${router_name || 'ANY'} at ${dt.toISOString()}`);
-        return res.status(404).json({ error: "No open jobs found (or start_time is in the future relative to end_time)" });
-    }
+    const row = (await pool.query('SELECT * FROM jobs WHERE "userId" = $1 AND end_time IS NULL AND router_name = $2 AND start_time <= $3 ORDER BY start_time DESC LIMIT 1', [userId, router_name || null, dt.toISOString()])).rows[0];
+    if (!row) return res.status(404).json({ error: "No open jobs found" });
 
     const startDt = new Date(row.start_time);
     const durationMinutes = (dt - startDt) / (1000 * 60);
 
-    // Relaxed ghost deletion: Only delete if duration is less than 3 seconds (0.05 mins)
     if (durationMinutes < 0.05) {
-        db.prepare('DELETE FROM jobs WHERE id = ?').run(row.id);
-        console.log(`GHOST JOB DELETED: ${row.file_name} (${(durationMinutes * 60).toFixed(1)}s)`);
-        return res.json({ id: row.id, deleted: true, reason: "< 3s" });
+        await pool.query('DELETE FROM jobs WHERE id = $1', [row.id]);
+        return res.json({ id: row.id, deleted: true });
     }
 
-    db.prepare('UPDATE jobs SET end_time = ?, duration_minutes = ? WHERE id = ?').run(dt.toISOString(), durationMinutes, row.id);
+    await pool.query('UPDATE jobs SET end_time = $1, duration_minutes = $2 WHERE id = $3', [dt.toISOString(), durationMinutes, row.id]);
     res.json({ id: row.id, duration_minutes: durationMinutes, success: true });
 });
 
-app.get('/api/jobs', authenticateToken, (req, res) => {
-    closeStaleJobs(req.user.id);
-    const jobs = db.prepare('SELECT * FROM jobs WHERE userId = ? ORDER BY id DESC').all(req.user.id);
+app.get('/api/jobs', authenticateToken, async (req, res) => {
+    await closeStaleJobs(req.user.id);
+    const jobs = (await pool.query('SELECT * FROM jobs WHERE "userId" = $1 ORDER BY id DESC', [req.user.id])).rows;
     res.json(jobs);
 });
 
-app.patch('/api/jobs/:id', authenticateToken, (req, res) => {
+app.patch('/api/jobs/:id', authenticateToken, async (req, res) => {
     const { material_id, material_name, material_price, folder, file_name, start_time, end_time } = req.body;
-    
-    let updates = [];
-    let values = [];
-    
-    if (material_id !== undefined) { updates.push("material_id = ?"); values.push(material_id); }
-    if (material_name !== undefined) { updates.push("material_name = ?"); values.push(material_name); }
-    if (material_price !== undefined) { updates.push("material_price = ?"); values.push(material_price); }
-    if (folder !== undefined) { updates.push("folder = ?"); values.push(folder); }
-    if (file_name !== undefined) { updates.push("file_name = ?"); values.push(file_name); }
-    if (start_time !== undefined) { updates.push("start_time = ?"); values.push(start_time); }
-    if (end_time !== undefined) { updates.push("end_time = ?"); values.push(end_time); }
-    
-    if (updates.length === 0) return res.status(400).json({ error: "No fields to update" });
-    
+    const fields = [];
+    const values = [];
+    let idx = 1;
+
+    if (material_id !== undefined) { fields.push(`material_id = $${idx++}`); values.push(material_id); }
+    if (material_name !== undefined) { fields.push(`material_name = $${idx++}`); values.push(material_name); }
+    if (material_price !== undefined) { fields.push(`material_price = $${idx++}`); values.push(material_price); }
+    if (folder !== undefined) { fields.push(`folder = $${idx++}`); values.push(folder); }
+    if (file_name !== undefined) { fields.push(`file_name = $${idx++}`); values.push(file_name); }
+    if (start_time !== undefined) { fields.push(`start_time = $${idx++}`); values.push(start_time); }
+    if (end_time !== undefined) { fields.push(`end_time = $${idx++}`); values.push(end_time); }
+
+    if (fields.length === 0) return res.status(400).json({ error: "No fields to update" });
     values.push(req.params.id, req.user.id);
-    const info = db.prepare(`UPDATE jobs SET ${updates.join(', ')} WHERE id = ? AND userId = ?`).run(...values);
-
-    if (info.changes > 0) res.json({ success: true });
+    const result = await pool.query(`UPDATE jobs SET ${fields.join(', ')} WHERE id = $${idx++} AND "userId" = $${idx++}`, values);
+    if (result.rowCount > 0) res.json({ success: true });
     else res.status(404).json({ error: "Job not found" });
 });
 
-app.delete('/api/jobs/:id', authenticateToken, (req, res) => {
-    const info = db.prepare('DELETE FROM jobs WHERE id = ? AND userId = ?').run(req.params.id, req.user.id);
-    if (info.changes > 0) res.json({ success: true });
+app.delete('/api/jobs/:id', authenticateToken, async (req, res) => {
+    const result = await pool.query('DELETE FROM jobs WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id]);
+    if (result.rowCount > 0) res.json({ success: true });
     else res.status(404).json({ error: "Job not found" });
 });
 
-app.get('/api/materials', authenticateToken, (req, res) => {
-    const mats = db.prepare('SELECT * FROM materials WHERE userId = ?').all(req.user.id);
+app.get('/api/materials', authenticateToken, async (req, res) => {
+    const mats = (await pool.query('SELECT * FROM materials WHERE "userId" = $1', [req.user.id])).rows;
     res.json(mats);
 });
 
-app.post('/api/materials', authenticateToken, (req, res) => {
-    try {
-        const { name, price } = req.body;
-        if (!name || price === undefined || price === null) return res.status(400).json({ error: "Name and price required" });
-
-        let parsedPrice = parseFloat(price);
-        if (isNaN(parsedPrice)) return res.status(400).json({ error: "Invalid price format" });
-
-        const result = db.prepare('INSERT INTO materials (name, price, userId) VALUES (?, ?, ?)').run(name, parsedPrice, req.user.id);
-        res.json({ success: true, material: { id: result.lastInsertRowid, name, price: parsedPrice, userId: req.user.id } });
-    } catch (err) {
-        console.error("Error saving material:", err);
-        res.status(500).json({ error: "Internal server error" });
-    }
+app.post('/api/materials', authenticateToken, async (req, res) => {
+    const { name, price } = req.body;
+    const result = await pool.query('INSERT INTO materials (name, price, "userId") VALUES ($1, $2, $3) RETURNING id', [name, parseFloat(price), req.user.id]);
+    res.json({ success: true, material: { id: result.rows[0].id, name, price, userId: req.user.id } });
 });
 
-app.delete('/api/materials/:id', authenticateToken, (req, res) => {
-    const info = db.prepare('DELETE FROM materials WHERE id = ? AND userId = ?').run(req.params.id, req.user.id);
-    if (info.changes > 0) res.json({ success: true });
+app.delete('/api/materials/:id', authenticateToken, async (req, res) => {
+    const result = await pool.query('DELETE FROM materials WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id]);
+    if (result.rowCount > 0) res.json({ success: true });
     else res.status(404).json({ error: "Material not found" });
 });
 
-app.get('/api/stats', authenticateToken, (req, res) => {
+app.get('/api/stats', authenticateToken, async (req, res) => {
     try {
-        closeStaleJobs(req.user.id);
-        const jobs = db.prepare('SELECT * FROM jobs WHERE userId = ?').all(req.user.id);
+        await closeStaleJobs(req.user.id);
+        const jobs = (await pool.query('SELECT * FROM jobs WHERE "userId" = $1', [req.user.id])).rows;
         const totalJobs = jobs.length;
-        let totalHours = 0;
-        let validCompletedJobs = 0;
-        const today = new Date();
-        let jobsToday = 0;
-
-        const hoursPerDay = {};
-        const fileCounts = {};
+        let totalHours = 0, validCompletedJobs = 0, jobsToday = 0;
+        const today = new Date(), hoursPerDay = {}, fileCounts = {};
 
         jobs.forEach(j => {
             const startDt = new Date(j.start_time);
-            const isToday = startDt.getDate() === today.getDate() && startDt.getMonth() === today.getMonth() && startDt.getFullYear() === today.getFullYear();
-            if (isToday) jobsToday++;
-
+            if (startDt.toDateString() === today.toDateString()) jobsToday++;
             if (j.end_time) {
                 let dur = j.duration_minutes || 0;
                 if (dur > 0.16) {
                     validCompletedJobs++;
                     totalHours += (dur / 60);
-
-                    const pad = n => n.toString().padStart(2, '0');
-                    const dateKey = `${pad(startDt.getDate())}/${pad(startDt.getMonth() + 1)}`;
-
-                    if (!hoursPerDay[dateKey]) hoursPerDay[dateKey] = 0;
-                    hoursPerDay[dateKey] += (dur / 60);
-
-                    if (!fileCounts[j.file_name]) fileCounts[j.file_name] = 0;
-                    fileCounts[j.file_name]++;
+                    const dateKey = `${startDt.getDate().toString().padStart(2,'0')}/${(startDt.getMonth()+1).toString().padStart(2,'0')}`;
+                    hoursPerDay[dateKey] = (hoursPerDay[dateKey] || 0) + (dur / 60);
+                    fileCounts[j.file_name] = (fileCounts[j.file_name] || 0) + 1;
                 }
             }
         });
 
-        const avgJobHours = validCompletedJobs > 0 ? totalHours / validCompletedJobs : 0;
-        const sortedFiles = Object.keys(fileCounts).map(k => ({ name: k, count: fileCounts[k] })).sort((a, b) => b.count - a.count).slice(0, 10);
-
-        const sortedDays = Object.keys(hoursPerDay)
-            .sort((a, b) => {
-                const [d1, m1] = a.split('/');
-                const [d2, m2] = b.split('/');
-                const yr = new Date().getFullYear();
-                return new Date(yr, m1 - 1, d1) - new Date(yr, m2 - 1, d2);
-            }).slice(-30);
+        const sortedFiles = Object.keys(fileCounts).map(k => ({ name: k, count: fileCounts[k] })).sort((a,b) => b.count - a.count).slice(0, 10);
+        const sortedDays = Object.keys(hoursPerDay).sort().slice(-30);
 
         res.json({
-            totalJobs,
-            totalHours,
-            avgJobHours,
-            jobsToday,
-            dailyHoursLabels: sortedDays,
-            dailyHoursData: sortedDays.map(d => hoursPerDay[d]),
-            topFiles: sortedFiles
+            totalJobs, totalHours, jobsToday, avgJobHours: validCompletedJobs > 0 ? totalHours / validCompletedJobs : 0,
+            dailyHoursLabels: sortedDays, dailyHoursData: sortedDays.map(d => hoursPerDay[d]), topFiles: sortedFiles
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -652,5 +407,5 @@ app.get('/api/stats', authenticateToken, (req, res) => {
 });
 
 app.listen(port, '0.0.0.0', () => {
-    console.log(`Premium Server (SQLite) running on port ${port}`);
+    console.log(`Premium Server (PostgreSQL) running on port ${port}`);
 });
