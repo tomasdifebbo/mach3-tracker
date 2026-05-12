@@ -1,21 +1,12 @@
-FROM node:20-bullseye-slim
-
-# Install python and build tools needed for better-sqlite3 native compilation
-RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
+RUN npm install --production
 
-# Install dependencies
-RUN npm install
-
-# Copy source code
 COPY . .
 
-# Expose port
 EXPOSE 3000
 
-# Start server
 CMD ["node", "server.js"]

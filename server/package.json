@@ -1,21 +1,17 @@
 {
   "name": "mach3-tracker",
-  "version": "2.0.0",
-  "description": "Mach3 Tracker - CNC Production Monitor Backend",
+  "version": "3.0.0",
+  "description": "Mach3 Tracker - CNC Production Monitor Backend (Supabase)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^12.8.0",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^4.18.2",
-    "express-rate-limit": "^8.3.2",
-    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
-    "mercadopago": "^2.12.0",
     "pg": "^8.20.0"
   }
 }
