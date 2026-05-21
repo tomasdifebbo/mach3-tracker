@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Bell, Search, User, Zap, CheckCircle2, Clock, LogOut, Settings, Menu } from 'lucide-react';
 
-export function Header({ title, subtitle, user }) {
+export function Header({ title, subtitle, user, onMenuToggle }) {
   const expiry = user?.trial_expiry ? new Date(user.trial_expiry) : null;
   const daysLeft = expiry ? Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24)) : 0;
 
