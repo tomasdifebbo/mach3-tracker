@@ -42,14 +42,13 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   const handleExportPdf = (filterType) => {
     setExportingPdf(true);
     setShowPdfMenu(false);
-    setTimeout(() => {
-      try {
-        generateProductionReport({ jobs, user, filterType });
-      } catch (err) {
-        console.error('Erro ao gerar PDF:', err);
-      }
-      setExportingPdf(false);
-    }, 100);
+    try {
+      generateProductionReport({ jobs, user, filterType });
+    } catch (err) {
+      console.error('Erro ao gerar PDF:', err);
+      alert('Erro ao gerar PDF: ' + err.message);
+    }
+    setExportingPdf(false);
   };
   
   // Helper to group jobs by File + Folder + Day
