@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, Search, User, Zap, CheckCircle2, Clock, LogOut, Settings } from 'lucide-react';
+import { Bell, Search, User, Zap, CheckCircle2, Clock, LogOut, Settings, Menu } from 'lucide-react';
 
 export function Header({ title, subtitle, user }) {
   const expiry = user?.trial_expiry ? new Date(user.trial_expiry) : null;
@@ -16,10 +16,18 @@ export function Header({ title, subtitle, user }) {
   ];
 
   return (
-    <header className="h-20 border-b border-border flex items-center justify-between px-8 bg-bg-main/50 backdrop-blur-sm sticky top-0 z-40">
-      <div className="flex flex-col">
-        <h2 className="text-xl font-bold text-white tracking-tight">{title}</h2>
-        <p className="text-sm text-text-muted">{subtitle}</p>
+    <header className="h-20 border-b border-border flex items-center justify-between px-4 md:px-8 bg-bg-main/50 backdrop-blur-sm sticky top-0 z-40">
+      <div className="flex items-center gap-3">
+        <button 
+          onClick={onMenuToggle}
+          className="md:hidden p-2 text-text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+        >
+          <Menu size={24} />
+        </button>
+        <div className="flex flex-col">
+          <h2 className="text-lg md:text-xl font-bold text-white tracking-tight">{title}</h2>
+          <p className="text-xs md:text-sm text-text-muted hidden sm:block">{subtitle}</p>
+        </div>
       </div>
 
       <div className="flex items-center gap-6">

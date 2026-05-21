@@ -17,7 +17,7 @@ function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-export function Sidebar({ activeSection, onSectionChange, user }) {
+export function Sidebar({ activeSection, onSectionChange, user, isMobileOpen, setIsMobileOpen }) {
   const [isOpen, setIsOpen] = React.useState(true);
 
   const navItems = [
@@ -33,11 +33,22 @@ export function Sidebar({ activeSection, onSectionChange, user }) {
   }
 
   return (
-    <aside className={cn(
-      "h-screen bg-bg-sidebar border-r border-border transition-all duration-300 flex flex-col z-50",
-      isOpen ? "w-[260px]" : "w-[80px]"
-    )}>
-      {/* Header */}
+    <>
+      {/* Mobile Backdrop */}
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      <aside className={cn(
+        "fixed md:static inset-y-0 left-0 bg-bg-sidebar border-r border-border transition-all duration-300 flex flex-col z-50",
+        // Desktop widths
+        isOpen ? "md:w-[260px]" : "md:w-[80px]",
+        // Mobile visibility
+        isMobileOpen ? "translate-x-0 w-[260px]" : "-translate-x-full md:translate-x-0"
+      )}>
       <div className="p-6 border-b border-border flex items-center justify-between">
         <div className={cn("flex items-center gap-3 overflow-hidden transition-all", isOpen ? "opacity-100" : "opacity-0 w-0")}>
           <div className="w-8 h-8 bg-gradient-to-br from-accent-cyan to-accent-blue rounded-lg flex items-center justify-center text-xl shadow-lg shadow-accent-cyan/20">
@@ -98,5 +109,6 @@ export function Sidebar({ activeSection, onSectionChange, user }) {
         </button>
       </div>
     </aside>
+    </>
   );
 }

@@ -163,10 +163,10 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   };
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-4 md:space-y-6">
       {/* Filters Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 glass p-4 rounded-2xl relative z-10">
-        <div className="flex items-center gap-4 flex-1 min-w-[300px]">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 glass p-4 rounded-2xl relative z-10">
+        <div className="flex items-center gap-2 md:gap-4 flex-1 w-full md:min-w-[300px]">
           <div className="flex items-center gap-2 bg-white/5 border border-border px-4 py-2 rounded-xl focus-within:border-accent-cyan/50 flex-1">
             <Search size={18} className="text-text-muted" />
             <input 
@@ -182,17 +182,17 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
           </button>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3 justify-between w-full md:w-auto">
           <button 
             onClick={handleExportCSV}
-            className="flex items-center gap-2 px-5 py-2.5 bg-white/5 border border-border text-white font-black uppercase tracking-widest text-[11px] rounded-xl hover:bg-white/10 hover:scale-105 active:scale-95 transition-all"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 md:px-5 py-2 md:py-2.5 bg-white/5 border border-border text-white font-black uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl hover:bg-white/10 hover:scale-105 active:scale-95 transition-all"
           >
             <Download size={16} /> CSV
           </button>
           <button 
             onClick={() => handleExportPdf('all')}
             disabled={exportingPdf}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-accent-blue to-accent-cyan text-white font-black uppercase tracking-widest text-[11px] rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-accent-cyan/20 disabled:opacity-50"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 md:px-5 py-2 md:py-2.5 bg-gradient-to-r from-accent-blue to-accent-cyan text-white font-black uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-accent-cyan/20 disabled:opacity-50"
           >
             <FileDown size={16} />
             {exportingPdf ? 'Gerando...' : 'Exportar PDF'}

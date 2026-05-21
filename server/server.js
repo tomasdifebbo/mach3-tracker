@@ -115,6 +115,14 @@ async function initDb() {
                 router_name TEXT,
                 estimated_minutes REAL
             );
+            CREATE TABLE IF NOT EXISTS routers (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                status TEXT DEFAULT 'active',
+                status_note TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "userId" INTEGER
+            );
         `);
 
         // SEED: Ensure Casadotrem exists
@@ -147,6 +155,17 @@ async function initDb() {
                 }
             }
         }
+
+        // SEED ROUTERS
+        const masterUser = (await pool.query('SELECT id FROM users WHERE email = $1', ['casadotrem@gmail.com'])).rows[0];
+        if (masterUser) {
+            const routerRes = await pool.query('SELECT count(*) as count FROM routers WHERE "userId" = $1', [masterUser.id]);
+            if (parseInt(routerRes.rows[0].count) === 0) {
+                console.log("[SEED] Criando routers padrão...");
+                await pool.query('INSERT INTO routers (name, status, "userId") VALUES ($1, $2, $3)', ['Router 1', 'active', masterUser.id]);
+                await pool.query('INSERT INTO routers (name, status, "userId") VALUES ($1, $2, $3)', ['Router 2', 'maintenance', masterUser.id]);
+            }
+        }
         
         console.log("Banco de dados PostgreSQL inicializado com sucesso.");
         runMaintenance();
@@ -170,6 +189,62 @@ function authenticateToken(req, res, next) {
         next();
     });
 }
+
+// ===== ROUTERS STATUS =====
+app.get('/api/routers', authenticateToken, async (req, res) => {
+    try {
+        const routers = (await pool.query('SELECT * FROM routers WHERE "userId" = $1 ORDER BY id ASC', [req.user.id])).rows;
+        res.json(routers);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.patch('/api/routers/:id/status', authenticateToken, async (req, res) => {
+    const { status, status_note } = req.body;
+    const validStatuses = ['active', 'maintenance', 'offline'];
+    if (!validStatuses.includes(status)) {
+        return res.status(400).json({ error: `Status inválido. Use: ${validStatuses.join(', ')}` });
+    }
+    try {
+        const result = await pool.query(
+            'UPDATE routers SET status = $1, status_note = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 AND "userId" = $4',
+            [status, status_note || null, req.params.id, req.user.id]
+        );
+        if (result.rowCount > 0) {
+            const router = (await pool.query('SELECT * FROM routers WHERE id = $1', [req.params.id])).rows[0];
+            res.json({ success: true, router });
+        } else {
+            res.status(404).json({ error: 'Router não encontrada' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/routers', authenticateToken, async (req, res) => {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: 'Nome obrigatório' });
+    try {
+        const result = await pool.query(
+            'INSERT INTO routers (name, status, "userId") VALUES ($1, $2, $3) RETURNING *',
+            [name, 'active', req.user.id]
+        );
+        res.json({ success: true, router: result.rows[0] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/routers/:id', authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query('DELETE FROM routers WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id]);
+        if (result.rowCount > 0) res.json({ success: true });
+        else res.status(404).json({ error: 'Router não encontrada' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 function authenticateAdmin(req, res, next) {
     if (!req.user || req.user.role !== 'admin') {

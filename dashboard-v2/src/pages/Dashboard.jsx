@@ -7,7 +7,11 @@ import {
   DollarSign, 
   Activity,
   Play,
-  FileText
+  FileText,
+  Wrench,
+  Power,
+  WifiOff,
+  CheckCircle2
 } from 'lucide-react';
 import { 
   Chart as ChartJS, 
@@ -47,8 +51,9 @@ const formatDuration = (minutes) => {
 
 const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
-export function Dashboard({ jobs = [], user }) {
+export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
   const [elapsed, setElapsed] = useState(0);
+  const [togglingId, setTogglingId] = useState(null);
   const activeJobs = jobs.filter(j => !j.end_time);
   
   // Live Timer Effect for multiple jobs
@@ -201,7 +206,7 @@ export function Dashboard({ jobs = [], user }) {
   const sortedFolders = Object.values(groupedFolders).sort((a, b) => b.totalMinutes - a.totalMinutes).slice(0, 10);
 
   return (
-    <div className="p-8 space-y-8 animate-in fade-in duration-500">
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8 animate-in fade-in duration-500">
       {/* Active Jobs Banners */}
       <div className="space-y-4">
         {activeJobs.map(job => {
@@ -219,12 +224,12 @@ export function Dashboard({ jobs = [], user }) {
             key={job.id}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-accent-cyan/10 border border-accent-cyan/30 rounded-2xl p-6 shadow-[0_0_30px_rgba(6,182,212,0.1)]"
+            className="bg-accent-cyan/10 border border-accent-cyan/30 rounded-2xl p-4 md:p-6 shadow-[0_0_30px_rgba(6,182,212,0.1)]"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-6">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-black ${isNearEnd ? 'bg-accent-success animate-pulse' : 'bg-accent-cyan animate-pulse'}`}>
-                  <Play size={24} fill="currentColor" />
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4 md:gap-0">
+              <div className="flex items-center gap-4 md:gap-6">
+                <div className={`w-10 h-10 md:w-12 md:h-12 shrink-0 rounded-xl flex items-center justify-center text-black ${isNearEnd ? 'bg-accent-success animate-pulse' : 'bg-accent-cyan animate-pulse'}`}>
+                  <Play size={20} className="md:w-6 md:h-6" fill="currentColor" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -233,11 +238,11 @@ export function Dashboard({ jobs = [], user }) {
                     </span>
                     <h3 className="text-lg font-bold text-white uppercase truncate max-w-xs">{job.file_name}</h3>
                   </div>
-                  <p className="text-xs text-text-muted font-medium opacity-60 truncate max-w-sm">{job.folder}</p>
+                  <p className="text-xs text-text-muted font-medium opacity-60 truncate max-w-[200px] sm:max-w-sm">{job.folder}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-3xl font-mono font-bold text-accent-cyan tracking-tighter tabular-nums">
+              <div className="text-left md:text-right">
+                <div className="text-2xl md:text-3xl font-mono font-bold text-accent-cyan tracking-tighter tabular-nums">
                    {formatDuration(elapsedMin)}
                 </div>
                 {hasEstimate && (
@@ -250,12 +255,12 @@ export function Dashboard({ jobs = [], user }) {
 
             {/* Progress Bar */}
             {hasEstimate && (
-              <div className="mt-2">
-                <div className="flex items-center justify-between mb-2">
+              <div className="mt-2 md:mt-0">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-1 sm:gap-0">
                   <span className={`text-xs font-bold ${isNearEnd ? 'text-accent-success' : 'text-accent-cyan'}`}>
                     {progress.toFixed(1)}% concluído
                   </span>
-                  <span className="text-xs font-bold text-text-muted">
+                  <span className="text-[10px] sm:text-xs font-bold text-text-muted">
                     {remaining > 0 
                       ? `Faltam ${Math.floor(remaining)}min · ETA ${eta.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}` 
                       : '✅ Finalização prevista atingida!'
@@ -284,33 +289,165 @@ export function Dashboard({ jobs = [], user }) {
         })}
       </div>
 
+      {/* Router Status Panel */}
+      {routers.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {routers.map(router => {
+            const statusConfig = {
+              active: { 
+                label: 'ATIVA', 
+                color: 'text-accent-success', 
+                bg: 'bg-accent-success/10', 
+                border: 'border-accent-success/30',
+                glow: 'shadow-[0_0_20px_rgba(16,185,129,0.15)]',
+                icon: CheckCircle2,
+                dot: 'bg-accent-success'
+              },
+              maintenance: { 
+                label: 'EM MANUTENÇÃO', 
+                color: 'text-amber-400', 
+                bg: 'bg-amber-400/10', 
+                border: 'border-amber-400/30',
+                glow: 'shadow-[0_0_20px_rgba(251,191,36,0.1)]',
+                icon: Wrench,
+                dot: 'bg-amber-400'
+              },
+              offline: { 
+                label: 'OFFLINE', 
+                color: 'text-red-400', 
+                bg: 'bg-red-400/10', 
+                border: 'border-red-400/30',
+                glow: 'shadow-[0_0_20px_rgba(248,113,113,0.1)]',
+                icon: WifiOff,
+                dot: 'bg-red-400'
+              }
+            };
+            const cfg = statusConfig[router.status] || statusConfig.active;
+            const StatusIcon = cfg.icon;
+            const isActive = router.status === 'active';
+            const routerActiveJob = activeJobs.find(j => {
+              const rn = (j.router_name || '').toLowerCase();
+              const name = router.name.toLowerCase();
+              return rn === name || rn.includes(name) || name.includes(rn);
+            });
+
+            const handleToggle = async (newStatus) => {
+              setTogglingId(router.id);
+              try {
+                const { api } = await import('../services/api');
+                await api.updateRouterStatus(router.id, newStatus);
+                if (onRefresh) onRefresh();
+              } catch (err) {
+                console.error('Erro ao atualizar status:', err);
+              }
+              setTogglingId(null);
+            };
+
+            return (
+              <motion.div
+                key={router.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`${cfg.bg} border ${cfg.border} rounded-2xl p-5 ${cfg.glow} transition-all`}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl ${cfg.bg} border ${cfg.border} flex items-center justify-center ${cfg.color}`}>
+                      <StatusIcon size={20} className={router.status === 'maintenance' ? 'animate-[spin_3s_linear_infinite]' : ''} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">{router.name}</h4>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <div className={`w-2 h-2 rounded-full ${cfg.dot} ${isActive ? 'animate-pulse' : ''}`} />
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${cfg.color}`}>
+                          {cfg.label}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {routerActiveJob && (
+                    <div className="text-right">
+                      <div className="text-[9px] font-bold text-accent-cyan uppercase">Cortando</div>
+                      <div className="text-[10px] font-bold text-white truncate max-w-[120px]">{routerActiveJob.file_name}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Status Toggle Buttons */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleToggle('active')}
+                    disabled={togglingId === router.id}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                      router.status === 'active'
+                        ? 'bg-accent-success/20 text-accent-success border border-accent-success/40'
+                        : 'bg-white/5 text-text-muted border border-white/10 hover:bg-accent-success/10 hover:text-accent-success hover:border-accent-success/30'
+                    }`}
+                  >
+                    <Power size={12} /> Ativa
+                  </button>
+                  <button
+                    onClick={() => handleToggle('maintenance')}
+                    disabled={togglingId === router.id}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                      router.status === 'maintenance'
+                        ? 'bg-amber-400/20 text-amber-400 border border-amber-400/40'
+                        : 'bg-white/5 text-text-muted border border-white/10 hover:bg-amber-400/10 hover:text-amber-400 hover:border-amber-400/30'
+                    }`}
+                  >
+                    <Wrench size={12} /> Manutenção
+                  </button>
+                  <button
+                    onClick={() => handleToggle('offline')}
+                    disabled={togglingId === router.id}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                      router.status === 'offline'
+                        ? 'bg-red-400/20 text-red-400 border border-red-400/40'
+                        : 'bg-white/5 text-text-muted border border-white/10 hover:bg-red-400/10 hover:text-red-400 hover:border-red-400/30'
+                    }`}
+                  >
+                    <WifiOff size={12} /> Offline
+                  </button>
+                </div>
+
+                {router.status_note && (
+                  <div className={`mt-3 text-[10px] font-medium ${cfg.color} opacity-70 italic`}>
+                    {router.status_note}
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
         {stats.map((s, i) => (
           <motion.div 
             key={i}
             whileHover={{ y: -5 }}
-            className="glass p-6 rounded-2xl group transition-all"
+            className="glass p-4 md:p-6 rounded-2xl group transition-all"
           >
-            <div className="flex justify-between items-start mb-4">
-              <div className={`p-3 rounded-xl bg-white/5 ${s.color} transition-colors group-hover:bg-white/10 group-hover:scale-110 duration-300`}>
-                <s.icon size={24} />
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0 mb-3 md:mb-4">
+              <div className={`p-2.5 md:p-3 rounded-xl bg-white/5 ${s.color} transition-colors group-hover:bg-white/10 group-hover:scale-110 duration-300`}>
+                <s.icon className="w-5 h-5 md:w-6 md:h-6" />
               </div>
-              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded bg-white/5 text-text-muted`}>
+              <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded bg-white/5 text-text-muted`}>
                 {s.trend}
               </span>
             </div>
-            <h4 className="text-sm text-text-muted font-medium mb-1">{s.label}</h4>
-            <div className="text-2xl font-bold text-white tracking-tight">{s.value}</div>
+            <h4 className="text-xs md:text-sm text-text-muted font-medium mb-1">{s.label}</h4>
+            <div className="text-lg sm:text-xl md:text-2xl font-bold text-white tracking-tight">{s.value}</div>
           </motion.div>
         ))}
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 glass p-8 rounded-3xl h-[400px]">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-lg font-bold">Produção (Últimos 7 dias)</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="lg:col-span-2 glass p-4 md:p-8 rounded-3xl h-[300px] md:h-[400px]">
+          <div className="flex items-center justify-between mb-4 md:mb-8">
+            <h3 className="text-base md:text-lg font-bold">Produção (Últimos 7 dias)</h3>
             <div className="flex items-center gap-2 text-xs text-text-muted font-bold">
               <div className="w-3 h-3 bg-accent-cyan rounded-sm"></div> Horas Máquina
             </div>
@@ -338,9 +475,9 @@ export function Dashboard({ jobs = [], user }) {
           />
         </div>
 
-        <div className="glass p-8 rounded-3xl h-[400px]">
-          <h3 className="text-lg font-bold mb-8">Materiais Usados</h3>
-          <div className="h-[250px] flex items-center justify-center">
+        <div className="glass p-4 md:p-8 rounded-3xl h-[300px] md:h-[400px]">
+          <h3 className="text-base md:text-lg font-bold mb-4 md:mb-8">Materiais Usados</h3>
+          <div className="h-[200px] md:h-[250px] flex items-center justify-center">
             {jobs.some(j => j.material_name) ? (
               <Doughnut 
                 data={{
@@ -368,11 +505,11 @@ export function Dashboard({ jobs = [], user }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-8">
         {/* Grouped Totals Table (Files) */}
-        <div className="glass p-8 rounded-3xl overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-lg font-bold">Resumo por Arquivo</h3>
+        <div className="glass p-4 md:p-8 rounded-3xl overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between mb-4 md:mb-8">
+            <h3 className="text-base md:text-lg font-bold">Resumo por Arquivo</h3>
             <span className="text-[10px] text-text-muted font-bold uppercase tracking-tighter">Tempo Somado</span>
           </div>
           <div className="overflow-x-auto">
@@ -431,9 +568,9 @@ export function Dashboard({ jobs = [], user }) {
         </div>
 
         {/* Grouped Totals Table (Folders) */}
-        <div className="glass p-8 rounded-3xl overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-lg font-bold">Resumo por Pasta/Projeto</h3>
+        <div className="glass p-4 md:p-8 rounded-3xl overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between mb-4 md:mb-8">
+            <h3 className="text-base md:text-lg font-bold">Resumo por Pasta/Projeto</h3>
             <span className="text-[10px] text-text-muted font-bold uppercase tracking-tighter">Total por Pasta</span>
           </div>
           <div className="overflow-x-auto">

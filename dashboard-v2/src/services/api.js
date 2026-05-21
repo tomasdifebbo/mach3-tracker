@@ -142,6 +142,25 @@ export const api = {
     return safeJson(resp);
   },
 
+  // Routers
+  getRouters: async () => {
+    const resp = await fetch(`${API_URL}/api/routers`, { 
+      headers: getAuthHeaders(),
+      cache: 'no-store' 
+    });
+    if (!resp.ok) return [];
+    return resp.json();
+  },
+
+  updateRouterStatus: async (id, status, status_note) => {
+    const resp = await fetch(`${API_URL}/api/routers/${id}/status`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status, status_note })
+    });
+    return safeJson(resp);
+  },
+
   // Generic REST methods
   get: async (url) => {
     const resp = await fetch(`${API_URL}/api${url}`, { headers: getAuthHeaders() });

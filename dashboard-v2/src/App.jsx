@@ -17,8 +17,10 @@ function App() {
   const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [materials, setMaterials] = useState([]);
+  const [routers, setRouters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('mach3_token'));
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Auth Check & User Data
   const loadUser = async () => {
@@ -37,12 +39,14 @@ function App() {
   const fetchData = async () => {
     if (!isLoggedIn) return;
     try {
-      const [jobsData, materialsData] = await Promise.all([
+      const [jobsData, materialsData, routersData] = await Promise.all([
         api.getJobs(),
-        api.getMaterials()
+        api.getMaterials(),
+        api.getRouters()
       ]);
       if (Array.isArray(jobsData)) setJobs(jobsData);
       if (Array.isArray(materialsData)) setMaterials(materialsData);
+      if (Array.isArray(routersData)) setRouters(routersData);
       setLoading(false);
     } catch (err) {
       console.error("Fetch failed:", err);
@@ -67,7 +71,7 @@ function App() {
 
   const renderSection = () => {
     switch (activeSection) {
-      case 'dashboard': return <Dashboard jobs={jobs} user={user} />;
+      case 'dashboard': return <Dashboard jobs={jobs} user={user} routers={routers} onRefresh={fetchData} />;
       case 'jobs': return <History jobs={jobs} materials={materials} onRefresh={fetchData} user={user} />;
       case 'charts': return <Charts jobs={jobs} />;
       case 'materials': return <Materials materials={materials} onRefresh={fetchData} />;
@@ -88,13 +92,23 @@ function App() {
 
   return (
     <div className="flex h-screen bg-bg-main overflow-hidden text-slate-200">
-      <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} user={user} />
+      <Sidebar 
+        activeSection={activeSection} 
+        onSectionChange={(section) => {
+          setActiveSection(section);
+          setIsMobileMenuOpen(false);
+        }} 
+        user={user} 
+        isMobileOpen={isMobileMenuOpen}
+        setIsMobileOpen={setIsMobileMenuOpen}
+      />
       
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden w-full">
         <Header 
           title={titles[activeSection][0]} 
           subtitle={titles[activeSection][1]} 
           user={user} 
+          onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
         
         <div className="flex-1 overflow-y-auto custom-scrollbar">
