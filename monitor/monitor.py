@@ -49,31 +49,36 @@ def find_material_match(filename):
     
     if not words: return None
     
-    # Pega as duas primeiras palavras e a combinação delas
+    # Pega as primeiras palavras e a combinação delas
     w1 = words[0]
     w2 = words[1] if len(words) > 1 else ""
+    w3 = words[2] if len(words) > 2 else ""
     phrase_2 = f"{w1} {w2}".strip()
+    phrase_3 = f"{w1} {w2} {w3}".strip()
     
     # Ordena os materiais pelo tamanho do nome (do mais longo para o mais curto)
-    # Isso garante que "MDF 15mm" seja testado antes de "MDF"
     sorted_mats = sorted(cached_materials, key=lambda x: len(x['name']), reverse=True)
     
-    # 1ª Passada: Busca por combinação exata das duas primeiras palavras
+    # 1ª Passada: Busca por combinação exata (3 palavras, 2 palavras)
     for mat in sorted_mats:
         mat_name = mat['name'].lower()
-        if mat_name == phrase_2:
+        if mat_name == phrase_3 or mat_name == phrase_2:
             return mat
             
-    # 2ª Passada: Busca se o nome do material contém tanto a primeira quanto a segunda palavra
+    # 2ª Passada: Busca se o nome do material contém as palavras chave
     for mat in sorted_mats:
         mat_name = mat['name'].lower()
+        # Verifica 3 palavras presentes
+        if w1 in mat_name and w2 and w2 in mat_name and w3 and w3 in mat_name:
+            return mat
+        # Verifica 2 palavras presentes
         if w1 in mat_name and w2 and w2 in mat_name:
             return mat
 
-    # 3ª Passada: Busca apenas pela primeira palavra (ex: apenas "MDF")
+    # 3ª Passada: Busca por palavra individual (3ª, 2ª ou 1ª)
     for mat in sorted_mats:
         mat_name = mat['name'].lower()
-        if mat_name == w1 or mat_name.startswith(w1 + " "):
+        if mat_name == w3 or mat_name == w2 or mat_name == w1 or mat_name.startswith(w1 + " "):
             return mat
                 
     return None

@@ -123,6 +123,16 @@ async function initDb() {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 "userId" INTEGER
             );
+            CREATE TABLE IF NOT EXISTS router_status_log (
+                id SERIAL PRIMARY KEY,
+                router_id INTEGER NOT NULL,
+                router_name TEXT,
+                status TEXT NOT NULL,
+                started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                ended_at TIMESTAMP,
+                duration_minutes REAL,
+                "userId" INTEGER
+            );
         `);
 
         // SEED: Ensure Casadotrem exists
@@ -167,6 +177,16 @@ async function initDb() {
             }
         }
         
+        // SEED ROUTER STATUS LOG
+        const logRes = await pool.query('SELECT count(*) as count FROM router_status_log');
+        if (parseInt(logRes.rows[0].count) === 0) {
+            console.log("[SEED] Populando histórico de status inicial...");
+            const allRouters = (await pool.query('SELECT * FROM routers')).rows;
+            for (const r of allRouters) {
+                await pool.query('INSERT INTO router_status_log (router_id, router_name, status, "userId") VALUES ($1, $2, $3, $4)', [r.id, r.name, r.status, r.userId]);
+            }
+        }
+        
         console.log("Banco de dados PostgreSQL inicializado com sucesso.");
         runMaintenance();
         setInterval(runMaintenance, 24 * 60 * 60 * 1000);
@@ -207,16 +227,36 @@ app.patch('/api/routers/:id/status', authenticateToken, async (req, res) => {
         return res.status(400).json({ error: `Status inválido. Use: ${validStatuses.join(', ')}` });
     }
     try {
-        const result = await pool.query(
+        const router = (await pool.query('SELECT * FROM routers WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id])).rows[0];
+        if (!router) return res.status(404).json({ error: 'Router não encontrada' });
+        
+        if (router.status !== status) {
+            // Close old log
+            const openLog = (await pool.query('SELECT id, started_at FROM router_status_log WHERE router_id = $1 AND ended_at IS NULL ORDER BY started_at DESC LIMIT 1', [router.id])).rows[0];
+            if (openLog) {
+                const endedAt = new Date();
+                const durationMinutes = (endedAt - new Date(openLog.started_at)) / 60000;
+                await pool.query('UPDATE router_status_log SET ended_at = $1, duration_minutes = $2 WHERE id = $3', [endedAt.toISOString(), durationMinutes, openLog.id]);
+            }
+            // Create new log
+            await pool.query('INSERT INTO router_status_log (router_id, router_name, status, "userId") VALUES ($1, $2, $3, $4)', [router.id, router.name, status, req.user.id]);
+        }
+
+        await pool.query(
             'UPDATE routers SET status = $1, status_note = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 AND "userId" = $4',
             [status, status_note || null, req.params.id, req.user.id]
         );
-        if (result.rowCount > 0) {
-            const router = (await pool.query('SELECT * FROM routers WHERE id = $1', [req.params.id])).rows[0];
-            res.json({ success: true, router });
-        } else {
-            res.status(404).json({ error: 'Router não encontrada' });
-        }
+        const updatedRouter = (await pool.query('SELECT * FROM routers WHERE id = $1', [req.params.id])).rows[0];
+        res.json({ success: true, router: updatedRouter });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/routers/status-log', authenticateToken, async (req, res) => {
+    try {
+        const logs = (await pool.query('SELECT * FROM router_status_log WHERE "userId" = $1 ORDER BY started_at DESC', [req.user.id])).rows;
+        res.json(logs);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

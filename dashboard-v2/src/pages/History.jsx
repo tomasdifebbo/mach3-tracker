@@ -39,11 +39,12 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleExportPdf = (filterType) => {
+  const handleExportPdf = async (filterType) => {
     setExportingPdf(true);
     setShowPdfMenu(false);
     try {
-      generateProductionReport({ jobs, user, filterType });
+      const routerStatusLog = await api.getRouterStatusLog();
+      generateProductionReport({ jobs, user, filterType, routerStatusLog });
     } catch (err) {
       console.error('Erro ao gerar PDF:', err);
       alert('Erro ao gerar PDF: ' + err.message);

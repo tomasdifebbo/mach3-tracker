@@ -50,7 +50,7 @@ function formatDuration(minutes) {
  * @param {Date} [options.startDate] - Start of custom date range
  * @param {Date} [options.endDate] - End of custom date range
  */
-export function generateProductionReport({ jobs = [], user = {}, filterType = 'all', startDate, endDate }) {
+export function generateProductionReport({ jobs = [], user = {}, filterType = 'all', startDate, endDate, routerStatusLog = [] }) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -92,6 +92,41 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
 
   // Sort by date
   filtered.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+
+  // ===== FILTER ROUTER STATUS LOG =====
+  let filteredLogs = [...routerStatusLog];
+  if (filterType === 'today') {
+    filteredLogs = routerStatusLog.filter(l => new Date(l.started_at).toDateString() === now.toDateString());
+  } else if (filterType === 'week') {
+    const weekAgo = new Date(now);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    filteredLogs = routerStatusLog.filter(l => new Date(l.started_at) >= weekAgo);
+  } else if (filterType === 'month') {
+    filteredLogs = routerStatusLog.filter(l => {
+      const d = new Date(l.started_at);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+  } else if (filterType === 'custom' && startDate && endDate) {
+    const s = new Date(startDate);
+    s.setHours(0, 0, 0, 0);
+    const e = new Date(endDate);
+    e.setHours(23, 59, 59, 999);
+    filteredLogs = routerStatusLog.filter(l => {
+      const d = new Date(l.started_at);
+      return d >= s && d <= e;
+    });
+  }
+
+  // Sort logs by date
+  filteredLogs.sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
+
+  const totalMaintenanceMinutes = filteredLogs
+    .filter(l => l.status === 'maintenance' || l.status === 'offline')
+    .reduce((acc, l) => {
+      const dur = l.duration_minutes || (l.ended_at ? (new Date(l.ended_at) - new Date(l.started_at)) / 60000 : (new Date() - new Date(l.started_at)) / 60000);
+      return acc + Math.max(0, dur);
+    }, 0);
+
 
   // ===== CALCULATE STATS =====
   const totalMinutes = filtered.reduce((acc, j) => {
@@ -152,14 +187,15 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
   // ===== KPI CARDS =====
   const cardY = 55;
   const cardH = 28;
-  const gap = 8;
-  const cardW = (pageWidth - 40 - gap * 3) / 4;
+  const gap = 6;
+  const cardW = (pageWidth - 40 - gap * 4) / 5;
   
   const kpis = [
     { label: 'TOTAL DE JOBS', value: `${filtered.length}`, color: [59, 130, 246] },
     { label: 'HORAS DE MAQUINA', value: `${(totalMinutes / 60).toFixed(1)}h`, color: [6, 182, 212] },
     { label: 'PRODUCAO ESTIMADA', value: `R$ ${totalCost.toFixed(2)}`, color: [245, 158, 11] },
     { label: 'PROJETOS ATIVOS', value: `${projectSummary.length}`, color: [16, 185, 129] },
+    { label: 'MANUTENCAO/OFFLINE', value: `${(totalMaintenanceMinutes / 60).toFixed(1)}h`, color: [239, 68, 68] },
   ];
 
   kpis.forEach((kpi, i) => {
@@ -307,6 +343,80 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       drawFooter(doc, pageWidth, pageHeight);
     }
   });
+
+  // ===== PAGE 3: MAINTENANCE HISTORY =====
+  if (filteredLogs.length > 0) {
+    doc.addPage('landscape');
+    
+    // Header bar for maintenance page
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pageWidth, 30, 'F');
+    doc.setFillColor(239, 68, 68); // red-500
+    doc.rect(0, 30, pageWidth, 1.5, 'F');
+
+    doc.setTextColor(239, 68, 68);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Historico de Manutencao e Paradas', 20, 18);
+
+    doc.setTextColor(148, 163, 184);
+    doc.setFontSize(9);
+    doc.text(`${filteredLogs.length} registros | ${periodLabel}`, pageWidth - 20, 18, { align: 'right' });
+
+    autoTable(doc, {
+      startY: 38,
+      head: [['Router', 'Status', 'Data Inicio', 'Hora Inicio', 'Data Fim', 'Hora Fim', 'Duracao']],
+      body: filteredLogs.map((l) => {
+        const startDt = new Date(l.started_at);
+        const endDt = l.ended_at ? new Date(l.ended_at) : null;
+        const dur = l.duration_minutes || (endDt ? (endDt - startDt) / 60000 : (new Date() - startDt) / 60000);
+        
+        let statusStr = l.status.toUpperCase();
+        if (l.status === 'maintenance') statusStr = 'MANUTENCAO';
+
+        return [
+          l.router_name || 'Desconhecido',
+          statusStr,
+          startDt.toLocaleDateString('pt-BR'),
+          startDt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+          endDt ? endDt.toLocaleDateString('pt-BR') : '-',
+          endDt ? endDt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'Atual',
+          formatDuration(Math.max(0, dur))
+        ];
+      }),
+      theme: 'plain',
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        textColor: [226, 232, 240],
+        lineColor: [51, 65, 85],
+        lineWidth: 0.1,
+      },
+      headStyles: {
+        fillColor: [30, 41, 59],
+        textColor: [239, 68, 68],
+        fontStyle: 'bold',
+        fontSize: 7.5,
+        cellPadding: 4,
+      },
+      alternateRowStyles: {
+        fillColor: [15, 23, 42],
+      },
+      columnStyles: {
+        0: { halign: 'left', fontStyle: 'bold' },
+        1: { halign: 'center' },
+        2: { halign: 'center' },
+        3: { halign: 'center' },
+        4: { halign: 'center' },
+        5: { halign: 'center' },
+        6: { halign: 'center', fontStyle: 'bold' },
+      },
+      margin: { left: 20, right: 20 },
+      didDrawPage: (data) => {
+        drawFooter(doc, pageWidth, pageHeight);
+      }
+    });
+  }
 
   // ===== SAVE =====
   const dateStr = now.toISOString().split('T')[0];

@@ -161,6 +161,15 @@ export const api = {
     return safeJson(resp);
   },
 
+  getRouterStatusLog: async () => {
+    const resp = await fetch(`${API_URL}/api/routers/status-log`, { 
+      headers: getAuthHeaders(),
+      cache: 'no-store' 
+    });
+    if (!resp.ok) return [];
+    return resp.json();
+  },
+
   // Generic REST methods
   get: async (url) => {
     const resp = await fetch(`${API_URL}/api${url}`, { headers: getAuthHeaders() });
