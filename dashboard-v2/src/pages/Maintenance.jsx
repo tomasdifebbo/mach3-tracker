@@ -24,10 +24,16 @@ export function Maintenance({ maintenance = [], routers = [], onRefresh, user })
 
   const getUrgency = (m) => {
     if (m.status !== 'pending') return 'none';
-    const mDate = new Date(m.scheduled_date);
+    
+    // Parse date without timezone shift
+    const [year, month, day] = m.scheduled_date.split('T')[0].split('-');
+    const mDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    
     if (m.scheduled_time) {
       const [h, min] = m.scheduled_time.split(':');
-      mDate.setHours(parseInt(h), parseInt(min));
+      mDate.setHours(parseInt(h), parseInt(min), 0, 0);
+    } else {
+      mDate.setHours(23, 59, 59, 999);
     }
     
     if (mDate < now) return 'overdue';

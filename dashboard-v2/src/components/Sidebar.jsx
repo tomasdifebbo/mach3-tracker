@@ -29,10 +29,13 @@ export function Sidebar({ activeSection, onSectionChange, user, maintenance = []
     
     return maintenance.some(m => {
       if (m.status === 'done' || m.status === 'cancelled') return false;
-      const mDate = new Date(m.scheduled_date);
+      const [year, month, day] = m.scheduled_date.split('T')[0].split('-');
+      const mDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       if (m.scheduled_time) {
         const [h, min] = m.scheduled_time.split(':');
-        mDate.setHours(parseInt(h), parseInt(min));
+        mDate.setHours(parseInt(h), parseInt(min), 0, 0);
+      } else {
+        mDate.setHours(23, 59, 59, 999);
       }
       return mDate <= tomorrow;
     });
