@@ -8,6 +8,7 @@ import { Dashboard } from './pages/Dashboard';
 import { History } from './pages/History';
 import { Charts } from './pages/Charts';
 import { Materials } from './pages/Materials';
+import { Maintenance } from './pages/Maintenance';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 import { Admin } from './pages/Admin';
@@ -18,6 +19,7 @@ function App() {
   const [jobs, setJobs] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [routers, setRouters] = useState([]);
+  const [maintenance, setMaintenance] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('mach3_token'));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -39,14 +41,16 @@ function App() {
   const fetchData = async () => {
     if (!isLoggedIn) return;
     try {
-      const [jobsData, materialsData, routersData] = await Promise.all([
+      const [jobsData, materialsData, routersData, maintenanceData] = await Promise.all([
         api.getJobs(),
         api.getMaterials(),
-        api.getRouters()
+        api.getRouters(),
+        api.getMaintenance()
       ]);
       if (Array.isArray(jobsData)) setJobs(jobsData);
       if (Array.isArray(materialsData)) setMaterials(materialsData);
       if (Array.isArray(routersData)) setRouters(routersData);
+      if (Array.isArray(maintenanceData)) setMaintenance(maintenanceData);
       setLoading(false);
     } catch (err) {
       console.error("Fetch failed:", err);
@@ -75,6 +79,7 @@ function App() {
       case 'jobs': return <History jobs={jobs} materials={materials} onRefresh={fetchData} user={user} />;
       case 'charts': return <Charts jobs={jobs} />;
       case 'materials': return <Materials materials={materials} onRefresh={fetchData} />;
+      case 'maintenance': return <Maintenance maintenance={maintenance} routers={routers} onRefresh={fetchData} user={user} />;
       case 'settings': return <Settings user={user} onRefresh={loadUser} />;
       case 'admin': return <Admin user={user} />;
       default: return <Dashboard jobs={jobs} user={user} />;
@@ -86,6 +91,7 @@ function App() {
     'jobs': ['Histórico', 'Registro completo de atividades'],
     'charts': ['Gráficos', 'Análise aprofundada de produção'],
     'materials': ['Materiais', 'Cadastro de insumos e preços'],
+    'maintenance': ['Manutenção', 'Agenda e histórico preventivo'],
     'settings': ['Configurações', 'Ajustes de custo e produção'],
     'admin': ['Painel Master', 'Gerenciamento avançado do SaaS']
   };
@@ -99,6 +105,7 @@ function App() {
           setIsMobileMenuOpen(false);
         }} 
         user={user} 
+        maintenance={maintenance}
         isMobileOpen={isMobileMenuOpen}
         setIsMobileOpen={setIsMobileMenuOpen}
       />

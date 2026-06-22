@@ -170,6 +170,42 @@ export const api = {
     return resp.json();
   },
 
+  // Maintenance Schedule
+  getMaintenance: async () => {
+    const resp = await fetch(`${API_URL}/api/maintenance`, { 
+      headers: getAuthHeaders(),
+      cache: 'no-store' 
+    });
+    if (!resp.ok) return [];
+    return resp.json();
+  },
+
+  createMaintenance: async (payload) => {
+    const resp = await fetch(`${API_URL}/api/maintenance`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload)
+    });
+    return safeJson(resp);
+  },
+
+  updateMaintenance: async (id, payload) => {
+    const resp = await fetch(`${API_URL}/api/maintenance/${id}`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload)
+    });
+    return safeJson(resp);
+  },
+
+  deleteMaintenance: async (id) => {
+    const resp = await fetch(`${API_URL}/api/maintenance/${id}`, { 
+      method: 'DELETE', 
+      headers: getAuthHeaders() 
+    });
+    return safeJson(resp);
+  },
+
   // Generic REST methods
   get: async (url) => {
     const resp = await fetch(`${API_URL}/api${url}`, { headers: getAuthHeaders() });

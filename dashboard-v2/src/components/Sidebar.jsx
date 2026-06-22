@@ -8,7 +8,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Crown
+  Crown,
+  ClipboardList
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -17,14 +18,32 @@ function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-export function Sidebar({ activeSection, onSectionChange, user, isMobileOpen, setIsMobileOpen }) {
+export function Sidebar({ activeSection, onSectionChange, user, maintenance = [], isMobileOpen, setIsMobileOpen }) {
   const [isOpen, setIsOpen] = React.useState(true);
+
+  // Check if there is an urgent maintenance
+  const hasUrgentMaintenance = React.useMemo(() => {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    return maintenance.some(m => {
+      if (m.status === 'done' || m.status === 'cancelled') return false;
+      const mDate = new Date(m.scheduled_date);
+      if (m.scheduled_time) {
+        const [h, min] = m.scheduled_time.split(':');
+        mDate.setHours(parseInt(h), parseInt(min));
+      }
+      return mDate <= tomorrow;
+    });
+  }, [maintenance]);
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'jobs', label: 'Histórico', icon: History },
     { id: 'charts', label: 'Gráficos', icon: BarChart3 },
     { id: 'materials', label: 'Materiais', icon: Box },
+    { id: 'maintenance', label: 'Manutenção', icon: ClipboardList, badge: hasUrgentMaintenance },
     { id: 'settings', label: 'Configurações', icon: Settings },
   ];
 
@@ -80,7 +99,15 @@ export function Sidebar({ activeSection, onSectionChange, user, isMobileOpen, se
                 : "text-text-muted hover:bg-white/5 hover:text-white"
             )}
           >
-            <item.icon size={22} className={cn("shrink-0", activeSection === item.id ? "text-accent-cyan" : "group-hover:text-white")} />
+            <div className="relative">
+              <item.icon size={22} className={cn("shrink-0", activeSection === item.id ? "text-accent-cyan" : "group-hover:text-white")} />
+              {item.badge && (
+                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                </span>
+              )}
+            </div>
             <span className={cn("whitespace-nowrap transition-all", isOpen ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none w-0")}>
               {item.label}
             </span>

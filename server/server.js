@@ -133,6 +133,21 @@ async function initDb() {
                 duration_minutes REAL,
                 "userId" INTEGER
             );
+            CREATE TABLE IF NOT EXISTS maintenance_schedule (
+                id SERIAL PRIMARY KEY,
+                router_id INTEGER NOT NULL,
+                router_name TEXT,
+                scheduled_date DATE NOT NULL,
+                scheduled_time TIME,
+                type TEXT DEFAULT 'preventive',
+                description TEXT,
+                parts_replaced TEXT,
+                status TEXT DEFAULT 'pending',
+                completed_at TIMESTAMP,
+                technician TEXT,
+                "userId" INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         `);
 
         // SEED: Ensure Casadotrem exists
@@ -257,6 +272,70 @@ app.get('/api/routers/status-log', authenticateToken, async (req, res) => {
     try {
         const logs = (await pool.query('SELECT * FROM router_status_log WHERE "userId" = $1 ORDER BY started_at DESC', [req.user.id])).rows;
         res.json(logs);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ===== MAINTENANCE SCHEDULE =====
+app.get('/api/maintenance', authenticateToken, async (req, res) => {
+    try {
+        const records = (await pool.query('SELECT * FROM maintenance_schedule WHERE "userId" = $1 ORDER BY scheduled_date ASC, scheduled_time ASC', [req.user.id])).rows;
+        res.json(records);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/maintenance', authenticateToken, async (req, res) => {
+    const { router_id, router_name, scheduled_date, scheduled_time, type, description, technician } = req.body;
+    if (!router_id || !scheduled_date || !description) return res.status(400).json({ error: 'Faltam dados obrigatórios' });
+    try {
+        const result = await pool.query(
+            'INSERT INTO maintenance_schedule (router_id, router_name, scheduled_date, scheduled_time, type, description, technician, "userId") VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            [router_id, router_name, scheduled_date, scheduled_time || null, type || 'preventive', description, technician || null, req.user.id]
+        );
+        res.json({ success: true, maintenance: result.rows[0] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.patch('/api/maintenance/:id', authenticateToken, async (req, res) => {
+    const { status, parts_replaced, completed_at, description, scheduled_date, scheduled_time, technician } = req.body;
+    try {
+        const maintenance = (await pool.query('SELECT * FROM maintenance_schedule WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id])).rows[0];
+        if (!maintenance) return res.status(404).json({ error: 'Manutenção não encontrada' });
+        
+        let query = 'UPDATE maintenance_schedule SET ';
+        let values = [];
+        let index = 1;
+        
+        if (status !== undefined) { query += `status = $${index++}, `; values.push(status); }
+        if (parts_replaced !== undefined) { query += `parts_replaced = $${index++}, `; values.push(parts_replaced); }
+        if (completed_at !== undefined) { query += `completed_at = $${index++}, `; values.push(completed_at); }
+        if (description !== undefined) { query += `description = $${index++}, `; values.push(description); }
+        if (scheduled_date !== undefined) { query += `scheduled_date = $${index++}, `; values.push(scheduled_date); }
+        if (scheduled_time !== undefined) { query += `scheduled_time = $${index++}, `; values.push(scheduled_time); }
+        if (technician !== undefined) { query += `technician = $${index++}, `; values.push(technician); }
+        
+        if (values.length === 0) return res.json({ success: true, maintenance });
+        
+        query = query.slice(0, -2) + ` WHERE id = $${index++} AND "userId" = $${index} RETURNING *`;
+        values.push(req.params.id, req.user.id);
+        
+        const result = await pool.query(query, values);
+        res.json({ success: true, maintenance: result.rows[0] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/maintenance/:id', authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query('DELETE FROM maintenance_schedule WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id]);
+        if (result.rowCount > 0) res.json({ success: true });
+        else res.status(404).json({ error: 'Manutenção não encontrada' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
