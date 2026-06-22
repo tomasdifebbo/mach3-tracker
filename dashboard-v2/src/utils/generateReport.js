@@ -50,7 +50,7 @@ function formatDuration(minutes) {
  * @param {Date} [options.startDate] - Start of custom date range
  * @param {Date} [options.endDate] - End of custom date range
  */
-export function generateProductionReport({ jobs = [], user = {}, filterType = 'all', startDate, endDate, routerStatusLog = [] }) {
+export function generateProductionReport({ jobs = [], user = {}, filterType = 'all', startDate, endDate, routerStatusLog = [], maintenanceSchedule = [] }) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -119,6 +119,32 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
 
   // Sort logs by date
   filteredLogs.sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
+
+  // ===== FILTER MAINTENANCE SCHEDULE =====
+  let filteredMaintenance = [...maintenanceSchedule];
+  if (filterType === 'today') {
+    filteredMaintenance = maintenanceSchedule.filter(m => new Date(m.scheduled_date).toDateString() === now.toDateString());
+  } else if (filterType === 'week') {
+    const weekAgo = new Date(now);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    filteredMaintenance = maintenanceSchedule.filter(m => new Date(m.scheduled_date) >= weekAgo);
+  } else if (filterType === 'month') {
+    filteredMaintenance = maintenanceSchedule.filter(m => {
+      const d = new Date(m.scheduled_date);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+  } else if (filterType === 'custom' && startDate && endDate) {
+    const s = new Date(startDate);
+    s.setHours(0, 0, 0, 0);
+    const e = new Date(endDate);
+    e.setHours(23, 59, 59, 999);
+    filteredMaintenance = maintenanceSchedule.filter(m => {
+      const d = new Date(m.scheduled_date);
+      return d >= s && d <= e;
+    });
+  }
+  
+  filteredMaintenance.sort((a, b) => new Date(b.scheduled_date) - new Date(a.scheduled_date));
 
   const totalMaintenanceMinutes = filteredLogs
     .filter(l => l.status === 'maintenance' || l.status === 'offline')
@@ -410,6 +436,83 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
         4: { halign: 'center' },
         5: { halign: 'center' },
         6: { halign: 'center', fontStyle: 'bold' },
+      },
+      margin: { left: 20, right: 20 },
+      didDrawPage: (data) => {
+        drawFooter(doc, pageWidth, pageHeight);
+      }
+    });
+  }
+
+  // ===== PAGE 4: MAINTENANCE SERVICES =====
+  if (filteredMaintenance.length > 0) {
+    doc.addPage('landscape');
+    
+    // Header bar for maintenance page
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pageWidth, 30, 'F');
+    doc.setFillColor(16, 185, 129); // emerald-500
+    doc.rect(0, 30, pageWidth, 1.5, 'F');
+
+    doc.setTextColor(16, 185, 129);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Registro de Servicos e Pecas Trocadas', 20, 18);
+
+    doc.setTextColor(148, 163, 184);
+    doc.setFontSize(9);
+    doc.text(`${filteredMaintenance.length} registros | ${periodLabel}`, pageWidth - 20, 18, { align: 'right' });
+
+    autoTable(doc, {
+      startY: 38,
+      head: [['Router', 'Data Agendada', 'Data Conclusao', 'Tipo', 'Descricao do Servico', 'Pecas Trocadas / Obs', 'Tecnico', 'Status']],
+      body: filteredMaintenance.map((m) => {
+        const [year, month, day] = m.scheduled_date.split('T')[0].split('-');
+        const d = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        const schedStr = d.toLocaleDateString('pt-BR');
+        const compStr = m.completed_at ? new Date(m.completed_at).toLocaleDateString('pt-BR') : '-';
+        
+        let typeStr = m.type === 'preventive' ? 'PREVENTIVA' : 'CORRETIVA';
+        let statusStr = m.status === 'done' ? 'CONCLUIDO' : (m.status === 'pending' ? 'PENDENTE' : 'CANCELADO');
+
+        return [
+          m.router_name || 'Desconhecido',
+          schedStr,
+          compStr,
+          typeStr,
+          m.description || '-',
+          m.parts_replaced || '-',
+          m.technician || '-',
+          statusStr
+        ];
+      }),
+      theme: 'plain',
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        textColor: [226, 232, 240],
+        lineColor: [51, 65, 85],
+        lineWidth: 0.1,
+      },
+      headStyles: {
+        fillColor: [30, 41, 59],
+        textColor: [16, 185, 129],
+        fontStyle: 'bold',
+        fontSize: 7.5,
+        cellPadding: 4,
+      },
+      alternateRowStyles: {
+        fillColor: [15, 23, 42],
+      },
+      columnStyles: {
+        0: { halign: 'left', fontStyle: 'bold', cellWidth: 20 },
+        1: { halign: 'center', cellWidth: 20 },
+        2: { halign: 'center', cellWidth: 20 },
+        3: { halign: 'center', cellWidth: 20 },
+        4: { halign: 'left', cellWidth: 50 },
+        5: { halign: 'left', cellWidth: 80 },
+        6: { halign: 'center', cellWidth: 20 },
+        7: { halign: 'center', fontStyle: 'bold', cellWidth: 20 },
       },
       margin: { left: 20, right: 20 },
       didDrawPage: (data) => {

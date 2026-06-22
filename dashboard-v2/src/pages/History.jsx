@@ -44,7 +44,8 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
     setShowPdfMenu(false);
     try {
       const routerStatusLog = await api.getRouterStatusLog();
-      generateProductionReport({ jobs, user, filterType, routerStatusLog });
+      const maintenanceSchedule = await api.getMaintenance();
+      generateProductionReport({ jobs, user, filterType, routerStatusLog, maintenanceSchedule });
     } catch (err) {
       console.error('Erro ao gerar PDF:', err);
       alert('Erro ao gerar PDF: ' + err.message);
