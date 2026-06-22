@@ -145,9 +145,19 @@ async function initDb() {
                 status TEXT DEFAULT 'pending',
                 completed_at TIMESTAMP,
                 technician TEXT,
+                parts_cost REAL,
                 "userId" INTEGER,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+            
+            -- Alter table if missing parts_cost (for backward compatibility)
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='maintenance_schedule' AND column_name='parts_cost') THEN
+                    ALTER TABLE maintenance_schedule ADD COLUMN parts_cost REAL;
+                END IF;
+            END
+            $$;
         `);
 
         // SEED: Ensure Casadotrem exists
@@ -302,7 +312,7 @@ app.post('/api/maintenance', authenticateToken, async (req, res) => {
 });
 
 app.patch('/api/maintenance/:id', authenticateToken, async (req, res) => {
-    const { status, parts_replaced, completed_at, description, scheduled_date, scheduled_time, technician } = req.body;
+    const { status, parts_replaced, parts_cost, completed_at, description, scheduled_date, scheduled_time, technician } = req.body;
     try {
         const maintenance = (await pool.query('SELECT * FROM maintenance_schedule WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id])).rows[0];
         if (!maintenance) return res.status(404).json({ error: 'Manutenção não encontrada' });
@@ -313,6 +323,7 @@ app.patch('/api/maintenance/:id', authenticateToken, async (req, res) => {
         
         if (status !== undefined) { query += `status = $${index++}, `; values.push(status); }
         if (parts_replaced !== undefined) { query += `parts_replaced = $${index++}, `; values.push(parts_replaced); }
+        if (parts_cost !== undefined) { query += `parts_cost = $${index++}, `; values.push(parts_cost); }
         if (completed_at !== undefined) { query += `completed_at = $${index++}, `; values.push(completed_at); }
         if (description !== undefined) { query += `description = $${index++}, `; values.push(description); }
         if (scheduled_date !== undefined) { query += `scheduled_date = $${index++}, `; values.push(scheduled_date); }

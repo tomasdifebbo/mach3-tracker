@@ -17,6 +17,7 @@ export function Maintenance({ maintenance = [], routers = [], onRefresh, user })
   
   const [completeModal, setCompleteModal] = useState(null); // ID of maintenance being completed
   const [partsReplaced, setPartsReplaced] = useState('');
+  const [partsCost, setPartsCost] = useState('');
 
   const now = new Date();
   const tomorrow = new Date(now);
@@ -59,10 +60,12 @@ export function Maintenance({ maintenance = [], routers = [], onRefresh, user })
       await api.updateMaintenance(id, { 
         status: 'done', 
         parts_replaced: partsReplaced,
+        parts_cost: parseFloat(partsCost) || 0,
         completed_at: new Date().toISOString()
       });
       setCompleteModal(null);
       setPartsReplaced('');
+      setPartsCost('');
       onRefresh();
     } catch (err) {
       alert('Erro ao concluir manutenção');
@@ -260,6 +263,7 @@ export function Maintenance({ maintenance = [], routers = [], onRefresh, user })
                       <div className="flex flex-col gap-1">
                         <span className="text-green-500 font-bold text-xs uppercase bg-green-500/10 px-2 py-1 rounded w-fit">Concluído</span>
                         {m.parts_replaced && <div className="text-[11px] text-text-muted italic truncate" title={m.parts_replaced}>"Trocado: {m.parts_replaced}"</div>}
+                        {m.parts_cost > 0 && <div className="text-[11px] font-bold text-red-400">Custo: R$ {m.parts_cost.toFixed(2)}</div>}
                       </div>
                     )}
                   </td>
@@ -302,15 +306,27 @@ export function Maintenance({ maintenance = [], routers = [], onRefresh, user })
             <p className="text-sm text-text-muted mb-4">
               Deseja registrar alguma peça que foi trocada ou adicionar observações sobre o serviço executado?
             </p>
+            <label className="text-xs text-text-muted font-bold uppercase mb-1 block">Peça Trocada e Observações</label>
             <textarea
               placeholder="Ex: Trocado rolamento linear eixo Y"
               value={partsReplaced}
               onChange={(e) => setPartsReplaced(e.target.value)}
-              className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-green-500 min-h-[100px] mb-6"
+              className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-green-500 min-h-[80px] mb-4"
             />
+            
+            <label className="text-xs text-text-muted font-bold uppercase mb-1 block">Custo da Peça (R$)</label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="Ex: 150.00"
+              value={partsCost}
+              onChange={(e) => setPartsCost(e.target.value)}
+              className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-green-500 mb-6"
+            />
+            
             <div className="flex justify-end gap-3">
               <button 
-                onClick={() => { setCompleteModal(null); setPartsReplaced(''); }}
+                onClick={() => { setCompleteModal(null); setPartsReplaced(''); setPartsCost(''); }}
                 className="px-4 py-2 bg-white/5 text-white font-medium rounded-xl hover:bg-white/10 transition-all"
               >
                 Cancelar

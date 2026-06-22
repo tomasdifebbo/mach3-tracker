@@ -481,7 +481,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
           compStr,
           typeStr,
           m.description || '-',
-          m.parts_replaced || '-',
+          (m.parts_replaced || '-') + (m.parts_cost ? ` (R$ ${m.parts_cost.toFixed(2)})` : ''),
           m.technician || '-',
           statusStr
         ];
