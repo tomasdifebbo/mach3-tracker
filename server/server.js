@@ -152,6 +152,15 @@ async function initDb() {
             
             -- Alter table if missing parts_cost (for backward compatibility)
             ALTER TABLE maintenance_schedule ADD COLUMN IF NOT EXISTS parts_cost REAL;
+            
+            -- Alter jobs table if missing new columns (migration from old schema)
+            ALTER TABLE jobs ADD COLUMN IF NOT EXISTS "userId" INTEGER;
+            ALTER TABLE jobs ADD COLUMN IF NOT EXISTS material_id INTEGER;
+            ALTER TABLE jobs ADD COLUMN IF NOT EXISTS material_name TEXT;
+            ALTER TABLE jobs ADD COLUMN IF NOT EXISTS material_price REAL;
+            ALTER TABLE jobs ADD COLUMN IF NOT EXISTS router_name TEXT;
+            ALTER TABLE jobs ADD COLUMN IF NOT EXISTS estimated_minutes REAL;
+            ALTER TABLE jobs ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
         `);
 
         // SEED: Ensure Casadotrem exists
