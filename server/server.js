@@ -151,13 +151,7 @@ async function initDb() {
             );
             
             -- Alter table if missing parts_cost (for backward compatibility)
-            DO $$
-            BEGIN
-                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='maintenance_schedule' AND column_name='parts_cost') THEN
-                    ALTER TABLE maintenance_schedule ADD COLUMN parts_cost REAL;
-                END IF;
-            END
-            $$;
+            ALTER TABLE maintenance_schedule ADD COLUMN IF NOT EXISTS parts_cost REAL;
         `);
 
         // SEED: Ensure Casadotrem exists
