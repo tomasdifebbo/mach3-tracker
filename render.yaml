@@ -11,7 +11,7 @@ services:
       - key: JWT_SECRET
         value: mach3_secret_2026
       - key: DATABASE_URL
-        value: postgresql://postgres.cimapinomzlmgrrfqcrp:c3ojpnF2a3m9ONHr@aws-1-sa-east-1.pooler.supabase.com:6543/postgres
+        value: postgresql://postgres.iehynyqkkkgmcjojplfc:W611ztIrUqxJyM14@aws-1-us-east-1.pooler.supabase.com:5432/postgres
       - key: PORT
         value: "3000"
       - key: NODE_VERSION
