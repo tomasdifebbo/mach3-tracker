@@ -4,12 +4,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, LogIn, UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export function Login({ onLoginSuccess }) {
-  const [mode, setMode] = useState('login');
+  const [mode, setMode] = useState('login'); // login, register, recover, reset
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [resetToken, setResetToken] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('reset');
+    if (token) {
+      setMode('reset');
+      setResetToken(token);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,17 +28,26 @@ export function Login({ onLoginSuccess }) {
     setSuccess(null);
 
     try {
-      const data = mode === 'login' 
-        ? await api.login(email, password)
-        : await api.register(email, password);
+      let data;
+      if (mode === 'login') data = await api.login(email, password);
+      else if (mode === 'register') data = await api.register(email, password);
+      else if (mode === 'recover') data = await api.recoverPassword(email);
+      else if (mode === 'reset') data = await api.resetPassword(resetToken, password);
 
       if (data.success) {
         if (mode === 'login') {
           localStorage.setItem('mach3_token', data.token);
           onLoginSuccess();
-        } else {
+        } else if (mode === 'register') {
           setSuccess('Conta criada! Agora faça login.');
           setMode('login');
+        } else if (mode === 'recover') {
+          setSuccess('Se o e-mail existir, você receberá um link em instantes.');
+          setMode('login');
+        } else if (mode === 'reset') {
+          setSuccess('Senha redefinida com sucesso! Faça login.');
+          setMode('login');
+          window.history.replaceState({}, document.title, '/');
         }
       } else {
         setError(data.error || 'Erro na autenticação');
@@ -64,20 +83,31 @@ export function Login({ onLoginSuccess }) {
            </div>
 
            {/* Tabs */}
-           <div className="flex bg-white/5 p-1 rounded-2xl mb-8 border border-white/5">
-              <button 
-                onClick={() => setMode('login')}
-                className={`flex-1 py-3 text-sm font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'login' ? 'bg-white/10 text-accent-cyan shadow-lg' : 'text-text-muted hover:text-white'}`}
-              >
-                Login
-              </button>
-              <button 
-                onClick={() => setMode('register')}
-                className={`flex-1 py-3 text-sm font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'register' ? 'bg-white/10 text-accent-cyan shadow-lg' : 'text-text-muted hover:text-white'}`}
-              >
-                Registro
-              </button>
-           </div>
+           {(mode === 'login' || mode === 'register' || mode === 'recover') && (
+             <div className="flex bg-white/5 p-1 rounded-2xl mb-8 border border-white/5">
+                <button 
+                  type="button"
+                  onClick={() => setMode('login')}
+                  className={`flex-1 py-3 text-sm font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'login' ? 'bg-white/10 text-accent-cyan shadow-lg' : 'text-text-muted hover:text-white'}`}
+                >
+                  Login
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setMode('register')}
+                  className={`flex-1 py-3 text-sm font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'register' ? 'bg-white/10 text-accent-cyan shadow-lg' : 'text-text-muted hover:text-white'}`}
+                >
+                  Registro
+                </button>
+             </div>
+           )}
+
+           {mode === 'reset' && (
+              <div className="text-center mb-8">
+                 <h2 className="text-xl font-bold text-white">Nova Senha</h2>
+                 <p className="text-sm text-text-muted mt-2">Digite sua nova senha de acesso.</p>
+              </div>
+           )}
 
            <form onSubmit={handleSubmit} className="space-y-6">
               <AnimatePresence mode="wait">
@@ -99,35 +129,49 @@ export function Login({ onLoginSuccess }) {
                 )}
               </AnimatePresence>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-2">E-mail Corporativo</label>
-                <div className="relative group">
-                  <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-cyan transition-colors" />
-                  <input 
-                    type="email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="ex@empresa.com" 
-                    className="w-full bg-white/5 border border-border px-11 py-4 rounded-2xl outline-none focus:border-accent-cyan/50 focus:bg-white/[0.08] transition-all text-white text-sm font-medium"
-                    required
-                  />
-                </div>
-              </div>
+              <AnimatePresence mode="wait">
+                {mode !== 'reset' && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-2">E-mail Corporativo</label>
+                    <div className="relative group">
+                      <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-cyan transition-colors" />
+                      <input 
+                        type="email" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="ex@empresa.com" 
+                        className="w-full bg-white/5 border border-border px-11 py-4 rounded-2xl outline-none focus:border-accent-cyan/50 focus:bg-white/[0.08] transition-all text-white text-sm font-medium"
+                        required
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-2">Senha de Acesso</label>
-                <div className="relative group">
-                  <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-cyan transition-colors" />
-                  <input 
-                    type="password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••" 
-                    className="w-full bg-white/5 border border-border px-11 py-4 rounded-2xl outline-none focus:border-accent-cyan/50 focus:bg-white/[0.08] transition-all text-white text-sm font-medium"
-                    required
-                  />
-                </div>
-              </div>
+              <AnimatePresence mode="wait">
+                {(mode === 'login' || mode === 'register' || mode === 'reset') && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2">
+                    <div className="flex items-center justify-between px-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Senha de Acesso</label>
+                      {mode === 'login' && (
+                        <button type="button" onClick={() => setMode('recover')} className="text-[10px] font-bold text-accent-cyan hover:underline">Esqueci minha senha</button>
+                      )}
+                    </div>
+                    <div className="relative group">
+                      <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-cyan transition-colors" />
+                      <input 
+                        type="password" 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••" 
+                        className="w-full bg-white/5 border border-border px-11 py-4 rounded-2xl outline-none focus:border-accent-cyan/50 focus:bg-white/[0.08] transition-all text-white text-sm font-medium"
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {mode === 'register' && (
                 <p className="text-[10px] font-black text-accent-cyan bg-accent-cyan/10 px-4 py-2 rounded-xl text-center uppercase tracking-[0.1em]">
@@ -140,7 +184,11 @@ export function Login({ onLoginSuccess }) {
                 disabled={loading}
                 className="w-full py-4.5 bg-accent-cyan text-black font-black uppercase tracking-widest text-xs rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-accent-cyan/30 flex items-center justify-center gap-3"
               >
-                {loading ? 'Processando...' : mode === 'login' ? <><LogIn size={18} /> Entrar no Dashboard</> : <><UserPlus size={18} /> Criar Minha Conta</>}
+                {loading ? 'Processando...' : 
+                 mode === 'login' ? <><LogIn size={18} /> Entrar no Dashboard</> : 
+                 mode === 'register' ? <><UserPlus size={18} /> Criar Minha Conta</> : 
+                 mode === 'recover' ? <><Mail size={18} /> Enviar Link de Recuperação</> :
+                 <><Lock size={18} /> Salvar Nova Senha</>}
               </button>
            </form>
 

@@ -36,6 +36,24 @@ export const api = {
     if (!resp.ok) throw new Error(data.error || `Erro ${resp.status}`);
     return data;
   },
+
+  recoverPassword: async (email) => {
+    const resp = await fetch(`${API_URL}/api/auth/recover`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    return safeJson(resp);
+  },
+
+  resetPassword: async (token, newPassword) => {
+    const resp = await fetch(`${API_URL}/api/auth/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, newPassword })
+    });
+    return safeJson(resp);
+  },
   
   register: async (email, password) => {
     const resp = await fetch(`${API_URL}/api/auth/register`, {

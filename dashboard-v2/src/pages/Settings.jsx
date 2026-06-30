@@ -16,6 +16,7 @@ import { api } from '../services/api';
 export function Settings({ user, onRefresh }) {
   const [costPerHour, setCostPerHour] = useState(user?.settings?.costPerHour || 50.0);
   const [plannedHours, setPlannedHours] = useState(user?.settings?.plannedHours || 8);
+  const [webhookUrl, setWebhookUrl] = useState(user?.settings?.webhookUrl || '');
   const [loading, setLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(null); // tracks which plan is loading
   const [status, setStatus] = useState(null);
@@ -38,13 +39,13 @@ export function Settings({ user, onRefresh }) {
   };
 
   const handleSaveSettings = async () => {
-    if (!costPerHour || !plannedHours) return;
     setLoading(true);
     setStatus(null);
     try {
       const resp = await api.updateUserSettings({ 
-        costPerHour: Number(costPerHour), 
-        plannedHours: Number(plannedHours) 
+        costPerHour: parseFloat(costPerHour), 
+        plannedHours: parseFloat(plannedHours),
+        webhookUrl
       });
       
       if (resp && resp.success) {
@@ -195,12 +196,27 @@ export function Settings({ user, onRefresh }) {
           </div>
           
           <div className="space-y-4">
-             <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-border/50">
-                <div className="space-y-0.5">
+             <div className="flex flex-col gap-2 p-4 bg-white/5 rounded-2xl border border-border/50">
+                <div className="space-y-0.5 mb-2">
                    <div className="text-sm font-bold text-white">Endpoint de Webhook</div>
-                   <div className="text-[10px] font-medium text-text-muted">URL para integração com ERP externa</div>
+                   <div className="text-[10px] font-medium text-text-muted">URL para receber POST quando um job terminar</div>
                 </div>
-                <ChevronRight size={18} className="text-text-muted" />
+                <div className="relative group">
+                   <input 
+                     type="url"
+                     value={webhookUrl}
+                     onChange={(e) => setWebhookUrl(e.target.value)}
+                     placeholder="https://seu-erp.com.br/api/mach3-webhook"
+                     className="w-full bg-white/5 border border-border px-4 py-3 rounded-xl outline-none focus:border-accent-cyan/50 focus:bg-white/[0.08] transition-all text-white text-sm font-medium"
+                   />
+                </div>
+                <button 
+                  onClick={handleSaveSettings}
+                  disabled={loading}
+                  className="mt-2 w-full py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all"
+                >
+                  Salvar Webhook
+                </button>
              </div>
              
              <div className="bg-accent-blue/10 border border-accent-blue/30 rounded-2xl p-6 flex gap-4">

@@ -4,6 +4,8 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 require('dotenv').config();
 const { Pool } = require('pg');
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
@@ -185,6 +187,9 @@ async function initDb() {
             ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'starter';
             ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_expiry TEXT;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'none';
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS webhook_url TEXT;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expiry TIMESTAMP;
         `);
 
         // SEED: Ensure Casadotrem exists
@@ -448,9 +453,77 @@ app.post('/api/auth/login', async (req, res) => {
     res.json({ success: true, token, user: { id: user.id, email: user.email, plan: user.plan, role: user.role } });
 });
 
+// Password Recovery Config
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER || 'contato@mach3tracker.com',
+        pass: process.env.EMAIL_PASS || 'sua_senha_de_app_aqui'
+    }
+});
+
+app.post('/api/auth/recover', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: "Email obrigatório" });
+
+    const user = (await pool.query('SELECT id, email FROM users WHERE email = $1', [email])).rows[0];
+    if (!user) {
+        // Obscure for security, always return success even if email not found
+        return res.json({ success: true }); 
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + 3600000); // 1 hour
+
+    await pool.query('UPDATE users SET reset_token = $1, reset_expiry = $2 WHERE id = $3', [resetToken, expiry, user.id]);
+
+    const resetLink = `${DOMAIN}?reset=${resetToken}`;
+    
+    const mailOptions = {
+        from: '"MACH3 Tracker" <contato@mach3tracker.com>',
+        to: email,
+        subject: 'Recuperação de Senha - MACH3 Tracker',
+        html: `
+            <h2>Recuperação de Senha</h2>
+            <p>Você solicitou a recuperação de senha da sua conta MACH3 Tracker.</p>
+            <p>Clique no link abaixo para redefinir sua senha:</p>
+            <a href="${resetLink}" style="display:inline-block;padding:10px 20px;background:#06b6d4;color:#000;text-decoration:none;border-radius:5px;font-weight:bold;">Redefinir Senha</a>
+            <p>Este link expira em 1 hora.</p>
+            <p>Se você não solicitou, ignore este e-mail.</p>
+        `
+    };
+
+    try {
+        if (process.env.EMAIL_PASS) {
+            await transporter.sendMail(mailOptions);
+        } else {
+            console.log(`[AUTH] Mocking email send to ${email}. Reset token: ${resetToken}`);
+        }
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Email send error:", err);
+        res.status(500).json({ error: "Erro ao enviar email de recuperação" });
+    }
+});
+
+app.post('/api/auth/reset', async (req, res) => {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword || newPassword.length < 6) {
+        return res.status(400).json({ error: "Dados inválidos" });
+    }
+
+    const user = (await pool.query('SELECT id FROM users WHERE reset_token = $1 AND reset_expiry > NOW()', [token])).rows[0];
+    if (!user) return res.status(400).json({ error: "Token inválido ou expirado" });
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await pool.query('UPDATE users SET password = $1, reset_token = NULL, reset_expiry = NULL WHERE id = $2', [hashedPassword, user.id]);
+
+    res.json({ success: true });
+});
+
 app.get('/api/user/me', authenticateToken, async (req, res) => {
     await closeStaleJobs(req.user.id);
-    let user = (await pool.query('SELECT id, email, plan, trial_expiry, payment_status, "costPerHour", "plannedHours", role FROM users WHERE id = $1', [req.user.id])).rows[0];
+    let user = (await pool.query('SELECT id, email, plan, trial_expiry, payment_status, "costPerHour", "plannedHours", role, webhook_url FROM users WHERE id = $1', [req.user.id])).rows[0];
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
 
     const masterEmails = ['tomasdifebbo.tdf@gmail.com', 'admin@mach3.com', 'casadotrem@gmail.com'];
@@ -459,19 +532,18 @@ app.get('/api/user/me', authenticateToken, async (req, res) => {
         user.role = 'admin';
     }
 
-    const settings = { costPerHour: user.costPerHour, plannedHours: user.plannedHours };
+    const settings = { costPerHour: user.costPerHour, plannedHours: user.plannedHours, webhookUrl: user.webhook_url };
     res.json({ ...user, settings });
 });
 
 app.patch('/api/user/settings', authenticateToken, async (req, res) => {
-    const { costPerHour, plannedHours } = req.body;
+    const { costPerHour, plannedHours, webhookUrl } = req.body;
     let cost = Number(costPerHour);
     let planned = Number(plannedHours);
     if (isNaN(cost) || isNaN(planned)) return res.status(400).json({ error: "Valores inválidos" });
 
-    await pool.query('UPDATE users SET "costPerHour" = $1, "plannedHours" = $2 WHERE id = $3', [cost, planned, req.user.id]);
-    const user = (await pool.query('SELECT id, email, plan, "costPerHour", "plannedHours", role FROM users WHERE id = $1', [req.user.id])).rows[0];
-    res.json({ success: true, user: { ...user, settings: { costPerHour: user.costPerHour, plannedHours: user.plannedHours } } });
+    await pool.query('UPDATE users SET "costPerHour" = $1, "plannedHours" = $2, webhook_url = $3 WHERE id = $4', [cost, planned, webhookUrl || null, req.user.id]);
+    res.json({ success: true });
 });
 
 app.get('/api/admin/users', authenticateToken, authenticateAdmin, async (req, res) => {
@@ -550,6 +622,34 @@ app.patch('/api/jobs/latest', authenticateToken, async (req, res) => {
     }
 
     await pool.query('UPDATE jobs SET end_time = $1, duration_minutes = $2 WHERE id = $3', [dt.toISOString(), durationMinutes, row.id]);
+    
+    // Dispatch Webhook if user has one configured
+    try {
+        const user = (await pool.query('SELECT webhook_url, "costPerHour" FROM users WHERE id = $1', [userId])).rows[0];
+        if (user && user.webhook_url) {
+            const cost = (durationMinutes / 60) * (user.costPerHour || 0);
+            const payload = {
+                event: 'job_completed',
+                job_id: row.id,
+                router_name: row.router_name,
+                file_name: row.file_name,
+                material_name: row.material_name,
+                start_time: row.start_time,
+                end_time: dt.toISOString(),
+                duration_minutes: durationMinutes,
+                estimated_cost: cost
+            };
+            // Send webhook async (fire and forget)
+            fetch(user.webhook_url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(e => console.error(`[WEBHOOK FAIL] ${user.webhook_url}:`, e.message));
+        }
+    } catch (e) {
+        console.error("Webhook processing error:", e);
+    }
+
     res.json({ id: row.id, duration_minutes: durationMinutes, success: true });
 });
 
