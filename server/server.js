@@ -6,6 +6,12 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { Pool } = require('pg');
+const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
+
+// Mercado Pago config
+const mpClient = new MercadoPagoConfig({ 
+    accessToken: process.env.MP_ACCESS_TOKEN || 'TEST-your-mp-access-token-here' 
+});
 
 const app = express();
 app.set('trust proxy', 1);
@@ -161,6 +167,24 @@ async function initDb() {
             ALTER TABLE jobs ADD COLUMN IF NOT EXISTS router_name TEXT;
             ALTER TABLE jobs ADD COLUMN IF NOT EXISTS estimated_minutes REAL;
             ALTER TABLE jobs ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+            -- Payments table
+            CREATE TABLE IF NOT EXISTS payments (
+                id SERIAL PRIMARY KEY,
+                "userId" INTEGER NOT NULL,
+                mp_preference_id TEXT,
+                mp_payment_id TEXT,
+                plan TEXT NOT NULL,
+                status TEXT DEFAULT 'pending',
+                amount REAL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            -- Add plan and trial to users if missing
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'starter';
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_expiry TEXT;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'none';
         `);
 
         // SEED: Ensure Casadotrem exists
@@ -612,6 +636,146 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
+});
+
+// ─────────────────────────────────────────────
+// 💳 PAYMENT ROUTES - MERCADO PAGO
+// ─────────────────────────────────────────────
+
+const PLANS = {
+    pro:      { name: 'MACH3 Tracker PRO',      price: 149.00, maxRouters: 3 },
+    business: { name: 'MACH3 Tracker BUSINESS',  price: 349.00, maxRouters: 999 }
+};
+
+// POST /api/payments/create-preference
+// Creates a Mercado Pago checkout preference and returns the init_point URL
+app.post('/api/payments/create-preference', authenticateToken, async (req, res) => {
+    try {
+        const { planType } = req.body;
+        const plan = PLANS[planType];
+        if (!plan) return res.status(400).json({ error: 'Plano inválido. Use: pro ou business' });
+
+        const preference = new Preference(mpClient);
+        const backUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${port}`;
+
+        const result = await preference.create({
+            body: {
+                items: [{
+                    title: plan.name,
+                    unit_price: plan.price,
+                    quantity: 1,
+                    currency_id: 'BRL'
+                }],
+                back_urls: {
+                    success: `${backUrl}/payment/success`,
+                    failure: `${backUrl}/payment/failure`,
+                    pending: `${backUrl}/payment/pending`
+                },
+                auto_return: 'approved',
+                notification_url: `${backUrl}/api/payments/webhook`,
+                metadata: {
+                    userId: req.user.id,
+                    planType
+                },
+                statement_descriptor: 'MACH3 TRACKER'
+            }
+        });
+
+        // Save pending payment record
+        await pool.query(
+            'INSERT INTO payments ("userId", mp_preference_id, plan, status, amount) VALUES ($1, $2, $3, $4, $5)',
+            [req.user.id, result.id, planType, 'pending', plan.price]
+        );
+
+        res.json({ 
+            init_point: result.init_point,
+            preference_id: result.id
+        });
+    } catch (err) {
+        console.error('[PAYMENT] create-preference error:', err);
+        res.status(500).json({ error: 'Erro ao criar preferência de pagamento: ' + err.message });
+    }
+});
+
+// POST /api/payments/webhook
+// Receives Mercado Pago IPN notifications and updates plan on approval
+app.post('/api/payments/webhook', async (req, res) => {
+    try {
+        const { type, data } = req.body;
+        if (type !== 'payment') return res.sendStatus(200);
+
+        const paymentId = data?.id;
+        if (!paymentId) return res.sendStatus(200);
+
+        const mpPayment = new Payment(mpClient);
+        const paymentData = await mpPayment.get({ id: paymentId });
+
+        const status = paymentData.status;
+        const metadata = paymentData.metadata || {};
+        const userId = metadata.user_id || metadata.userId;
+        const planType = metadata.plan_type || metadata.planType;
+
+        if (!userId || !planType) {
+            console.warn('[WEBHOOK] Missing metadata: userId or planType', metadata);
+            return res.sendStatus(200);
+        }
+
+        console.log(`[WEBHOOK] Payment ${paymentId} status=${status} userId=${userId} plan=${planType}`);
+
+        // Update payment record
+        await pool.query(
+            'UPDATE payments SET mp_payment_id=$1, status=$2, updated_at=NOW() WHERE mp_preference_id IS NOT NULL AND "userId"=$3 AND plan=$4 AND status=\'pending\'',
+            [String(paymentId), status, userId, planType]
+        );
+
+        if (status === 'approved') {
+            // Calculate trial_expiry: 30 days from now
+            const expiry = new Date();
+            expiry.setDate(expiry.getDate() + 30);
+
+            await pool.query(
+                'UPDATE users SET plan=$1, payment_status=$2, trial_expiry=$3 WHERE id=$4',
+                [planType, 'active', expiry.toISOString(), userId]
+            );
+
+            console.log(`[WEBHOOK] ✅ User ${userId} upgraded to ${planType} plan!`);
+        }
+
+        res.sendStatus(200);
+    } catch (err) {
+        console.error('[WEBHOOK] Error processing payment:', err);
+        res.sendStatus(500);
+    }
+});
+
+// GET /api/payments/status
+// Returns the current plan and last payment info for the authenticated user
+app.get('/api/payments/status', authenticateToken, async (req, res) => {
+    try {
+        const user = (await pool.query(
+            'SELECT id, email, plan, payment_status, trial_expiry FROM users WHERE id=$1',
+            [req.user.id]
+        )).rows[0];
+
+        const lastPayment = (await pool.query(
+            'SELECT * FROM payments WHERE "userId"=$1 ORDER BY created_at DESC LIMIT 1',
+            [req.user.id]
+        )).rows[0];
+
+        res.json({ 
+            plan: user.plan || 'starter', 
+            payment_status: user.payment_status || 'none',
+            trial_expiry: user.trial_expiry,
+            last_payment: lastPayment || null
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET/POST: Payment redirect pages (served from frontend build)
+app.get('/payment/:status', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(port, '0.0.0.0', () => {

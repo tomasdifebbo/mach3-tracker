@@ -12,6 +12,7 @@ import { Maintenance } from './pages/Maintenance';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 import { Admin } from './pages/Admin';
+import { PaymentResult } from './pages/PaymentResult';
 
 function App() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -71,6 +72,23 @@ function App() {
 
   if (!isLoggedIn) {
     return <Login onLoginSuccess={() => setIsLoggedIn(true)} />;
+  }
+
+  // Handle Mercado Pago return URLs (/payment/success, /payment/failure, /payment/pending)
+  const pathParts = window.location.pathname.split('/');
+  if (pathParts[1] === 'payment') {
+    const paymentStatus = pathParts[2] || 'success';
+    return (
+      <PaymentResult
+        status={paymentStatus}
+        onGoToDashboard={() => {
+          window.history.replaceState({}, '', '/');
+          setActiveSection(paymentStatus === 'failure' ? 'settings' : 'dashboard');
+          // Force re-render by toggling a dummy state
+          window.location.href = '/';
+        }}
+      />
+    );
   }
 
   const renderSection = () => {

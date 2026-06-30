@@ -8,7 +8,8 @@ import {
   Info,
   CheckCircle2,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -16,16 +17,23 @@ export function Settings({ user, onRefresh }) {
   const [costPerHour, setCostPerHour] = useState(user?.settings?.costPerHour || 50.0);
   const [plannedHours, setPlannedHours] = useState(user?.settings?.plannedHours || 8);
   const [loading, setLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(null); // tracks which plan is loading
   const [status, setStatus] = useState(null);
 
   const handleSubscribe = async (plan) => {
+    setCheckoutLoading(plan);
     try {
       const resp = await api.createPreference(plan);
       if (resp.init_point) {
-        window.location.href = resp.init_point;
+        // Small delay to show feedback before redirect
+        setTimeout(() => { window.location.href = resp.init_point; }, 300);
+      } else {
+        throw new Error(resp.error || 'Link de pagamento não retornado');
       }
     } catch (err) {
-      alert('Erro ao iniciar checkout');
+      setStatus({ type: 'error', message: 'Erro ao abrir checkout: ' + (err.message || 'tente novamente') });
+      setTimeout(() => setStatus(null), 5000);
+      setCheckoutLoading(null);
     }
   };
 
@@ -90,9 +98,10 @@ export function Settings({ user, onRefresh }) {
               </ul>
               <button 
                 onClick={() => handleSubscribe('pro')}
-                className="w-full py-4 rounded-2xl bg-accent-cyan text-black hover:scale-105 active:scale-95 transition-all font-black uppercase tracking-widest text-xs shadow-xl shadow-accent-cyan/20"
+                disabled={!!checkoutLoading || user?.plan === 'pro'}
+                className="w-full py-4 rounded-2xl bg-accent-cyan text-black hover:scale-105 active:scale-95 transition-all font-black uppercase tracking-widest text-xs shadow-xl shadow-accent-cyan/20 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Escolher PRO
+                {checkoutLoading === 'pro' ? <><Loader2 size={16} className="animate-spin" /> Redirecionando...</> : user?.plan === 'pro' ? '✓ Plano Atual' : 'Escolher PRO'}
               </button>
             </div>
           </div>
@@ -109,9 +118,10 @@ export function Settings({ user, onRefresh }) {
             </ul>
              <button 
                 onClick={() => handleSubscribe('business')}
-                className="w-full py-4 rounded-2xl bg-white/5 border border-border group-hover:bg-white/10 group-hover:border-accent-cyan/30 transition-all font-black uppercase tracking-widest text-xs"
+                disabled={!!checkoutLoading || user?.plan === 'business'}
+                className="w-full py-4 rounded-2xl bg-white/5 border border-border group-hover:bg-white/10 group-hover:border-accent-cyan/30 transition-all font-black uppercase tracking-widest text-xs disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Escolher BUSINESS
+                {checkoutLoading === 'business' ? <><Loader2 size={16} className="animate-spin" /> Redirecionando...</> : user?.plan === 'business' ? '✓ Plano Atual' : 'Escolher BUSINESS'}
               </button>
           </div>
         </div>
