@@ -270,17 +270,38 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem):
         folder_parts = full_parts[:-1] if len(full_parts) > 1 else full_parts
         
         project_name = "Desconhecido"
-        skip_list = ["ROUTER", "ISOPOR", "ARQUIVO", "CNC", "ARQUIVOS", "2024", "2026", "TOMAS", "MACH3"]
         
-        # Traverse backwards to find the first non-generic name
+        import re
+        # Generic folder patterns to skip
+        SKIP_EXACT = {"ROUTER", "ISOPOR", "ARQUIVO", "ARQUIVOS", "CNC", "MACH3", "TOMAS"}
+
+        def is_generic(name):
+            n = name.upper().strip()
+            if n in SKIP_EXACT:
+                return True
+            # Skip "ARQUIVOS 2026", "ARQUIVOS 2025", plain "2024", "2025", "2026", etc.
+            if re.match(r'^(ARQUIVOS?\s*)?\d{4}$', n):
+                return True
+            return False
+
+        # Priority 1: a folder starting with a 4-digit project code (e.g., "2624D - BASQUETE")
         for p in reversed(folder_parts):
-            # Also skip anything that looks like a file (has extension)
-            if p.upper() not in skip_list and len(p) > 2 and "." not in p:
+            if "." in p:  # skip anything that looks like a filename
+                continue
+            if re.match(r'^\d{4}', p) and not is_generic(p):
                 project_name = p
                 break
+
+        # Priority 2: first non-generic folder from the end
+        if project_name == "Desconhecido":
+            for p in reversed(folder_parts):
+                if "." not in p and not is_generic(p) and len(p) > 2:
+                    project_name = p
+                    break
         
+        # Last resort fallback
         if project_name == "Desconhecido" and folder_parts:
-            project_name = folder_parts[-1] # Fallback to last folder
+            project_name = folder_parts[-1]
 
         # Simulate machining time for progress bar
         estimated = None

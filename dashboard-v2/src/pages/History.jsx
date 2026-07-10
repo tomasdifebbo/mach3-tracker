@@ -238,25 +238,22 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                   </td>
                     <td className="px-6 py-4">
                       {(() => {
-                        const pathParts = (job.folder || 'Geral').replace(/^Router \d+ \| /, '').split('\\');
-                        const routerIdx = pathParts.findIndex(p => p.toUpperCase() === 'ROUTER');
-                        let projectName = '';
+                        // Field comes as "Router 2 | 2624D - BASQUETE" or just the project name
+                        const raw = job.folder || 'Produção Geral';
+                        const pipeIdx = raw.indexOf('|');
+                        let projectName = pipeIdx !== -1 ? raw.substring(pipeIdx + 1).trim() : raw.trim();
                         
-                        if (routerIdx !== -1 && routerIdx < pathParts.length - 1) {
-                          projectName = pathParts[routerIdx + 1];
-                        } else {
-                          const folderOnlyParts = pathParts.filter(p => !p.toUpperCase().includes('.TXT') && !p.toUpperCase().includes('.TAP') && !p.toUpperCase().includes('.NC'));
-                          const cleanPath = folderOnlyParts.join('\\').replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
-                          const parts = cleanPath.split('\\').filter(p => {
-                            const up = p.toUpperCase();
-                            const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
-                                              up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
-                                              up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
-                            return p && !isGeneric;
-                          });
-                          projectName = parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || 'Produção Geral');
+                        // If it's still a full path (legacy records), extract the project intelligently
+                        if (projectName.includes('\\') || projectName.includes('/')) {
+                          const parts = projectName.replace(/\//g, '\\').split('\\').filter(p => p);
+                          const GENERIC = /^(ARQUIVOS?\s*\d{4}|ROUTER|ISOPOR|ARQUIVO|CNC|MACH3|TOMAS|\d{4})$/i;
+                          // Prefer part starting with 4-digit code
+                          const proj = parts.find(p => /^\d{4}/.test(p) && !GENERIC.test(p)) ||
+                                       parts.filter(p => !GENERIC.test(p) && p.length > 2).pop() ||
+                                       parts[parts.length - 1] || 'Produção Geral';
+                          projectName = proj;
                         }
-                        
+
                         return (
                           <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20 block whitespace-normal min-w-[120px]" title={projectName}>
                             {projectName}
