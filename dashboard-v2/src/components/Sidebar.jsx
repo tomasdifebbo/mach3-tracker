@@ -50,10 +50,6 @@ export function Sidebar({ activeSection, onSectionChange, user, maintenance = []
     { id: 'settings', label: 'Configurações', icon: Settings },
   ];
 
-  if (user?.role === 'admin') {
-    navItems.push({ id: 'admin', label: 'Painel Master', icon: Crown });
-  }
-
   return (
     <>
       {/* Mobile Backdrop */}

@@ -11,7 +11,8 @@ import { Materials } from './pages/Materials';
 import { Maintenance } from './pages/Maintenance';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
-import { Admin } from './pages/Admin';
+import { AdminPortal } from './pages/AdminPortal';
+import { AdminLogin } from './pages/AdminLogin';
 import { PaymentResult } from './pages/PaymentResult';
 
 function App() {
@@ -70,12 +71,36 @@ function App() {
     }
   }, [isLoggedIn]);
 
+  // Handle Admin Portal Route (/admin)
+  const pathParts = window.location.pathname.split('/');
+  const isAdminRoute = pathParts[1] === 'admin';
+
+  if (isAdminRoute) {
+    if (!isLoggedIn) {
+      return <AdminLogin onLoginSuccess={() => {
+        setIsLoggedIn(true);
+        window.location.reload();
+      }} />;
+    }
+    if (user && user.role === 'admin') {
+      return <AdminPortal />;
+    } else if (user && user.role !== 'admin') {
+      // If logged in but not admin, show login again or an error. AdminLogin handles the error natively.
+      return <AdminLogin onLoginSuccess={() => {
+        setIsLoggedIn(true);
+        window.location.reload();
+      }} />;
+    }
+    // Loading state while user data fetches
+    return <div className="h-screen w-full bg-zinc-950 flex items-center justify-center text-purple-500">Carregando...</div>;
+  }
+
+  // Handle standard routes
   if (!isLoggedIn) {
     return <Login onLoginSuccess={() => setIsLoggedIn(true)} />;
   }
 
   // Handle Mercado Pago return URLs (/payment/success, /payment/failure, /payment/pending)
-  const pathParts = window.location.pathname.split('/');
   if (pathParts[1] === 'payment') {
     const paymentStatus = pathParts[2] || 'success';
     return (
@@ -99,7 +124,6 @@ function App() {
       case 'materials': return <Materials materials={materials} onRefresh={fetchData} />;
       case 'maintenance': return <Maintenance maintenance={maintenance} routers={routers} onRefresh={fetchData} user={user} />;
       case 'settings': return <Settings user={user} onRefresh={loadUser} />;
-      case 'admin': return <Admin user={user} />;
       default: return <Dashboard jobs={jobs} user={user} />;
     }
   };
@@ -110,8 +134,7 @@ function App() {
     'charts': ['Gráficos', 'Análise aprofundada de produção'],
     'materials': ['Materiais', 'Cadastro de insumos e preços'],
     'maintenance': ['Manutenção', 'Agenda e histórico preventivo'],
-    'settings': ['Configurações', 'Ajustes de custo e produção'],
-    'admin': ['Painel Master', 'Gerenciamento avançado do SaaS']
+    'settings': ['Configurações', 'Ajustes de custo e produção']
   };
 
   return (

@@ -873,8 +873,8 @@ app.get('/api/payments/status', authenticateToken, async (req, res) => {
     }
 });
 
-// GET/POST: Payment redirect pages (served from frontend build)
-app.get('/payment/:status', (req, res) => {
+// Catch-all: Route all other non-API requests to the React SPA
+app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
