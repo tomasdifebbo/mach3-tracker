@@ -25,12 +25,27 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('mach3_token'));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isTrialExpired, setIsTrialExpired] = useState(false);
 
   // Auth Check & User Data
   const loadUser = async () => {
     try {
       const userData = await api.getMe();
       setUser(userData);
+      
+      // Trial Expiration Logic
+      if (userData?.plan === 'starter' && userData?.trial_expiry) {
+         const expiry = new Date(userData.trial_expiry);
+         if (expiry < new Date()) {
+            setIsTrialExpired(true);
+            setActiveSection('settings');
+         } else {
+            setIsTrialExpired(false);
+         }
+      } else {
+         setIsTrialExpired(false);
+      }
+
       setIsLoggedIn(true);
     } catch (err) {
       console.error("Auth failed:", err);
@@ -117,13 +132,17 @@ function App() {
   }
 
   const renderSection = () => {
+    if (isTrialExpired) {
+      return <Settings user={user} onRefresh={loadUser} isTrialExpired={isTrialExpired} />;
+    }
+
     switch (activeSection) {
       case 'dashboard': return <Dashboard jobs={jobs} user={user} routers={routers} onRefresh={fetchData} />;
       case 'jobs': return <History jobs={jobs} materials={materials} onRefresh={fetchData} user={user} />;
       case 'charts': return <Charts jobs={jobs} />;
       case 'materials': return <Materials materials={materials} onRefresh={fetchData} />;
       case 'maintenance': return <Maintenance maintenance={maintenance} routers={routers} onRefresh={fetchData} user={user} />;
-      case 'settings': return <Settings user={user} onRefresh={loadUser} />;
+      case 'settings': return <Settings user={user} onRefresh={loadUser} isTrialExpired={isTrialExpired} />;
       default: return <Dashboard jobs={jobs} user={user} />;
     }
   };
@@ -140,15 +159,16 @@ function App() {
   return (
     <div className="flex h-screen bg-bg-main overflow-hidden text-slate-200">
       <Sidebar 
-        activeSection={activeSection} 
+        activeSection={isTrialExpired ? 'settings' : activeSection} 
         onSectionChange={(section) => {
-          setActiveSection(section);
+          if (!isTrialExpired) setActiveSection(section);
           setIsMobileMenuOpen(false);
         }} 
         user={user} 
         maintenance={maintenance}
         isMobileOpen={isMobileMenuOpen}
         setIsMobileOpen={setIsMobileMenuOpen}
+        isTrialExpired={isTrialExpired}
       />
       
       <main className="flex-1 flex flex-col overflow-hidden w-full">

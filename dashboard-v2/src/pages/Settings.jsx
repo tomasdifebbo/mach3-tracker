@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 
-export function Settings({ user, onRefresh }) {
+export function Settings({ user, onRefresh, isTrialExpired }) {
   const [costPerHour, setCostPerHour] = useState(user?.settings?.costPerHour || 50.0);
   const [plannedHours, setPlannedHours] = useState(user?.settings?.plannedHours || 8);
   const [webhookUrl, setWebhookUrl] = useState(user?.settings?.webhookUrl || '');
@@ -62,14 +62,29 @@ export function Settings({ user, onRefresh }) {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-12 animate-in slide-in-from-bottom duration-700">
+    <div className="p-8 max-w-6xl mx-auto space-y-12 animate-in fade-in duration-500">
+      {isTrialExpired && (
+        <div className="mb-8 p-6 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-start gap-4 shadow-xl shadow-red-500/5">
+          <div className="p-3 bg-red-500/20 text-red-400 rounded-xl">
+            <AlertCircle size={28} />
+          </div>
+          <div>
+            <h3 className="text-xl font-black text-red-400 uppercase tracking-widest mb-2">Período de Teste Expirado</h3>
+            <p className="text-sm font-medium text-red-200/80 leading-relaxed">
+              O seu período de degustação de 30 dias chegou ao fim e o acesso às métricas e históricos foi bloqueado. 
+              Para restaurar o acesso imediato ao sistema, por favor assine um dos nossos planos abaixo.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="mb-8">
+        <h2 className="text-3xl font-black tracking-tighter text-white">Configurações e Assinatura</h2>
+        <p className="text-sm font-medium text-text-muted mt-2">Gerencie seus custos de hora máquina e escolha seu plano</p>
+      </div>
+
       {/* Plans Section */}
       <section className="space-y-8">
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl font-black tracking-tight text-white uppercase italic">Upgrade para o Plano Pro</h2>
-          <p className="text-text-muted">Acesso ilimitado a relatórios avançados, monitoramento de múltiplas máquinas e exportação PDF.</p>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Starter Plan */}
           <div className={`glass p-10 rounded-[40px] border-border/30 flex flex-col items-center group hover:scale-105 transition-all duration-500 ${user?.plan === 'starter' ? 'ring-2 ring-accent-cyan/50' : ''}`}>

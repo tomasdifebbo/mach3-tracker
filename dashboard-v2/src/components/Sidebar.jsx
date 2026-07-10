@@ -18,7 +18,7 @@ function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-export function Sidebar({ activeSection, onSectionChange, user, maintenance = [], isMobileOpen, setIsMobileOpen }) {
+export function Sidebar({ activeSection, onSectionChange, user, maintenance = [], isMobileOpen, setIsMobileOpen, isTrialExpired }) {
   const [isOpen, setIsOpen] = React.useState(true);
 
   // Check if there is an urgent maintenance
@@ -87,17 +87,21 @@ export function Sidebar({ activeSection, onSectionChange, user, maintenance = []
 
       {/* Nav */}
       <nav className="flex-1 p-3 space-y-1 mt-4">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onSectionChange(item.id)}
-            className={cn(
-              "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-medium transition-all group relative",
-              activeSection === item.id 
-                ? "bg-gradient-to-r from-accent-cyan/10 to-transparent text-accent-cyan border-l-4 border-accent-cyan shadow-[inset_20px_0_20px_-20px_rgba(6,182,212,0.3)]"
-                : "text-text-muted hover:bg-white/5 hover:text-white"
-            )}
-          >
+        {navItems.map((item) => {
+          const isDisabled = isTrialExpired && item.id !== 'settings';
+          return (
+            <button
+              key={item.id}
+              onClick={() => { if (!isDisabled) onSectionChange(item.id); }}
+              disabled={isDisabled}
+              className={cn(
+                "w-full flex items-center gap-4 px-4 py-3 rounded-xl font-medium transition-all group relative",
+                activeSection === item.id 
+                  ? "bg-gradient-to-r from-accent-cyan/10 to-transparent text-accent-cyan border-l-4 border-accent-cyan shadow-[inset_20px_0_20px_-20px_rgba(6,182,212,0.3)]"
+                  : "text-text-muted hover:bg-white/5 hover:text-white",
+                isDisabled && "opacity-50 cursor-not-allowed hover:bg-transparent hover:text-text-muted"
+              )}
+            >
             <div className="relative">
               <item.icon size={22} className={cn("shrink-0", activeSection === item.id ? "text-accent-cyan" : "group-hover:text-white")} />
               {item.badge && (
@@ -107,16 +111,20 @@ export function Sidebar({ activeSection, onSectionChange, user, maintenance = []
                 </span>
               )}
             </div>
-            <span className={cn("whitespace-nowrap transition-all", isOpen ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none w-0")}>
+            <span className={cn("whitespace-nowrap transition-all flex-1 text-left", isOpen ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none w-0")}>
               {item.label}
             </span>
+            {isDisabled && isOpen && (
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400 opacity-60"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            )}
             {!isOpen && (
               <div className="absolute left-16 bg-bg-sidebar border border-border px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50 shadow-xl">
-                {item.label}
+                {item.label} {isDisabled ? '(Bloqueado)' : ''}
               </div>
             )}
           </button>
-        ))}
+          );
+        })}
       </nav>
 
       {/* Footer */}
