@@ -14,6 +14,7 @@ import { Login } from './pages/Login';
 import { AdminPortal } from './pages/AdminPortal';
 import { AdminLogin } from './pages/AdminLogin';
 import { PaymentResult } from './pages/PaymentResult';
+import { PaymentModal } from './components/PaymentModal';
 
 function App() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -38,7 +39,6 @@ function App() {
          const expiry = new Date(userData.trial_expiry);
          if (expiry < new Date()) {
             setIsTrialExpired(true);
-            setActiveSection('settings');
          } else {
             setIsTrialExpired(false);
          }
@@ -132,17 +132,13 @@ function App() {
   }
 
   const renderSection = () => {
-    if (isTrialExpired) {
-      return <Settings user={user} onRefresh={loadUser} isTrialExpired={isTrialExpired} />;
-    }
-
     switch (activeSection) {
       case 'dashboard': return <Dashboard jobs={jobs} user={user} routers={routers} onRefresh={fetchData} />;
       case 'jobs': return <History jobs={jobs} materials={materials} onRefresh={fetchData} user={user} />;
       case 'charts': return <Charts jobs={jobs} />;
       case 'materials': return <Materials materials={materials} onRefresh={fetchData} />;
       case 'maintenance': return <Maintenance maintenance={maintenance} routers={routers} onRefresh={fetchData} user={user} />;
-      case 'settings': return <Settings user={user} onRefresh={loadUser} isTrialExpired={isTrialExpired} />;
+      case 'settings': return <Settings user={user} onRefresh={loadUser} />;
       default: return <Dashboard jobs={jobs} user={user} />;
     }
   };
@@ -157,9 +153,11 @@ function App() {
   };
 
   return (
-    <div className="flex h-screen bg-bg-main overflow-hidden text-slate-200">
+    <div className="flex h-screen bg-bg-main overflow-hidden text-slate-200 relative">
+      {isTrialExpired && <PaymentModal user={user} />}
+      
       <Sidebar 
-        activeSection={isTrialExpired ? 'settings' : activeSection} 
+        activeSection={activeSection} 
         onSectionChange={(section) => {
           if (!isTrialExpired) setActiveSection(section);
           setIsMobileMenuOpen(false);

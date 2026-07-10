@@ -62,13 +62,13 @@ export function Header({ title, subtitle, user, onMenuToggle }) {
               
               <div className="flex flex-col">
                 <span className="text-sm font-semibold text-white leading-none mb-1">{user.email}</span>
-                <span className="text-[10px] text-accent-cyan font-bold flex items-center gap-1">
+                <span className={`text-[10px] font-bold flex items-center gap-1 ${user.plan === 'starter' ? (daysLeft > 0 ? 'text-accent-warning' : 'text-accent-danger') : 'text-accent-cyan'}`}>
                   <Zap size={10} fill="currentColor" />
-                  {daysLeft > 0 ? `Trial: ${daysLeft} dias` : 'Plano Ativo'}
+                  {user.plan === 'starter' ? (daysLeft > 0 ? `Renove em ${daysLeft} dias` : 'Expirado') : 'Plano Ativo'}
                 </span>
               </div>
               
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-accent-cyan/20 to-accent-blue/20 border border-accent-cyan/30 flex items-center justify-center text-accent-cyan overflow-hidden">
+              <div className={`w-8 h-8 rounded-full bg-gradient-to-tr border flex items-center justify-center overflow-hidden ${user.plan === 'starter' && daysLeft <= 0 ? 'from-accent-danger/20 to-red-900/20 border-accent-danger/30 text-accent-danger' : 'from-accent-cyan/20 to-accent-blue/20 border-accent-cyan/30 text-accent-cyan'}`}>
                  <User size={18} />
               </div>
             </button>
