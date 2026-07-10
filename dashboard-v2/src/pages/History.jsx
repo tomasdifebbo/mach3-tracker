@@ -26,7 +26,14 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   const [deletingId, setDeletingId] = useState(null);
   const [showPdfMenu, setShowPdfMenu] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [dateFilter, setDateFilter] = useState('all'); // 'all' | 'today' | 'week' | 'month' | '30d' | 'custom'
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const [routerFilter, setRouterFilter] = useState('all');
   const pdfMenuRef = useRef(null);
+
+  // Available routers from job list
+  const availableRouters = [...new Set(jobs.map(j => j.router_name).filter(Boolean))].sort();
 
   // Close PDF menu on outside click
   useEffect(() => {
@@ -88,10 +95,53 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
     return Object.values(groups).sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
   };
 
-  const filteredJobs = consolidateJobs(jobs).filter(j => 
-    j.file_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    j.folder?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Date range boundaries
+  const getDateBounds = () => {
+    const now = new Date();
+    const startOfDay = (d) => { const x = new Date(d); x.setHours(0,0,0,0); return x; };
+    if (dateFilter === 'today') return { from: startOfDay(now), to: now };
+    if (dateFilter === 'week') {
+      const from = startOfDay(now);
+      from.setDate(now.getDate() - now.getDay()); // Sunday
+      return { from, to: now };
+    }
+    if (dateFilter === 'month') {
+      const from = startOfDay(now);
+      from.setDate(1);
+      return { from, to: now };
+    }
+    if (dateFilter === '30d') {
+      const from = new Date(now);
+      from.setDate(now.getDate() - 30);
+      return { from, to: now };
+    }
+    if (dateFilter === 'custom' && customStart) {
+      const from = new Date(customStart + 'T00:00:00');
+      const to = customEnd ? new Date(customEnd + 'T23:59:59') : now;
+      return { from, to };
+    }
+    return null;
+  };
+
+  const filteredJobs = consolidateJobs(jobs).filter(j => {
+    // Text search
+    const matchText = !searchTerm ||
+      j.file_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      j.folder?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Router filter
+    const matchRouter = routerFilter === 'all' || j.router_name === routerFilter;
+
+    // Date filter
+    const bounds = getDateBounds();
+    const matchDate = !bounds || (() => {
+      const t = j.start_time ? new Date(j.start_time) : null;
+      return t && t >= bounds.from && t <= bounds.to;
+    })();
+
+    return matchText && matchRouter && matchDate;
+  });
+
 
   const handleExportCSV = () => {
     const headers = ['ID', 'Arquivo', 'Projeto', 'Inicio', 'Fim', 'Duracao (min)', 'Material', 'Custo (R$)', 'Data'];
@@ -166,10 +216,11 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   return (
     <div className="p-4 md:p-8 space-y-4 md:space-y-6">
       {/* Filters Bar */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 glass p-4 rounded-2xl relative z-10">
-        <div className="flex items-center gap-2 md:gap-4 flex-1 w-full md:min-w-[300px]">
+      <div className="glass p-4 rounded-2xl space-y-3 relative z-10 border border-border/40">
+        {/* Row 1: Search + Export */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           <div className="flex items-center gap-2 bg-white/5 border border-border px-4 py-2 rounded-xl focus-within:border-accent-cyan/50 flex-1">
-            <Search size={18} className="text-text-muted" />
+            <Search size={18} className="text-text-muted shrink-0" />
             <input 
               type="text" 
               placeholder="Filtrar por nome ou projeto..." 
@@ -177,27 +228,104 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-transparent border-none outline-none text-sm w-full"
             />
+            {searchTerm && (
+              <button onClick={() => setSearchTerm('')} className="text-text-muted hover:text-white text-xs ml-1">✕</button>
+            )}
           </div>
-          <button className="p-2.5 bg-white/5 border border-border rounded-xl text-text-muted hover:text-white transition-all">
-            <Filter size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleExportCSV}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-white/5 border border-border text-white font-black uppercase tracking-widest text-[10px] rounded-xl hover:bg-white/10 transition-all"
+            >
+              <Download size={15} /> CSV
+            </button>
+            <button 
+              onClick={() => handleExportPdf('all')}
+              disabled={exportingPdf}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-accent-blue to-accent-cyan text-white font-black uppercase tracking-widest text-[10px] rounded-xl hover:scale-105 transition-all shadow-lg shadow-accent-cyan/20 disabled:opacity-50"
+            >
+              <FileDown size={15} />
+              {exportingPdf ? 'Gerando...' : 'PDF'}
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-3 justify-between w-full md:w-auto">
-          <button 
-            onClick={handleExportCSV}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 md:px-5 py-2 md:py-2.5 bg-white/5 border border-border text-white font-black uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl hover:bg-white/10 hover:scale-105 active:scale-95 transition-all"
-          >
-            <Download size={16} /> CSV
-          </button>
-          <button 
-            onClick={() => handleExportPdf('all')}
-            disabled={exportingPdf}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 md:px-5 py-2 md:py-2.5 bg-gradient-to-r from-accent-blue to-accent-cyan text-white font-black uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-accent-cyan/20 disabled:opacity-50"
-          >
-            <FileDown size={16} />
-            {exportingPdf ? 'Gerando...' : 'Exportar PDF'}
-          </button>
+        {/* Row 2: Period chips + Router filter */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Calendar size={14} className="text-text-muted shrink-0" />
+          {[
+            { id: 'all',   label: 'Todos' },
+            { id: 'today', label: 'Hoje' },
+            { id: 'week',  label: 'Esta Semana' },
+            { id: 'month', label: 'Este Mês' },
+            { id: '30d',   label: 'Últimos 30d' },
+            { id: 'custom',label: 'Personalizado' },
+          ].map(opt => (
+            <button
+              key={opt.id}
+              onClick={() => setDateFilter(opt.id)}
+              className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+                dateFilter === opt.id
+                  ? 'bg-accent-cyan text-black shadow-lg shadow-accent-cyan/20'
+                  : 'bg-white/5 border border-border text-text-muted hover:text-white hover:bg-white/10'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+
+          {/* Router filter */}
+          {availableRouters.length > 1 && (
+            <select
+              value={routerFilter}
+              onChange={e => setRouterFilter(e.target.value)}
+              className="ml-auto bg-black/40 border border-border text-[11px] font-bold text-white rounded-xl px-3 py-1.5 outline-none hover:border-accent-cyan/50 transition-all cursor-pointer"
+            >
+              <option value="all">Todas as Roteadoras</option>
+              {availableRouters.map(r => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        {/* Row 3: Custom date inputs (only when 'custom' selected) */}
+        {dateFilter === 'custom' && (
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <div className="flex items-center gap-2 text-xs text-text-muted font-bold">
+              <span>De:</span>
+              <input
+                type="date"
+                value={customStart}
+                onChange={e => setCustomStart(e.target.value)}
+                className="bg-black/40 border border-border text-white text-xs rounded-xl px-3 py-1.5 outline-none hover:border-accent-cyan/50 transition-all cursor-pointer"
+              />
+            </div>
+            <div className="flex items-center gap-2 text-xs text-text-muted font-bold">
+              <span>Até:</span>
+              <input
+                type="date"
+                value={customEnd}
+                onChange={e => setCustomEnd(e.target.value)}
+                className="bg-black/40 border border-border text-white text-xs rounded-xl px-3 py-1.5 outline-none hover:border-accent-cyan/50 transition-all cursor-pointer"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Results count */}
+        <div className="flex items-center justify-between pt-1 border-t border-border/30">
+          <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">
+            <span className="text-white font-black">{filteredJobs.length}</span> registro{filteredJobs.length !== 1 ? 's' : ''} encontrado{filteredJobs.length !== 1 ? 's' : ''}
+          </span>
+          {(dateFilter !== 'all' || routerFilter !== 'all' || searchTerm) && (
+            <button
+              onClick={() => { setDateFilter('all'); setRouterFilter('all'); setSearchTerm(''); setCustomStart(''); setCustomEnd(''); }}
+              className="text-[10px] font-black uppercase tracking-widest text-accent-danger hover:text-red-400 transition-colors"
+            >
+              Limpar Filtros ✕
+            </button>
+          )}
         </div>
       </div>
 
