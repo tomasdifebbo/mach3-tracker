@@ -189,7 +189,7 @@ const PRIORITY_CONFIG = {
   baixa:   { color: 'bg-blue-400', label: 'Baixa', text: 'text-blue-400' },
 };
 
-function KanbanCard({ card, onDragStart }) {
+function KanbanCard({ card, onDragStart, onClick }) {
   const p = PRIORITY_CONFIG[card.priority] || PRIORITY_CONFIG.media;
   return (
     <div
@@ -199,7 +199,8 @@ function KanbanCard({ card, onDragStart }) {
         e.currentTarget.classList.add('opacity-50');
       }}
       onDragEnd={(e) => e.currentTarget.classList.remove('opacity-50')}
-      className="bg-bg-main/80 rounded-xl p-4 border border-white/5 hover:border-white/10 hover:-translate-y-0.5 transition-all cursor-grab active:cursor-grabbing group select-none"
+      onClick={() => onClick(card)}
+      className="bg-bg-main/80 rounded-xl p-4 border border-white/5 hover:border-white/10 hover:-translate-y-0.5 transition-all cursor-pointer select-none"
     >
       <div className="flex items-start justify-between gap-2 mb-3">
         <p className="text-sm font-semibold text-white leading-snug">{card.title}</p>
@@ -235,9 +236,146 @@ const KANBAN_COLS = [
   { id: 'done',  label: 'Concluído',    color: 'text-accent-success', bg: 'bg-accent-success/5', border: 'border-accent-success/20', countBg: 'bg-accent-success text-black' },
 ];
 
+function KanbanCardModal({ card, onClose, onSave, onDelete }) {
+  const [title, setTitle] = useState(card.title || '');
+  const [machine, setMachine] = useState(card.machine || 'Router CNC');
+  const [operator, setOperator] = useState(card.operator || '');
+  const [date, setDate] = useState(card.date || '');
+  const [priority, setPriority] = useState(card.priority || 'media');
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await onSave({
+        ...card,
+        title,
+        machine,
+        operator,
+        date,
+        priority
+      });
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao salvar as alterações.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={onClose}></div>
+      
+      {/* Modal */}
+      <form onSubmit={handleSubmit} className="relative z-10 w-full max-w-md bg-zinc-950 border border-white/10 p-6 rounded-3xl shadow-2xl flex flex-col gap-4 text-white animate-in zoom-in-95 duration-200">
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-sm font-black uppercase tracking-widest text-orange-400">
+            {card.id ? 'Editar O.S.' : 'Nova O.S.'}
+          </h3>
+          <button type="button" onClick={onClose} className="text-text-muted hover:text-white transition-colors font-bold text-xs uppercase tracking-wider">Fechar</button>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Título da O.S.</label>
+          <input 
+            type="text" 
+            required 
+            value={title} 
+            onChange={(e) => setTitle(e.target.value)} 
+            className="bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:border-orange-500 focus:outline-none transition-colors"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Máquina</label>
+            <select 
+              value={machine} 
+              onChange={(e) => setMachine(e.target.value)}
+              className="bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:border-orange-500 focus:outline-none transition-colors cursor-pointer"
+            >
+              <option value="Router CNC">Router CNC</option>
+              <option value="Laser">Laser</option>
+              <option value="Vácuo">Vácuo</option>
+              <option value="Impressão 3D">Impressão 3D</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Prioridade</label>
+            <select 
+              value={priority} 
+              onChange={(e) => setPriority(e.target.value)}
+              className="bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:border-orange-500 focus:outline-none transition-colors cursor-pointer"
+            >
+              <option value="urgente">Urgente</option>
+              <option value="alta">Alta</option>
+              <option value="media">Média</option>
+              <option value="baixa">Baixa</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Operador</label>
+            <input 
+              type="text" 
+              value={operator} 
+              onChange={(e) => setOperator(e.target.value)} 
+              className="bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:border-orange-500 focus:outline-none transition-colors"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Prazo</label>
+            <input 
+              type="text" 
+              placeholder="ex: Hoje 18:00"
+              value={date} 
+              onChange={(e) => setDate(e.target.value)} 
+              className="bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:border-orange-500 focus:outline-none transition-colors"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 mt-4">
+          {card.id && (
+            <button 
+              type="button" 
+              onClick={() => {
+                if (confirm('Deseja excluir esta O.S.?')) {
+                  onDelete(card.id);
+                  onClose();
+                }
+              }}
+              className="px-4 py-2.5 rounded-xl border border-red-500/30 hover:border-red-500 hover:bg-red-500/10 text-red-500 text-xs font-bold transition-all uppercase tracking-widest"
+            >
+              Excluir
+            </button>
+          )}
+          <button 
+            type="submit" 
+            disabled={saving}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-black text-xs font-bold transition-all uppercase tracking-widest shadow-lg shadow-orange-500/20"
+          >
+            {saving ? 'Salvando...' : 'Salvar'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function PainelKanban({ jobs = [] }) {
   const [columns, setColumns] = useState({ todo: [], doing: [], done: [] });
   const [loading, setLoading] = useState(true);
+  const [selectedCard, setSelectedCard] = useState(null);
+  
   const dragCard = React.useRef(null);
   const dragFrom = React.useRef(null);
 
@@ -315,6 +453,43 @@ function PainelKanban({ jobs = [] }) {
     dragFrom.current = null;
   };
 
+  const handleSaveCard = async (updatedCard) => {
+    if (updatedCard.id) {
+      const saved = await api.patch(`/kanban/${updatedCard.id}`, updatedCard);
+      setColumns(prev => {
+        const col = updatedCard.column_id;
+        return {
+          ...prev,
+          [col]: prev[col].map(c => String(c.id) === String(updatedCard.id) ? saved : c)
+        };
+      });
+    } else {
+      const saved = await api.post('/kanban', updatedCard);
+      setColumns(prev => {
+        const col = updatedCard.column_id || 'todo';
+        return {
+          ...prev,
+          [col]: [...prev[col], saved]
+        };
+      });
+    }
+  };
+
+  const handleDeleteCard = async (cardId) => {
+    try {
+      await api.deleteCustom(`/kanban/${cardId}`);
+      setColumns(prev => {
+        const next = { ...prev };
+        Object.keys(next).forEach(k => {
+          next[k] = next[k].filter(c => String(c.id) !== String(cardId));
+        });
+        return next;
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleReset = async () => {
     if (confirm('Deseja resetar o painel Kanban para o estado padrão? Isso removerá as posições manuais.')) {
       setLoading(true);
@@ -357,7 +532,7 @@ function PainelKanban({ jobs = [] }) {
           </span>
         ))}
         <div className="ml-auto flex items-center gap-4">
-          <span className="text-[10px] text-text-muted italic">↔ Arraste os cards entre colunas</span>
+          <span className="text-[10px] text-text-muted italic">↔ Arraste os cards entre colunas • Clique para editar</span>
           <button
             onClick={handleReset}
             className="text-[10px] font-bold text-orange-400 hover:text-orange-300 transition-colors uppercase border border-orange-500/30 px-2.5 py-1 rounded-lg"
@@ -371,34 +546,50 @@ function PainelKanban({ jobs = [] }) {
         {KANBAN_COLS.map(col => (
           <div
             key={col.id}
-            className={`${col.bg} rounded-2xl p-4 border ${col.border} transition-all`}
+            className={`${col.bg} rounded-2xl p-4 border ${col.border} transition-all flex flex-col gap-4`}
             onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('ring-1', 'ring-white/20'); }}
             onDragLeave={(e) => e.currentTarget.classList.remove('ring-1', 'ring-white/20')}
             onDrop={(e) => { e.currentTarget.classList.remove('ring-1', 'ring-white/20'); handleDrop(e, col.id); }}
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between">
               <h4 className={`text-xs font-black uppercase tracking-widest ${col.color}`}>{col.label}</h4>
               <span className={`w-6 h-6 rounded-full ${col.countBg} text-xs font-bold flex items-center justify-center`}>
                 {columns[col.id].length}
               </span>
             </div>
-            <div className={`space-y-3 ${col.id === 'done' ? 'opacity-75' : ''} min-h-[60px]`}>
+            <div className={`space-y-3 ${col.id === 'done' ? 'opacity-75' : ''} min-h-[150px] flex-1`}>
               {columns[col.id].map(card => (
                 <KanbanCard
                   key={card.id}
                   card={card}
                   onDragStart={(e, id) => handleDragStart(e, id, col.id)}
+                  onClick={(c) => setSelectedCard(c)}
                 />
               ))}
               {columns[col.id].length === 0 && (
-                <div className="border-2 border-dashed border-white/10 rounded-xl p-6 text-center text-xs text-text-muted">
+                <div className="border-2 border-dashed border-white/5 rounded-xl p-6 text-center text-xs text-text-muted">
                   Solte aqui
                 </div>
               )}
             </div>
+            <button
+              onClick={() => setSelectedCard({ column_id: col.id })}
+              className="w-full py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold transition-all uppercase tracking-widest border border-white/5"
+            >
+              + Adicionar O.S.
+            </button>
           </div>
         ))}
       </div>
+
+      {selectedCard && (
+        <KanbanCardModal 
+          card={selectedCard}
+          onClose={() => setSelectedCard(null)}
+          onSave={handleSaveCard}
+          onDelete={handleDeleteCard}
+        />
+      )}
 
       <div className="p-4 bg-orange-500/10 border border-orange-500/20 border-l-4 border-l-orange-500 rounded-r-xl">
         <p className="text-sm text-orange-200/80 leading-relaxed">
