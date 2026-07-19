@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   LayoutGrid, Calendar, Columns3, CheckSquare2, Package, TrendingUp,
   AlertCircle, CheckCircle2, Clock, Star, ChevronRight, Zap, Target
 } from 'lucide-react';
+import { api } from '../services/api';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -235,41 +236,50 @@ const KANBAN_COLS = [
 ];
 
 function PainelKanban({ jobs = [] }) {
-  // Merge real active jobs into the doing column on first render
-  const buildInitial = () => {
-    const realActive = jobs.filter(j => !j.end_time).slice(0, 4).map(j => ({
-      id: `job-${j.id}`, title: j.job_name, machine: j.router_name, operator: 'Operador', priority: 'alta'
-    }));
-    const realDone = jobs.filter(j => j.end_time).slice(0, 3).map(j => ({
-      id: `job-done-${j.id}`, title: j.job_name, machine: j.router_name, date: 'Entregue', priority: 'baixa'
-    }));
-    return {
-      todo: [...INITIAL_CARDS.todo],
-      doing: realActive.length > 0 ? realActive : [...INITIAL_CARDS.doing],
-      done: realDone.length > 0 ? realDone : [...INITIAL_CARDS.done],
-    };
-  };
-
-  const [columns, setColumns] = useState(() => {
-    try {
-      const saved = localStorage.getItem('mach3_kanban_columns');
-      return saved ? JSON.parse(saved) : buildInitial();
-    } catch {
-      return buildInitial();
-    }
-  });
-
+  const [columns, setColumns] = useState({ todo: [], doing: [], done: [] });
+  const [loading, setLoading] = useState(true);
   const dragCard = React.useRef(null);
   const dragFrom = React.useRef(null);
 
-  // Sync state to localStorage whenever columns change
-  React.useEffect(() => {
+  const buildInitial = () => {
+    const realActive = jobs.filter(j => !j.end_time).slice(0, 4).map(j => ({
+      title: j.job_name, machine: j.router_name, operator: 'Operador', priority: 'alta', column_id: 'doing'
+    }));
+    const realDone = jobs.filter(j => j.end_time).slice(0, 3).map(j => ({
+      title: j.job_name, machine: j.router_name, date: 'Entregue', priority: 'baixa', column_id: 'done'
+    }));
+    const todoCards = INITIAL_CARDS.todo.map(c => ({ ...c, column_id: 'todo' }));
+    const doingCards = realActive.length > 0 ? realActive : INITIAL_CARDS.doing.map(c => ({ ...c, column_id: 'doing' }));
+    const doneCards = realDone.length > 0 ? realDone : INITIAL_CARDS.done.map(c => ({ ...c, column_id: 'done' }));
+
+    return [...todoCards, ...doingCards, ...doneCards];
+  };
+
+  const loadKanban = async () => {
+    setLoading(true);
     try {
-      localStorage.setItem('mach3_kanban_columns', JSON.stringify(columns));
+      let cards = await api.get('/kanban');
+      if (!Array.isArray(cards) || cards.length === 0) {
+        const initial = buildInitial();
+        cards = await api.post('/kanban/batch', initial);
+      }
+      const cols = { todo: [], doing: [], done: [] };
+      cards.forEach(c => {
+        if (cols[c.column_id]) {
+          cols[c.column_id].push(c);
+        }
+      });
+      setColumns(cols);
     } catch (err) {
-      console.error('Failed to save kanban columns to localStorage', err);
+      console.error('Failed to load kanban:', err);
+    } finally {
+      setLoading(false);
     }
-  }, [columns]);
+  };
+
+  useEffect(() => {
+    loadKanban();
+  }, [jobs]);
 
   const handleDragStart = (e, cardId, colId) => {
     dragCard.current = cardId;
@@ -277,31 +287,62 @@ function PainelKanban({ jobs = [] }) {
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDrop = (e, targetCol) => {
+  const handleDrop = async (e, targetCol) => {
     e.preventDefault();
     const cardId = dragCard.current;
     const fromCol = dragFrom.current;
     if (!cardId || !fromCol || fromCol === targetCol) return;
 
+    // Optimistic UI update
     setColumns(prev => {
-      const card = prev[fromCol].find(c => c.id === cardId);
+      const card = prev[fromCol].find(c => String(c.id) === String(cardId));
       if (!card) return prev;
       return {
         ...prev,
-        [fromCol]: prev[fromCol].filter(c => c.id !== cardId),
-        [targetCol]: [...prev[targetCol], card],
+        [fromCol]: prev[fromCol].filter(c => String(c.id) !== String(cardId)),
+        [targetCol]: [...prev[targetCol], { ...card, column_id: targetCol }],
       };
     });
+
+    try {
+      await api.patch(`/kanban/${cardId}`, { column_id: targetCol });
+    } catch (err) {
+      console.error('Failed to update card column:', err);
+      loadKanban();
+    }
+
     dragCard.current = null;
     dragFrom.current = null;
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (confirm('Deseja resetar o painel Kanban para o estado padrão? Isso removerá as posições manuais.')) {
-      const initial = buildInitial();
-      setColumns(initial);
+      setLoading(true);
+      try {
+        const initial = buildInitial();
+        const cards = await api.post('/kanban/batch', initial);
+        const cols = { todo: [], doing: [], done: [] };
+        cards.forEach(c => {
+          if (cols[c.column_id]) {
+            cols[c.column_id].push(c);
+          }
+        });
+        setColumns(cols);
+      } catch (err) {
+        console.error('Failed to reset kanban:', err);
+      } finally {
+        setLoading(false);
+      }
     }
   };
+
+  if (loading && columns.todo.length === 0 && columns.doing.length === 0 && columns.done.length === 0) {
+    return (
+      <div className="flex items-center justify-center p-20 text-orange-400 font-bold">
+        Carregando Kanban...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -419,30 +460,70 @@ const MACHINE_CHECKLISTS = {
 
 function ChecklistMaquina({ data, machineKey }) {
   const today = new Date().toISOString().slice(0, 10);
-  const storageKey = `mach3_checklist_${machineKey}_${today}`;
+  const [checked, setChecked] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [checked, setChecked] = useState(() => {
+  useEffect(() => {
+    let active = true;
+    const fetchChecklist = async () => {
+      setLoading(true);
+      try {
+        const rows = await api.get(`/checklists?machine_key=${machineKey}&date=${today}`);
+        if (active && Array.isArray(rows)) {
+          const checkedIndices = rows.filter(r => r.done).map(r => r.item_index);
+          setChecked(checkedIndices);
+        }
+      } catch (err) {
+        console.error('Failed to load checklist:', err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    fetchChecklist();
+    return () => { active = false; };
+  }, [machineKey, today]);
+
+  const toggle = async (i) => {
+    const isDone = !checked.includes(i);
+    // Optimistic update
+    setChecked(prev => isDone ? [...prev, i] : prev.filter(x => x !== i));
     try {
-      const saved = localStorage.getItem(storageKey);
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  });
-
-  const toggle = (i) => {
-    setChecked(prev => {
-      const next = prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i];
-      try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
-      return next;
-    });
+      await api.post('/checklists/toggle', {
+        machine_key: machineKey,
+        item_index: i,
+        done: isDone,
+        date: today
+      });
+    } catch (err) {
+      console.error('Failed to toggle checklist item:', err);
+      // Revert on error
+      setChecked(prev => isDone ? prev.filter(x => x !== i) : [...prev, i]);
+    }
   };
 
-  const clearAll = () => {
+  const clearAll = async () => {
+    if (!confirm('Deseja limpar todos os itens deste checklist?')) return;
     setChecked([]);
-    try { localStorage.removeItem(storageKey); } catch {}
+    try {
+      await api.post('/checklists/clear', {
+        machine_key: machineKey,
+        date: today
+      });
+    } catch (err) {
+      console.error('Failed to clear checklist:', err);
+    }
   };
 
   const progress = Math.round((checked.length / data.items.length) * 100);
   const allDone = checked.length === data.items.length;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-20 text-orange-400 font-bold">
+        Carregando checklist...
+      </div>
+    );
+  }
 
   return (
     <div className="glass rounded-2xl border border-white/5 overflow-hidden">

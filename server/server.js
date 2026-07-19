@@ -190,6 +190,28 @@ async function initDb() {
             ALTER TABLE users ADD COLUMN IF NOT EXISTS webhook_url TEXT;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expiry TIMESTAMP;
+
+            -- Kanban and Checklist tables
+            CREATE TABLE IF NOT EXISTS kanban_tasks (
+                id SERIAL PRIMARY KEY,
+                title TEXT NOT NULL,
+                machine TEXT,
+                operator TEXT,
+                date TEXT,
+                priority TEXT,
+                column_id TEXT NOT NULL,
+                "userId" INTEGER
+            );
+
+            CREATE TABLE IF NOT EXISTS checklists (
+                id SERIAL PRIMARY KEY,
+                machine_key TEXT NOT NULL,
+                item_index INTEGER NOT NULL,
+                done BOOLEAN NOT NULL DEFAULT FALSE,
+                date TEXT NOT NULL,
+                "userId" INTEGER,
+                UNIQUE(machine_key, item_index, date, "userId")
+            );
         `);
 
         // SEED: Ensure Casadotrem exists
@@ -868,6 +890,124 @@ app.get('/api/payments/status', authenticateToken, async (req, res) => {
             trial_expiry: user.trial_expiry,
             last_payment: lastPayment || null
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Kanban API
+app.get('/api/kanban', authenticateToken, async (req, res) => {
+    try {
+        const rows = (await pool.query(
+            'SELECT * FROM kanban_tasks WHERE "userId" = $1 ORDER BY id ASC',
+            [req.user.id]
+        )).rows;
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/kanban', authenticateToken, async (req, res) => {
+    const { title, machine, operator, date, priority, column_id } = req.body;
+    try {
+        const r = await pool.query(
+            'INSERT INTO kanban_tasks (title, machine, operator, date, priority, column_id, "userId") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+            [title, machine || null, operator || null, date || null, priority || 'media', column_id || 'todo', req.user.id]
+        );
+        res.json(r.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.patch('/api/kanban/:id', authenticateToken, async (req, res) => {
+    const { title, machine, operator, date, priority, column_id } = req.body;
+    try {
+        const r = await pool.query(
+            'UPDATE kanban_tasks SET title = COALESCE($1, title), machine = COALESCE($2, machine), operator = COALESCE($3, operator), date = COALESCE($4, date), priority = COALESCE($5, priority), column_id = COALESCE($6, column_id) WHERE id = $7 AND "userId" = $8 RETURNING *',
+            [title, machine, operator, date, priority, column_id, req.params.id, req.user.id]
+        );
+        if (r.rowCount === 0) return res.status(404).json({ error: "Tarefa não encontrada." });
+        res.json(r.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/kanban/:id', authenticateToken, async (req, res) => {
+    try {
+        const r = await pool.query('DELETE FROM kanban_tasks WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id]);
+        if (r.rowCount === 0) return res.status(404).json({ error: "Tarefa não encontrada." });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/kanban/batch', authenticateToken, async (req, res) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        await client.query('DELETE FROM kanban_tasks WHERE "userId" = $1', [req.user.id]);
+        const cards = req.body;
+        const inserted = [];
+        for (const card of cards) {
+            const r = await client.query(
+                'INSERT INTO kanban_tasks (title, machine, operator, date, priority, column_id, "userId") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+                [card.title, card.machine || null, card.operator || null, card.date || null, card.priority || 'media', card.column_id || 'todo', req.user.id]
+            );
+            inserted.push(r.rows[0]);
+        }
+        await client.query('COMMIT');
+        res.json(inserted);
+    } catch (err) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
+    }
+});
+
+// Checklists API
+app.get('/api/checklists', authenticateToken, async (req, res) => {
+    const { machine_key, date } = req.query;
+    if (!machine_key || !date) return res.status(400).json({ error: "Parâmetros machine_key e date obrigatórios." });
+    try {
+        const rows = (await pool.query(
+            'SELECT item_index, done FROM checklists WHERE machine_key = $1 AND date = $2 AND "userId" = $3',
+            [machine_key, date, req.user.id]
+        )).rows;
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/checklists/toggle', authenticateToken, async (req, res) => {
+    const { machine_key, item_index, done, date } = req.body;
+    try {
+        await pool.query(
+            `INSERT INTO checklists (machine_key, item_index, done, date, "userId") 
+             VALUES ($1, $2, $3, $4, $5) 
+             ON CONFLICT (machine_key, item_index, date, "userId") 
+             DO UPDATE SET done = EXCLUDED.done`,
+            [machine_key, item_index, done, date, req.user.id]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/checklists/clear', authenticateToken, async (req, res) => {
+    const { machine_key, date } = req.body;
+    try {
+        await pool.query(
+            'DELETE FROM checklists WHERE machine_key = $1 AND date = $2 AND "userId" = $3',
+            [machine_key, date, req.user.id]
+        );
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
