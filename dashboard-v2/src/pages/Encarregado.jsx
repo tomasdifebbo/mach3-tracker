@@ -250,9 +250,26 @@ function PainelKanban({ jobs = [] }) {
     };
   };
 
-  const [columns, setColumns] = useState(buildInitial);
+  const [columns, setColumns] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mach3_kanban_columns');
+      return saved ? JSON.parse(saved) : buildInitial();
+    } catch {
+      return buildInitial();
+    }
+  });
+
   const dragCard = React.useRef(null);
   const dragFrom = React.useRef(null);
+
+  // Sync state to localStorage whenever columns change
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('mach3_kanban_columns', JSON.stringify(columns));
+    } catch (err) {
+      console.error('Failed to save kanban columns to localStorage', err);
+    }
+  }, [columns]);
 
   const handleDragStart = (e, cardId, colId) => {
     dragCard.current = cardId;
@@ -279,6 +296,13 @@ function PainelKanban({ jobs = [] }) {
     dragFrom.current = null;
   };
 
+  const handleReset = () => {
+    if (confirm('Deseja resetar o painel Kanban para o estado padrão? Isso removerá as posições manuais.')) {
+      const initial = buildInitial();
+      setColumns(initial);
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <SectionHeader label="Gestão de Produção" title="Painel Kanban" />
@@ -291,7 +315,15 @@ function PainelKanban({ jobs = [] }) {
             <span className={`w-2 h-2 rounded-full ${v.color}`}></span>{v.label}
           </span>
         ))}
-        <span className="ml-auto text-[10px] text-text-muted italic">↔ Arraste os cards entre colunas</span>
+        <div className="ml-auto flex items-center gap-4">
+          <span className="text-[10px] text-text-muted italic">↔ Arraste os cards entre colunas</span>
+          <button
+            onClick={handleReset}
+            className="text-[10px] font-bold text-orange-400 hover:text-orange-300 transition-colors uppercase border border-orange-500/30 px-2.5 py-1 rounded-lg"
+          >
+            Resetar Painel
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-5">
