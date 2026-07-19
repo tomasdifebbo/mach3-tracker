@@ -9,7 +9,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Crown,
-  ClipboardList
+  ClipboardList,
+  HardHat
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -47,6 +48,7 @@ export function Sidebar({ activeSection, onSectionChange, user, maintenance = []
     { id: 'charts', label: 'Gráficos', icon: BarChart3 },
     { id: 'materials', label: 'Materiais', icon: Box },
     { id: 'maintenance', label: 'Manutenção', icon: ClipboardList, badge: hasUrgentMaintenance },
+    { id: 'encarregado', label: 'Encarregado', icon: HardHat },
     { id: 'settings', label: 'Configurações', icon: Settings },
   ];
 

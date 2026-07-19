@@ -15,6 +15,7 @@ import { AdminPortal } from './pages/AdminPortal';
 import { AdminLogin } from './pages/AdminLogin';
 import { PaymentResult } from './pages/PaymentResult';
 import { PaymentModal } from './components/PaymentModal';
+import { Encarregado } from './pages/Encarregado';
 
 function App() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -139,6 +140,7 @@ function App() {
       case 'materials': return <Materials materials={materials} onRefresh={fetchData} />;
       case 'maintenance': return <Maintenance maintenance={maintenance} routers={routers} onRefresh={fetchData} user={user} />;
       case 'settings': return <Settings user={user} onRefresh={loadUser} />;
+      case 'encarregado': return <Encarregado jobs={jobs} />;
       default: return <Dashboard jobs={jobs} user={user} />;
     }
   };
@@ -149,7 +151,8 @@ function App() {
     'charts': ['Gráficos', 'Análise aprofundada de produção'],
     'materials': ['Materiais', 'Cadastro de insumos e preços'],
     'maintenance': ['Manutenção', 'Agenda e histórico preventivo'],
-    'settings': ['Configurações', 'Ajustes de custo e produção']
+    'settings': ['Configurações', 'Ajustes de custo e produção'],
+    'encarregado': ['Encarregado', 'Planner operacional e checklists'],
   };
 
   return (
