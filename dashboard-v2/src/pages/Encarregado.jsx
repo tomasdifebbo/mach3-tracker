@@ -188,26 +188,96 @@ const PRIORITY_CONFIG = {
   baixa:   { color: 'bg-blue-400', label: 'Baixa', text: 'text-blue-400' },
 };
 
-function KanbanCard({ title, machine, operator, date, priority }) {
-  const p = PRIORITY_CONFIG[priority] || PRIORITY_CONFIG.media;
+function KanbanCard({ card, onDragStart }) {
+  const p = PRIORITY_CONFIG[card.priority] || PRIORITY_CONFIG.media;
   return (
-    <div className="bg-bg-main/80 rounded-xl p-4 border border-white/5 hover:border-white/10 hover:-translate-y-0.5 transition-all cursor-pointer group">
+    <div
+      draggable
+      onDragStart={(e) => {
+        onDragStart(e, card.id);
+        e.currentTarget.classList.add('opacity-50');
+      }}
+      onDragEnd={(e) => e.currentTarget.classList.remove('opacity-50')}
+      className="bg-bg-main/80 rounded-xl p-4 border border-white/5 hover:border-white/10 hover:-translate-y-0.5 transition-all cursor-grab active:cursor-grabbing group select-none"
+    >
       <div className="flex items-start justify-between gap-2 mb-3">
-        <p className="text-sm font-semibold text-white leading-snug">{title}</p>
+        <p className="text-sm font-semibold text-white leading-snug">{card.title}</p>
         <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 ${p.color}`}></span>
       </div>
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[10px] font-bold bg-white/10 px-2.5 py-1 rounded-full text-text-muted">{machine}</span>
-        {date && <span className="text-[10px] text-text-muted">📅 {date}</span>}
-        {operator && <span className="text-[10px] text-text-muted">👤 {operator}</span>}
+        <span className="text-[10px] font-bold bg-white/10 px-2.5 py-1 rounded-full text-text-muted">{card.machine}</span>
+        {card.date && <span className="text-[10px] text-text-muted">📅 {card.date}</span>}
+        {card.operator && <span className="text-[10px] text-text-muted">👤 {card.operator}</span>}
       </div>
     </div>
   );
 }
 
+const INITIAL_CARDS = {
+  todo: [
+    { id: 'k1', title: 'Peças de MDF — Cliente Marcenaria X', machine: 'Router CNC', date: 'Hoje 18:00', priority: 'alta' },
+    { id: 'k2', title: 'Gravação Acrílico — Loja Y', machine: 'Laser', date: 'Amanhã', priority: 'media' },
+    { id: 'k3', title: 'Protótipo de Case — Interno', machine: 'Impressão 3D', date: 'Semana', priority: 'baixa' },
+  ],
+  doing: [
+    { id: 'k4', title: 'Moldes de PETG — Embalagens Z', machine: 'Vácuo', operator: 'Op. João', priority: 'urgente' },
+    { id: 'k5', title: 'Corte Chapas — Sinalização ABC', machine: 'Laser', operator: 'Op. Maria', priority: 'alta' },
+  ],
+  done: [
+    { id: 'k6', title: 'Usinagem Painel — Cliente W', machine: 'Router CNC', date: 'Entregue ontem', priority: 'media' },
+  ],
+};
+
+const KANBAN_COLS = [
+  { id: 'todo',  label: 'A Fazer',      color: 'text-text-muted',   bg: 'bg-white/[0.02]',      border: 'border-white/5',        countBg: 'bg-bg-main text-white' },
+  { id: 'doing', label: 'Em Andamento', color: 'text-orange-400',   bg: 'bg-orange-500/5',     border: 'border-orange-500/20', countBg: 'bg-orange-500 text-white' },
+  { id: 'done',  label: 'Concluído',    color: 'text-accent-success', bg: 'bg-accent-success/5', border: 'border-accent-success/20', countBg: 'bg-accent-success text-black' },
+];
+
 function PainelKanban({ jobs = [] }) {
-  const activeJobs = jobs.filter(j => !j.end_time).slice(0, 5);
-  const doneJobs = jobs.filter(j => j.end_time).slice(0, 3);
+  // Merge real active jobs into the doing column on first render
+  const buildInitial = () => {
+    const realActive = jobs.filter(j => !j.end_time).slice(0, 4).map(j => ({
+      id: `job-${j.id}`, title: j.job_name, machine: j.router_name, operator: 'Operador', priority: 'alta'
+    }));
+    const realDone = jobs.filter(j => j.end_time).slice(0, 3).map(j => ({
+      id: `job-done-${j.id}`, title: j.job_name, machine: j.router_name, date: 'Entregue', priority: 'baixa'
+    }));
+    return {
+      todo: [...INITIAL_CARDS.todo],
+      doing: realActive.length > 0 ? realActive : [...INITIAL_CARDS.doing],
+      done: realDone.length > 0 ? realDone : [...INITIAL_CARDS.done],
+    };
+  };
+
+  const [columns, setColumns] = useState(buildInitial);
+  const dragCard = React.useRef(null);
+  const dragFrom = React.useRef(null);
+
+  const handleDragStart = (e, cardId, colId) => {
+    dragCard.current = cardId;
+    dragFrom.current = colId;
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDrop = (e, targetCol) => {
+    e.preventDefault();
+    const cardId = dragCard.current;
+    const fromCol = dragFrom.current;
+    if (!cardId || !fromCol || fromCol === targetCol) return;
+
+    setColumns(prev => {
+      const card = prev[fromCol].find(c => c.id === cardId);
+      if (!card) return prev;
+      return {
+        ...prev,
+        [fromCol]: prev[fromCol].filter(c => c.id !== cardId),
+        [targetCol]: [...prev[targetCol], card],
+      };
+    });
+    dragCard.current = null;
+    dragFrom.current = null;
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -221,54 +291,40 @@ function PainelKanban({ jobs = [] }) {
             <span className={`w-2 h-2 rounded-full ${v.color}`}></span>{v.label}
           </span>
         ))}
+        <span className="ml-auto text-[10px] text-text-muted italic">↔ Arraste os cards entre colunas</span>
       </div>
 
       <div className="grid grid-cols-3 gap-5">
-        {/* A Fazer */}
-        <div className="bg-white/[0.02] rounded-2xl p-4 border border-white/5">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-xs font-black uppercase tracking-widest text-text-muted">A Fazer</h4>
-            <span className="w-6 h-6 rounded-full bg-bg-main text-xs font-bold flex items-center justify-center text-white">3</span>
+        {KANBAN_COLS.map(col => (
+          <div
+            key={col.id}
+            className={`${col.bg} rounded-2xl p-4 border ${col.border} transition-all`}
+            onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('ring-1', 'ring-white/20'); }}
+            onDragLeave={(e) => e.currentTarget.classList.remove('ring-1', 'ring-white/20')}
+            onDrop={(e) => { e.currentTarget.classList.remove('ring-1', 'ring-white/20'); handleDrop(e, col.id); }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h4 className={`text-xs font-black uppercase tracking-widest ${col.color}`}>{col.label}</h4>
+              <span className={`w-6 h-6 rounded-full ${col.countBg} text-xs font-bold flex items-center justify-center`}>
+                {columns[col.id].length}
+              </span>
+            </div>
+            <div className={`space-y-3 ${col.id === 'done' ? 'opacity-75' : ''} min-h-[60px]`}>
+              {columns[col.id].map(card => (
+                <KanbanCard
+                  key={card.id}
+                  card={card}
+                  onDragStart={(e, id) => handleDragStart(e, id, col.id)}
+                />
+              ))}
+              {columns[col.id].length === 0 && (
+                <div className="border-2 border-dashed border-white/10 rounded-xl p-6 text-center text-xs text-text-muted">
+                  Solte aqui
+                </div>
+              )}
+            </div>
           </div>
-          <div className="space-y-3">
-            <KanbanCard title="Peças de MDF — Cliente Marcenaria X" machine="Router CNC" date="Hoje 18:00" priority="alta" />
-            <KanbanCard title="Gravação Acrílico — Loja Y" machine="Laser" date="Amanhã" priority="media" />
-            <KanbanCard title="Protótipo de Case — Interno" machine="Impressão 3D" date="Semana" priority="baixa" />
-          </div>
-        </div>
-
-        {/* Em Andamento — alimentado pelo banco */}
-        <div className="bg-orange-500/5 rounded-2xl p-4 border border-orange-500/20">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-xs font-black uppercase tracking-widest text-orange-400">Em Andamento</h4>
-            <span className="w-6 h-6 rounded-full bg-orange-500 text-xs font-bold flex items-center justify-center text-white">{activeJobs.length || 2}</span>
-          </div>
-          <div className="space-y-3">
-            {activeJobs.length > 0 ? activeJobs.map(j => (
-              <KanbanCard key={j.id} title={j.job_name} machine={j.router_name} operator="Operador" priority="alta" />
-            )) : (
-              <>
-                <KanbanCard title="Moldes de PETG — Embalagens Z" machine="Vácuo" operator="Op. João" priority="urgente" />
-                <KanbanCard title="Corte Chapas — Sinalização ABC" machine="Laser" operator="Op. Maria" priority="alta" />
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Concluído */}
-        <div className="bg-accent-success/5 rounded-2xl p-4 border border-accent-success/20">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-xs font-black uppercase tracking-widest text-accent-success">Concluído</h4>
-            <span className="w-6 h-6 rounded-full bg-accent-success text-xs font-bold flex items-center justify-center text-black">{doneJobs.length || 1}</span>
-          </div>
-          <div className="space-y-3 opacity-70">
-            {doneJobs.length > 0 ? doneJobs.map(j => (
-              <KanbanCard key={j.id} title={j.job_name} machine={j.router_name} date="Entregue" priority="baixa" />
-            )) : (
-              <KanbanCard title="Usinagem Painel — Cliente W" machine="Router CNC" date="Entregue ontem" priority="media" />
-            )}
-          </div>
-        </div>
+        ))}
       </div>
 
       <div className="p-4 bg-orange-500/10 border border-orange-500/20 border-l-4 border-l-orange-500 rounded-r-xl">
@@ -329,22 +385,64 @@ const MACHINE_CHECKLISTS = {
   }
 };
 
-function ChecklistMaquina({ data }) {
-  const [checked, setChecked] = useState([]);
-  const toggle = (i) => setChecked(prev => prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i]);
+function ChecklistMaquina({ data, machineKey }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const storageKey = `mach3_checklist_${machineKey}_${today}`;
+
+  const [checked, setChecked] = useState(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+
+  const toggle = (i) => {
+    setChecked(prev => {
+      const next = prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i];
+      try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
+  const clearAll = () => {
+    setChecked([]);
+    try { localStorage.removeItem(storageKey); } catch {}
+  };
+
   const progress = Math.round((checked.length / data.items.length) * 100);
+  const allDone = checked.length === data.items.length;
 
   return (
     <div className="glass rounded-2xl border border-white/5 overflow-hidden">
       <div className="p-6 border-b border-white/5">
-        <h3 className="text-sm font-black uppercase tracking-widest text-white mb-4">{data.title}</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-black uppercase tracking-widest text-white">{data.title}</h3>
+          <div className="flex items-center gap-3">
+            {allDone && (
+              <span className="text-[10px] font-black bg-accent-success/10 text-accent-success border border-accent-success/20 px-3 py-1 rounded-full">✓ COMPLETO</span>
+            )}
+            <button
+              onClick={clearAll}
+              className="text-[10px] font-bold text-text-muted hover:text-accent-danger transition-colors"
+            >
+              Limpar
+            </button>
+          </div>
+        </div>
         {/* Progress bar */}
         <div className="flex items-center gap-3">
           <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-            <div className="h-full bg-orange-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${allDone ? 'bg-accent-success' : 'bg-orange-500'}`}
+              style={{ width: `${progress}%` }}
+            ></div>
           </div>
           <span className="text-xs font-black text-text-muted min-w-[50px] text-right">{checked.length}/{data.items.length}</span>
         </div>
+        <p className="text-[10px] text-text-muted mt-2 flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent-success inline-block"></span>
+          Progresso salvo automaticamente para hoje ({today})
+        </p>
       </div>
       <div className="divide-y divide-white/5">
         {data.items.map((item, i) => {
@@ -384,7 +482,7 @@ function ChecklistsDiarios() {
         ))}
       </div>
 
-      <ChecklistMaquina data={MACHINE_CHECKLISTS[activeTab]} />
+      <ChecklistMaquina key={activeTab} data={MACHINE_CHECKLISTS[activeTab]} machineKey={activeTab} />
     </div>
   );
 }
