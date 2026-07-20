@@ -232,6 +232,18 @@ async function initDb() {
                 "userId" INTEGER REFERENCES users(id) ON DELETE CASCADE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+
+            CREATE TABLE IF NOT EXISTS stock_items (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                machine TEXT NOT NULL,
+                unit TEXT NOT NULL DEFAULT 'un',
+                qty_current NUMERIC NOT NULL DEFAULT 0,
+                qty_min NUMERIC NOT NULL DEFAULT 0,
+                qty_max NUMERIC NOT NULL DEFAULT 100,
+                "userId" INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         `);
 
         // SEED: Ensure Casadotrem exists
@@ -1027,6 +1039,68 @@ app.post('/api/checklists/clear', authenticateToken, async (req, res) => {
             'DELETE FROM checklists WHERE machine_key = $1 AND date = $2 AND "userId" = $3',
             [machine_key, date, req.user.id]
         );
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Stock Items API
+app.get('/api/stock', authenticateToken, async (req, res) => {
+    try {
+        const rows = (await pool.query(
+            'SELECT * FROM stock_items WHERE "userId" = $1 ORDER BY machine, name',
+            [req.user.id]
+        )).rows;
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/stock', authenticateToken, async (req, res) => {
+    const { name, machine, unit, qty_current, qty_min, qty_max } = req.body;
+    try {
+        const r = await pool.query(
+            `INSERT INTO stock_items (name, machine, unit, qty_current, qty_min, qty_max, "userId")
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+            [name, machine, unit || 'un', qty_current ?? 0, qty_min ?? 0, qty_max ?? 100, req.user.id]
+        );
+        res.json(r.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.patch('/api/stock/:id', authenticateToken, async (req, res) => {
+    const { name, machine, unit, qty_current, qty_min, qty_max } = req.body;
+    try {
+        const r = await pool.query(
+            `UPDATE stock_items SET
+                name        = COALESCE($1, name),
+                machine     = COALESCE($2, machine),
+                unit        = COALESCE($3, unit),
+                qty_current = COALESCE($4, qty_current),
+                qty_min     = COALESCE($5, qty_min),
+                qty_max     = COALESCE($6, qty_max),
+                updated_at  = CURRENT_TIMESTAMP
+             WHERE id = $7 AND "userId" = $8 RETURNING *`,
+            [name, machine, unit, qty_current, qty_min, qty_max, req.params.id, req.user.id]
+        );
+        if (r.rowCount === 0) return res.status(404).json({ error: 'Item não encontrado.' });
+        res.json(r.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/stock/:id', authenticateToken, async (req, res) => {
+    try {
+        const r = await pool.query(
+            'DELETE FROM stock_items WHERE id = $1 AND "userId" = $2',
+            [req.params.id, req.user.id]
+        );
+        if (r.rowCount === 0) return res.status(404).json({ error: 'Item não encontrado.' });
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
