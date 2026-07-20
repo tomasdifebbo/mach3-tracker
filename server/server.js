@@ -212,6 +212,26 @@ async function initDb() {
                 "userId" INTEGER,
                 UNIQUE(machine_key, item_index, date, "userId")
             );
+
+            CREATE TABLE IF NOT EXISTS kaizens (
+                id SERIAL PRIMARY KEY,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'Em avaliação',
+                "userId" INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS occurrences (
+                id SERIAL PRIMARY KEY,
+                machine TEXT NOT NULL,
+                type TEXT NOT NULL,
+                description TEXT NOT NULL,
+                severity TEXT NOT NULL DEFAULT 'media',
+                status TEXT NOT NULL DEFAULT 'pending',
+                "userId" INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         `);
 
         // SEED: Ensure Casadotrem exists
@@ -1007,6 +1027,106 @@ app.post('/api/checklists/clear', authenticateToken, async (req, res) => {
             'DELETE FROM checklists WHERE machine_key = $1 AND date = $2 AND "userId" = $3',
             [machine_key, date, req.user.id]
         );
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Kaizens API
+app.get('/api/kaizens', authenticateToken, async (req, res) => {
+    try {
+        const rows = (await pool.query(
+            'SELECT * FROM kaizens WHERE "userId" = $1 ORDER BY id DESC',
+            [req.user.id]
+        )).rows;
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/kaizens', authenticateToken, async (req, res) => {
+    const { title, description, status } = req.body;
+    try {
+        const r = await pool.query(
+            'INSERT INTO kaizens (title, description, status, "userId") VALUES ($1, $2, $3, $4) RETURNING *',
+            [title, description, status || 'Em avaliação', req.user.id]
+        );
+        res.json(r.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.patch('/api/kaizens/:id', authenticateToken, async (req, res) => {
+    const { title, description, status } = req.body;
+    try {
+        const r = await pool.query(
+            'UPDATE kaizens SET title = COALESCE($1, title), description = COALESCE($2, description), status = COALESCE($3, status) WHERE id = $4 AND "userId" = $5 RETURNING *',
+            [title, description, status, req.params.id, req.user.id]
+        );
+        if (r.rowCount === 0) return res.status(404).json({ error: "Kaizen não encontrado." });
+        res.json(r.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/kaizens/:id', authenticateToken, async (req, res) => {
+    try {
+        const r = await pool.query('DELETE FROM kaizens WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id]);
+        if (r.rowCount === 0) return res.status(404).json({ error: "Kaizen não encontrado." });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Occurrences API
+app.get('/api/occurrences', authenticateToken, async (req, res) => {
+    try {
+        const rows = (await pool.query(
+            'SELECT * FROM occurrences WHERE "userId" = $1 ORDER BY id DESC',
+            [req.user.id]
+        )).rows;
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/occurrences', authenticateToken, async (req, res) => {
+    const { machine, type, description, severity, status } = req.body;
+    try {
+        const r = await pool.query(
+            'INSERT INTO occurrences (machine, type, description, severity, status, "userId") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [machine, type, description, severity || 'media', status || 'pending', req.user.id]
+        );
+        res.json(r.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.patch('/api/occurrences/:id', authenticateToken, async (req, res) => {
+    const { status, severity, description } = req.body;
+    try {
+        const r = await pool.query(
+            'UPDATE occurrences SET status = COALESCE($1, status), severity = COALESCE($2, severity), description = COALESCE($3, description) WHERE id = $4 AND "userId" = $5 RETURNING *',
+            [status, severity, description, req.params.id, req.user.id]
+        );
+        if (r.rowCount === 0) return res.status(404).json({ error: "Ocorrência não encontrada." });
+        res.json(r.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/occurrences/:id', authenticateToken, async (req, res) => {
+    try {
+        const r = await pool.query('DELETE FROM occurrences WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id]);
+        if (r.rowCount === 0) return res.status(404).json({ error: "Ocorrência não encontrada." });
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
