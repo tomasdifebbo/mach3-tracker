@@ -237,6 +237,127 @@ const KANBAN_COLS = [
   { id: 'done',  label: 'Concluído',    color: 'text-accent-success', bg: 'bg-accent-success/5', border: 'border-accent-success/20', countBg: 'bg-accent-success text-black' },
 ];
 
+const STAR_LABELS = ['', 'Péssima', 'Ruim', 'Regular', 'Boa', 'Excelente'];
+
+function QualityModal({ card, onConfirm, onCancel }) {
+  const [rating, setRating] = useState(5);
+  const [hovered, setHovered] = useState(0);
+  const [qtyApproved, setQtyApproved] = useState('');
+  const [qtyRejected, setQtyRejected] = useState('');
+  const [observations, setObservations] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleConfirm = async () => {
+    setSaving(true);
+    try {
+      await onConfirm({ rating, qtyApproved: Number(qtyApproved) || 0, qtyRejected: Number(qtyRejected) || 0, observations });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const starColor = rating >= 4 ? 'text-accent-success' : rating >= 3 ? 'text-accent-warning' : 'text-accent-danger';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative z-10 w-full max-w-md bg-zinc-950 border border-white/10 rounded-3xl shadow-2xl flex flex-col gap-0 overflow-hidden animate-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="bg-accent-success/10 border-b border-accent-success/20 px-6 py-5 flex items-start gap-4">
+          <div className="w-10 h-10 rounded-2xl bg-accent-success/20 flex items-center justify-center flex-shrink-0">
+            <CheckCircle2 size={20} className="text-accent-success" />
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-accent-success mb-0.5">Inspeção de Qualidade</p>
+            <h3 className="text-base font-black text-white leading-tight">{card.title}</h3>
+            <p className="text-xs text-text-muted mt-0.5">{card.machine}{card.operator ? ` · ${card.operator}` : ''}</p>
+          </div>
+        </div>
+
+        <div className="p-6 flex flex-col gap-5">
+          {/* Star Rating */}
+          <div className="flex flex-col gap-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Qualidade Geral das Peças</label>
+            <div className="flex items-center gap-2">
+              {[1,2,3,4,5].map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setRating(s)}
+                  onMouseEnter={() => setHovered(s)}
+                  onMouseLeave={() => setHovered(0)}
+                  className={`text-3xl transition-all duration-100 ${
+                    (hovered || rating) >= s ? 'text-yellow-400 scale-110' : 'text-white/20'
+                  }`}
+                >
+                  ★
+                </button>
+              ))}
+              <span className={`ml-2 text-sm font-black ${starColor}`}>
+                {STAR_LABELS[hovered || rating]}
+              </span>
+            </div>
+          </div>
+
+          {/* Quantities */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Qtd. Aprovada ✓</label>
+              <input
+                type="number" min="0"
+                value={qtyApproved}
+                onChange={e => setQtyApproved(e.target.value)}
+                placeholder="0"
+                className="bg-black/40 border border-accent-success/20 focus:border-accent-success rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none transition-colors"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Qtd. Rejeitada ✗</label>
+              <input
+                type="number" min="0"
+                value={qtyRejected}
+                onChange={e => setQtyRejected(e.target.value)}
+                placeholder="0"
+                className="bg-black/40 border border-accent-danger/20 focus:border-accent-danger rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none transition-colors"
+              />
+            </div>
+          </div>
+
+          {/* Observations */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Observações (opcional)</label>
+            <textarea
+              value={observations}
+              onChange={e => setObservations(e.target.value)}
+              placeholder="Ex: Pequena variação dimensional na peça 3, retrabalho necessário..."
+              className="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white h-20 focus:border-orange-500 focus:outline-none transition-colors resize-none"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 py-2.5 rounded-xl border border-white/10 text-xs font-bold text-text-muted hover:text-white transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirm}
+              disabled={saving}
+              className="flex-2 px-6 py-2.5 rounded-xl bg-accent-success hover:opacity-90 disabled:opacity-50 text-black text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-accent-success/20"
+            >
+              {saving ? 'Arquivando...' : 'Concluir e Arquivar'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function KanbanCardModal({ card, onClose, onSave, onDelete }) {
   const [title, setTitle] = useState(card.title || '');
   const [machine, setMachine] = useState(card.machine || 'Router CNC');
@@ -376,7 +497,11 @@ function PainelKanban({ jobs = [] }) {
   const [columns, setColumns] = useState({ todo: [], doing: [], done: [] });
   const [loading, setLoading] = useState(true);
   const [selectedCard, setSelectedCard] = useState(null);
-  
+  const [queuedForDone, setQueuedForDone] = useState(null); // card waiting for quality check
+  const [showArchive, setShowArchive] = useState(false);
+  const [archive, setArchive] = useState([]);
+  const [archiveLoading, setArchiveLoading] = useState(false);
+
   const dragCard = React.useRef(null);
   const dragFrom = React.useRef(null);
 
@@ -432,7 +557,18 @@ function PainelKanban({ jobs = [] }) {
     const fromCol = dragFrom.current;
     if (!cardId || !fromCol || fromCol === targetCol) return;
 
-    // Optimistic UI update
+    // If dropping into 'done', intercept and show quality modal
+    if (targetCol === 'done') {
+      const card = columns[fromCol].find(c => String(c.id) === String(cardId));
+      if (card) {
+        setQueuedForDone({ card, fromCol });
+        dragCard.current = null;
+        dragFrom.current = null;
+        return;
+      }
+    }
+
+    // Optimistic UI update for other columns
     setColumns(prev => {
       const card = prev[fromCol].find(c => String(c.id) === String(cardId));
       if (!card) return prev;
@@ -452,6 +588,49 @@ function PainelKanban({ jobs = [] }) {
 
     dragCard.current = null;
     dragFrom.current = null;
+  };
+
+  const handleArchiveConfirm = async ({ rating, qtyApproved, qtyRejected, observations }) => {
+    if (!queuedForDone) return;
+    const { card, fromCol } = queuedForDone;
+    // Optimistically remove from active column
+    setColumns(prev => ({
+      ...prev,
+      [fromCol]: prev[fromCol].filter(c => String(c.id) !== String(card.id)),
+    }));
+    setQueuedForDone(null);
+    try {
+      await api.post('/kanban/archive', {
+        kanban_id: card.id,
+        title: card.title,
+        machine: card.machine,
+        operator: card.operator,
+        priority: card.priority,
+        quality_rating: rating,
+        qty_approved: qtyApproved,
+        qty_rejected: qtyRejected,
+        observations,
+      });
+    } catch (err) {
+      console.error(err);
+      loadKanban();
+    }
+  };
+
+  const loadArchive = async () => {
+    setArchiveLoading(true);
+    try {
+      const data = await api.get('/kanban/archive');
+      if (Array.isArray(data)) setArchive(data);
+    } catch (err) { console.error(err); }
+    finally { setArchiveLoading(false); }
+  };
+
+  const toggleArchive = () => {
+    setShowArchive(v => {
+      if (!v) loadArchive();
+      return !v;
+    });
   };
 
   const handleSaveCard = async (updatedCard) => {
@@ -533,7 +712,15 @@ function PainelKanban({ jobs = [] }) {
           </span>
         ))}
         <div className="ml-auto flex items-center gap-4">
-          <span className="text-[10px] text-text-muted italic">↔ Arraste os cards entre colunas • Clique para editar</span>
+          <span className="text-[10px] text-text-muted italic">↔ Arraste para "Concluído" abre inspeção de qualidade</span>
+          <button
+            onClick={toggleArchive}
+            className={`text-[10px] font-bold transition-colors uppercase border px-2.5 py-1 rounded-lg ${
+              showArchive ? 'text-accent-success border-accent-success/50 bg-accent-success/10' : 'text-accent-success border-accent-success/30 hover:border-accent-success/50'
+            }`}
+          >
+            {showArchive ? '← Fechar Histórico' : 'Histórico de OS'}
+          </button>
           <button
             onClick={handleReset}
             className="text-[10px] font-bold text-orange-400 hover:text-orange-300 transition-colors uppercase border border-orange-500/30 px-2.5 py-1 rounded-lg"
@@ -592,9 +779,66 @@ function PainelKanban({ jobs = [] }) {
         />
       )}
 
+      {queuedForDone && (
+        <QualityModal
+          card={queuedForDone.card}
+          onConfirm={handleArchiveConfirm}
+          onCancel={() => setQueuedForDone(null)}
+        />
+      )}
+
+      {/* Archive History Panel */}
+      {showArchive && (
+        <div className="glass rounded-2xl border border-white/5 overflow-hidden">
+          <div className="px-6 py-4 border-b border-white/5 flex items-center gap-3">
+            <CheckCircle2 size={16} className="text-accent-success" />
+            <h3 className="text-sm font-black uppercase tracking-widest text-white">Histórico de O.S. Arquivadas</h3>
+            <span className="text-[10px] text-text-muted font-bold">({archive.length} registros)</span>
+          </div>
+          {archiveLoading ? (
+            <div className="p-8 text-center text-xs text-text-muted animate-pulse">Carregando histórico...</div>
+          ) : archive.length === 0 ? (
+            <div className="p-8 text-center text-xs text-text-muted">Nenhuma O.S. arquivada ainda.</div>
+          ) : (
+            <div className="divide-y divide-white/5">
+              {archive.map(a => {
+                const stars = '★'.repeat(a.quality_rating) + '☆'.repeat(5 - a.quality_rating);
+                const starColor = a.quality_rating >= 4 ? 'text-accent-success' : a.quality_rating >= 3 ? 'text-accent-warning' : 'text-accent-danger';
+                const date = new Date(a.archived_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                return (
+                  <div key={a.id} className="grid grid-cols-[1fr_120px_120px_auto] gap-4 px-6 py-4 hover:bg-white/[0.02] transition-colors items-center">
+                    <div>
+                      <p className="text-sm font-bold text-white">{a.title}</p>
+                      <p className="text-xs text-text-muted">{a.machine}{a.operator ? ` · ${a.operator}` : ''} · {date}</p>
+                      {a.observations && <p className="text-[11px] text-text-muted/70 mt-1 italic">{a.observations}</p>}
+                    </div>
+                    <div className="text-center">
+                      <p className={`text-sm font-black ${starColor}`}>{stars}</p>
+                      <p className="text-[10px] text-text-muted">{STAR_LABELS[a.quality_rating]}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs font-bold">
+                        <span className="text-accent-success">{a.qty_approved} aprov.</span>
+                        {a.qty_rejected > 0 && <span className="text-accent-danger ml-1">{a.qty_rejected} rej.</span>}
+                      </p>
+                    </div>
+                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${
+                      a.priority === 'urgente' ? 'bg-red-500/15 text-red-400' :
+                      a.priority === 'alta'    ? 'bg-orange-500/15 text-orange-400' :
+                      a.priority === 'media'   ? 'bg-yellow-500/15 text-yellow-400' :
+                      'bg-white/10 text-text-muted'
+                    }`}>{a.priority || '—'}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="p-4 bg-orange-500/10 border border-orange-500/20 border-l-4 border-l-orange-500 rounded-r-xl">
         <p className="text-sm text-orange-200/80 leading-relaxed">
-          <strong className="text-orange-400">Regra de Ouro:</strong> Operadores não movem cartões para "Concluído" sem aprovação visual do Encarregado. Isso garante que erros dimensionais não cheguem ao cliente final.
+          <strong className="text-orange-400">Regra de Ouro:</strong> Ao arrastar uma O.S. para "Concluído", o sistema abre uma inspeção de qualidade obrigatória. O card é arquivado com nota, quantidade aprovada/rejeitada e observações.
         </p>
       </div>
     </div>

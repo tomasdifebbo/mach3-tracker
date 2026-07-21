@@ -244,6 +244,20 @@ async function initDb() {
                 "userId" INTEGER REFERENCES users(id) ON DELETE CASCADE,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+
+            CREATE TABLE IF NOT EXISTS kanban_archive (
+                id SERIAL PRIMARY KEY,
+                title TEXT NOT NULL,
+                machine TEXT,
+                operator TEXT,
+                priority TEXT,
+                quality_rating INTEGER NOT NULL DEFAULT 5,
+                qty_approved INTEGER NOT NULL DEFAULT 0,
+                qty_rejected INTEGER NOT NULL DEFAULT 0,
+                observations TEXT,
+                archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "userId" INTEGER REFERENCES users(id) ON DELETE CASCADE
+            );
         `);
 
         // SEED: Ensure Casadotrem exists
@@ -1040,6 +1054,38 @@ app.post('/api/checklists/clear', authenticateToken, async (req, res) => {
             [machine_key, date, req.user.id]
         );
         res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Kanban Archive API
+app.post('/api/kanban/archive', authenticateToken, async (req, res) => {
+    const { kanban_id, title, machine, operator, priority, quality_rating, qty_approved, qty_rejected, observations } = req.body;
+    try {
+        // Save to archive
+        const r = await pool.query(
+            `INSERT INTO kanban_archive (title, machine, operator, priority, quality_rating, qty_approved, qty_rejected, observations, "userId")
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+            [title, machine, operator, priority, quality_rating ?? 5, qty_approved ?? 0, qty_rejected ?? 0, observations ?? '', req.user.id]
+        );
+        // Delete from kanban
+        if (kanban_id) {
+            await pool.query('DELETE FROM kanban_tasks WHERE id = $1 AND "userId" = $2', [kanban_id, req.user.id]);
+        }
+        res.json(r.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/kanban/archive', authenticateToken, async (req, res) => {
+    try {
+        const rows = (await pool.query(
+            'SELECT * FROM kanban_archive WHERE "userId" = $1 ORDER BY archived_at DESC LIMIT 50',
+            [req.user.id]
+        )).rows;
+        res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
