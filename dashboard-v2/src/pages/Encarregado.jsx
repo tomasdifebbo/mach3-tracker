@@ -107,16 +107,50 @@ function DashboardSemanal({ jobs = [] }) {
 
       {/* Jobs da semana */}
       {totalJobs > 0 && (
-        <div className="glass rounded-2xl p-6 border border-white/5">
-          <h3 className="text-sm font-black uppercase tracking-widest text-white mb-4">Jobs desta semana ({totalJobs})</h3>
-          <div className="space-y-2">
-            {weekJobs.slice(0, 8).map(j => (
-              <div key={j.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+        <div className="glass rounded-2xl border border-white/5 overflow-hidden">
+          <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+            <h3 className="text-sm font-black uppercase tracking-widest text-white">Jobs desta semana ({totalJobs})</h3>
+            <div className="flex items-center gap-4 text-[9px] font-black uppercase tracking-widest text-text-muted">
+              <span>Máquina</span>
+              <span>Pasta / Arquivo</span>
+              <span>Status</span>
+            </div>
+          </div>
+          <div className="divide-y divide-white/5">
+            {weekJobs.slice(0, 10).map(j => (
+              <div key={j.id} className="grid grid-cols-[1fr_auto] gap-4 px-6 py-3.5 hover:bg-white/[0.02] transition-colors items-center">
                 <div>
-                  <p className="text-sm font-semibold text-white">{j.job_name}</p>
-                  <p className="text-xs text-text-muted">{j.router_name} • {j.material_name}</p>
+                  {/* Nome do job */}
+                  <p className="text-sm font-semibold text-white mb-0.5 leading-tight">
+                    {j.job_name || j.file_name || '—'}
+                  </p>
+                  {/* Linha inferior: máquina + pasta / arquivo */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-[10px] font-bold text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-md">
+                      {j.router_name || '—'}
+                    </span>
+                    {j.folder && (
+                      <span className="flex items-center gap-1 text-[10px] text-text-muted">
+                        <span className="text-text-muted/50">📁</span>
+                        <span className="font-medium">{j.folder}</span>
+                      </span>
+                    )}
+                    {j.file_name && (
+                      <span className="flex items-center gap-1 text-[10px] text-text-muted">
+                        <span className="text-text-muted/50">📄</span>
+                        <span className="font-medium text-accent-cyan/80">{j.file_name}</span>
+                      </span>
+                    )}
+                    {j.material_name && !j.folder && !j.file_name && (
+                      <span className="text-[10px] text-text-muted">{j.material_name}</span>
+                    )}
+                  </div>
                 </div>
-                <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${j.end_time ? 'bg-accent-success/10 text-accent-success' : 'bg-accent-cyan/10 text-accent-cyan'}`}>
+                <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full whitespace-nowrap ${
+                  j.end_time
+                    ? 'bg-accent-success/10 text-accent-success'
+                    : 'bg-accent-cyan/10 text-accent-cyan'
+                }`}>
                   {j.end_time ? 'Concluído' : 'Em curso'}
                 </span>
               </div>
