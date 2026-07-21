@@ -102,6 +102,8 @@ async function initDb() {
                 id SERIAL PRIMARY KEY,
                 name TEXT,
                 price REAL,
+                feed_rate REAL DEFAULT 3000,
+                pass_width REAL DEFAULT 100,
                 "userId" INTEGER
             );
             CREATE TABLE IF NOT EXISTS jobs (
@@ -169,6 +171,10 @@ async function initDb() {
             ALTER TABLE jobs ADD COLUMN IF NOT EXISTS router_name TEXT;
             ALTER TABLE jobs ADD COLUMN IF NOT EXISTS estimated_minutes REAL;
             ALTER TABLE jobs ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+            -- Alter materials table for m² linear feed rate and pass width calculation
+            ALTER TABLE materials ADD COLUMN IF NOT EXISTS feed_rate REAL DEFAULT 3000;
+            ALTER TABLE materials ADD COLUMN IF NOT EXISTS pass_width REAL DEFAULT 100;
 
             -- Payments table
             CREATE TABLE IF NOT EXISTS payments (
@@ -755,20 +761,47 @@ app.delete('/api/jobs/:id', authenticateToken, async (req, res) => {
 });
 
 app.get('/api/materials', authenticateToken, async (req, res) => {
-    const mats = (await pool.query('SELECT * FROM materials WHERE "userId" = $1', [req.user.id])).rows;
+    const mats = (await pool.query('SELECT * FROM materials WHERE "userId" = $1 ORDER BY id DESC', [req.user.id])).rows;
     res.json(mats);
 });
 
 app.post('/api/materials', authenticateToken, async (req, res) => {
-    const { name, price } = req.body;
-    const result = await pool.query('INSERT INTO materials (name, price, "userId") VALUES ($1, $2, $3) RETURNING id', [name, parseFloat(price), req.user.id]);
-    res.json({ success: true, material: { id: result.rows[0].id, name, price, userId: req.user.id } });
+    const { name, price, feed_rate, pass_width } = req.body;
+    const fRate = parseFloat(feed_rate) || 3000;
+    const pWidth = parseFloat(pass_width) || 100;
+    const result = await pool.query(
+        'INSERT INTO materials (name, price, feed_rate, pass_width, "userId") VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [name, parseFloat(price), fRate, pWidth, req.user.id]
+    );
+    res.json({ success: true, material: result.rows[0] });
+});
+
+app.patch('/api/materials/:id', authenticateToken, async (req, res) => {
+    const { name, price, feed_rate, pass_width } = req.body;
+    const result = await pool.query(
+        `UPDATE materials SET 
+            name = COALESCE($1, name),
+            price = COALESCE($2, price),
+            feed_rate = COALESCE($3, feed_rate),
+            pass_width = COALESCE($4, pass_width)
+         WHERE id = $5 AND "userId" = $6 RETURNING *`,
+        [
+            name || null,
+            price !== undefined && price !== null ? parseFloat(price) : null,
+            feed_rate !== undefined && feed_rate !== null ? parseFloat(feed_rate) : null,
+            pass_width !== undefined && pass_width !== null ? parseFloat(pass_width) : null,
+            req.params.id,
+            req.user.id
+        ]
+    );
+    if (result.rowCount > 0) res.json({ success: true, material: result.rows[0] });
+    else res.status(404).json({ error: "Material não encontrado" });
 });
 
 app.delete('/api/materials/:id', authenticateToken, async (req, res) => {
     const result = await pool.query('DELETE FROM materials WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id]);
     if (result.rowCount > 0) res.json({ success: true });
-    else res.status(404).json({ error: "Material not found" });
+    else res.status(404).json({ error: "Material não encontrado" });
 });
 
 app.get('/api/stats', authenticateToken, async (req, res) => {

@@ -113,11 +113,20 @@ export const api = {
     return resp.json();
   },
 
-  addMaterial: async (name, price) => {
+  addMaterial: async (name, price, feedRate = 3000, passWidth = 100) => {
     const resp = await fetch(`${API_URL}/api/materials`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ name, price })
+      body: JSON.stringify({ name, price, feed_rate: feedRate, pass_width: passWidth })
+    });
+    return safeJson(resp);
+  },
+
+  updateMaterial: async (id, payload) => {
+    const resp = await fetch(`${API_URL}/api/materials/${id}`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload)
     });
     return safeJson(resp);
   },

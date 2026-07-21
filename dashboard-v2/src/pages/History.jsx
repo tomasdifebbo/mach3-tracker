@@ -13,6 +13,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
 import { generateProductionReport } from '../utils/generateReport';
+import { calculateInsumo } from '../utils/insumoCalculator';
 
 const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 const formatTime = (iso) => iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-';
@@ -142,15 +143,27 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
 
   const handleUpdateMaterial = async (job, mat) => {
     try {
-      const payload = mat ? {
-        material_id: mat.id,
-        material_name: mat.name,
-        material_price: mat.price
-      } : {
+      let payload = {
         material_id: null,
         material_name: null,
         material_price: 0
       };
+
+      if (mat) {
+        const insumo = calculateInsumo({
+          durationMinutes: job.duration_minutes || 0,
+          pricePerM2: mat.price || 0,
+          feedRateMmMin: mat.feed_rate || 3000,
+          passWidthMm: mat.pass_width || 100
+        });
+
+        payload = {
+          material_id: mat.id,
+          material_name: mat.name,
+          material_price: insumo.totalCost
+        };
+      }
+
       // Update all IDs if consolidated
       const targetIds = job.ids || [job.id];
       for (const id of targetIds) {
@@ -281,18 +294,25 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                     </div>
                   </td>
                   <td className="px-6 py-5 text-center relative overflow-visible">
-                    <button 
-                      onClick={() => setActiveDropdown(activeDropdown === job.id ? null : job.id)}
-                      className="text-[10px] font-black uppercase tracking-widest py-1.5 px-3 rounded-xl border border-border bg-white/5 hover:border-accent-cyan transition-all text-text-muted hover:text-white flex items-center gap-2 mx-auto shadow-sm whitespace-nowrap"
-                    >
-                      {job.material_name || 'Vincular'} <ChevronDown size={12} className={activeDropdown === job.id ? "rotate-180 transition-transform" : "transition-transform"} />
-                    </button>
+                    <div className="flex flex-col items-center gap-1">
+                      <button 
+                        onClick={() => setActiveDropdown(activeDropdown === job.id ? null : job.id)}
+                        className="text-[10px] font-black uppercase tracking-widest py-1.5 px-3 rounded-xl border border-border bg-white/5 hover:border-accent-cyan transition-all text-text-muted hover:text-white flex items-center gap-2 mx-auto shadow-sm whitespace-nowrap"
+                      >
+                        {job.material_name || 'Vincular'} <ChevronDown size={12} className={activeDropdown === job.id ? "rotate-180 transition-transform" : "transition-transform"} />
+                      </button>
+                      {job.material_name && (
+                        <span className="text-[9px] font-mono text-accent-cyan/80 font-bold bg-accent-cyan/10 px-2 py-0.5 rounded-md">
+                          Insumo: {formatCurrency(job.material_price || 0)}
+                        </span>
+                      )}
+                    </div>
                     
                     <AnimatePresence>
                       {activeDropdown === job.id && (
                         <motion.div 
                           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                          className="absolute left-1/2 -translate-x-1/2 mt-2 w-48 glass border border-border rounded-2xl shadow-2xl z-[100] p-1.5"
+                          className="absolute left-1/2 -translate-x-1/2 mt-2 w-52 glass border border-border rounded-2xl shadow-2xl z-[100] p-1.5"
                         >
                           <button 
                             onClick={() => handleUpdateMaterial(job, null)}
@@ -300,16 +320,26 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                           >
                             × Sem Material
                           </button>
-                          {materials.map(m => (
-                            <button 
-                              key={m.id}
-                              onClick={() => handleUpdateMaterial(job, m)}
-                              className="w-full text-left px-4 py-2 text-xs font-bold text-white hover:bg-accent-cyan hover:text-black rounded-lg transition-all flex justify-between group"
-                            >
-                              <span>{m.name}</span>
-                              <span className="opacity-0 group-hover:opacity-100 text-[10px] font-black">R$ {m.price}</span>
-                            </button>
-                          ))}
+                          {materials.map(m => {
+                            const ins = calculateInsumo({
+                              durationMinutes: job.duration_minutes || 0,
+                              pricePerM2: m.price || 0,
+                              feedRateMmMin: m.feed_rate || 3000,
+                              passWidthMm: m.pass_width || 100
+                            });
+                            return (
+                              <button 
+                                key={m.id}
+                                onClick={() => handleUpdateMaterial(job, m)}
+                                className="w-full text-left px-3 py-2 text-xs font-bold text-white hover:bg-accent-cyan hover:text-black rounded-lg transition-all flex justify-between items-center group"
+                              >
+                                <span>{m.name}</span>
+                                <span className="text-[9px] font-mono text-accent-cyan group-hover:text-black font-black">
+                                  {ins.areaM2}m² ({formatCurrency(ins.totalCost)})
+                                </span>
+                              </button>
+                            );
+                          })}
                         </motion.div>
                       )}
                     </AnimatePresence>
