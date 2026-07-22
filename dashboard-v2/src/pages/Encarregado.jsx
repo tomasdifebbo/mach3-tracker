@@ -224,7 +224,7 @@ const PRIORITY_CONFIG = {
   baixa:   { color: 'bg-blue-400', label: 'Baixa', text: 'text-blue-400' },
 };
 
-function KanbanCard({ card, onDragStart, onClick }) {
+function KanbanCard({ card, onDragStart, onClick, onArchive }) {
   const p = PRIORITY_CONFIG[card.priority] || PRIORITY_CONFIG.media;
   return (
     <div
@@ -234,18 +234,33 @@ function KanbanCard({ card, onDragStart, onClick }) {
         e.currentTarget.classList.add('opacity-50');
       }}
       onDragEnd={(e) => e.currentTarget.classList.remove('opacity-50')}
-      onClick={() => onClick(card)}
-      className="bg-bg-main/80 rounded-xl p-4 border border-white/5 hover:border-white/10 hover:-translate-y-0.5 transition-all cursor-pointer select-none"
+      className="bg-bg-main/80 rounded-xl p-4 border border-white/5 hover:border-white/10 hover:-translate-y-0.5 transition-all select-none group"
     >
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <p className="text-sm font-semibold text-white leading-snug">{card.title}</p>
-        <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 ${p.color}`}></span>
+      <div
+        className="cursor-pointer"
+        onClick={() => onClick(card)}
+      >
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <p className="text-sm font-semibold text-white leading-snug">{card.title}</p>
+          <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1 ${p.color}`}></span>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] font-bold bg-white/10 px-2.5 py-1 rounded-full text-text-muted">{card.machine}</span>
+          {card.date && <span className="text-[10px] text-text-muted">📅 {card.date}</span>}
+          {card.operator && <span className="text-[10px] text-text-muted">👤 {card.operator}</span>}
+        </div>
       </div>
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[10px] font-bold bg-white/10 px-2.5 py-1 rounded-full text-text-muted">{card.machine}</span>
-        {card.date && <span className="text-[10px] text-text-muted">📅 {card.date}</span>}
-        {card.operator && <span className="text-[10px] text-text-muted">👤 {card.operator}</span>}
-      </div>
+      {onArchive && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onArchive(card); }}
+          className="mt-3 w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all
+            bg-accent-success/10 text-accent-success border border-accent-success/20
+            hover:bg-accent-success/25 hover:border-accent-success/50 hover:shadow-sm hover:shadow-accent-success/20
+            opacity-0 group-hover:opacity-100"
+        >
+          <CheckCircle2 size={11} /> Arquivar
+        </button>
+      )}
     </div>
   );
 }
@@ -865,6 +880,7 @@ function PainelKanban({ jobs = [] }) {
                   card={card}
                   onDragStart={(e, id) => handleDragStart(e, id, col.id)}
                   onClick={(c) => setSelectedCard(c)}
+                  onArchive={col.id !== 'done' ? (c) => setQueuedForDone({ card: c, fromCol: col.id }) : null}
                 />
               ))}
               {columns[col.id].length === 0 && (
