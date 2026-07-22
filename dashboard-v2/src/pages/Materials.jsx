@@ -24,7 +24,6 @@ export function Materials({ materials = [], onRefresh }) {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [feedRate, setFeedRate] = useState('3000');
-  const [passWidth, setPassWidth] = useState('100');
   const [sheetWidth, setSheetWidth] = useState('2750');
   const [sheetHeight, setSheetHeight] = useState('1850');
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,24 +34,12 @@ export function Materials({ materials = [], onRefresh }) {
   const [deletingId, setDeletingId] = useState(null);
   const [editingMaterial, setEditingMaterial] = useState(null);
 
-  // Live preview for 60 min (1 hour) & Sheet Area
+  // Live preview for sheet area
   const sheetAreaM2 = useMemo(() => {
     const w = parseFloat(sheetWidth) || 0;
     const h = parseFloat(sheetHeight) || 0;
     return ((w * h) / 1000000).toFixed(3);
   }, [sheetWidth, sheetHeight]);
-
-  const preview = useMemo(() => {
-    const p = parseFloat(String(price).replace(',', '.')) || 0;
-    const f = parseFloat(feedRate) || 3000;
-    const w = parseFloat(passWidth) || 100;
-    return calculateInsumo({
-      durationMinutes: 60,
-      pricePerM2: p,
-      feedRateMmMin: f,
-      passWidthMm: w
-    });
-  }, [price, feedRate, passWidth]);
 
   const handleAddOrUpdate = async (e) => {
     e.preventDefault();
@@ -60,7 +47,6 @@ export function Materials({ materials = [], onRefresh }) {
     
     let numPrice = typeof price === 'string' ? parseFloat(price.replace(',', '.')) : Number(price);
     let numFeed = parseFloat(feedRate) || 3000;
-    let numPass = parseFloat(passWidth) || 100;
     let numSheetW = parseFloat(sheetWidth) || 2750;
     let numSheetH = parseFloat(sheetHeight) || 1850;
     
@@ -78,7 +64,6 @@ export function Materials({ materials = [], onRefresh }) {
           name,
           price: numPrice,
           feed_rate: numFeed,
-          pass_width: numPass,
           sheet_width_mm: numSheetW,
           sheet_height_mm: numSheetH
         });
@@ -86,7 +71,6 @@ export function Materials({ materials = [], onRefresh }) {
           setName('');
           setPrice('');
           setFeedRate('3000');
-          setPassWidth('100');
           setSheetWidth('2750');
           setSheetHeight('1850');
           setEditingMaterial(null);
@@ -96,12 +80,11 @@ export function Materials({ materials = [], onRefresh }) {
           throw new Error(resp?.error || 'Falha ao atualizar');
         }
       } else {
-        const resp = await api.addMaterial(name, numPrice, numFeed, numPass, numSheetW, numSheetH);
+        const resp = await api.addMaterial(name, numPrice, numFeed, 100, numSheetW, numSheetH);
         if (resp && resp.success) {
           setName('');
           setPrice('');
           setFeedRate('3000');
-          setPassWidth('100');
           setSheetWidth('2750');
           setSheetHeight('1850');
           setStatus({ type: 'success', message: 'Insumo cadastrado com sucesso!' });
@@ -122,7 +105,6 @@ export function Materials({ materials = [], onRefresh }) {
     setName(mat.name || '');
     setPrice(mat.price !== undefined ? String(mat.price) : '');
     setFeedRate(mat.feed_rate !== undefined ? String(mat.feed_rate) : '3000');
-    setPassWidth(mat.pass_width !== undefined ? String(mat.pass_width) : '100');
     setSheetWidth(mat.sheet_width_mm !== undefined ? String(mat.sheet_width_mm) : '2750');
     setSheetHeight(mat.sheet_height_mm !== undefined ? String(mat.sheet_height_mm) : '1850');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -133,7 +115,6 @@ export function Materials({ materials = [], onRefresh }) {
     setName('');
     setPrice('');
     setFeedRate('3000');
-    setPassWidth('100');
     setSheetWidth('2750');
     setSheetHeight('1850');
   };
@@ -242,27 +223,8 @@ export function Materials({ materials = [], onRefresh }) {
               </div>
             </div>
 
-            {/* Configurações da Chapa Padrão & Passo Lateral */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 border-t border-white/5">
-              {/* Passo Lateral */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1 flex items-center justify-between">
-                  <span>Passo Lateral</span>
-                  <span className="text-accent-cyan font-mono text-[9px]">mm</span>
-                </label>
-                <div className="relative group">
-                  <Maximize2 size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-cyan transition-colors" />
-                  <input 
-                    type="number" 
-                    value={passWidth}
-                    onChange={(e) => setPassWidth(e.target.value)}
-                    placeholder="100" 
-                    className="w-full bg-white/5 border border-border px-11 py-3 rounded-2xl outline-none focus:border-accent-cyan/50 transition-all text-white font-bold text-sm"
-                    required
-                  />
-                </div>
-              </div>
-
+            {/* Configurações da Chapa Padrão (Dimensões Físicas) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-white/5">
               {/* Largura da Chapa (mm) */}
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1 flex items-center justify-between">
@@ -307,24 +269,10 @@ export function Materials({ materials = [], onRefresh }) {
               <div className="flex items-center gap-3 text-xs text-text-muted">
                 <Zap size={18} className="text-orange-400 shrink-0" />
                 <div>
-                  <span className="text-white font-bold">Simulação em 1 Hora de Operação: </span>
+                  <span className="text-white font-bold">Área da Chapa Cadastrada: </span>
                   <span>
-                    A <strong className="text-orange-400">{feedRate || 3000} mm/min</strong> e passo de <strong className="text-accent-cyan">{passWidth || 100} mm</strong>, usina:
+                    Chapa de <strong className="text-orange-400">{sheetWidth || 2750} × {sheetHeight || 1850} mm</strong> possui total de <strong className="text-accent-cyan">{sheetAreaM2} m²</strong>.
                   </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 shrink-0 text-xs font-mono">
-                <div className="bg-black/30 border border-white/5 px-3 py-1.5 rounded-xl">
-                  <span className="text-text-muted">Linear: </span>
-                  <strong className="text-white">{preview.linearMeters} m</strong>
-                </div>
-                <div className="bg-black/30 border border-white/5 px-3 py-1.5 rounded-xl">
-                  <span className="text-text-muted">Área: </span>
-                  <strong className="text-accent-cyan">{preview.areaM2} m²</strong>
-                </div>
-                <div className="bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 rounded-xl">
-                  <span className="text-orange-400">Insumo/h: </span>
-                  <strong className="text-orange-400">{formatCurrency(preview.totalCost)}</strong>
                 </div>
               </div>
             </div>
@@ -439,14 +387,6 @@ export function Materials({ materials = [], onRefresh }) {
                     <div className="flex justify-between items-center">
                       <span>Velocidade Fresa:</span>
                       <span className="text-white font-bold">{fRate} mm/min</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Passo Lateral:</span>
-                      <span className="text-white font-bold">{pWidth} mm</span>
-                    </div>
-                    <div className="flex justify-between items-center text-orange-400 font-bold border-t border-white/5 pt-2 mt-1">
-                      <span>Consumo / Hora:</span>
-                      <span>{m1h.areaM2} m² ({formatCurrency(m1h.totalCost)}/h)</span>
                     </div>
                   </div>
                 </div>
