@@ -121,6 +121,21 @@ class RuidaMonitor {
         });
     }
 
+    extractFileName(msg) {
+        if (!msg || msg.length < 4) return null;
+        const str = msg.toString('utf8');
+        // Match standard filename patterns (e.g. filename.rd, filename.nc, or plain alphanumeric names)
+        const match = str.match(/([a-zA-Z0-9_\-áéíóúâêîôûãõçÁÉÍÓÚÃÕÇ\s]{3,50}\.(?:rd|tap|nc|dxf|gcode|xml))/i)
+                   || str.match(/([a-zA-Z0-9_\-áéíóúâêîôûãõçÁÉÍÓÚÃÕÇ\s]{4,50})/i);
+        if (match && match[1]) {
+            const clean = match[1].trim().replace(/\.rd$/i, '');
+            if (clean.length >= 3 && !['socket', 'status', 'ping', 'connect', 'online', 'ruida'].includes(clean.toLowerCase())) {
+                return clean;
+            }
+        }
+        return null;
+    }
+
     handleUdpResponse(msg, rinfo) {
         if (rinfo.address !== this.targetIp) return;
         
@@ -129,11 +144,18 @@ class RuidaMonitor {
             this.updateStatus('idle');
         }
 
+        // Try extracting job file name from payload if present
+        const detectedFileName = this.extractFileName(msg);
+        if (detectedFileName) {
+            this.lastDetectedFileName = detectedFileName;
+            console.log(`[RUIDA MONITOR] Nome do arquivo detectado via UDP: "${detectedFileName}"`);
+        }
+
         // Parse Ruida response bytes if payload exists
         if (msg.length >= 6) {
             const stateByte = msg[4]; // 0: Idle, 1: Working, 2: Paused
             if (stateByte === 1 && this.status !== 'working') {
-                this.updateStatus('working');
+                this.updateStatus('working', this.lastDetectedFileName || detectedFileName);
             } else if (stateByte === 0 && this.status === 'working') {
                 this.updateStatus('idle');
             }
