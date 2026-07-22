@@ -312,6 +312,14 @@ async function initDb() {
                 console.log("[SEED] Criando routers padrão...");
                 await pool.query('INSERT INTO routers (name, status, "userId") VALUES ($1, $2, $3)', ['Router 1', 'active', masterUser.id]);
                 await pool.query('INSERT INTO routers (name, status, "userId") VALUES ($1, $2, $3)', ['Router 2', 'maintenance', masterUser.id]);
+                await pool.query('INSERT INTO routers (name, status, "userId") VALUES ($1, $2, $3)', ['Laser Ruida', 'active', masterUser.id]);
+            } else {
+                // Guarantee Laser Ruida router exists
+                const laserCheck = await pool.query("SELECT id FROM routers WHERE name ILIKE '%laser%' AND \"userId\" = $1", [masterUser.id]);
+                if (laserCheck.rows.length === 0) {
+                    console.log("[SEED] Adicionando máquina Laser Ruida...");
+                    await pool.query('INSERT INTO routers (name, status, "userId") VALUES ($1, $2, $3)', ['Laser Ruida', 'active', masterUser.id]);
+                }
             }
         }
         
