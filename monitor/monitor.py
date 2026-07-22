@@ -551,41 +551,29 @@ class LaserMonitorThread(threading.Thread):
                 if recent_file:
                     self.last_filename = recent_file
 
-                # 2. Ping / Status UDP para a controladora Laser
-                sock.sendto(poll_cmd, (self.laser_ip, self.port))
-                data, addr = sock.recvfrom(1024)
+                # 2. Ping check para garantir status de conexão da máquina na rede
+                is_alive = False
+                try:
+                    sock.sendto(poll_cmd, (self.laser_ip, self.port))
+                    data, addr = sock.recvfrom(1024)
+                    if data:
+                        is_alive = True
+                except Exception:
+                    # Tenta fallback via ping OS se UDP timeout
+                    res = os.system(f"ping -n 1 -w 1000 {self.laser_ip} > nul")
+                    if res == 0:
+                        is_alive = True
 
-                if data:
+                if is_alive:
                     if self.status == "offline":
                         print(f"[+] Laser ({self.laser_ip}) ficou ONLINE!")
                         self.status = "idle"
-
-                    # Verifica byte de trabalho (Ruida / Trocen)
-                    if len(data) >= 5:
-                        state_byte = data[4]
-                        if state_byte == 1 and self.status != "working":
-                            self.status = "working"
-                            file_to_report = self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
-                            print(f"[+] LASER CORTE INICIADO: {file_to_report}")
-                            processa_inicio(
-                                caminho=f"LaserCAD\\{file_to_report}",
-                                nome_arquivo=file_to_report,
-                                iso_time=datetime.datetime.now().astimezone().isoformat(),
-                                origem="Laser Ruida"
-                            )
-                        elif state_byte == 0 and self.status == "working":
-                            self.status = "idle"
-                            print(f"[OK] LASER CORTE FINALIZADO")
-                            processa_fim(
-                                iso_time=datetime.datetime.now().astimezone().isoformat(),
-                                origem="Laser Ruida"
-                            )
-            except socket.timeout:
-                if self.status != "offline":
-                    print(f"[!] Laser ({self.laser_ip}) desconectada ou desligada.")
-                    if self.status == "working":
-                        processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
-                    self.status = "offline"
+                else:
+                    if self.status != "offline":
+                        print(f"[!] Laser ({self.laser_ip}) desconectada / offline.")
+                        if self.status == "working":
+                            processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
+                        self.status = "offline"
             except Exception as e:
                 pass
 
