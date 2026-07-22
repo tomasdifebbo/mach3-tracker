@@ -524,34 +524,49 @@ class LaserMonitorThread(threading.Thread):
         self.port = port
         self.status = "offline"  # offline, idle, working
         self.last_filename = None
+        self.last_cfg_mtime = 0
         self.running = True
 
     def run(self):
-        print(f"[*] Monitor de Laser (LaserCAD/Ruida) iniciado no IP {self.laser_ip}...")
+        print(f"[*] Monitor de Laser (LaserCAD/AWC) iniciado no IP {self.laser_ip}...")
         
-        # Monitora também arquivos de trabalho do LaserCAD (C:\LaserCAD ou diretórios de exportação)
-        lasercad_dirs = [
-            r"C:\LaserCAD",
-            r"C:\LaserCADv7.87.3",
-            r"D:\LaserCAD",
-            r"C:\Program Files\LaserCAD",
-            r"C:\Program Files (x86)\LaserCAD"
-        ]
+        soft_cfg_path = r"C:\LaserCAD\AWCCfg\SoftCfg.ini"
+        lasercad_dirs = [r"C:\LaserCAD"]
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.settimeout(3.0)
-
-        # Polling do status da Laser via UDP
+        sock.settimeout(2.0)
         poll_cmd = bytes([0xd8, 0x00, 0x02, 0x00, 0x01, 0x00])
 
         while self.running:
             try:
-                # 1. Procurar arquivos recentemente modificados na pasta do LaserCAD
+                # 1. Checar se o arquivo SoftCfg.ini do LaserCAD foi atualizado (clique em Start / Send / Download)
+                if os.path.exists(soft_cfg_path):
+                    try:
+                        mtime = os.path.getmtime(soft_cfg_path)
+                        if self.last_cfg_mtime == 0:
+                            self.last_cfg_mtime = mtime
+                        elif mtime > self.last_cfg_mtime:
+                            self.last_cfg_mtime = mtime
+                            doc_name = self.read_doc_name(soft_cfg_path)
+                            if doc_name:
+                                self.last_filename = doc_name
+                                print(f"[+] LASER CORTE DISPARADO NO LASERCAD: {doc_name}")
+                                processa_inicio(
+                                    caminho=f"LaserCAD\\{doc_name}",
+                                    nome_arquivo=doc_name,
+                                    iso_time=datetime.datetime.now().astimezone().isoformat(),
+                                    origem="Laser Ruida"
+                                )
+                                self.status = "working"
+                    except Exception as e:
+                        pass
+
+                # 2. Procurar arquivos recentemente modificados na pasta do LaserCAD
                 recent_file = self.find_recent_lasercad_file(lasercad_dirs)
                 if recent_file:
                     self.last_filename = recent_file
 
-                # 2. Ping check para garantir status de conexão da máquina na rede
+                # 3. Ping check para conexao de rede com a maquina
                 is_alive = False
                 try:
                     sock.sendto(poll_cmd, (self.laser_ip, self.port))
@@ -559,7 +574,6 @@ class LaserMonitorThread(threading.Thread):
                     if data:
                         is_alive = True
                 except Exception:
-                    # Tenta fallback via ping OS se UDP timeout
                     res = os.system(f"ping -n 1 -w 1000 {self.laser_ip} > nul")
                     if res == 0:
                         is_alive = True
@@ -568,28 +582,6 @@ class LaserMonitorThread(threading.Thread):
                     if self.status == "offline":
                         print(f"[+] Laser ({self.laser_ip}) ficou ONLINE!")
                         self.status = "idle"
-                        processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
-                    
-                    # Se tiver dados UDP de estado da Ruida/Trocen
-                    if 'data' in locals() and data and len(data) >= 5:
-                        state_byte = data[4]
-                        if state_byte == 1 and self.status != "working":
-                            self.status = "working"
-                            file_to_report = self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
-                            print(f"[+] LASER CORTE INICIADO: {file_to_report}")
-                            processa_inicio(
-                                caminho=f"LaserCAD\\{file_to_report}",
-                                nome_arquivo=file_to_report,
-                                iso_time=datetime.datetime.now().astimezone().isoformat(),
-                                origem="Laser Ruida"
-                            )
-                        elif state_byte == 0 and self.status == "working":
-                            self.status = "idle"
-                            print(f"[OK] LASER CORTE FINALIZADO")
-                            processa_fim(
-                                iso_time=datetime.datetime.now().astimezone().isoformat(),
-                                origem="Laser Ruida"
-                            )
                 else:
                     if self.status != "offline":
                         print(f"[!] Laser ({self.laser_ip}) desconectada / offline.")
@@ -599,7 +591,19 @@ class LaserMonitorThread(threading.Thread):
             except Exception as e:
                 pass
 
-            time.sleep(4)
+            time.sleep(2)
+
+    def read_doc_name(self, cfg_path):
+        try:
+            with open(cfg_path, 'r', encoding='utf-8', errors='ignore') as f:
+                for line in f:
+                    if line.strip().startswith('DocName='):
+                        val = line.strip().split('=', 1)[1].strip()
+                        if val and len(val) >= 2:
+                            return val
+        except Exception:
+            pass
+        return None
 
     def find_recent_lasercad_file(self, search_dirs):
         now = time.time()
