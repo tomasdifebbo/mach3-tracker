@@ -653,22 +653,34 @@ function matchKanbanTitle(jobFileName, jobFolder, cardTitle) {
     const normTitle = normalizeStr(cardTitle);
     if (!normTitle) return false;
 
-    const normFile = normalizeStr(jobFileName);
+    const normFile   = normalizeStr(jobFileName);
     const normFolder = normalizeStr(jobFolder);
 
-    if (normFile && (normFile === normTitle || normFile.includes(normTitle) || normTitle.includes(normFile))) {
-        return true;
-    }
-    if (normFolder && (normFolder.includes(normTitle) || normTitle.includes(normFolder))) {
-        return true;
-    }
+    // 1. Exact match — always valid
+    if (normFile && normFile === normTitle) return true;
+    if (normFolder && normFolder === normTitle) return true;
 
-    const words = normTitle.split(' ').filter(w => w.length >= 3);
-    if (words.length >= 2) {
-        const fullJobText = `${normFile} ${normFolder}`;
-        if (words.every(w => fullJobText.includes(w))) {
-            return true;
-        }
+    // 2. The file/folder fully contains the card title
+    if (normFile && normFile.includes(normTitle) && normTitle.length >= 6) return true;
+    if (normFolder && normFolder.includes(normTitle) && normTitle.length >= 6) return true;
+
+    // 3. Jaccard-style bidirectional word similarity
+    // Both directions must have >= 60% coverage to avoid false positives
+    // from generic filenames like "mdf 9mm" matching a longer, specific card title.
+    const titleWords  = normTitle.split(' ').filter(w => w.length >= 3);
+    const fileWords   = normFile   ? normFile.split(' ').filter(w => w.length >= 3)   : [];
+    const folderWords = normFolder ? normFolder.split(' ').filter(w => w.length >= 3) : [];
+    const jobWords    = [...new Set([...fileWords, ...folderWords])];
+    const fullJobText = `${normFile} ${normFolder}`;
+
+    if (titleWords.length >= 2 && jobWords.length >= 2) {
+        const jobHits   = jobWords.filter(w => normTitle.includes(w)).length;
+        const titleHits = titleWords.filter(w => fullJobText.includes(w)).length;
+
+        const jobCoverage   = jobHits   / jobWords.length;
+        const titleCoverage = titleHits / titleWords.length;
+
+        if (jobCoverage >= 0.6 && titleCoverage >= 0.6) return true;
     }
 
     return false;

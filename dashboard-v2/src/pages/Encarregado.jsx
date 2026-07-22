@@ -557,22 +557,37 @@ function matchKanbanTitle(jobFileName, jobFolder, cardTitle) {
   const normTitle = normalizeStr(cardTitle);
   if (!normTitle) return false;
 
-  const normFile = normalizeStr(jobFileName);
+  const normFile  = normalizeStr(jobFileName);
   const normFolder = normalizeStr(jobFolder);
 
-  if (normFile && (normFile === normTitle || normFile.includes(normTitle) || normTitle.includes(normFile))) {
-    return true;
-  }
-  if (normFolder && (normFolder.includes(normTitle) || normTitle.includes(normFolder))) {
-    return true;
-  }
+  // 1. Exact match — always valid
+  if (normFile && normFile === normTitle) return true;
+  if (normFolder && normFolder === normTitle) return true;
 
-  const words = normTitle.split(' ').filter(w => w.length >= 3);
-  if (words.length >= 2) {
-    const fullJobText = `${normFile} ${normFolder}`;
-    if (words.every(w => fullJobText.includes(w))) {
-      return true;
-    }
+  // 2. The file/folder fully contains the card title (job name is more specific than the card)
+  if (normFile && normFile.includes(normTitle) && normTitle.length >= 6) return true;
+  if (normFolder && normFolder.includes(normTitle) && normTitle.length >= 6) return true;
+
+  // 3. Jaccard-style bidirectional word similarity
+  // Both the job text and the card title must share a high proportion of words with each other.
+  // This prevents generic filenames like "mdf 9mm" from matching a long, specific card title.
+  const titleWords = normTitle.split(' ').filter(w => w.length >= 3);
+  const fileWords  = normFile  ? normFile.split(' ').filter(w => w.length >= 3) : [];
+  const folderWords = normFolder ? normFolder.split(' ').filter(w => w.length >= 3) : [];
+  const jobWords   = [...new Set([...fileWords, ...folderWords])];
+  const fullJobText = `${normFile} ${normFolder}`;
+
+  if (titleWords.length >= 2 && jobWords.length >= 2) {
+    // How many of the JOB words appear in the card title
+    const jobHits   = jobWords.filter(w => normTitle.includes(w)).length;
+    // How many of the CARD TITLE words appear in the job text
+    const titleHits = titleWords.filter(w => fullJobText.includes(w)).length;
+
+    const jobCoverage   = jobHits   / jobWords.length;   // % of job words found in title
+    const titleCoverage = titleHits / titleWords.length; // % of title words found in job
+
+    // Both directions must meet the threshold — prevents false positives from shared generic words
+    if (jobCoverage >= 0.6 && titleCoverage >= 0.6) return true;
   }
 
   return false;
