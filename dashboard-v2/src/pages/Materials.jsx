@@ -24,8 +24,16 @@ export function Materials({ materials = [], onRefresh }) {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [feedRate, setFeedRate] = useState('3000');
+  const [passWidth, setPassWidth] = useState('100');
   const [sheetWidth, setSheetWidth] = useState('2750');
   const [sheetHeight, setSheetHeight] = useState('1850');
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [editingMaterial, setEditingMaterial] = useState(null);
 
   // Live preview for 60 min (1 hour) & Sheet Area
   const sheetAreaM2 = useMemo(() => {
