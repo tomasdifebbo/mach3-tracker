@@ -508,58 +508,72 @@ class LaserMonitorThread(threading.Thread):
         self.status = "offline"  # offline, idle, working
         self.last_filename = None
         self.last_cfg_mtime = 0
+        self.download_dialog_open = False
         self.running = True
 
     def run(self):
         print(f"[*] Monitor de Laser (LaserCAD/AWC) iniciado no IP {self.laser_ip}...")
         
         soft_cfg_path = r"C:\LaserCAD\AWCCfg\SoftCfg.ini"
-        lasercad_dirs = [r"C:\LaserCAD"]
-
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.settimeout(2.0)
-        poll_cmd = bytes([0xd8, 0x00, 0x02, 0x00, 0x01, 0x00])
+        
+        # Inicializar mtime do SoftCfg.ini
+        if os.path.exists(soft_cfg_path):
+            self.last_cfg_mtime = os.path.getmtime(soft_cfg_path)
+            doc = self.read_doc_name(soft_cfg_path)
+            if doc:
+                self.last_filename = doc
+                print(f"[*] Projeto atual no LaserCAD: {doc}")
 
         while self.running:
             try:
-                # 1. Checar se o arquivo SoftCfg.ini do LaserCAD foi atualizado (clique em Start / Send / Download)
+                # 1. Detectar janela "Download Document" do LaserCAD via Win32 API
+                download_visible = self.is_download_dialog_open()
+                
+                if download_visible and not self.download_dialog_open:
+                    # Dialog acabou de abrir - ler o DocName do SoftCfg.ini
+                    self.download_dialog_open = True
+                    doc = self.read_doc_name(soft_cfg_path)
+                    if doc:
+                        self.last_filename = doc
+                    print(f"[~] Janela Download Document aberta (projeto: {self.last_filename})")
+                
+                elif not download_visible and self.download_dialog_open:
+                    # Dialog acabou de fechar = Download foi enviado!
+                    self.download_dialog_open = False
+                    doc = self.read_doc_name(soft_cfg_path)
+                    if doc:
+                        self.last_filename = doc
+                    
+                    file_to_report = self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
+                    print(f"[+] LASER DOWNLOAD ENVIADO: {file_to_report}")
+                    
+                    if self.status == "working":
+                        # Finalizar job anterior primeiro
+                        processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
+                    
+                    processa_inicio(
+                        caminho=f"LaserCAD\\{file_to_report}",
+                        nome_arquivo=file_to_report,
+                        iso_time=datetime.datetime.now().astimezone().isoformat(),
+                        origem="Laser Ruida"
+                    )
+                    self.status = "working"
+
+                # 2. Checar SoftCfg.ini para atualizar DocName
                 if os.path.exists(soft_cfg_path):
                     try:
                         mtime = os.path.getmtime(soft_cfg_path)
-                        if self.last_cfg_mtime == 0:
+                        if mtime > self.last_cfg_mtime:
                             self.last_cfg_mtime = mtime
-                        elif mtime > self.last_cfg_mtime:
-                            self.last_cfg_mtime = mtime
-                            doc_name = self.read_doc_name(soft_cfg_path)
-                            if doc_name:
-                                self.last_filename = doc_name
-                                print(f"[+] LASER CORTE DISPARADO NO LASERCAD: {doc_name}")
-                                processa_inicio(
-                                    caminho=f"LaserCAD\\{doc_name}",
-                                    nome_arquivo=doc_name,
-                                    iso_time=datetime.datetime.now().astimezone().isoformat(),
-                                    origem="Laser Ruida"
-                                )
-                                self.status = "working"
-                    except Exception as e:
+                            doc = self.read_doc_name(soft_cfg_path)
+                            if doc:
+                                self.last_filename = doc
+                                print(f"[~] Projeto LaserCAD atualizado: {doc}")
+                    except Exception:
                         pass
 
-                # 2. Procurar arquivos recentemente modificados na pasta do LaserCAD
-                recent_file = self.find_recent_lasercad_file(lasercad_dirs)
-                if recent_file:
-                    self.last_filename = recent_file
-
                 # 3. Ping check para conexao de rede com a maquina
-                is_alive = False
-                try:
-                    sock.sendto(poll_cmd, (self.laser_ip, self.port))
-                    data, addr = sock.recvfrom(1024)
-                    if data:
-                        is_alive = True
-                except Exception:
-                    res = os.system(f"ping -n 1 -w 1000 {self.laser_ip} > nul")
-                    if res == 0:
-                        is_alive = True
+                is_alive = os.system(f"ping -n 1 -w 1000 {self.laser_ip} > nul") == 0
 
                 if is_alive:
                     if self.status == "offline":
@@ -574,7 +588,21 @@ class LaserMonitorThread(threading.Thread):
             except Exception as e:
                 pass
 
-            time.sleep(2)
+            time.sleep(1)
+
+    def is_download_dialog_open(self):
+        """Detectar se a janela 'Download Document' do LaserCAD está aberta via Win32 API"""
+        try:
+            import ctypes
+            user32 = ctypes.windll.user32
+            
+            # FindWindowW procura janela pelo título exato
+            hwnd = user32.FindWindowW(None, "Download Document")
+            if hwnd and user32.IsWindowVisible(hwnd):
+                return True
+            return False
+        except Exception:
+            return False
 
     def read_doc_name(self, cfg_path):
         try:
