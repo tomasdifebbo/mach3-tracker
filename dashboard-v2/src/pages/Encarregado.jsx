@@ -880,7 +880,7 @@ function PainelKanban({ jobs = [] }) {
                   card={card}
                   onDragStart={(e, id) => handleDragStart(e, id, col.id)}
                   onClick={(c) => setSelectedCard(c)}
-                  onArchive={col.id !== 'done' ? (c) => setQueuedForDone({ card: c, fromCol: col.id }) : null}
+                  onArchive={col.id === 'done' ? (c) => setQueuedForDone({ card: c, fromCol: col.id }) : null}
                 />
               ))}
               {columns[col.id].length === 0 && (
