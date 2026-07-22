@@ -5,7 +5,7 @@ class RuidaMonitor {
     constructor(pool, autoSyncKanban) {
         this.pool = pool;
         this.autoSyncKanban = autoSyncKanban;
-        this.targetIp = '192.168.0.174';
+        this.targetIp = '192.168.0.2';
         this.targetMacPrefix = '00-e2-69';
         this.port = 5005;
         this.status = 'offline'; // 'offline' | 'idle' | 'working'

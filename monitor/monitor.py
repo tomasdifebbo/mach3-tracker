@@ -518,7 +518,7 @@ def main():
 import socket
 
 class LaserMonitorThread(threading.Thread):
-    def __init__(self, laser_ip="192.168.0.174", port=5005):
+    def __init__(self, laser_ip="192.168.0.2", port=5005):
         super().__init__(daemon=True)
         self.laser_ip = laser_ip
         self.port = port
@@ -609,7 +609,7 @@ class LaserMonitorThread(threading.Thread):
         return None
 
 def start_laser_monitor():
-    t = LaserMonitorThread(laser_ip="192.168.0.174", port=5005)
+    t = LaserMonitorThread(laser_ip="192.168.0.2", port=5005)
     t.start()
 
 if __name__ == "__main__":
