@@ -527,6 +527,42 @@ function KanbanCardModal({ card, onClose, onSave, onDelete }) {
   );
 }
 
+function normalizeStr(str) {
+  if (!str) return '';
+  return String(str)
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\.(txt|tap|nc|gcode|cnc|dxf)$/i, '')
+    .replace(/[^a-z0-9]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function matchKanbanTitle(jobFileName, jobFolder, cardTitle) {
+  const normTitle = normalizeStr(cardTitle);
+  if (!normTitle) return false;
+
+  const normFile = normalizeStr(jobFileName);
+  const normFolder = normalizeStr(jobFolder);
+
+  if (normFile && (normFile === normTitle || normFile.includes(normTitle) || normTitle.includes(normFile))) {
+    return true;
+  }
+  if (normFolder && (normFolder.includes(normTitle) || normTitle.includes(normFolder))) {
+    return true;
+  }
+
+  const words = normTitle.split(' ').filter(w => w.length >= 3);
+  if (words.length >= 2) {
+    const fullJobText = `${normFile} ${normFolder}`;
+    if (words.every(w => fullJobText.includes(w))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function PainelKanban({ jobs = [] }) {
   const [columns, setColumns] = useState({ todo: [], doing: [], done: [] });
   const [loading, setLoading] = useState(true);
@@ -577,6 +613,49 @@ function PainelKanban({ jobs = [] }) {
 
   useEffect(() => {
     loadKanban();
+  }, [jobs]);
+
+  // Automatic verification and sync between Router jobs and Kanban cards
+  useEffect(() => {
+    if (!jobs || jobs.length === 0) return;
+
+    const activeJobs = jobs.filter(j => !j.end_time);
+    const todayStr = new Date().toISOString().split('T')[0];
+    const completedJobs = jobs.filter(j => j.end_time && j.end_time >= todayStr);
+
+    setColumns(prev => {
+      let hasChanges = false;
+      const newCols = {
+        todo: [...(prev.todo || [])],
+        doing: [...(prev.doing || [])],
+        done: [...(prev.done || [])]
+      };
+
+      // 1. Check running jobs vs TODO cards -> Move to DOING
+      for (const card of prev.todo || []) {
+        const match = activeJobs.find(j => matchKanbanTitle(j.file_name, j.folder, card.title));
+        if (match) {
+          hasChanges = true;
+          const routerName = match.router_name || card.machine;
+          newCols.todo = newCols.todo.filter(c => String(c.id) !== String(card.id));
+          newCols.doing.push({ ...card, column_id: 'doing', machine: routerName });
+          api.patch(`/kanban/${card.id}`, { column_id: 'doing', machine: routerName }).catch(console.error);
+        }
+      }
+
+      // 2. Check completed jobs vs DOING cards -> Move to DONE
+      for (const card of prev.doing || []) {
+        const match = completedJobs.find(j => matchKanbanTitle(j.file_name, j.folder, card.title));
+        if (match) {
+          hasChanges = true;
+          newCols.doing = newCols.doing.filter(c => String(c.id) !== String(card.id));
+          newCols.done.push({ ...card, column_id: 'done' });
+          api.patch(`/kanban/${card.id}`, { column_id: 'done' }).catch(console.error);
+        }
+      }
+
+      return hasChanges ? newCols : prev;
+    });
   }, [jobs]);
 
   const handleDragStart = (e, cardId, colId) => {

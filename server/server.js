@@ -637,6 +637,68 @@ app.patch('/api/admin/users/:id/plan', authenticateToken, authenticateAdmin, asy
     res.json({ success: true });
 });
 
+// Helper for matching G-code filenames/folders with Kanban card titles
+function normalizeStr(str) {
+    if (!str) return '';
+    return String(str)
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\.(txt|tap|nc|gcode|cnc|dxf)$/i, '')
+        .replace(/[^a-z0-9]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function matchKanbanTitle(jobFileName, jobFolder, cardTitle) {
+    const normTitle = normalizeStr(cardTitle);
+    if (!normTitle) return false;
+
+    const normFile = normalizeStr(jobFileName);
+    const normFolder = normalizeStr(jobFolder);
+
+    if (normFile && (normFile === normTitle || normFile.includes(normTitle) || normTitle.includes(normFile))) {
+        return true;
+    }
+    if (normFolder && (normFolder.includes(normTitle) || normTitle.includes(normFolder))) {
+        return true;
+    }
+
+    const words = normTitle.split(' ').filter(w => w.length >= 3);
+    if (words.length >= 2) {
+        const fullJobText = `${normFile} ${normFolder}`;
+        if (words.every(w => fullJobText.includes(w))) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+async function autoSyncKanban(userId, jobFileName, jobFolder, routerName, targetStatus) {
+    try {
+        const tasks = (await pool.query('SELECT * FROM kanban_tasks WHERE "userId" = $1', [userId])).rows;
+        for (const task of tasks) {
+            if (matchKanbanTitle(jobFileName, jobFolder, task.title)) {
+                if (targetStatus === 'doing' && task.column_id === 'todo') {
+                    await pool.query(
+                        'UPDATE kanban_tasks SET column_id = $1, machine = COALESCE($2, machine) WHERE id = $3 AND "userId" = $4',
+                        ['doing', routerName || null, task.id, userId]
+                    );
+                    console.log(`[KANBAN AUTO-SYNC] Card "${task.title}" (ID ${task.id}) moved from TODO -> DOING (${routerName})`);
+                } else if (targetStatus === 'done' && (task.column_id === 'doing' || task.column_id === 'todo')) {
+                    await pool.query(
+                        'UPDATE kanban_tasks SET column_id = $1 WHERE id = $2 AND "userId" = $3',
+                        ['done', task.id, userId]
+                    );
+                    console.log(`[KANBAN AUTO-SYNC] Card "${task.title}" (ID ${task.id}) moved from ${task.column_id.toUpperCase()} -> DONE`);
+                }
+            }
+        }
+    } catch (err) {
+        console.error('[KANBAN AUTO-SYNC ERROR]', err.message);
+    }
+}
+
 app.post('/api/jobs', authenticateToken, async (req, res) => {
     const { file_name, folder, file_path, start_time, router_name, estimated_minutes } = req.body;
     const userId = req.user.id;
@@ -676,6 +738,9 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
     const result = await pool.query('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, "userId", router_name, estimated_minutes, material_id, material_name, material_price) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id', 
         [cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, router_name || null, estMin, req.body.material_id || null, req.body.material_name || null, req.body.material_price || null]);
     
+    // Auto-sync Kanban card: todo -> doing
+    autoSyncKanban(userId, cleanFileName, cleanFolder, router_name, 'doing');
+
     res.json({ id: result.rows[0].id, success: true });
 });
 
@@ -696,6 +761,9 @@ app.patch('/api/jobs/latest', authenticateToken, async (req, res) => {
     }
 
     await pool.query('UPDATE jobs SET end_time = $1, duration_minutes = $2 WHERE id = $3', [dt.toISOString(), durationMinutes, row.id]);
+    
+    // Auto-sync Kanban card: doing/todo -> done
+    autoSyncKanban(userId, row.file_name, row.folder, router_name, 'done');
     
     // Dispatch Webhook if user has one configured
     try {
@@ -977,6 +1045,19 @@ app.get('/api/payments/status', authenticateToken, async (req, res) => {
 // Kanban API
 app.get('/api/kanban', authenticateToken, async (req, res) => {
     try {
+        // Auto-sync open running jobs to 'doing'
+        const openJobs = (await pool.query('SELECT * FROM jobs WHERE "userId" = $1 AND end_time IS NULL', [req.user.id])).rows;
+        for (const j of openJobs) {
+            await autoSyncKanban(req.user.id, j.file_name, j.folder, j.router_name, 'doing');
+        }
+
+        // Auto-sync recent completed jobs to 'done'
+        const todayStr = new Date().toISOString().split('T')[0];
+        const doneJobs = (await pool.query('SELECT * FROM jobs WHERE "userId" = $1 AND end_time >= $2', [req.user.id, todayStr])).rows;
+        for (const j of doneJobs) {
+            await autoSyncKanban(req.user.id, j.file_name, j.folder, j.router_name, 'done');
+        }
+
         const rows = (await pool.query(
             'SELECT * FROM kanban_tasks WHERE "userId" = $1 ORDER BY id ASC',
             [req.user.id]
