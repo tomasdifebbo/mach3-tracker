@@ -653,34 +653,33 @@ function matchKanbanTitle(jobFileName, jobFolder, cardTitle) {
     const normTitle = normalizeStr(cardTitle);
     if (!normTitle) return false;
 
-    const normFile   = normalizeStr(jobFileName);
-    const normFolder = normalizeStr(jobFolder);
+    const normFile    = normalizeStr(jobFileName);
+    const normFolder  = normalizeStr(jobFolder);
+    const fullJobText = `${normFile} ${normFolder}`.trim();
 
     // 1. Exact match — always valid
     if (normFile && normFile === normTitle) return true;
     if (normFolder && normFolder === normTitle) return true;
 
-    // 2. The file/folder fully contains the card title
+    // 2. The job filename fully contains the entire card title string
     if (normFile && normFile.includes(normTitle) && normTitle.length >= 6) return true;
     if (normFolder && normFolder.includes(normTitle) && normTitle.length >= 6) return true;
 
-    // 3. Jaccard-style bidirectional word similarity
-    // Both directions must have >= 60% coverage to avoid false positives
-    // from generic filenames like "mdf 9mm" matching a longer, specific card title.
-    const titleWords  = normTitle.split(' ').filter(w => w.length >= 3);
-    const fileWords   = normFile   ? normFile.split(' ').filter(w => w.length >= 3)   : [];
-    const folderWords = normFolder ? normFolder.split(' ').filter(w => w.length >= 3) : [];
-    const jobWords    = [...new Set([...fileWords, ...folderWords])];
-    const fullJobText = `${normFile} ${normFolder}`;
-
-    if (titleWords.length >= 2 && jobWords.length >= 2) {
-        const jobHits   = jobWords.filter(w => normTitle.includes(w)).length;
-        const titleHits = titleWords.filter(w => fullJobText.includes(w)).length;
-
-        const jobCoverage   = jobHits   / jobWords.length;
-        const titleCoverage = titleHits / titleWords.length;
-
-        if (jobCoverage >= 0.6 && titleCoverage >= 0.6) return true;
+    // 3. STRICT: ALL meaningful words of the card title must be present in the job text.
+    // A generic filename like "mdf 9mm" will NEVER match a specific card title like
+    // "chapa 2 MDF 9MM VETOR LOGO TARTARUGA e4mm" because unique words like
+    // "vetor", "tartaruga", "reposicao" etc. would be absent from the job filename.
+    const titleWords = normTitle.split(' ').filter(w => w.length >= 3);
+    if (titleWords.length >= 2) {
+        const allTitleWordsInJob = titleWords.every(w => fullJobText.includes(w));
+        if (allTitleWordsInJob) {
+            // Extra guard: at least 50% of the job's own words must appear in the title
+            const jobWords = fullJobText.split(' ').filter(w => w.length >= 3);
+            const jobHits  = jobWords.filter(w => normTitle.includes(w)).length;
+            if (jobWords.length === 0 || jobHits / jobWords.length >= 0.5) {
+                return true;
+            }
+        }
     }
 
     return false;
