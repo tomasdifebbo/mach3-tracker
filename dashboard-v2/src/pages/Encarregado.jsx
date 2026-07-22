@@ -670,14 +670,17 @@ function PainelKanban({ jobs = [] }) {
         }
       }
 
-      // 2. Check completed jobs vs DOING cards -> Move to DONE
+      // 2. Check completed jobs vs DOING cards -> Move to DONE (ONLY if NOT currently running)
       for (const card of prev.doing || []) {
-        const match = completedJobs.find(j => matchKanbanTitle(j.file_name, j.folder, card.title));
-        if (match) {
-          hasChanges = true;
-          newCols.doing = newCols.doing.filter(c => String(c.id) !== String(card.id));
-          newCols.done.push({ ...card, column_id: 'done' });
-          api.patch(`/kanban/${card.id}`, { column_id: 'done' }).catch(console.error);
+        const stillRunning = activeJobs.some(j => matchKanbanTitle(j.file_name, j.folder, card.title));
+        if (!stillRunning) {
+          const match = completedJobs.find(j => matchKanbanTitle(j.file_name, j.folder, card.title));
+          if (match) {
+            hasChanges = true;
+            newCols.doing = newCols.doing.filter(c => String(c.id) !== String(card.id));
+            newCols.done.push({ ...card, column_id: 'done' });
+            api.patch(`/kanban/${card.id}`, { column_id: 'done' }).catch(console.error);
+          }
         }
       }
 

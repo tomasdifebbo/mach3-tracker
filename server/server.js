@@ -696,12 +696,12 @@ async function autoSyncKanban(userId, jobFileName, jobFolder, routerName, target
                         ['doing', routerName || null, task.id, userId]
                     );
                     console.log(`[KANBAN AUTO-SYNC] Card "${task.title}" (ID ${task.id}) moved from TODO -> DOING (${routerName})`);
-                } else if (targetStatus === 'done' && (task.column_id === 'doing' || task.column_id === 'todo')) {
+                } else if (targetStatus === 'done' && task.column_id === 'doing') {
                     await pool.query(
                         'UPDATE kanban_tasks SET column_id = $1 WHERE id = $2 AND "userId" = $3',
                         ['done', task.id, userId]
                     );
-                    console.log(`[KANBAN AUTO-SYNC] Card "${task.title}" (ID ${task.id}) moved from ${task.column_id.toUpperCase()} -> DONE`);
+                    console.log(`[KANBAN AUTO-SYNC] Card "${task.title}" (ID ${task.id}) moved DOING -> DONE`);
                 }
             }
         }
