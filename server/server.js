@@ -172,9 +172,16 @@ async function initDb() {
             ALTER TABLE jobs ADD COLUMN IF NOT EXISTS estimated_minutes REAL;
             ALTER TABLE jobs ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
-            -- Alter materials table for m² linear feed rate and pass width calculation
+            -- Alter materials table for m² calculation & sheet dimensions
             ALTER TABLE materials ADD COLUMN IF NOT EXISTS feed_rate REAL DEFAULT 3000;
             ALTER TABLE materials ADD COLUMN IF NOT EXISTS pass_width REAL DEFAULT 100;
+            ALTER TABLE materials ADD COLUMN IF NOT EXISTS sheet_width_mm REAL DEFAULT 2750;
+            ALTER TABLE materials ADD COLUMN IF NOT EXISTS sheet_height_mm REAL DEFAULT 1850;
+
+            -- Alter jobs table for bounding box coordinates from G-code
+            ALTER TABLE jobs ADD COLUMN IF NOT EXISTS max_x REAL;
+            ALTER TABLE jobs ADD COLUMN IF NOT EXISTS max_y REAL;
+            ALTER TABLE jobs ADD COLUMN IF NOT EXISTS bounding_area_m2 REAL;
 
             -- Payments table
             CREATE TABLE IF NOT EXISTS payments (
@@ -845,30 +852,36 @@ app.get('/api/materials', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/materials', authenticateToken, async (req, res) => {
-    const { name, price, feed_rate, pass_width } = req.body;
+    const { name, price, feed_rate, pass_width, sheet_width_mm, sheet_height_mm } = req.body;
     const fRate = parseFloat(feed_rate) || 3000;
     const pWidth = parseFloat(pass_width) || 100;
+    const sWidth = parseFloat(sheet_width_mm) || 2750;
+    const sHeight = parseFloat(sheet_height_mm) || 1850;
     const result = await pool.query(
-        'INSERT INTO materials (name, price, feed_rate, pass_width, "userId") VALUES ($1, $2, $3, $4, $5) RETURNING *',
-        [name, parseFloat(price), fRate, pWidth, req.user.id]
+        'INSERT INTO materials (name, price, feed_rate, pass_width, sheet_width_mm, sheet_height_mm, "userId") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+        [name, parseFloat(price), fRate, pWidth, sWidth, sHeight, req.user.id]
     );
     res.json({ success: true, material: result.rows[0] });
 });
 
 app.patch('/api/materials/:id', authenticateToken, async (req, res) => {
-    const { name, price, feed_rate, pass_width } = req.body;
+    const { name, price, feed_rate, pass_width, sheet_width_mm, sheet_height_mm } = req.body;
     const result = await pool.query(
         `UPDATE materials SET 
             name = COALESCE($1, name),
             price = COALESCE($2, price),
             feed_rate = COALESCE($3, feed_rate),
-            pass_width = COALESCE($4, pass_width)
-         WHERE id = $5 AND "userId" = $6 RETURNING *`,
+            pass_width = COALESCE($4, pass_width),
+            sheet_width_mm = COALESCE($5, sheet_width_mm),
+            sheet_height_mm = COALESCE($6, sheet_height_mm)
+         WHERE id = $7 AND "userId" = $8 RETURNING *`,
         [
             name || null,
             price !== undefined && price !== null ? parseFloat(price) : null,
             feed_rate !== undefined && feed_rate !== null ? parseFloat(feed_rate) : null,
             pass_width !== undefined && pass_width !== null ? parseFloat(pass_width) : null,
+            sheet_width_mm !== undefined && sheet_width_mm !== null ? parseFloat(sheet_width_mm) : null,
+            sheet_height_mm !== undefined && sheet_height_mm !== null ? parseFloat(sheet_height_mm) : null,
             req.params.id,
             req.user.id
         ]

@@ -24,16 +24,16 @@ export function Materials({ materials = [], onRefresh }) {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [feedRate, setFeedRate] = useState('3000');
-  const [passWidth, setPassWidth] = useState('100');
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
-  const [editingMaterial, setEditingMaterial] = useState(null);
+  const [sheetWidth, setSheetWidth] = useState('2750');
+  const [sheetHeight, setSheetHeight] = useState('1850');
 
-  // Live preview for 60 min (1 hour)
+  // Live preview for 60 min (1 hour) & Sheet Area
+  const sheetAreaM2 = useMemo(() => {
+    const w = parseFloat(sheetWidth) || 0;
+    const h = parseFloat(sheetHeight) || 0;
+    return ((w * h) / 1000000).toFixed(3);
+  }, [sheetWidth, sheetHeight]);
+
   const preview = useMemo(() => {
     const p = parseFloat(String(price).replace(',', '.')) || 0;
     const f = parseFloat(feedRate) || 3000;
@@ -53,6 +53,8 @@ export function Materials({ materials = [], onRefresh }) {
     let numPrice = typeof price === 'string' ? parseFloat(price.replace(',', '.')) : Number(price);
     let numFeed = parseFloat(feedRate) || 3000;
     let numPass = parseFloat(passWidth) || 100;
+    let numSheetW = parseFloat(sheetWidth) || 2750;
+    let numSheetH = parseFloat(sheetHeight) || 1850;
     
     if (isNaN(numPrice)) {
       setStatus({ type: 'error', message: 'Preço por m² inválido.' });
@@ -68,13 +70,17 @@ export function Materials({ materials = [], onRefresh }) {
           name,
           price: numPrice,
           feed_rate: numFeed,
-          pass_width: numPass
+          pass_width: numPass,
+          sheet_width_mm: numSheetW,
+          sheet_height_mm: numSheetH
         });
         if (resp && resp.success) {
           setName('');
           setPrice('');
           setFeedRate('3000');
           setPassWidth('100');
+          setSheetWidth('2750');
+          setSheetHeight('1850');
           setEditingMaterial(null);
           setStatus({ type: 'success', message: 'Material atualizado!' });
           onRefresh();
@@ -82,12 +88,14 @@ export function Materials({ materials = [], onRefresh }) {
           throw new Error(resp?.error || 'Falha ao atualizar');
         }
       } else {
-        const resp = await api.addMaterial(name, numPrice, numFeed, numPass);
+        const resp = await api.addMaterial(name, numPrice, numFeed, numPass, numSheetW, numSheetH);
         if (resp && resp.success) {
           setName('');
           setPrice('');
           setFeedRate('3000');
           setPassWidth('100');
+          setSheetWidth('2750');
+          setSheetHeight('1850');
           setStatus({ type: 'success', message: 'Insumo cadastrado com sucesso!' });
           onRefresh();
         } else {
@@ -107,6 +115,8 @@ export function Materials({ materials = [], onRefresh }) {
     setPrice(mat.price !== undefined ? String(mat.price) : '');
     setFeedRate(mat.feed_rate !== undefined ? String(mat.feed_rate) : '3000');
     setPassWidth(mat.pass_width !== undefined ? String(mat.pass_width) : '100');
+    setSheetWidth(mat.sheet_width_mm !== undefined ? String(mat.sheet_width_mm) : '2750');
+    setSheetHeight(mat.sheet_height_mm !== undefined ? String(mat.sheet_height_mm) : '1850');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -116,6 +126,8 @@ export function Materials({ materials = [], onRefresh }) {
     setPrice('');
     setFeedRate('3000');
     setPassWidth('100');
+    setSheetWidth('2750');
+    setSheetHeight('1850');
   };
 
   const handleDelete = async (id) => {
@@ -169,9 +181,9 @@ export function Materials({ materials = [], onRefresh }) {
           </div>
 
           <form onSubmit={handleAddOrUpdate} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Nome do Insumo */}
-              <div className="md:col-span-1 space-y-2">
+              <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">Nome do Insumo</label>
                 <div className="relative group">
                   <Box size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-cyan transition-colors" />
@@ -179,7 +191,7 @@ export function Materials({ materials = [], onRefresh }) {
                     type="text" 
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Ex: MDF 15mm, Alumínio 2mm..." 
+                    placeholder="Ex: MDF 15mm, Acrílico 3mm..." 
                     className="w-full bg-white/5 border border-border px-11 py-3 rounded-2xl outline-none focus:border-accent-cyan/50 focus:bg-white/[0.08] transition-all text-white font-medium text-sm shadow-inner"
                     required
                   />
@@ -220,8 +232,11 @@ export function Materials({ materials = [], onRefresh }) {
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Largura da Passada / Passo */}
+            {/* Configurações da Chapa Padrão & Passo Lateral */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 border-t border-white/5">
+              {/* Passo Lateral */}
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1 flex items-center justify-between">
                   <span>Passo Lateral</span>
@@ -234,6 +249,44 @@ export function Materials({ materials = [], onRefresh }) {
                     value={passWidth}
                     onChange={(e) => setPassWidth(e.target.value)}
                     placeholder="100" 
+                    className="w-full bg-white/5 border border-border px-11 py-3 rounded-2xl outline-none focus:border-accent-cyan/50 transition-all text-white font-bold text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Largura da Chapa (mm) */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1 flex items-center justify-between">
+                  <span>Largura Chapa Padrão</span>
+                  <span className="text-orange-400 font-mono text-[9px]">mm</span>
+                </label>
+                <div className="relative group">
+                  <Maximize2 size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-400 group-focus-within:text-accent-cyan transition-colors" />
+                  <input 
+                    type="number" 
+                    value={sheetWidth}
+                    onChange={(e) => setSheetWidth(e.target.value)}
+                    placeholder="2750" 
+                    className="w-full bg-white/5 border border-border px-11 py-3 rounded-2xl outline-none focus:border-accent-cyan/50 transition-all text-white font-bold text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Comprimento da Chapa (mm) */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1 flex items-center justify-between">
+                  <span>Comprimento Chapa Padrão</span>
+                  <span className="text-orange-400 font-mono text-[9px]">mm</span>
+                </label>
+                <div className="relative group">
+                  <Maximize2 size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-400 group-focus-within:text-accent-cyan transition-colors" />
+                  <input 
+                    type="number" 
+                    value={sheetHeight}
+                    onChange={(e) => setSheetHeight(e.target.value)}
+                    placeholder="1850" 
                     className="w-full bg-white/5 border border-border px-11 py-3 rounded-2xl outline-none focus:border-accent-cyan/50 transition-all text-white font-bold text-sm"
                     required
                   />
@@ -369,6 +422,12 @@ export function Materials({ materials = [], onRefresh }) {
 
                   {/* Operational parameters */}
                   <div className="space-y-2 py-3 border-t border-white/5 text-xs text-text-muted font-mono">
+                    <div className="flex justify-between items-center">
+                      <span>Chapa Padrão:</span>
+                      <span className="text-orange-400 font-bold">
+                        {m.sheet_width_mm || 2750} × {m.sheet_height_mm || 1850} mm ({(((m.sheet_width_mm || 2750) * (m.sheet_height_mm || 1850)) / 1000000).toFixed(2)} m²)
+                      </span>
+                    </div>
                     <div className="flex justify-between items-center">
                       <span>Velocidade Fresa:</span>
                       <span className="text-white font-bold">{fRate} mm/min</span>
