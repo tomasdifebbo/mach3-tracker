@@ -512,5 +512,107 @@ def main():
         
         time.sleep(1)
 
+# ==========================================
+# MONITOR LASERCAD & RUIDA LASER (UDP 5005 / PORTA 50200)
+# ==========================================
+import socket
+
+class LaserMonitorThread(threading.Thread):
+    def __init__(self, laser_ip="192.168.0.174", port=5005):
+        super().__init__(daemon=True)
+        self.laser_ip = laser_ip
+        self.port = port
+        self.status = "offline"  # offline, idle, working
+        self.last_filename = None
+        self.running = True
+
+    def run(self):
+        print(f"[*] Monitor de Laser (LaserCAD/Ruida) iniciado no IP {self.laser_ip}...")
+        
+        # Monitora também arquivos de trabalho do LaserCAD (C:\LaserCAD ou diretórios de exportação)
+        lasercad_dirs = [
+            r"C:\LaserCAD",
+            r"C:\LaserCADv7.87.3",
+            r"D:\LaserCAD",
+            r"C:\Program Files\LaserCAD",
+            r"C:\Program Files (x86)\LaserCAD"
+        ]
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.settimeout(3.0)
+
+        # Polling do status da Laser via UDP
+        poll_cmd = bytes([0xd8, 0x00, 0x02, 0x00, 0x01, 0x00])
+
+        while self.running:
+            try:
+                # 1. Procurar arquivos recentemente modificados na pasta do LaserCAD
+                recent_file = self.find_recent_lasercad_file(lasercad_dirs)
+                if recent_file:
+                    self.last_filename = recent_file
+
+                # 2. Ping / Status UDP para a controladora Laser
+                sock.sendto(poll_cmd, (self.laser_ip, self.port))
+                data, addr = sock.recvfrom(1024)
+
+                if data:
+                    if self.status == "offline":
+                        print(f"[+] Laser ({self.laser_ip}) ficou ONLINE!")
+                        self.status = "idle"
+
+                    # Verifica byte de trabalho (Ruida / Trocen)
+                    if len(data) >= 5:
+                        state_byte = data[4]
+                        if state_byte == 1 and self.status != "working":
+                            self.status = "working"
+                            file_to_report = self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
+                            print(f"[+] LASER CORTE INICIADO: {file_to_report}")
+                            processa_inicio(
+                                caminho=f"LaserCAD\\{file_to_report}",
+                                nome_arquivo=file_to_report,
+                                iso_time=datetime.datetime.now().astimezone().isoformat(),
+                                origem="Laser Ruida"
+                            )
+                        elif state_byte == 0 and self.status == "working":
+                            self.status = "idle"
+                            print(f"[OK] LASER CORTE FINALIZADO")
+                            processa_fim(
+                                iso_time=datetime.datetime.now().astimezone().isoformat(),
+                                origem="Laser Ruida"
+                            )
+            except socket.timeout:
+                if self.status != "offline":
+                    print(f"[!] Laser ({self.laser_ip}) desconectada ou desligada.")
+                    if self.status == "working":
+                        processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
+                    self.status = "offline"
+            except Exception as e:
+                pass
+
+            time.sleep(4)
+
+    def find_recent_lasercad_file(self, search_dirs):
+        now = time.time()
+        for d in search_dirs:
+            if os.path.exists(d):
+                try:
+                    for root, _, files in os.walk(d):
+                        for f in files:
+                            if f.lower().endswith(('.pw5', '.ud5', '.pw', '.dxf', '.plt', '.nc')):
+                                fpath = os.path.join(root, f)
+                                mtime = os.path.getmtime(fpath)
+                                # Se modificado nos últimos 60 segundos
+                                if now - mtime < 60:
+                                    return f
+                except Exception:
+                    pass
+        return None
+
+def start_laser_monitor():
+    t = LaserMonitorThread(laser_ip="192.168.0.174", port=5005)
+    t.start()
+
 if __name__ == "__main__":
+    start_laser_monitor()
     main()
+
