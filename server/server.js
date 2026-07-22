@@ -333,7 +333,16 @@ async function initDb() {
     }
 }
 
-initDb();
+const RuidaMonitor = require('./ruida_monitor');
+
+initDb().then(() => {
+    try {
+        const ruida = new RuidaMonitor(pool, autoSyncKanban);
+        ruida.start();
+    } catch (err) {
+        console.error('[RUIDA MONITOR START ERROR]', err);
+    }
+});
 
 // Middleware to protect routes
 function authenticateToken(req, res, next) {
