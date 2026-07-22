@@ -249,79 +249,62 @@ def simulate_gcode_time(filepath):
 
 def processa_inicio(caminho, nome_arquivo, iso_time, origem):
     # Extract actual folder from full file path
-    # Extract actual folder from full file path
-    # Example: \\TOMAS\arquivos 2024\ARQUIVOS 2026\router\Project\Folder -> Project\Folder
+    project_name = "LaserCAD"
     parts = caminho.split("\\")
     if len(parts) > 2:
-        # Try to get the project name (e.g., 2578I - Donatello)
-        # Usually projects are 3 levels deep from the root share
-        project = parts[-3] if len(parts) >= 3 else "Desconhecido"
-        subfolder = parts[-2] if len(parts) >= 2 else ""
-         # Skip diagnostic PING lines
-        if "PING" in nome_arquivo.upper():
-            return
-
         # Improved project folder extraction for deep UNC paths
-        # Goal: Find the folder name that represents the project (e.g., "2578g - Bancada tubo")
-        # Logic: Skip generic end-folders like "ROUTER", "ISOPOR", "ARQUIVO"
         full_parts = [p for p in caminho.split("\\") if p]
-        
-        # Exclude the filename (last part)
         folder_parts = full_parts[:-1] if len(full_parts) > 1 else full_parts
-        
         project_name = "Desconhecido"
         skip_list = ["ROUTER", "ISOPOR", "ARQUIVO", "CNC", "ARQUIVOS", "2024", "2026", "TOMAS", "MACH3"]
-        
-        # Traverse backwards to find the first non-generic name
         for p in reversed(folder_parts):
-            # Also skip anything that looks like a file (has extension)
             if p.upper() not in skip_list and len(p) > 2 and "." not in p:
                 project_name = p
                 break
-        
         if project_name == "Desconhecido" and folder_parts:
-            project_name = folder_parts[-1] # Fallback to last folder
+            project_name = folder_parts[-1]
 
-        # Simulate machining time for progress bar
-        estimated = None
-        # Map UNC paths to local paths (\\TOMAS\arquivos 2024\... -> E:\arquivos 2024\...)
-        local_path = caminho
-        unc_mappings = {
-            r"\\TOMAS\arquivos 2024": r"E:\arquivos 2024",
-            r"\\DESKTOP-1CSKMNT\Mach3": r"C:\mach3",
-        }
-        for unc_prefix, local_prefix in unc_mappings.items():
-            if local_path.upper().startswith(unc_prefix.upper()):
-                local_path = local_prefix + local_path[len(unc_prefix):]
-                break
-        
-        if os.path.exists(local_path):
-            estimated = simulate_gcode_time(local_path)
-            if estimated:
-                print(f"[~] Tempo estimado: {estimated:.1f} min ({estimated/60:.1f}h)")
-        else:
-            print(f"[!] Arquivo não encontrado para simulação: {local_path}")
-        
-        # Auto-detect material from filename
-        mat = find_material_match(nome_arquivo)
-        mat_id = mat['id'] if mat else None
-        mat_name = mat['name'] if mat else None
-        mat_price = mat['price'] if mat else None
-        
-        if mat:
-            print(f"[+] Material detectado: {mat_name}")
+    # Skip diagnostic PING lines
+    if "PING" in nome_arquivo.upper():
+        return
 
-        payload = {
-            "file_name": nome_arquivo,
-            "folder": f"{origem} | {project_name}",
-            "file_path": caminho,
-            "start_time": iso_time,
-            "router_name": origem,
-            "estimated_minutes": estimated,
-            "material_id": mat_id,
-            "material_name": mat_name,
-            "material_price": mat_price
-        }
+    # Simulate machining time for progress bar
+    estimated = None
+    local_path = caminho
+    unc_mappings = {
+        r"\\TOMAS\arquivos 2024": r"E:\arquivos 2024",
+        r"\\DESKTOP-1CSKMNT\Mach3": r"C:\mach3",
+    }
+    for unc_prefix, local_prefix in unc_mappings.items():
+        if local_path.upper().startswith(unc_prefix.upper()):
+            local_path = local_prefix + local_path[len(unc_prefix):]
+            break
+    
+    if os.path.exists(local_path):
+        estimated = simulate_gcode_time(local_path)
+        if estimated:
+            print(f"[~] Tempo estimado: {estimated:.1f} min ({estimated/60:.1f}h)")
+    
+    # Auto-detect material from filename
+    mat = find_material_match(nome_arquivo)
+    mat_id = mat['id'] if mat else None
+    mat_name = mat['name'] if mat else None
+    mat_price = mat['price'] if mat else None
+    
+    if mat:
+        print(f"[+] Material detectado: {mat_name}")
+
+    payload = {
+        "file_name": nome_arquivo,
+        "folder": f"{origem} | {project_name}",
+        "file_path": caminho,
+        "start_time": iso_time,
+        "router_name": origem,
+        "estimated_minutes": estimated,
+        "material_id": mat_id,
+        "material_name": mat_name,
+        "material_price": mat_price
+    }
     
     headers = get_headers()
     if headers and len(load_queue()) == 0:
