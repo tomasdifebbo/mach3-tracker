@@ -568,6 +568,28 @@ class LaserMonitorThread(threading.Thread):
                     if self.status == "offline":
                         print(f"[+] Laser ({self.laser_ip}) ficou ONLINE!")
                         self.status = "idle"
+                        processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
+                    
+                    # Se tiver dados UDP de estado da Ruida/Trocen
+                    if 'data' in locals() and data and len(data) >= 5:
+                        state_byte = data[4]
+                        if state_byte == 1 and self.status != "working":
+                            self.status = "working"
+                            file_to_report = self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
+                            print(f"[+] LASER CORTE INICIADO: {file_to_report}")
+                            processa_inicio(
+                                caminho=f"LaserCAD\\{file_to_report}",
+                                nome_arquivo=file_to_report,
+                                iso_time=datetime.datetime.now().astimezone().isoformat(),
+                                origem="Laser Ruida"
+                            )
+                        elif state_byte == 0 and self.status == "working":
+                            self.status = "idle"
+                            print(f"[OK] LASER CORTE FINALIZADO")
+                            processa_fim(
+                                iso_time=datetime.datetime.now().astimezone().isoformat(),
+                                origem="Laser Ruida"
+                            )
                 else:
                     if self.status != "offline":
                         print(f"[!] Laser ({self.laser_ip}) desconectada / offline.")
