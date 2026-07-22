@@ -224,7 +224,7 @@ export function Materials({ materials = [], onRefresh }) {
               {/* Largura da Passada / Passo */}
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1 flex items-center justify-between">
-                  <span>Largura Passo</span>
+                  <span>Passo Lateral</span>
                   <span className="text-accent-cyan font-mono text-[9px]">mm</span>
                 </label>
                 <div className="relative group">
@@ -374,7 +374,7 @@ export function Materials({ materials = [], onRefresh }) {
                       <span className="text-white font-bold">{fRate} mm/min</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span>Largura Passo:</span>
+                      <span>Passo Lateral:</span>
                       <span className="text-white font-bold">{pWidth} mm</span>
                     </div>
                     <div className="flex justify-between items-center text-orange-400 font-bold border-t border-white/5 pt-2 mt-1">
