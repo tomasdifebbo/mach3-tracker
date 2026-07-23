@@ -177,6 +177,9 @@ function App() {
           title={titles[activeSection][0]} 
           subtitle={titles[activeSection][1]} 
           user={user} 
+          jobs={jobs}
+          routers={routers}
+          maintenance={maintenance}
           onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           onSectionChange={(section) => {
             if (!isTrialExpired) setActiveSection(section);
