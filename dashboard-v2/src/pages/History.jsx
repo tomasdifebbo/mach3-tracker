@@ -112,18 +112,28 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   );
 
   const handleExportCSV = () => {
-    const headers = ['ID', 'Arquivo', 'Projeto', 'Inicio', 'Fim', 'Duracao (min)', 'Material', 'Custo (R$)', 'Data'];
-    const rows = filteredJobs.map(j => [
-      j.id,
-      j.file_name,
-      j.folder?.split('|').pop()?.split('\\').pop() || '-',
-      formatTime(j.start_time),
-      j.end_time ? formatTime(j.end_time) : 'Ativo',
-      (j.duration_minutes || 0).toFixed(2),
-      j.material_name || '-',
-      (((j.duration_minutes || 0) / 60 * costPerHour) + (j.material_price || 0)).toFixed(2),
-      formatDate(j.start_time)
-    ]);
+    const headers = ['ID', 'Arquivo', 'Projeto', 'Inicio', 'Fim', 'Duracao (min)', 'Material', 'm2 Utilizado', 'Custo (R$)', 'Data'];
+    const rows = filteredJobs.map(j => {
+      const mat = materials.find(m => m.id === j.material_id);
+      const ins = mat ? calculateInsumo({
+        durationMinutes: j.duration_minutes || 0,
+        pricePerM2: mat.price || 0,
+        feedRateMmMin: mat.feed_rate || 3000,
+        passWidthMm: mat.pass_width || 100
+      }) : null;
+      return [
+        j.id,
+        j.file_name,
+        j.folder?.split('|').pop()?.split('\\').pop() || '-',
+        formatTime(j.start_time),
+        j.end_time ? formatTime(j.end_time) : 'Ativo',
+        (j.duration_minutes || 0).toFixed(2),
+        j.material_name || '-',
+        ins ? ins.areaM2.toFixed(3) : '-',
+        (((j.duration_minutes || 0) / 60 * costPerHour) + (j.material_price || 0)).toFixed(2),
+        formatDate(j.start_time)
+      ];
+    });
 
     const escapeCSV = (val) => {
       const str = String(val);
@@ -243,6 +253,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                 <th className="px-6 py-5">Cronograma</th>
                 <th className="px-6 py-5">Duração</th>
                 <th className="px-6 py-5 text-center">Insumo</th>
+                <th className="px-6 py-5 text-center">m²</th>
                 <th className="px-6 py-5">Custo Estimado</th>
                 <th className="px-6 py-5">Data</th>
                 <th className="px-6 py-5 text-right">Ações</th>
@@ -415,6 +426,23 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                         </motion.div>
                       )}
                     </AnimatePresence>
+                  </td>
+                  <td className="px-6 py-5 text-center whitespace-nowrap">
+                    {(() => {
+                      const mat = materials.find(m => m.id === job.material_id);
+                      if (!mat) return <span className="text-text-muted text-xs">-</span>;
+                      const ins = calculateInsumo({
+                        durationMinutes: job.duration_minutes || 0,
+                        pricePerM2: mat.price || 0,
+                        feedRateMmMin: mat.feed_rate || 3000,
+                        passWidthMm: mat.pass_width || 100
+                      });
+                      return (
+                        <span className="text-sm font-bold text-accent-cyan">
+                          {ins.areaM2.toFixed(2)} <span className="text-[10px] text-text-muted">m²</span>
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-6 py-5 font-black text-white text-sm tracking-tighter whitespace-nowrap">
                     {formatCurrency(((job.duration_minutes || 0) / 60 * costPerHour) + (job.material_price || 0))}
