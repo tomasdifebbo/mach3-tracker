@@ -953,8 +953,9 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
 // ─────────────────────────────────────────────
 
 const PLANS = {
-    pro:      { name: 'MACH3 Tracker PRO',      price: 149.00, maxRouters: 3 },
-    business: { name: 'MACH3 Tracker BUSINESS',  price: 349.00, maxRouters: 999 }
+    starter:  { name: 'MACH3 Tracker STARTER',   price: 59.90, maxRouters: 1 },
+    pro:      { name: 'MACH3 Tracker PRO',      price: 149.90, maxRouters: 3 },
+    business: { name: 'MACH3 Tracker BUSINESS',  price: 349.90, maxRouters: 999 }
 };
 
 // POST /api/payments/create-preference
@@ -963,7 +964,7 @@ app.post('/api/payments/create-preference', authenticateToken, async (req, res) 
     try {
         const { planType } = req.body;
         const plan = PLANS[planType];
-        if (!plan) return res.status(400).json({ error: 'Plano inválido. Use: pro ou business' });
+        if (!plan) return res.status(400).json({ error: 'Plano inválido. Use: starter, pro ou business' });
 
         const preference = new Preference(mpClient);
         const backUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${port}`;
