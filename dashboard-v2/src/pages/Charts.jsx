@@ -118,11 +118,11 @@ export function Charts({ jobs = [] }) {
   const hasJobs = jobs.length > 0;
 
   return (
-    <div className="p-8 space-y-8 animate-in fade-in duration-700">
+    <div className="p-4 md:p-8 space-y-6 md:space-y-8 animate-in fade-in duration-700">
       {/* Overview Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
         {/* Productivity Line Chart */}
-        <div className="glass p-10 rounded-[40px] border-border/40 min-h-[450px] relative overflow-hidden group">
+        <div className="glass p-5 md:p-10 rounded-3xl sm:rounded-[40px] border-border/40 min-h-[350px] md:min-h-[450px] relative overflow-hidden group">
           <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-accent-cyan/5 via-transparent to-transparent pointer-events-none"></div>
           <div className="flex items-center justify-between mb-10 relative z-10">
             <div className="flex items-center gap-4">

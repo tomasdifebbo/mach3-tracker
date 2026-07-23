@@ -25,7 +25,7 @@ export function SubscriptionPlans({ user }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       {/* Starter Plan */}
-      <div className={`glass p-10 rounded-[40px] border-border/30 flex flex-col items-center group hover:scale-105 transition-all duration-500 ${user?.plan === 'starter' ? 'ring-2 ring-accent-cyan/50' : ''}`}>
+      <div className={`glass p-6 sm:p-10 rounded-3xl sm:rounded-[40px] border-border/30 flex flex-col items-center group hover:scale-105 transition-all duration-500 ${user?.plan === 'starter' ? 'ring-2 ring-accent-cyan/50' : ''}`}>
         {user?.plan === 'starter' && <span className="text-[10px] uppercase font-black tracking-widest text-accent-cyan mb-4">Plano Atual</span>}
         <h3 className="text-xl font-bold mb-1 text-white">Starter</h3>
         <div className="text-xs font-bold text-accent-cyan uppercase tracking-widest mb-3">30 Dias Grátis</div>
@@ -55,9 +55,9 @@ export function SubscriptionPlans({ user }) {
       </div>
 
       {/* Pro Plan */}
-      <div className={`glass p-1 w-full rounded-[40px] border-accent-cyan/30 bg-gradient-to-br from-accent-cyan/20 to-accent-blue/10 flex flex-col items-center group scale-105 relative shadow-2xl shadow-accent-cyan/10 ${user?.plan === 'pro' ? 'ring-2 ring-accent-cyan/50' : ''}`}>
+      <div className={`glass p-1 w-full rounded-3xl sm:rounded-[40px] border-accent-cyan/30 bg-gradient-to-br from-accent-cyan/20 to-accent-blue/10 flex flex-col items-center group md:scale-105 relative shadow-2xl shadow-accent-cyan/10 ${user?.plan === 'pro' ? 'ring-2 ring-accent-cyan/50' : ''}`}>
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-accent-cyan text-black text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-full shadow-lg shadow-accent-cyan/30">MAIS POPULAR</div>
-        <div className="p-9 flex flex-col items-center w-full h-full">
+        <div className="p-6 sm:p-9 flex flex-col items-center w-full h-full">
           <h3 className="text-xl font-bold mb-3 text-white">Profissional</h3>
           <div className="flex flex-col items-center mb-6">
             <div className="text-4xl font-black text-white">
@@ -87,7 +87,7 @@ export function SubscriptionPlans({ user }) {
       </div>
 
       {/* Business Plan */}
-      <div className={`glass p-10 rounded-[40px] border-border/30 flex flex-col items-center group hover:scale-105 transition-all duration-500 ${user?.plan === 'business' ? 'ring-2 ring-accent-cyan/50' : ''}`}>
+      <div className={`glass p-6 sm:p-10 rounded-3xl sm:rounded-[40px] border-border/30 flex flex-col items-center group hover:scale-105 transition-all duration-500 ${user?.plan === 'business' ? 'ring-2 ring-accent-cyan/50' : ''}`}>
         <h3 className="text-xl font-bold mb-3 text-white">Business</h3>
         <div className="flex flex-col items-center mb-6">
           <div className="text-3xl font-black text-white">

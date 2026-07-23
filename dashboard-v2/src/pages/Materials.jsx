@@ -140,9 +140,9 @@ export function Materials({ materials = [], onRefresh }) {
   );
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-10">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 md:space-y-10">
       {/* Form Section */}
-      <section className="glass p-10 rounded-[40px] border-border/40 relative overflow-hidden group">
+      <section className="glass p-5 md:p-10 rounded-3xl md:rounded-[40px] border-border/40 relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-64 h-64 bg-accent-cyan/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-accent-cyan/20 transition-all duration-700"></div>
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-8">

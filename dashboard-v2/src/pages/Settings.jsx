@@ -64,7 +64,7 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-12 animate-in fade-in duration-500">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 md:space-y-12 animate-in fade-in duration-500">
       {isTrialExpired && (
         <div className="mb-8 p-6 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-start gap-4 shadow-xl shadow-red-500/5">
           <div className="p-3 bg-red-500/20 text-red-400 rounded-xl">

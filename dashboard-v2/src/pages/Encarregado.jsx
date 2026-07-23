@@ -916,7 +916,7 @@ function PainelKanban({ jobs = [] }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {KANBAN_COLS.map(col => (
           <div
             key={col.id}
@@ -1971,9 +1971,45 @@ export function Encarregado({ jobs = [] }) {
   };
 
   return (
-    <div className="flex h-full overflow-hidden">
-      {/* Mini sidebar interna */}
-      <aside className="w-60 flex-shrink-0 bg-black/30 border-r border-white/5 flex flex-col overflow-y-auto">
+    <div className="flex flex-col md:flex-row h-full overflow-hidden">
+      {/* Mobile Header / Navigation Bar */}
+      <div className="md:hidden bg-black/40 border-b border-white/5 p-3 flex flex-col gap-2">
+        <div className="flex items-center justify-between px-1">
+          <div>
+            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-orange-400">Planner Operacional</p>
+            <h2 className="font-black text-white text-sm">Painel do <span className="text-orange-400">Encarregado</span></h2>
+          </div>
+          <div className="px-2.5 py-1 bg-orange-500/10 border border-orange-500/20 rounded-lg flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></span>
+            <span className="text-[10px] font-bold text-orange-400">{dayName}-feira</span>
+          </div>
+        </div>
+
+        {/* Horizontal Nav Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 pt-1">
+          {NAV_SECTIONS.map(s => {
+            const Icon = s.icon;
+            const active = activeTab === s.id;
+            return (
+              <button
+                key={s.id}
+                onClick={() => setActiveTab(s.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all ${
+                  active 
+                    ? 'bg-orange-500 text-black shadow-lg shadow-orange-500/20' 
+                    : 'bg-white/5 text-text-muted hover:text-white'
+                }`}
+              >
+                <Icon size={14} className="shrink-0" />
+                <span>{s.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Mini sidebar interna (Desktop Only) */}
+      <aside className="hidden md:flex w-60 flex-shrink-0 bg-black/30 border-r border-white/5 flex-col overflow-y-auto">
         {/* Header */}
         <div className="p-5 border-b border-white/5">
           <p className="text-[9px] font-black uppercase tracking-[0.25em] text-orange-400 mb-1">Planner Operacional</p>
@@ -2031,7 +2067,7 @@ export function Encarregado({ jobs = [] }) {
       </aside>
 
       {/* Conteúdo */}
-      <main className="flex-1 overflow-y-auto p-8">
+      <main className="flex-1 overflow-y-auto p-4 md:p-8">
         {renderSection()}
       </main>
     </div>

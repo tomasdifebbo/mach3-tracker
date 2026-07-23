@@ -161,7 +161,7 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
         </div>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-2 sm:gap-6">
 
         {/* User Status / Plan */}
         {user && (
@@ -171,10 +171,10 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
                 setShowUserMenu(!showUserMenu);
                 setShowNotifications(false);
               }}
-              className="flex items-center gap-4 bg-white/5 border border-border pl-2 pr-4 py-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer text-left"
+              className="flex items-center gap-2 sm:gap-4 bg-white/5 border border-border pl-2 pr-2 sm:pr-4 py-1.5 rounded-full hover:bg-white/10 transition-colors cursor-pointer text-left"
             >
               <div className={`
-                px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest
+                hidden sm:block px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest
                 ${user.plan === 'starter' ? 'bg-slate-500 text-white' : ''}
                 ${user.plan === 'pro' ? 'bg-accent-blue text-white shadow-lg shadow-accent-blue/20' : ''}
                 ${user.plan === 'business' ? 'bg-accent-warning text-black shadow-lg shadow-accent-warning/20' : ''}
@@ -182,21 +182,22 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
                 {user.plan}
               </div>
               
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold text-white leading-none mb-1">{user.email}</span>
-                <span className={`text-[10px] font-bold flex items-center gap-1 ${user.plan === 'starter' ? (daysLeft > 0 ? 'text-accent-warning' : 'text-accent-danger') : 'text-accent-cyan'}`}>
-                  <Zap size={10} fill="currentColor" />
-                  {user.plan === 'starter' ? (daysLeft > 0 ? `Renove em ${daysLeft} dias` : 'Expirado') : 'Plano Ativo'}
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs sm:text-sm font-semibold text-white leading-none mb-1 truncate max-w-[100px] sm:max-w-[200px]">{user.email}</span>
+                <span className={`text-[9px] sm:text-[10px] font-bold flex items-center gap-1 ${user.plan === 'starter' ? (daysLeft > 0 ? 'text-accent-warning' : 'text-accent-danger') : 'text-accent-cyan'}`}>
+                  <Zap size={10} fill="currentColor" className="shrink-0" />
+                  <span className="truncate">{user.plan === 'starter' ? (daysLeft > 0 ? `Renove em ${daysLeft}d` : 'Expirado') : 'Plano Ativo'}</span>
                 </span>
               </div>
               
-              <div className={`w-8 h-8 rounded-full bg-gradient-to-tr border flex items-center justify-center overflow-hidden ${user.plan === 'starter' && daysLeft <= 0 ? 'from-accent-danger/20 to-red-900/20 border-accent-danger/30 text-accent-danger' : 'from-accent-cyan/20 to-accent-blue/20 border-accent-cyan/30 text-accent-cyan'}`}>
-                 <User size={18} />
+              <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr border flex items-center justify-center overflow-hidden shrink-0 ${user.plan === 'starter' && daysLeft <= 0 ? 'from-accent-danger/20 to-red-900/20 border-accent-danger/30 text-accent-danger' : 'from-accent-cyan/20 to-accent-blue/20 border-accent-cyan/30 text-accent-cyan'}`}>
+                 <User size={16} className="sm:hidden" />
+                 <User size={18} className="hidden sm:block" />
               </div>
             </button>
 
             {showUserMenu && (
-              <div className="absolute right-0 mt-4 w-56 glass rounded-2xl overflow-hidden border border-border shadow-2xl p-1.5 animate-in slide-in-from-top-2 duration-200">
+              <div className="absolute right-0 mt-4 w-56 glass rounded-2xl overflow-hidden border border-border shadow-2xl p-1.5 animate-in slide-in-from-top-2 duration-200 z-[200]">
                 <button 
                   onClick={() => {
                     setShowUserMenu(false);
@@ -241,7 +242,7 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-4 w-96 glass rounded-3xl overflow-hidden border border-border shadow-2xl p-2 animate-in slide-in-from-top-2 duration-200 z-[200]">
+            <div className="absolute right-0 mt-4 w-[calc(100vw-2rem)] max-w-sm sm:w-96 glass rounded-3xl overflow-hidden border border-border shadow-2xl p-2 animate-in slide-in-from-top-2 duration-200 z-[200]">
               <div className="p-4 border-b border-border flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-white">Notificações</span>
