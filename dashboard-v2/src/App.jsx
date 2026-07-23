@@ -36,15 +36,22 @@ function App() {
       setUser(userData);
       
       // Trial Expiration Logic
+      let trialExpired = false;
       if (userData?.plan === 'starter' && userData?.trial_expiry) {
          const expiry = new Date(userData.trial_expiry);
          if (expiry < new Date()) {
-            setIsTrialExpired(true);
-         } else {
-            setIsTrialExpired(false);
+            trialExpired = true;
          }
-      } else {
-         setIsTrialExpired(false);
+      }
+      setIsTrialExpired(trialExpired);
+
+      // Feature / Expiration Redirection Check
+      if (trialExpired) {
+        setActiveSection('settings');
+      } else if (userData?.features && userData.features['dashboard'] === false) {
+        // If dashboard is disabled by Master Admin, find first allowed section
+        const firstAllowed = Object.keys(userData.features).find(k => userData.features[k] === true && k !== 'dashboard');
+        setActiveSection(firstAllowed || 'settings');
       }
 
       setIsLoggedIn(true);
@@ -72,6 +79,7 @@ function App() {
       setLoading(false);
     } catch (err) {
       console.error("Fetch failed:", err);
+      setLoading(false);
     }
   };
 
@@ -84,6 +92,8 @@ function App() {
       init();
       const interval = setInterval(fetchData, 10000);
       return () => clearInterval(interval);
+    } else {
+      setLoading(false);
     }
   }, [isLoggedIn]);
 
@@ -101,19 +111,27 @@ function App() {
     if (user && user.role === 'admin') {
       return <AdminPortal />;
     } else if (user && user.role !== 'admin') {
-      // If logged in but not admin, show login again or an error. AdminLogin handles the error natively.
       return <AdminLogin onLoginSuccess={() => {
         setIsLoggedIn(true);
         window.location.reload();
       }} />;
     }
-    // Loading state while user data fetches
-    return <div className="h-screen w-full bg-zinc-950 flex items-center justify-center text-purple-500">Carregando...</div>;
+    return <div className="h-screen w-full bg-zinc-950 flex items-center justify-center text-purple-500 font-bold">Carregando...</div>;
   }
 
   // Handle standard routes
   if (!isLoggedIn) {
     return <Login onLoginSuccess={() => setIsLoggedIn(true)} />;
+  }
+
+  // Show Loading Screen while user data fetches (prevents brief dashboard flash on F5/Login)
+  if (loading || !user) {
+    return (
+      <div className="h-screen w-full bg-bg-main flex flex-col items-center justify-center gap-4 text-accent-cyan font-bold">
+        <div className="w-10 h-10 border-4 border-accent-cyan/20 border-t-accent-cyan rounded-full animate-spin"></div>
+        <span className="text-xs uppercase tracking-widest text-text-muted">Carregando sistema...</span>
+      </div>
+    );
   }
 
   // Handle Mercado Pago return URLs (/payment/success, /payment/failure, /payment/pending)
@@ -125,7 +143,6 @@ function App() {
         onGoToDashboard={() => {
           window.history.replaceState({}, '', '/');
           setActiveSection(paymentStatus === 'failure' ? 'settings' : 'dashboard');
-          // Force re-render by toggling a dummy state
           window.location.href = '/';
         }}
       />
@@ -133,15 +150,31 @@ function App() {
   }
 
   const renderSection = () => {
+    if (isTrialExpired) {
+      return <Settings user={user} onRefresh={loadUser} isTrialExpired={isTrialExpired} />;
+    }
+
+    if (user?.features && user.features[activeSection] === false) {
+      return (
+        <div className="p-8 text-center space-y-4 animate-in fade-in duration-300">
+          <div className="text-xl font-bold text-red-400">Recurso não incluído no seu plano</div>
+          <p className="text-sm text-text-muted">Entre em contato com o suporte ou atualize seu plano em Configurações.</p>
+          <button onClick={() => setActiveSection('settings')} className="px-6 py-2.5 bg-accent-cyan text-black font-bold rounded-xl text-xs uppercase tracking-widest cursor-pointer">
+            Ir para Configurações
+          </button>
+        </div>
+      );
+    }
+
     switch (activeSection) {
       case 'dashboard': return <Dashboard jobs={jobs} user={user} routers={routers} onRefresh={fetchData} />;
       case 'jobs': return <History jobs={jobs} materials={materials} onRefresh={fetchData} user={user} />;
       case 'charts': return <Charts jobs={jobs} />;
       case 'materials': return <Materials materials={materials} onRefresh={fetchData} />;
       case 'maintenance': return <Maintenance maintenance={maintenance} routers={routers} onRefresh={fetchData} user={user} />;
-      case 'settings': return <Settings user={user} onRefresh={loadUser} />;
+      case 'settings': return <Settings user={user} onRefresh={loadUser} isTrialExpired={isTrialExpired} />;
       case 'encarregado': return <Encarregado jobs={jobs} />;
-      default: return <Dashboard jobs={jobs} user={user} />;
+      default: return <Dashboard jobs={jobs} user={user} routers={routers} onRefresh={fetchData} />;
     }
   };
 
