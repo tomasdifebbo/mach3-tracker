@@ -37,11 +37,13 @@ export function SubscriptionPlans({ user }) {
             R$ 99,90/mês
           </div>
         </div>
-        <ul className="space-y-4 mb-10 text-sm text-text-muted font-medium w-full">
-          <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-success" /> 1 Máquina Ativa</li>
-          <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-success" /> Histórico 30 dias</li>
-          <li className="flex items-center gap-3 opacity-30"><CheckCircle2 size={16} /> Gráficos Avançados</li>
-          <li className="flex items-center gap-3 opacity-30"><CheckCircle2 size={16} /> Exportação CSV/PDF</li>
+        <ul className="space-y-3 mb-8 text-xs text-text-muted font-medium w-full flex-1">
+          <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-success shrink-0" /> 1 Máquina Ativa (CNC Router ou Laser)</li>
+          <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-success shrink-0" /> Status & Telemetria em Tempo Real</li>
+          <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-success shrink-0" /> Histórico de Produção 30 dias</li>
+          <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-success shrink-0" /> Notificações de Produção</li>
+          <li className="flex items-center gap-3 opacity-40"><CheckCircle2 size={16} className="shrink-0" /> Cálculo de Consumo por m²</li>
+          <li className="flex items-center gap-3 opacity-40"><CheckCircle2 size={16} className="shrink-0" /> Relatórios PDF / CSV & Gráficos</li>
         </ul>
         <button 
           onClick={() => handleSubscribe('starter')}
@@ -53,9 +55,9 @@ export function SubscriptionPlans({ user }) {
       </div>
 
       {/* Pro Plan */}
-      <div className={`glass p-1 w-full rounded-[40px] border-accent-cyan/30 bg-gradient-to-br from-accent-cyan/20 to-accent-blue/10 flex flex-col items-center group scale-110 relative shadow-2xl shadow-accent-cyan/10 ${user?.plan === 'pro' ? 'ring-2 ring-accent-cyan/50' : ''}`}>
+      <div className={`glass p-1 w-full rounded-[40px] border-accent-cyan/30 bg-gradient-to-br from-accent-cyan/20 to-accent-blue/10 flex flex-col items-center group scale-105 relative shadow-2xl shadow-accent-cyan/10 ${user?.plan === 'pro' ? 'ring-2 ring-accent-cyan/50' : ''}`}>
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-accent-cyan text-black text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-full shadow-lg shadow-accent-cyan/30">MAIS POPULAR</div>
-        <div className="p-9 flex flex-col items-center w-full">
+        <div className="p-9 flex flex-col items-center w-full h-full">
           <h3 className="text-xl font-bold mb-3 text-white">Profissional</h3>
           <div className="flex flex-col items-center mb-6">
             <div className="text-4xl font-black text-white">
@@ -65,11 +67,14 @@ export function SubscriptionPlans({ user }) {
               De R$ 199,90/mês
             </div>
           </div>
-          <ul className="space-y-4 mb-10 text-sm font-semibold w-full text-white">
-            <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-cyan" /> Até 3 Máquinas</li>
-            <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-cyan" /> Histórico Ilimitado</li>
-            <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-cyan" /> Gráficos de Produção</li>
-            <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-cyan" /> Exportação Completa</li>
+          <ul className="space-y-3 mb-8 text-xs font-semibold w-full text-white flex-1">
+            <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-cyan shrink-0" /> Até 3 Máquinas (Router & Laser)</li>
+            <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-cyan shrink-0" /> Histórico de Produção Ilimitado</li>
+            <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-cyan shrink-0" /> Edição de Projetos & Vinculação O.S.</li>
+            <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-cyan shrink-0" /> Cálculo de Consumo por m² Utilizado</li>
+            <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-cyan shrink-0" /> Relatórios PDF Profissionais & CSV</li>
+            <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-cyan shrink-0" /> Gráficos de Produção & Carga</li>
+            <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-cyan shrink-0" /> Gestão de Manutenção Preventiva</li>
           </ul>
           <button 
             onClick={() => handleSubscribe('pro')}
@@ -92,11 +97,13 @@ export function SubscriptionPlans({ user }) {
             De R$ 399,90/mês
           </div>
         </div>
-        <ul className="space-y-4 mb-10 text-sm text-text-muted font-medium w-full">
-          <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-success" /> Máquinas Ilimitadas</li>
-          <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-success" /> Análise de Custos OEE</li>
-          <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-success" /> Suporte Prioritário</li>
-          <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-success" /> White-label App</li>
+        <ul className="space-y-3 mb-8 text-xs text-text-muted font-medium w-full flex-1">
+          <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-success shrink-0" /> Máquinas Ilimitadas (Router, Laser, Plasma)</li>
+          <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-success shrink-0" /> Tudo do Plano Profissional</li>
+          <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-success shrink-0" /> Painel Kanban do Encarregado Completo</li>
+          <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-success shrink-0" /> Checklists Diários Operacionais</li>
+          <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-success shrink-0" /> Análise de Custos OEE & Performance</li>
+          <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-accent-success shrink-0" /> Suporte Prioritário Dedicado</li>
         </ul>
         <button 
           onClick={() => handleSubscribe('business')}
