@@ -97,7 +97,8 @@ export function Sidebar({ activeSection, onSectionChange, user, maintenance = []
       {/* Nav */}
       <nav className="flex-1 p-3 space-y-1 mt-4 overflow-y-auto custom-scrollbar">
         {navItems.map((item) => {
-          const isDisabled = isTrialExpired && item.id !== 'settings';
+          const isFeatureDisabled = user?.features && user.features[item.id] === false;
+          const isDisabled = (isTrialExpired && item.id !== 'settings') || isFeatureDisabled;
           const showText = isOpen || isMobileOpen;
           return (
             <button

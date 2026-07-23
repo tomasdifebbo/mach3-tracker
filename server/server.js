@@ -203,6 +203,7 @@ async function initDb() {
             ALTER TABLE users ADD COLUMN IF NOT EXISTS webhook_url TEXT;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expiry TIMESTAMP;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS features_override TEXT;
 
             -- Kanban and Checklist tables
             CREATE TABLE IF NOT EXISTS kanban_tasks (
@@ -619,9 +620,56 @@ app.post('/api/auth/reset', async (req, res) => {
     res.json({ success: true });
 });
 
+const DEFAULT_PLAN_FEATURES = {
+    starter: {
+        dashboard: true,
+        jobs: true,
+        charts: false,
+        materials: true,
+        maintenance: false,
+        encarregado: false,
+        m2_calculation: false,
+        export_pdf_csv: false,
+        notifications: true
+    },
+    pro: {
+        dashboard: true,
+        jobs: true,
+        charts: true,
+        materials: true,
+        maintenance: true,
+        encarregado: true,
+        m2_calculation: true,
+        export_pdf_csv: true,
+        notifications: true
+    },
+    business: {
+        dashboard: true,
+        jobs: true,
+        charts: true,
+        materials: true,
+        maintenance: true,
+        encarregado: true,
+        m2_calculation: true,
+        export_pdf_csv: true,
+        notifications: true
+    }
+};
+
+function getEffectiveFeatures(userPlan, overrideJsonStr) {
+    const base = DEFAULT_PLAN_FEATURES[userPlan] || DEFAULT_PLAN_FEATURES.starter;
+    if (!overrideJsonStr) return { ...base };
+    try {
+        const parsed = typeof overrideJsonStr === 'object' ? overrideJsonStr : JSON.parse(overrideJsonStr);
+        return { ...base, ...parsed };
+    } catch {
+        return { ...base };
+    }
+}
+
 app.get('/api/user/me', authenticateToken, async (req, res) => {
     await closeStaleJobs(req.user.id);
-    let user = (await pool.query('SELECT id, email, plan, trial_expiry, payment_status, "costPerHour", "plannedHours", role, webhook_url FROM users WHERE id = $1', [req.user.id])).rows[0];
+    let user = (await pool.query('SELECT id, email, plan, trial_expiry, payment_status, "costPerHour", "plannedHours", role, webhook_url, features_override FROM users WHERE id = $1', [req.user.id])).rows[0];
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
 
     const masterEmails = ['tomasdifebbo.tdf@gmail.com', 'admin@mach3.com', 'casadotrem@gmail.com'];
@@ -631,7 +679,8 @@ app.get('/api/user/me', authenticateToken, async (req, res) => {
     }
 
     const settings = { costPerHour: user.costPerHour, plannedHours: user.plannedHours, webhookUrl: user.webhook_url };
-    res.json({ ...user, settings });
+    const features = getEffectiveFeatures(user.plan, user.features_override);
+    res.json({ ...user, settings, features });
 });
 
 app.patch('/api/user/settings', authenticateToken, async (req, res) => {
@@ -645,8 +694,12 @@ app.patch('/api/user/settings', authenticateToken, async (req, res) => {
 });
 
 app.get('/api/admin/users', authenticateToken, authenticateAdmin, async (req, res) => {
-    const users = (await pool.query('SELECT id, email, plan, payment_status, trial_expiry, role FROM users ORDER BY id DESC')).rows;
-    res.json(users);
+    const users = (await pool.query('SELECT id, email, plan, payment_status, trial_expiry, role, features_override FROM users ORDER BY id DESC')).rows;
+    const formatted = users.map(u => ({
+        ...u,
+        features: getEffectiveFeatures(u.plan, u.features_override)
+    }));
+    res.json(formatted);
 });
 
 app.patch('/api/admin/users/:id/plan', authenticateToken, authenticateAdmin, async (req, res) => {
@@ -658,6 +711,13 @@ app.patch('/api/admin/users/:id/plan', authenticateToken, authenticateAdmin, asy
         currentExp.setDate(currentExp.getDate() + Number(addDays));
         await pool.query('UPDATE users SET trial_expiry = $1 WHERE id = $2', [currentExp.toISOString(), req.params.id]);
     }
+    res.json({ success: true });
+});
+
+app.patch('/api/admin/users/:id/features', authenticateToken, authenticateAdmin, async (req, res) => {
+    const { features } = req.body;
+    const jsonStr = JSON.stringify(features || {});
+    await pool.query('UPDATE users SET features_override = $1 WHERE id = $2', [jsonStr, req.params.id]);
     res.json({ success: true });
 });
 
