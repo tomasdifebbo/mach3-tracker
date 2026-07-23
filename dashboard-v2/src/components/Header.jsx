@@ -74,7 +74,7 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
         timestamp: new Date(j.end_time),
         icon: CheckCircle2,
         color: 'text-accent-success',
-        action: 'history'
+        action: 'jobs'
       });
     });
 
