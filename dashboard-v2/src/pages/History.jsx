@@ -251,17 +251,19 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
             <tbody className="divide-y divide-border/30">
               {filteredJobs.map((job) => (
                 <tr key={job.id} className="border-b border-border/40 hover:bg-white/5 transition-colors group">
-                  <td className="px-6 py-5 max-w-[220px]">
+                  <td className="px-6 py-5 min-w-[250px] max-w-[400px]">
                     <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-white text-sm truncate" title={job.file_name}>{job.file_name}</span>
+                      <div className="flex items-start gap-2 justify-between">
+                        <span className="font-bold text-white text-sm break-all" title={job.file_name}>
+                          {job.file_name}
+                        </span>
                         {job.count > 1 && (
-                          <span className="text-[10px] bg-accent-blue/20 text-accent-blue px-1.5 py-0.5 rounded-lg font-black tracking-tighter shrink-0">
+                          <span className="text-[10px] bg-accent-blue/20 text-accent-blue px-1.5 py-0.5 rounded-lg font-black tracking-tighter shrink-0 mt-0.5">
                             {job.count}X
                           </span>
                         )}
                       </div>
-                      <div className="text-[9px] text-text-muted opacity-50 font-black tracking-widest">
+                      <div className="text-[9px] text-text-muted opacity-50 font-black tracking-widest mt-1">
                         ID: #{job.id}
                       </div>
                     </div>
