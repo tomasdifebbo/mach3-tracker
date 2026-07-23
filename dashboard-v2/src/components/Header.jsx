@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Bell, Search, User, Zap, CheckCircle2, Clock, LogOut, Settings, Menu } from 'lucide-react';
 
-export function Header({ title, subtitle, user, onMenuToggle }) {
+export function Header({ title, subtitle, user, onMenuToggle, onSectionChange }) {
   const expiry = user?.trial_expiry ? new Date(user.trial_expiry) : null;
   const daysLeft = expiry ? Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24)) : 0;
 
@@ -31,15 +31,6 @@ export function Header({ title, subtitle, user, onMenuToggle }) {
       </div>
 
       <div className="flex items-center gap-6">
-        {/* Search */}
-        <div className="hidden md:flex items-center gap-3 bg-white/5 border border-border px-4 py-2 rounded-full w-64 transition-all focus-within:border-accent-cyan/50 focus-within:w-80">
-          <Search size={18} className="text-text-muted" />
-          <input 
-            type="text" 
-            placeholder="Buscar jobs..." 
-            className="bg-transparent border-none outline-none text-sm w-full placeholder:text-text-muted"
-          />
-        </div>
 
         {/* User Status / Plan */}
         {user && (
@@ -78,7 +69,7 @@ export function Header({ title, subtitle, user, onMenuToggle }) {
                 <button 
                   onClick={() => {
                     setShowUserMenu(false);
-                    alert("Acesse as configurações pelo menu lateral.");
+                    if (onSectionChange) onSectionChange('settings');
                   }}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-white hover:bg-white/5 transition-colors"
                 >

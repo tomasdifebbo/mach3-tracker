@@ -178,6 +178,9 @@ function App() {
           subtitle={titles[activeSection][1]} 
           user={user} 
           onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          onSectionChange={(section) => {
+            if (!isTrialExpired) setActiveSection(section);
+          }}
         />
         
         <div className="flex-1 overflow-y-auto custom-scrollbar">
