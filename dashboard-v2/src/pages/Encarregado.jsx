@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   LayoutGrid, Calendar, Columns3, CheckSquare2, Package, TrendingUp,
   AlertCircle, CheckCircle2, Clock, Star, ChevronRight, Zap, Target,
-  AlertTriangle, PlusCircle, X, ShieldAlert
+  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2
 } from 'lucide-react';
 import { api } from '../services/api';
 import { LinkProjectModal } from '../components/LinkProjectModal';
@@ -1118,13 +1118,28 @@ const MACHINE_CHECKLISTS = {
 function ChecklistMaquina({ data, machineKey }) {
   const today = new Date().toISOString().slice(0, 10);
   const [checked, setChecked] = useState([]);
+  const [customItems, setCustomItems] = useState([]);
+  const [newItemText, setNewItemText] = useState('');
+  const [addingItem, setAddingItem] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const fetchCustomItems = async () => {
+    try {
+      const items = await api.get(`/checklists/items?machine_key=${machineKey}`);
+      if (Array.isArray(items)) {
+        setCustomItems(items);
+      }
+    } catch (err) {
+      console.error('Failed to load custom checklist items:', err);
+    }
+  };
 
   useEffect(() => {
     let active = true;
     const fetchChecklist = async () => {
       setLoading(true);
       try {
+        await fetchCustomItems();
         const rows = await api.get(`/checklists?machine_key=${machineKey}&date=${today}`);
         if (active && Array.isArray(rows)) {
           const checkedIndices = rows.filter(r => r.done).map(r => r.item_index);
@@ -1139,6 +1154,12 @@ function ChecklistMaquina({ data, machineKey }) {
     fetchChecklist();
     return () => { active = false; };
   }, [machineKey, today]);
+
+  // Combine default items and custom items
+  const allItems = [
+    ...data.items.map((text, idx) => ({ type: 'default', index: idx, text })),
+    ...customItems.map((item, idx) => ({ type: 'custom', id: item.id, index: data.items.length + idx, text: item.item_text }))
+  ];
 
   const toggle = async (i) => {
     const isDone = !checked.includes(i);
@@ -1158,8 +1179,40 @@ function ChecklistMaquina({ data, machineKey }) {
     }
   };
 
+  const handleAddCustomItem = async (e) => {
+    e.preventDefault();
+    if (!newItemText.trim() || addingItem) return;
+    setAddingItem(true);
+    try {
+      const created = await api.post('/checklists/items', {
+        machine_key: machineKey,
+        item_text: newItemText.trim()
+      });
+      if (created && created.id) {
+        setCustomItems(prev => [...prev, created]);
+        setNewItemText('');
+      }
+    } catch (err) {
+      alert('Erro ao adicionar item ao checklist.');
+    } finally {
+      setAddingItem(false);
+    }
+  };
+
+  const handleDeleteCustomItem = async (e, customId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm('Deseja excluir este item personalizado do checklist?')) return;
+    try {
+      await api.deleteCustom(`/checklists/items/${customId}`);
+      setCustomItems(prev => prev.filter(item => item.id !== customId));
+    } catch (err) {
+      alert('Erro ao excluir item.');
+    }
+  };
+
   const clearAll = async () => {
-    if (!confirm('Deseja limpar todos os itens deste checklist?')) return;
+    if (!confirm('Deseja limpar todos os checados deste checklist?')) return;
     setChecked([]);
     try {
       await api.post('/checklists/clear', {
@@ -1171,8 +1224,8 @@ function ChecklistMaquina({ data, machineKey }) {
     }
   };
 
-  const progress = Math.round((checked.length / data.items.length) * 100);
-  const allDone = checked.length === data.items.length;
+  const progress = allItems.length > 0 ? Math.round((checked.length / allItems.length) * 100) : 0;
+  const allDone = allItems.length > 0 && checked.length === allItems.length;
 
   if (loading) {
     return (
@@ -1193,9 +1246,9 @@ function ChecklistMaquina({ data, machineKey }) {
             )}
             <button
               onClick={clearAll}
-              className="text-[10px] font-bold text-text-muted hover:text-accent-danger transition-colors"
+              className="text-[10px] font-bold text-text-muted hover:text-accent-danger transition-colors cursor-pointer"
             >
-              Limpar
+              Limpar Checados
             </button>
           </div>
         </div>
@@ -1207,24 +1260,55 @@ function ChecklistMaquina({ data, machineKey }) {
               style={{ width: `${progress}%` }}
             ></div>
           </div>
-          <span className="text-xs font-black text-text-muted min-w-[50px] text-right">{checked.length}/{data.items.length}</span>
+          <span className="text-xs font-black text-text-muted min-w-[50px] text-right">{checked.length}/{allItems.length}</span>
         </div>
         <p className="text-[10px] text-text-muted mt-2 flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-accent-success inline-block"></span>
           Progresso salvo automaticamente para hoje ({today})
         </p>
       </div>
+
       <div className="divide-y divide-white/5">
-        {data.items.map((item, i) => {
-          const done = checked.includes(i);
+        {allItems.map((item) => {
+          const done = checked.includes(item.index);
           return (
-            <label key={i} className={`flex items-start gap-4 p-4 cursor-pointer hover:bg-white/[0.02] transition-colors ${done ? 'opacity-60' : ''}`}>
-              <input type="checkbox" className="mt-0.5 accent-orange-500 w-4 h-4 flex-shrink-0" checked={done} onChange={() => toggle(i)} />
-              <span className={`text-sm ${done ? 'line-through text-text-muted' : 'text-white/80'}`}>{item}</span>
-            </label>
+            <div key={`${item.type}-${item.index}`} className={`flex items-center justify-between gap-4 p-4 hover:bg-white/[0.02] transition-colors group ${done ? 'opacity-60' : ''}`}>
+              <label className="flex items-start gap-4 flex-1 cursor-pointer">
+                <input type="checkbox" className="mt-0.5 accent-orange-500 w-4 h-4 flex-shrink-0 cursor-pointer" checked={done} onChange={() => toggle(item.index)} />
+                <span className={`text-sm ${done ? 'line-through text-text-muted' : 'text-white/80'}`}>{item.text}</span>
+              </label>
+              {item.type === 'custom' && (
+                <button
+                  onClick={(e) => handleDeleteCustomItem(e, item.id)}
+                  className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-400 p-1 rounded-lg hover:bg-white/5 transition-all cursor-pointer"
+                  title="Excluir item personalizado"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
           );
         })}
       </div>
+
+      {/* Form para Adicionar Novo Item Personalizado ao Checklist */}
+      <form onSubmit={handleAddCustomItem} className="flex flex-col sm:flex-row gap-2 p-4 border-t border-white/5 bg-white/[0.01]">
+        <input 
+          type="text" 
+          placeholder="+ Adicionar novo item ao checklist desta máquina..." 
+          value={newItemText} 
+          onChange={(e) => setNewItemText(e.target.value)}
+          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-orange-500 transition-colors"
+        />
+        <button 
+          type="submit" 
+          disabled={!newItemText.trim() || addingItem}
+          className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-black font-black uppercase text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+        >
+          {addingItem ? 'Adicionando...' : '+ Adicionar Item'}
+        </button>
+      </form>
+
       <div className="p-4 bg-white/[0.02] border-t border-white/5">
         <p className="text-xs text-text-muted"><strong className="text-white">Insumos:</strong> {data.supply}</p>
       </div>

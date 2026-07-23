@@ -227,6 +227,14 @@ async function initDb() {
                 UNIQUE(machine_key, item_index, date, "userId")
             );
 
+            CREATE TABLE IF NOT EXISTS checklist_items (
+                id SERIAL PRIMARY KEY,
+                machine_key TEXT NOT NULL,
+                item_text TEXT NOT NULL,
+                "userId" INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
             CREATE TABLE IF NOT EXISTS kaizens (
                 id SERIAL PRIMARY KEY,
                 title TEXT NOT NULL,
@@ -1268,6 +1276,49 @@ app.post('/api/checklists/clear', authenticateToken, async (req, res) => {
         await pool.query(
             'DELETE FROM checklists WHERE machine_key = $1 AND date = $2 AND "userId" = $3',
             [machine_key, date, req.user.id]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Custom Checklist Items API
+app.get('/api/checklists/items', authenticateToken, async (req, res) => {
+    const { machine_key } = req.query;
+    if (!machine_key) return res.status(400).json({ error: "Parâmetro machine_key obrigatório." });
+    try {
+        const rows = (await pool.query(
+            'SELECT id, machine_key, item_text FROM checklist_items WHERE machine_key = $1 AND "userId" = $2 ORDER BY id ASC',
+            [machine_key, req.user.id]
+        )).rows;
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/checklists/items', authenticateToken, async (req, res) => {
+    const { machine_key, item_text } = req.body;
+    if (!machine_key || !item_text || !item_text.trim()) {
+        return res.status(400).json({ error: "Texto do item e machine_key obrigatórios." });
+    }
+    try {
+        const result = await pool.query(
+            'INSERT INTO checklist_items (machine_key, item_text, "userId") VALUES ($1, $2, $3) RETURNING *',
+            [machine_key, item_text.trim(), req.user.id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/checklists/items/:id', authenticateToken, async (req, res) => {
+    try {
+        await pool.query(
+            'DELETE FROM checklist_items WHERE id = $1 AND "userId" = $2',
+            [req.params.id, req.user.id]
         );
         res.json({ success: true });
     } catch (err) {
