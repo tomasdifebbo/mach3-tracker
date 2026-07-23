@@ -106,19 +106,12 @@ export function Charts({ jobs = [] }) {
   // ─── Machine/Origin Distribution (Doughnut) ───
   const originCounts = {};
   jobs.forEach(j => {
-    // Extract machine name from folder (e.g. "TOMAS | path" or just path)
-    let origin = 'Principal';
-    if (j.folder?.includes('|')) {
-      origin = j.folder.split('|')[0].trim();
-    } else if (j.folder?.includes('Router A')) {
-      origin = 'Router A';
-    } else if (j.folder?.includes('Router B')) {
-      origin = 'Router B';
-    }
-    originCounts[origin] = (originCounts[origin] || 0) + 1;
+    const origin = j.router_name || 'Principal';
+    const dur = j.duration_minutes || (j.end_time ? (new Date(j.end_time) - new Date(j.start_time)) / 60000 : 0);
+    originCounts[origin] = (originCounts[origin] || 0) + Math.max(0, dur / 60);
   });
-  const originLabels = Object.keys(originCounts).slice(0, 5);
-  const originData = originLabels.map(k => originCounts[k]);
+  const originLabels = Object.keys(originCounts).sort((a, b) => originCounts[b] - originCounts[a]).slice(0, 5);
+  const originData = originLabels.map(k => Number(originCounts[k].toFixed(1)));
   const originColors = ['#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
 
   // ─── Empty state helpers ───
