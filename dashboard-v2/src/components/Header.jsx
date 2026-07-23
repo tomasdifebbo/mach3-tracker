@@ -53,7 +53,8 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
         time: timeAgo(j.start_time),
         timestamp: new Date(j.start_time),
         icon: Play,
-        color: 'text-accent-cyan'
+        color: 'text-accent-cyan',
+        action: 'dashboard'
       });
     });
 
@@ -72,7 +73,8 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
         time: timeAgo(j.end_time),
         timestamp: new Date(j.end_time),
         icon: CheckCircle2,
-        color: 'text-accent-success'
+        color: 'text-accent-success',
+        action: 'history'
       });
     });
 
@@ -86,7 +88,8 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
         time: r.last_seen ? timeAgo(r.last_seen) : '-',
         timestamp: r.last_seen ? new Date(r.last_seen) : new Date(0),
         icon: WifiOff,
-        color: 'text-accent-danger'
+        color: 'text-accent-danger',
+        action: 'dashboard'
       });
     });
 
@@ -103,7 +106,8 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
           time: daysUntil <= 0 ? 'Atrasada' : `${daysUntil}d`,
           timestamp: nextDate,
           icon: daysUntil <= 0 ? AlertTriangle : Wrench,
-          color: daysUntil <= 0 ? 'text-accent-danger' : 'text-accent-warning'
+          color: daysUntil <= 0 ? 'text-accent-danger' : 'text-accent-warning',
+          action: 'maintenance'
         });
       }
     });
@@ -275,7 +279,13 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
                   activeNotifs.map((n) => (
                     <div 
                       key={n.id} 
-                      className="p-4 hover:bg-white/5 transition-colors flex gap-4 border-b border-border/30 last:border-0 group"
+                      className={`p-4 hover:bg-white/5 transition-colors flex gap-4 border-b border-border/30 last:border-0 group ${n.action ? 'cursor-pointer' : ''}`}
+                      onClick={() => {
+                        if (n.action && onSectionChange) {
+                          onSectionChange(n.action);
+                          setShowNotifications(false);
+                        }
+                      }}
                     >
                       <div className={`p-2 rounded-xl bg-white/5 ${n.color} transition-transform group-hover:scale-110 shrink-0 h-fit`}>
                         <n.icon size={18} />
