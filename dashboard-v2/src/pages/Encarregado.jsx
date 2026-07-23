@@ -5,6 +5,7 @@ import {
   AlertTriangle, PlusCircle, X, ShieldAlert
 } from 'lucide-react';
 import { api } from '../services/api';
+import { LinkProjectModal } from '../components/LinkProjectModal';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -598,9 +599,21 @@ function PainelKanban({ jobs = [] }) {
   const [showArchive, setShowArchive] = useState(false);
   const [archive, setArchive] = useState([]);
   const [archiveLoading, setArchiveLoading] = useState(false);
+  const [selectedLinkJob, setSelectedLinkJob] = useState(null);
+  const [selectedLinkRouter, setSelectedLinkRouter] = useState('');
 
   const dragCard = React.useRef(null);
   const dragFrom = React.useRef(null);
+
+  const unmatchedActiveJobs = useMemo(() => {
+    const activeJobs = jobs.filter(j => !j.end_time);
+    const allCards = [...(columns.todo || []), ...(columns.doing || []), ...(columns.done || [])];
+    return activeJobs.filter(job => {
+      // Find if there is any card that matches this job
+      const hasMatch = allCards.some(card => matchKanbanTitle(job.file_name, job.folder, card.title));
+      return !hasMatch;
+    });
+  }, [jobs, columns]);
 
   const buildInitial = () => {
     const realActive = jobs.filter(j => !j.end_time).slice(0, 4).map(j => ({
@@ -846,6 +859,36 @@ function PainelKanban({ jobs = [] }) {
     <div className="space-y-8 animate-in fade-in duration-500">
       <SectionHeader label="Gestão de Produção" title="Painel Kanban" />
 
+      {/* Alerta de cortes não identificados */}
+      {unmatchedActiveJobs.length > 0 && (
+        <div className="flex flex-col gap-3">
+          {unmatchedActiveJobs.map(job => (
+            <div key={job.id} className="glass rounded-2xl p-5 border border-orange-500/20 border-l-4 border-l-orange-500 bg-orange-500/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
+                  ⚠️
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-white">Máquina em corte sem O.S. vinculada!</h4>
+                  <p className="text-[10px] text-text-muted mt-0.5">
+                    A máquina <strong className="text-orange-400">{job.router_name}</strong> está rodando o arquivo "<strong className="text-white">{job.file_name}</strong>".
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedLinkJob(job);
+                  setSelectedLinkRouter(job.router_name);
+                }}
+                className="self-start sm:self-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-black font-black uppercase tracking-widest rounded-xl text-[10px] transition-colors whitespace-nowrap"
+              >
+                ✏️ Vincular O.S.
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Legenda */}
       <div className="glass rounded-2xl p-4 border border-white/5 flex items-center gap-6 flex-wrap">
         <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">Prioridades:</span>
@@ -985,6 +1028,20 @@ function PainelKanban({ jobs = [] }) {
           <strong className="text-orange-400">Regra de Ouro:</strong> Ao arrastar uma O.S. para "Concluído", o sistema abre uma inspeção de qualidade obrigatória. O card é arquivado com nota, quantidade aprovada/rejeitada e observações.
         </p>
       </div>
+
+      {selectedLinkJob && (
+        <LinkProjectModal
+          job={selectedLinkJob}
+          routerName={selectedLinkRouter}
+          onClose={() => {
+            setSelectedLinkJob(null);
+            setSelectedLinkRouter('');
+          }}
+          onSuccess={() => {
+            loadKanban();
+          }}
+        />
+      )}
     </div>
   );
 }

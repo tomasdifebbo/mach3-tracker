@@ -27,6 +27,7 @@ import {
 } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { motion } from 'framer-motion';
+import { LinkProjectModal } from '../components/LinkProjectModal';
 
 ChartJS.register(
   CategoryScale,
@@ -54,6 +55,8 @@ const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currenc
 export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
   const [elapsed, setElapsed] = useState(0);
   const [togglingId, setTogglingId] = useState(null);
+  const [selectedLinkJob, setSelectedLinkJob] = useState(null);
+  const [selectedLinkRouter, setSelectedLinkRouter] = useState('');
   const activeJobs = jobs.filter(j => !j.end_time);
   
   // Live Timer Effect for multiple jobs
@@ -366,9 +369,18 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
                     </div>
                   </div>
                   {routerActiveJob && (
-                    <div className="text-right">
+                    <div className="text-right flex flex-col items-end">
                       <div className="text-[9px] font-bold text-accent-cyan uppercase">Cortando</div>
                       <div className="text-[10px] font-bold text-white truncate max-w-[120px]">{routerActiveJob.file_name}</div>
+                      <button 
+                        onClick={() => {
+                          setSelectedLinkJob(routerActiveJob);
+                          setSelectedLinkRouter(router.name);
+                        }} 
+                        className="text-[9px] text-orange-400 hover:text-orange-300 font-bold underline mt-0.5"
+                      >
+                        ✏️ Vincular O.S.
+                      </button>
                     </div>
                   )}
                 </div>
@@ -607,6 +619,17 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
           </div>
         </div>
       </div>
+      {selectedLinkJob && (
+        <LinkProjectModal 
+          job={selectedLinkJob}
+          routerName={selectedLinkRouter}
+          onClose={() => {
+            setSelectedLinkJob(null);
+            setSelectedLinkRouter('');
+          }}
+          onSuccess={onRefresh}
+        />
+      )}
     </div>
   );
 }
