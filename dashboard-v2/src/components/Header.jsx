@@ -281,6 +281,7 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
                       key={n.id} 
                       className={`p-4 hover:bg-white/5 transition-colors flex gap-4 border-b border-border/30 last:border-0 group ${n.action ? 'cursor-pointer' : ''}`}
                       onClick={() => {
+                        handleDismiss(n.id);
                         if (n.action && onSectionChange) {
                           onSectionChange(n.action);
                           setShowNotifications(false);
