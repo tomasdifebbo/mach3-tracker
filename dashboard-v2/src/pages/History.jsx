@@ -8,7 +8,9 @@ import {
   Calendar,
   Layers,
   FileText,
-  FileDown
+  FileDown,
+  Check,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
@@ -28,6 +30,21 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   const [showPdfMenu, setShowPdfMenu] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const pdfMenuRef = useRef(null);
+  const [editingJobId, setEditingJobId] = useState(null);
+  const [editingValue, setEditingValue] = useState('');
+
+  const handleUpdateProjectName = async (job, newName) => {
+    try {
+      const targetIds = job.ids || [job.id];
+      for (const id of targetIds) {
+        await api.patch(`/jobs/${id}`, { folder: newName });
+      }
+      setEditingJobId(null);
+      onRefresh();
+    } catch (err) {
+      alert('Erro ao atualizar nome do projeto');
+    }
+  };
 
   // Close PDF menu on outside click
   useEffect(() => {
@@ -251,29 +268,82 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                   </td>
                     <td className="px-6 py-4">
                       {(() => {
-                        const pathParts = (job.folder || 'Geral').replace(/^Router \d+ \| /, '').split('\\');
-                        const routerIdx = pathParts.findIndex(p => p.toUpperCase() === 'ROUTER');
                         let projectName = '';
-                        
-                        if (routerIdx !== -1 && routerIdx < pathParts.length - 1) {
-                          projectName = pathParts[routerIdx + 1];
+                        if (job.folder && !job.folder.includes('\\') && !job.folder.includes('/')) {
+                          projectName = job.folder;
                         } else {
-                          const folderOnlyParts = pathParts.filter(p => !p.toUpperCase().includes('.TXT') && !p.toUpperCase().includes('.TAP') && !p.toUpperCase().includes('.NC'));
-                          const cleanPath = folderOnlyParts.join('\\').replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
-                          const parts = cleanPath.split('\\').filter(p => {
-                            const up = p.toUpperCase();
-                            const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
-                                              up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
-                                              up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
-                            return p && !isGeneric;
-                          });
-                          projectName = parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || 'Produção Geral');
+                          const pathParts = (job.folder || 'Geral').replace(/^Router \d+ \| /, '').split('\\');
+                          const routerIdx = pathParts.findIndex(p => p.toUpperCase() === 'ROUTER');
+                          
+                          if (routerIdx !== -1 && routerIdx < pathParts.length - 1) {
+                            projectName = pathParts[routerIdx + 1];
+                          } else {
+                            const folderOnlyParts = pathParts.filter(p => !p.toUpperCase().includes('.TXT') && !p.toUpperCase().includes('.TAP') && !p.toUpperCase().includes('.NC'));
+                            const cleanPath = folderOnlyParts.join('\\').replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
+                            const parts = cleanPath.split('\\').filter(p => {
+                              const up = p.toUpperCase();
+                              const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
+                                                up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
+                                                up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
+                              return p && !isGeneric;
+                            });
+                            projectName = parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || 'Produção Geral');
+                          }
                         }
                         
+                        const isEditing = editingJobId === job.id;
+                        
+                        if (isEditing) {
+                          return (
+                            <div className="flex items-center gap-1.5 min-w-[150px]">
+                              <input
+                                type="text"
+                                value={editingValue}
+                                onChange={(e) => setEditingValue(e.target.value)}
+                                className="bg-black/50 border border-orange-500/40 rounded-xl px-2 py-1 text-xs text-white focus:outline-none focus:border-orange-500 w-full"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleUpdateProjectName(job, editingValue);
+                                  } else if (e.key === 'Escape') {
+                                    setEditingJobId(null);
+                                  }
+                                }}
+                              />
+                              <button 
+                                onClick={() => handleUpdateProjectName(job, editingValue)}
+                                className="p-1 hover:bg-white/10 rounded-lg text-accent-success transition-all cursor-pointer"
+                                title="Salvar"
+                              >
+                                <Check size={14} />
+                              </button>
+                              <button 
+                                onClick={() => setEditingJobId(null)}
+                                className="p-1 hover:bg-white/10 rounded-lg text-accent-danger transition-all cursor-pointer"
+                                title="Cancelar"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          );
+                        }
+
                         return (
-                          <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20 block whitespace-normal min-w-[120px]" title={projectName}>
-                            {projectName}
-                          </span>
+                          <div className="flex items-center gap-2 group/proj min-w-[120px]">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20 block whitespace-normal" title={projectName}>
+                              {projectName}
+                            </span>
+                            <button
+                              onClick={() => {
+                                setEditingJobId(job.id);
+                                setEditingValue(projectName);
+                              }}
+                              className="p-1 text-[10px] text-text-muted hover:text-white hover:bg-white/5 rounded-lg opacity-0 group-hover/proj:opacity-100 transition-all cursor-pointer animate-in fade-in duration-100"
+                              title="Editar Projeto"
+                            >
+                              ✏️
+                            </button>
+                          </div>
                         );
                       })()}
                     </td>
