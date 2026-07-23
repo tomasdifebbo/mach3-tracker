@@ -501,6 +501,9 @@ def main():
 import socket
 
 class LaserMonitorThread(threading.Thread):
+    # Tempo (em segundos) sem tráfego de rede para considerar que o corte acabou
+    IDLE_TIMEOUT = 60
+
     def __init__(self, laser_ip="192.168.0.2", port=5005):
         super().__init__(daemon=True)
         self.laser_ip = laser_ip
@@ -510,13 +513,69 @@ class LaserMonitorThread(threading.Thread):
         self.last_cfg_mtime = 0
         self.download_dialog_open = False
         self.running = True
+        # Timestamp da última atividade de rede com a controladora
+        self.last_network_activity = 0
+        self._sniffer_running = False
+
+    def _start_network_sniffer(self):
+        """Inicia thread que escuta tráfego UDP na porta 50200 (AWC controller)."""
+        if self._sniffer_running:
+            return
+        self._sniffer_running = True
+
+        def sniffer():
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                # Escutar na porta 50200 para captar respostas da controladora
+                sock.bind(("0.0.0.0", 50200))
+                sock.settimeout(2)
+                print(f"[*] Sniffer de rede Laser ativo na porta 50200")
+                while self.running:
+                    try:
+                        data, addr = sock.recvfrom(4096)
+                        if data:
+                            self.last_network_activity = time.time()
+                    except socket.timeout:
+                        continue
+                    except Exception:
+                        continue
+            except OSError as e:
+                # Porta pode estar em uso pelo LaserCAD — usar abordagem alternativa
+                print(f"[!] Porta 50200 em uso, usando monitor de conexões TCP/UDP ativo")
+                self._sniffer_via_netstat()
+            except Exception as e:
+                print(f"[!] Erro no sniffer de rede: {e}")
+            finally:
+                self._sniffer_running = False
+
+        t = threading.Thread(target=sniffer, daemon=True)
+        t.start()
+
+    def _sniffer_via_netstat(self):
+        """Fallback: checa conexões ativas com o IP da laser via netstat."""
+        while self.running:
+            try:
+                import subprocess
+                result = subprocess.run(
+                    ["netstat", "-n"],
+                    capture_output=True, text=True, timeout=5
+                )
+                if self.laser_ip in result.stdout:
+                    self.last_network_activity = time.time()
+            except Exception:
+                pass
+            time.sleep(5)
 
     def run(self):
         print(f"[*] Monitor de Laser (LaserCAD/AWC) iniciado no IP {self.laser_ip}...")
         
         soft_cfg_path = r"C:\LaserCAD\AWCCfg\SoftCfg.ini"
         
-        # Inicializar mtime do SoftCfg.ini
+        # Iniciar sniffer de rede
+        self._start_network_sniffer()
+        
+        # Inicializar DocName
         if os.path.exists(soft_cfg_path):
             self.last_cfg_mtime = os.path.getmtime(soft_cfg_path)
             doc = self.read_doc_name(soft_cfg_path)
@@ -558,6 +617,7 @@ class LaserMonitorThread(threading.Thread):
                         origem="Laser Ruida"
                     )
                     self.status = "working"
+                    self.last_network_activity = time.time()
 
                 # 2. Checar SoftCfg.ini para atualizar DocName
                 if os.path.exists(soft_cfg_path):
@@ -572,7 +632,16 @@ class LaserMonitorThread(threading.Thread):
                     except Exception:
                         pass
 
-                # 3. Ping check para conexao de rede com a maquina
+                # 3. Detectar FIM do corte por inatividade de rede
+                if self.status == "working" and self.last_network_activity > 0:
+                    elapsed = time.time() - self.last_network_activity
+                    if elapsed >= self.IDLE_TIMEOUT:
+                        print(f"[+] LASER CORTE FINALIZADO (sem atividade de rede por {int(elapsed)}s)")
+                        processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
+                        self.status = "idle"
+                        self.last_network_activity = 0
+
+                # 4. Ping check para conexao de rede com a maquina
                 is_alive = os.system(f"ping -n 1 -w 1000 {self.laser_ip} > nul") == 0
 
                 if is_alive:
