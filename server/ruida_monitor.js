@@ -14,6 +14,11 @@ class RuidaMonitor {
         this.socket = null;
         this.pollInterval = null;
         this.laserRouterId = null;
+
+        // Protection against premature job closure (debounce)
+        this.lastWorkingTimestamp = 0;
+        this.idleDebounceTimer = null;
+        this.IDLE_DEBOUNCE_MS = 45000; // Require 45 seconds of continuous idle before closing a cut job
     }
 
     start() {
@@ -97,20 +102,27 @@ class RuidaMonitor {
         // Send status poll UDP packet (Ruida status inquiry command)
         const pollCmd = Buffer.from([0xd8, 0x00, 0x02, 0x00, 0x01, 0x00]);
         this.socket.send(pollCmd, this.port, this.targetIp, (err) => {
-            if (err) {
+            if (err && this.status !== 'working') {
                 this.updateStatus('offline');
             }
         });
 
         // Ping check as fallback for connection state
         const isWin = process.platform === 'win32';
-        const pingCmd = isWin ? `ping -n 1 -w 1000 ${this.targetIp}` : `ping -c 1 -W 1 ${this.targetIp}`;
+        const pingCmd = isWin ? `ping -n 1 -w 1500 ${this.targetIp}` : `ping -c 1 -W 2 ${this.targetIp}`;
         
         exec(pingCmd, (err, stdout) => {
             if (err || (stdout && stdout.includes('100% loss'))) {
+                // Ignore ping timeouts during active cuts if recent working packets arrived
+                const timeSinceLastWorking = Date.now() - this.lastWorkingTimestamp;
+                if (this.status === 'working' && timeSinceLastWorking < this.IDLE_DEBOUNCE_MS) {
+                    console.log(`[RUIDA MONITOR] Ping timeout ignorado (máquina em corte ativo há ${Math.round(timeSinceLastWorking/1000)}s)`);
+                    return;
+                }
+
                 if (this.status !== 'offline') {
                     console.log(`[RUIDA MONITOR] Laser ${this.targetIp} desconectada / desligada.`);
-                    this.updateStatus('offline');
+                    this.scheduleStatusChange('offline');
                 }
             } else {
                 if (this.status === 'offline') {
@@ -154,12 +166,39 @@ class RuidaMonitor {
         // Parse Ruida response bytes if payload exists
         if (msg.length >= 6) {
             const stateByte = msg[4]; // 0: Idle, 1: Working, 2: Paused
-            if (stateByte === 1 && this.status !== 'working') {
-                this.updateStatus('working', this.lastDetectedFileName || detectedFileName);
+            if (stateByte === 1) {
+                this.lastWorkingTimestamp = Date.now();
+                
+                // Cancel any pending idle debounce timer because machine is actively cutting!
+                if (this.idleDebounceTimer) {
+                    clearTimeout(this.idleDebounceTimer);
+                    this.idleDebounceTimer = null;
+                }
+
+                if (this.status !== 'working') {
+                    this.updateStatus('working', this.lastDetectedFileName || detectedFileName);
+                }
             } else if (stateByte === 0 && this.status === 'working') {
-                this.updateStatus('idle');
+                // Do NOT close immediately! Schedule idle status after continuous debounce
+                this.scheduleStatusChange('idle');
             }
         }
+    }
+
+    scheduleStatusChange(targetStatus) {
+        if (this.idleDebounceTimer) return; // Timer already active
+
+        console.log(`[RUIDA MONITOR] Laser parou ou desativou. Aguardando ${this.IDLE_DEBOUNCE_MS / 1000}s de confirmação antes de encerrar o job...`);
+        this.idleDebounceTimer = setTimeout(() => {
+            const timeSinceLastWorking = Date.now() - this.lastWorkingTimestamp;
+            if (timeSinceLastWorking >= this.IDLE_DEBOUNCE_MS) {
+                console.log(`[RUIDA MONITOR] Confirmado fim do corte após ${Math.round(timeSinceLastWorking / 1000)}s sem sinais. Encerrando job.`);
+                this.updateStatus(targetStatus);
+            } else {
+                console.log(`[RUIDA MONITOR] Sinal de corte recebido durante a tolerância. Mantendo corte ativo.`);
+            }
+            this.idleDebounceTimer = null;
+        }, this.IDLE_DEBOUNCE_MS);
     }
 
     async updateStatus(newStatus, fileName = null) {
@@ -221,6 +260,7 @@ class RuidaMonitor {
     }
 
     stop() {
+        if (this.idleDebounceTimer) clearTimeout(this.idleDebounceTimer);
         if (this.pollInterval) clearInterval(this.pollInterval);
         if (this.socket) this.socket.close();
     }
