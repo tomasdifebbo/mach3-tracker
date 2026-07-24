@@ -127,6 +127,40 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
 
   const activeJobs = kanbanTasks.filter(t => t.column_id === 'doing' || t.column_id === 'todo');
 
+  const [now, setNow] = useState(Date.now());
+  const [selectedTaskToStart, setSelectedTaskToStart] = useState({});
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleStartManualJob = async (routerName, opName, taskTitle) => {
+    if (!taskTitle) return alert('Selecione uma O.S. para iniciar');
+    try {
+      await api.post('/jobs', {
+        file_name: taskTitle,
+        folder: 'Operação Fábrica',
+        router_name: routerName,
+        operator_name: opName || operatorName
+      });
+      if (onRefresh) await onRefresh();
+      fetchKanban();
+    } catch (err) {
+      alert('Erro ao iniciar O.S. na máquina');
+    }
+  };
+
+  const handleFinishManualJob = async (routerName) => {
+    try {
+      await api.patch('/jobs/latest', { router_name: routerName });
+      if (onRefresh) await onRefresh();
+      fetchKanban();
+    } catch (err) {
+      alert('Erro ao finalizar job na máquina');
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-500">
       
@@ -187,13 +221,23 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
       {/* Cards de Maquinário em Tempo Real com Seleção de Operador por Máquina */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {routers.map((m) => {
-          const isCutting = m.status === 'cortando';
+          const isCutting = m.status === 'cortando' || !!m.current_job;
+          let runtimeFormatted = '00:00:00';
+
+          if (m.start_time) {
+            const diffSec = Math.max(0, Math.floor((now - new Date(m.start_time).getTime()) / 1000));
+            const hrs = String(Math.floor(diffSec / 3600)).padStart(2, '0');
+            const mins = String(Math.floor((diffSec % 3600) / 60)).padStart(2, '0');
+            const secs = String(diffSec % 60).padStart(2, '0');
+            runtimeFormatted = `${hrs}:${mins}:${secs}`;
+          }
+
           return (
             <div key={m.id} className={`glass p-5 rounded-2xl border transition-all ${isCutting ? 'border-accent-cyan/40 bg-accent-cyan/5 shadow-xl shadow-accent-cyan/5' : 'border-white/5'}`}>
               <div className="flex items-center justify-between mb-3">
                 <span className="font-black text-sm text-white">{m.name}</span>
                 <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${isCutting ? 'bg-accent-cyan text-black animate-pulse' : 'bg-white/10 text-text-muted'}`}>
-                  {m.status?.toUpperCase() || 'PARADA'}
+                  {isCutting ? 'EM EXECUÇÃO' : (m.status?.toUpperCase() || 'PARADA')}
                 </span>
               </div>
 
@@ -220,15 +264,51 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                 </select>
               </div>
 
-              <div className="space-y-2 text-xs text-text-muted">
-                <div className="flex justify-between">
+              <div className="space-y-2 text-xs text-text-muted mb-3">
+                <div className="flex justify-between items-center">
                   <span>Job Atual:</span>
-                  <span className="text-white font-bold truncate max-w-[120px]">{m.current_job || 'Nenhum'}</span>
+                  <span className="text-white font-bold truncate max-w-[140px]">{m.current_job || 'Nenhum'}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span>Tempo Corrido:</span>
-                  <span className="text-accent-cyan font-mono font-bold">{m.runtime || '00:00:00'}</span>
+                  <span className="text-accent-cyan font-mono font-bold text-sm">{runtimeFormatted}</span>
                 </div>
+              </div>
+
+              {/* Controles de Início/Conclusão Manual pelo Operador */}
+              <div className="border-t border-white/10 pt-2.5 mt-2 space-y-2">
+                {isCutting ? (
+                  <button
+                    onClick={() => handleFinishManualJob(m.name)}
+                    className="w-full py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <CheckCircle2 size={13} />
+                    Concluir O.S. nesta Máquina
+                  </button>
+                ) : (
+                  <div className="space-y-1.5">
+                    <select
+                      value={selectedTaskToStart[m.id] || ''}
+                      onChange={(e) => setSelectedTaskToStart(prev => ({ ...prev, [m.id]: e.target.value }))}
+                      className="w-full bg-black/60 border border-white/10 text-[11px] font-medium text-white rounded-lg px-2 py-1 outline-none"
+                    >
+                      <option value="">-- Selecionar O.S. para Iniciar --</option>
+                      {kanbanTasks.filter(t => t.column_id === 'todo').map(t => (
+                        <option key={t.id} value={t.title}>📋 {t.title}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => {
+                        handleStartManualJob(m.name, m.operator_name, selectedTaskToStart[m.id]);
+                        setSelectedTaskToStart(prev => ({ ...prev, [m.id]: '' }));
+                      }}
+                      className="w-full py-1.5 bg-accent-cyan/20 hover:bg-accent-cyan/30 text-accent-cyan border border-accent-cyan/30 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Play size={13} fill="currentColor" />
+                      Iniciar O.S. com {m.operator_name || 'Operador'}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           );

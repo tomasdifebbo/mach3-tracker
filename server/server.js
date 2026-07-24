@@ -215,6 +215,7 @@ async function initDb() {
             ALTER TABLE users ADD COLUMN IF NOT EXISTS company_role TEXT DEFAULT 'gerente';
             ALTER TABLE users ADD COLUMN IF NOT EXISTS gerente_pin TEXT;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS supervisor_pin TEXT;
+            ALTER TABLE jobs ADD COLUMN IF NOT EXISTS operator_name TEXT;
 
             -- Kanban and Checklist tables
             CREATE TABLE IF NOT EXISTS kanban_tasks (
@@ -399,6 +400,23 @@ function authenticateToken(req, res, next) {
 app.get('/api/routers', authenticateToken, async (req, res) => {
     try {
         const routers = (await pool.query('SELECT * FROM routers WHERE "userId" = $1 ORDER BY id ASC', [req.user.id])).rows;
+        for (const r of routers) {
+            const activeJob = (await pool.query(
+                'SELECT * FROM jobs WHERE "userId" = $1 AND (router_name ILIKE $2 OR router_name ILIKE $3) AND end_time IS NULL ORDER BY start_time DESC LIMIT 1',
+                [req.user.id, `%${r.name}%`, `%${r.name.replace(/ruida/i, '').trim()}%`]
+            )).rows[0];
+
+            if (activeJob) {
+                r.current_job = activeJob.file_name;
+                r.current_job_id = activeJob.id;
+                r.start_time = activeJob.start_time;
+                r.operator_name = activeJob.operator_name || r.operator_name || null;
+                r.status = 'cortando';
+            } else {
+                r.current_job = null;
+                r.start_time = null;
+            }
+        }
         res.json(routers);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -978,12 +996,21 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
         }
     }
 
+    // Auto-fetch operator assigned to this router if not specified
+    let operatorName = req.body.operator_name || null;
+    if (!operatorName && router_name) {
+        const routerRes = (await pool.query('SELECT operator_name FROM routers WHERE (name ILIKE $1 OR name ILIKE $2) AND "userId" = $3 LIMIT 1', [`%${router_name}%`, `%${router_name.replace(/ruida/i, '').trim()}%`, userId])).rows[0];
+        if (routerRes && routerRes.operator_name) {
+            operatorName = routerRes.operator_name;
+        }
+    }
+
     const estMin = estimated_minutes ? parseFloat(estimated_minutes) : null;
-    const result = await pool.query('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, "userId", router_name, estimated_minutes, material_id, material_name, material_price) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id', 
-        [cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, router_name || null, estMin, req.body.material_id || null, req.body.material_name || null, req.body.material_price || null]);
+    const result = await pool.query('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, "userId", router_name, estimated_minutes, material_id, material_name, material_price, operator_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id', 
+        [cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, router_name || null, estMin, req.body.material_id || null, req.body.material_name || null, req.body.material_price || null, operatorName]);
     
     // Auto-sync Kanban card: todo -> doing
-    autoSyncKanban(userId, cleanFileName, cleanFolder, router_name, 'doing');
+    autoSyncKanban(userId, cleanFileName, cleanFolder, router_name, 'doing', operatorName);
 
     res.json({ id: result.rows[0].id, success: true });
 });
@@ -1503,11 +1530,28 @@ app.delete('/api/operators/:id', authenticateToken, async (req, res) => {
 app.patch('/api/routers/:id/operator', authenticateToken, async (req, res) => {
     const { operator_name } = req.body;
     try {
+        const router = (await pool.query('SELECT * FROM routers WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id])).rows[0];
+        if (!router) return res.status(404).json({ error: 'Máquina não encontrada' });
+
+        const opVal = operator_name ? operator_name.trim() : null;
         await pool.query(
             'UPDATE routers SET operator_name = $1 WHERE id = $2 AND "userId" = $3',
-            [operator_name ? operator_name.trim() : null, req.params.id, req.user.id]
+            [opVal, req.params.id, req.user.id]
         );
-        res.json({ success: true });
+
+        // Sync operator_name on active open job on this machine
+        await pool.query(
+            'UPDATE jobs SET operator_name = $1 WHERE "userId" = $2 AND (router_name ILIKE $3 OR router_name ILIKE $4) AND end_time IS NULL',
+            [opVal, req.user.id, `%${router.name}%`, `%${router.name.replace(/ruida/i, '').trim()}%`]
+        );
+
+        // Sync operator on active Kanban task assigned to this machine
+        await pool.query(
+            'UPDATE kanban_tasks SET operator = $1 WHERE "userId" = $2 AND (machine ILIKE $3 OR machine ILIKE $4) AND column_id = $5',
+            [opVal, req.user.id, `%${router.name}%`, `%${router.name.replace(/ruida/i, '').trim()}%`, 'doing']
+        );
+
+        res.json({ success: true, operator_name: opVal });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

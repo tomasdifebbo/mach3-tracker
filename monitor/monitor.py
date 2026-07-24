@@ -656,10 +656,6 @@ class LaserMonitorThread(threading.Thread):
                 pass
 
             time.sleep(1)
-            except Exception as e:
-                pass
-
-            time.sleep(1)
 
     def is_download_dialog_open(self):
         """Detectar se a janela 'Download Document' do LaserCAD está aberta via Win32 API"""
