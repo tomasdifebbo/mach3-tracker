@@ -214,17 +214,23 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
                           onClick={async () => {
                             if (active) return;
                             try {
-                              let resp = await api.patch('/user/company-role', { company_role: r.id });
-                              if (resp && resp.error) {
-                                resp = await api.post('/user/company-role', { company_role: r.id });
-                              }
-                              if (resp && resp.error) {
-                                alert(resp.error);
+                              const token = localStorage.getItem('mach3_token');
+                              const resp = await fetch('/api/user/company-role', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': token ? `Bearer ${token}` : ''
+                                },
+                                body: JSON.stringify({ company_role: r.id })
+                              });
+                              const data = await resp.json();
+                              if (data && data.error) {
+                                alert(data.error);
                               } else {
                                 window.location.href = '/';
                               }
                             } catch (e) {
-                              alert('Erro ao alterar perfil: ' + (e?.message || 'Tente novamente em instantes'));
+                              alert('Erro ao alterar perfil: ' + (e?.message || 'Tente novamente'));
                             }
                           }}
                           className={`flex-1 py-1.5 px-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
