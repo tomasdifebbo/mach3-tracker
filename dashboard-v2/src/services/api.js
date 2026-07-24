@@ -198,6 +198,41 @@ export const api = {
     return safeJson(resp);
   },
 
+  updateRouterOperator: async (id, operator_name) => {
+    const resp = await fetch(`${API_URL}/api/routers/${id}/operator`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ operator_name })
+    });
+    return safeJson(resp);
+  },
+
+  getOperators: async () => {
+    const resp = await fetch(`${API_URL}/api/operators`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store'
+    });
+    if (!resp.ok) return [];
+    return resp.json();
+  },
+
+  addOperator: async (name, shift = 'Geral') => {
+    const resp = await fetch(`${API_URL}/api/operators`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ name, shift })
+    });
+    return safeJson(resp);
+  },
+
+  deleteOperator: async (id) => {
+    const resp = await fetch(`${API_URL}/api/operators/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    return safeJson(resp);
+  },
+
   getRouterStatusLog: async () => {
     const resp = await fetch(`${API_URL}/api/routers/status-log`, { 
       headers: getAuthHeaders(),

@@ -366,6 +366,12 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
                           {cfg.label}
                         </span>
                       </div>
+                      <div className="text-[10px] font-medium text-text-muted mt-1 flex items-center gap-1">
+                        <span>👷 Operador:</span>
+                        <span className={`font-bold ${router.operator_name ? 'text-purple-300' : 'text-text-muted/60'}`}>
+                          {router.operator_name || 'Livre'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   {routerActiveJob && (

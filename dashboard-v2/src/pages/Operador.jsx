@@ -19,6 +19,12 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
   const [occDesc, setOccDesc] = useState('');
   const [submittingOcc, setSubmittingOcc] = useState(false);
 
+  const [operatorsList, setOperatorsList] = useState([]);
+  const [showOperatorsModal, setShowOperatorsModal] = useState(false);
+  const [newOpName, setNewOpName] = useState('');
+  const [newOpShift, setNewOpShift] = useState('Geral');
+  const [savingOp, setSavingOp] = useState(false);
+
   const fetchKanban = async () => {
     setLoadingTasks(true);
     try {
@@ -33,9 +39,53 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
     }
   };
 
+  const fetchOperators = async () => {
+    try {
+      const data = await api.getOperators();
+      if (Array.isArray(data)) setOperatorsList(data);
+    } catch (err) {
+      console.error('Failed to load operators:', err);
+    }
+  };
+
   useEffect(() => {
     fetchKanban();
+    fetchOperators();
   }, []);
+
+  const handleAddOperator = async (e) => {
+    e.preventDefault();
+    if (!newOpName.trim()) return;
+    setSavingOp(true);
+    try {
+      await api.addOperator(newOpName.trim(), newOpShift);
+      setNewOpName('');
+      fetchOperators();
+    } catch (err) {
+      alert('Erro ao cadastrar operador');
+    } finally {
+      setSavingOp(false);
+    }
+  };
+
+  const handleDeleteOperator = async (id) => {
+    if (!confirm('Deseja remover este operador?')) return;
+    try {
+      await api.deleteOperator(id);
+      fetchOperators();
+    } catch (err) {
+      alert('Erro ao remover operador');
+    }
+  };
+
+  const handleAssignOperatorToMachine = async (routerId, opName) => {
+    try {
+      await api.updateRouterOperator(routerId, opName);
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      alert('Erro ao alocar operador na máquina');
+    }
+  };
 
   const handleNameChange = (e) => {
     const val = e.target.value;
@@ -103,9 +153,17 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
           </div>
         </div>
 
-        {/* Identificação do Operador */}
+        {/* Identificação do Operador & Gestão da Equipe */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 relative z-10 bg-white/5 p-3 rounded-2xl border border-white/10">
-          <div className="text-xs font-bold text-text-muted flex items-center gap-2 px-2">
+          <button
+            onClick={() => setShowOperatorsModal(true)}
+            className="px-3.5 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <UserCheck size={16} />
+            Cadastrar Operadores ({operatorsList.length})
+          </button>
+          <div className="h-4 w-px bg-white/10 hidden sm:block" />
+          <div className="text-xs font-bold text-text-muted flex items-center gap-2 px-1">
             <Wrench size={16} className="text-accent-cyan" />
             <span>Operador Atual:</span>
           </div>
@@ -114,11 +172,11 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
             value={operatorName}
             onChange={handleNameChange}
             placeholder="Nome do Operador"
-            className="bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold text-white outline-none focus:border-accent-cyan transition-colors"
+            className="bg-black/50 border border-white/10 rounded-xl px-3 py-1.5 text-xs font-bold text-white outline-none focus:border-accent-cyan transition-colors"
           />
           <button
             onClick={() => setShowOccurrenceModal(true)}
-            className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2"
+            className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <ShieldAlert size={16} />
             Reportar Falha
@@ -126,7 +184,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
         </div>
       </div>
 
-      {/* Cards de Maquinário em Tempo Real */}
+      {/* Cards de Maquinário em Tempo Real com Seleção de Operador por Máquina */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {routers.map((m) => {
           const isCutting = m.status === 'cortando';
@@ -138,6 +196,30 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                   {m.status?.toUpperCase() || 'PARADA'}
                 </span>
               </div>
+
+              {/* Seletor de Operador Alocado na Máquina */}
+              <div className="bg-black/40 p-2.5 rounded-xl border border-white/10 mb-3 space-y-1">
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-muted flex items-center gap-1">
+                  <UserCheck size={12} className="text-accent-cyan" />
+                  <span>Operador Alocado:</span>
+                </div>
+                <select
+                  value={m.operator_name || ''}
+                  onChange={(e) => handleAssignOperatorToMachine(m.id, e.target.value)}
+                  className="w-full bg-zinc-900 border border-white/10 text-xs font-bold text-white rounded-lg px-2.5 py-1.5 outline-none focus:border-accent-cyan cursor-pointer"
+                >
+                  <option value="" className="bg-zinc-900 text-text-muted">-- Selecionar Operador --</option>
+                  {operatorsList.map(op => (
+                    <option key={op.id} value={op.name} className="bg-zinc-900 text-white">
+                      👷 {op.name} ({op.shift})
+                    </option>
+                  ))}
+                  {operatorName && !operatorsList.some(o => o.name === operatorName) && (
+                    <option value={operatorName} className="bg-zinc-900 text-white">👷 {operatorName}</option>
+                  )}
+                </select>
+              </div>
+
               <div className="space-y-2 text-xs text-text-muted">
                 <div className="flex justify-between">
                   <span>Job Atual:</span>
@@ -339,6 +421,115 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Modal: Equipe de Operadores da Fábrica */}
+      {showOperatorsModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
+          <div className="glass p-6 md:p-8 rounded-3xl border border-white/10 max-w-lg w-full space-y-6 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-purple-500/20 text-purple-400 rounded-2xl">
+                  <UserCheck size={24} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white">Equipe de Operadores da Fábrica</h3>
+                  <p className="text-xs text-text-muted">Cadastre a lista de operadores para alocação direta em máquinas</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowOperatorsModal(false)}
+                className="text-text-muted hover:text-white text-lg font-bold p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Form de Adição */}
+            <form onSubmit={handleAddOperator} className="flex gap-2 items-end">
+              <div className="flex-1">
+                <label className="text-[10px] font-black uppercase text-text-muted block mb-1">Nome do Operador</label>
+                <input
+                  type="text"
+                  placeholder="Ex: João Silva"
+                  value={newOpName}
+                  onChange={(e) => setNewOpName(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-purple-500"
+                  required
+                />
+              </div>
+
+              <div className="w-28">
+                <label className="text-[10px] font-black uppercase text-text-muted block mb-1">Turno</label>
+                <select
+                  value={newOpShift}
+                  onChange={(e) => setNewOpShift(e.target.value)}
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white outline-none focus:border-purple-500 cursor-pointer"
+                >
+                  <option value="Geral">Geral</option>
+                  <option value="Manhã">Manhã</option>
+                  <option value="Tarde">Tarde</option>
+                  <option value="Noite">Noite</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                disabled={savingOp || !newOpName.trim()}
+                className="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:opacity-50 text-black font-black uppercase text-xs rounded-xl transition-all shadow-md shadow-purple-500/20 cursor-pointer h-[34px]"
+              >
+                {savingOp ? '...' : '+ Add'}
+              </button>
+            </form>
+
+            {/* Lista de Operadores Cadastrados */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-wider text-text-muted block">
+                Operadores Cadastrados ({operatorsList.length})
+              </label>
+
+              <div className="max-h-56 overflow-y-auto custom-scrollbar space-y-2 pr-1">
+                {operatorsList.length === 0 ? (
+                  <div className="text-center py-6 text-xs text-text-muted border border-dashed border-white/10 rounded-2xl">
+                    Nenhum operador cadastrado. Adicione acima!
+                  </div>
+                ) : (
+                  operatorsList.map(op => (
+                    <div key={op.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-300 font-bold text-xs flex items-center justify-center">
+                          {op.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white">{op.name}</p>
+                          <p className="text-[10px] text-text-muted font-medium">Turno: {op.shift}</p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleDeleteOperator(op.id)}
+                        className="text-text-muted hover:text-red-400 p-1.5 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+                        title="Remover operador"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setShowOperatorsModal(false)}
+                className="px-5 py-2.5 rounded-xl border border-white/10 text-xs font-bold uppercase tracking-wider text-text-muted hover:text-white cursor-pointer"
+              >
+                Concluir
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

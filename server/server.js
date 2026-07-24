@@ -238,6 +238,16 @@ async function initDb() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
+            ALTER TABLE routers ADD COLUMN IF NOT EXISTS operator_name TEXT;
+
+            CREATE TABLE IF NOT EXISTS operators (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                shift TEXT DEFAULT 'Geral',
+                "userId" INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
             CREATE TABLE IF NOT EXISTS kaizens (
                 id SERIAL PRIMARY KEY,
                 title TEXT NOT NULL,
@@ -1408,6 +1418,52 @@ app.delete('/api/checklists/items/:id', authenticateToken, async (req, res) => {
         await pool.query(
             'DELETE FROM checklist_items WHERE id = $1 AND "userId" = $2',
             [req.params.id, req.user.id]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Operator & Machine Assignment API
+app.get('/api/operators', authenticateToken, async (req, res) => {
+    try {
+        const ops = (await pool.query('SELECT * FROM operators WHERE "userId" = $1 ORDER BY name ASC', [req.user.id])).rows;
+        res.json(ops);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/operators', authenticateToken, async (req, res) => {
+    const { name, shift } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: "Nome do operador é obrigatório." });
+    try {
+        const result = await pool.query(
+            'INSERT INTO operators (name, shift, "userId") VALUES ($1, $2, $3) RETURNING *',
+            [name.trim(), shift || 'Geral', req.user.id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/operators/:id', authenticateToken, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM operators WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.patch('/api/routers/:id/operator', authenticateToken, async (req, res) => {
+    const { operator_name } = req.body;
+    try {
+        await pool.query(
+            'UPDATE routers SET operator_name = $1 WHERE id = $2 AND "userId" = $3',
+            [operator_name ? operator_name.trim() : null, req.params.id, req.user.id]
         );
         res.json({ success: true });
     } catch (err) {
