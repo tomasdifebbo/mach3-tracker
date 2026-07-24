@@ -7,6 +7,7 @@ import { api } from '../services/api';
 
 const ALL_FEATURES = [
   { id: 'dashboard', label: 'Dashboard Principal', category: 'Visão Geral', desc: 'Acesso à visão geral de máquinas e métricas do dia' },
+  { id: 'operador', label: 'Painel do Operador', category: 'Operação', desc: 'Terminal de operação, fila de O.S. e apontamento de falhas' },
   { id: 'jobs', label: 'Histórico de Produção', category: 'Produção', desc: 'Registro de cortes e edição inline de nomes de projetos' },
   { id: 'charts', label: 'Gráficos Avançados', category: 'Análise', desc: 'Gráfico de carga horária por máquina e eficiência mensal' },
   { id: 'materials', label: 'Cadastro de Materiais', category: 'Estoque', desc: 'Cadastro de chaparia, insumos e custos por m²' },

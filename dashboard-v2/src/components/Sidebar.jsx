@@ -10,7 +10,8 @@ import {
   ChevronRight,
   Crown,
   ClipboardList,
-  HardHat
+  HardHat,
+  UserCheck
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -44,6 +45,7 @@ export function Sidebar({ activeSection, onSectionChange, user, maintenance = []
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'operador', label: 'Operador', icon: UserCheck },
     { id: 'jobs', label: 'Histórico', icon: History },
     { id: 'charts', label: 'Gráficos', icon: BarChart3 },
     { id: 'materials', label: 'Materiais', icon: Box },

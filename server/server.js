@@ -631,6 +631,7 @@ app.post('/api/auth/reset', async (req, res) => {
 const DEFAULT_PLAN_FEATURES = {
     starter: {
         dashboard: true,
+        operador: true,
         jobs: true,
         charts: false,
         materials: true,
@@ -642,6 +643,7 @@ const DEFAULT_PLAN_FEATURES = {
     },
     pro: {
         dashboard: true,
+        operador: true,
         jobs: true,
         charts: true,
         materials: true,
@@ -653,6 +655,7 @@ const DEFAULT_PLAN_FEATURES = {
     },
     business: {
         dashboard: true,
+        operador: true,
         jobs: true,
         charts: true,
         materials: true,

@@ -16,6 +16,7 @@ import { AdminLogin } from './pages/AdminLogin';
 import { PaymentResult } from './pages/PaymentResult';
 import { PaymentModal } from './components/PaymentModal';
 import { Encarregado } from './pages/Encarregado';
+import { Operador } from './pages/Operador';
 
 function App() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -168,6 +169,7 @@ function App() {
 
     switch (activeSection) {
       case 'dashboard': return <Dashboard jobs={jobs} user={user} routers={routers} onRefresh={fetchData} />;
+      case 'operador': return <Operador jobs={jobs} routers={routers} onRefresh={fetchData} />;
       case 'jobs': return <History jobs={jobs} materials={materials} onRefresh={fetchData} user={user} />;
       case 'charts': return <Charts jobs={jobs} />;
       case 'materials': return <Materials materials={materials} onRefresh={fetchData} />;
@@ -180,6 +182,7 @@ function App() {
 
   const titles = {
     'dashboard': ['Dashboard', 'Visão geral dos jobs CNC'],
+    'operador': ['Operador', 'Terminal de execução e apontamentos de máquinas'],
     'jobs': ['Histórico', 'Registro completo de atividades'],
     'charts': ['Gráficos', 'Análise aprofundada de produção'],
     'materials': ['Materiais', 'Cadastro de insumos e preços'],
