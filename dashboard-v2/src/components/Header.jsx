@@ -213,17 +213,42 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
                           key={r.id}
                           onClick={async () => {
                             if (active) return;
+                            let pin = '';
+                            if (r.id === 'gerente' && user?.has_gerente_pin) {
+                              pin = prompt('Digite a Senha do Perfil Gerente:');
+                              if (pin === null) return;
+                            } else if (r.id === 'encarregado' && user?.has_supervisor_pin) {
+                              pin = prompt('Digite a Senha do Perfil Supervisor:');
+                              if (pin === null) return;
+                            }
+
                             try {
                               const token = localStorage.getItem('mach3_token');
-                              const resp = await fetch('/api/user/company-role', {
+                              let resp = await fetch('/api/user/company-role', {
                                 method: 'POST',
                                 headers: {
                                   'Content-Type': 'application/json',
                                   'Authorization': token ? `Bearer ${token}` : ''
                                 },
-                                body: JSON.stringify({ company_role: r.id })
+                                body: JSON.stringify({ company_role: r.id, pin })
                               });
-                              const data = await resp.json();
+                              let data = await resp.json();
+
+                              if (data && data.error && (data.error.includes('Senha') || data.error.includes('incorreta'))) {
+                                const retryPin = prompt(`[${r.label}] ${data.error}\nDigite a Senha:`);
+                                if (retryPin !== null) {
+                                  resp = await fetch('/api/user/company-role', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'Authorization': token ? `Bearer ${token}` : ''
+                                    },
+                                    body: JSON.stringify({ company_role: r.id, pin: retryPin })
+                                  });
+                                  data = await resp.json();
+                                }
+                              }
+
                               if (data && data.error) {
                                 alert(data.error);
                               } else {
