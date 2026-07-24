@@ -232,7 +232,7 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
                             if (resp && resp.error) {
                               alert(resp.error);
                             } else {
-                              window.location.reload();
+                              window.location.href = '/';
                             }
                           }}
                           className={`flex-1 py-1.5 px-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${

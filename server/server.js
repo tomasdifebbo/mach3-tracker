@@ -723,24 +723,27 @@ app.patch('/api/user/company-role', authenticateToken, async (req, res) => {
         return res.status(400).json({ error: "Nível de acesso inválido" });
     }
 
-    const user = (await pool.query('SELECT gerente_pin, supervisor_pin FROM users WHERE id = $1', [req.user.id])).rows[0];
+    const user = (await pool.query('SELECT role, gerente_pin, supervisor_pin FROM users WHERE id = $1', [req.user.id])).rows[0];
 
-    // Check PIN requirement if switching to gerente
-    if (company_role === 'gerente' && user && user.gerente_pin && user.gerente_pin.trim()) {
-        if (!pin || String(pin).trim() !== String(user.gerente_pin).trim()) {
-            return res.status(401).json({ error: "Senha do Perfil Gerente incorreta!" });
+    // Master Admins bypass PIN checks
+    if (user && user.role !== 'admin') {
+        // Check PIN requirement if switching to gerente
+        if (company_role === 'gerente' && user.gerente_pin && user.gerente_pin.trim()) {
+            if (!pin || String(pin).trim() !== String(user.gerente_pin).trim()) {
+                return res.status(401).json({ error: "Senha do Perfil Gerente incorreta!" });
+            }
         }
-    }
 
-    // Check PIN requirement if switching to encarregado (supervisor)
-    if (company_role === 'encarregado' && user && user.supervisor_pin && user.supervisor_pin.trim()) {
-        if (!pin || String(pin).trim() !== String(user.supervisor_pin).trim()) {
-            return res.status(401).json({ error: "Senha do Perfil Supervisor incorreta!" });
+        // Check PIN requirement if switching to encarregado (supervisor)
+        if (company_role === 'encarregado' && user.supervisor_pin && user.supervisor_pin.trim()) {
+            if (!pin || String(pin).trim() !== String(user.supervisor_pin).trim()) {
+                return res.status(401).json({ error: "Senha do Perfil Supervisor incorreta!" });
+            }
         }
     }
 
     await pool.query('UPDATE users SET company_role = $1 WHERE id = $2', [company_role, req.user.id]);
-    res.json({ success: true });
+    res.json({ success: true, company_role });
 });
 
 app.patch('/api/user/profile-pins', authenticateToken, async (req, res) => {
