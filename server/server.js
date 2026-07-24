@@ -204,6 +204,7 @@ async function initDb() {
             ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expiry TIMESTAMP;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS features_override TEXT;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS company_role TEXT DEFAULT 'gerente';
 
             -- Kanban and Checklist tables
             CREATE TABLE IF NOT EXISTS kanban_tasks (
@@ -680,7 +681,7 @@ function getEffectiveFeatures(userPlan, overrideJsonStr) {
 
 app.get('/api/user/me', authenticateToken, async (req, res) => {
     await closeStaleJobs(req.user.id);
-    let user = (await pool.query('SELECT id, email, plan, trial_expiry, payment_status, "costPerHour", "plannedHours", role, webhook_url, features_override FROM users WHERE id = $1', [req.user.id])).rows[0];
+    let user = (await pool.query('SELECT id, email, plan, trial_expiry, payment_status, "costPerHour", "plannedHours", role, company_role, webhook_url, features_override FROM users WHERE id = $1', [req.user.id])).rows[0];
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
 
     const masterEmails = ['tomasdifebbo.tdf@gmail.com', 'admin@mach3.com', 'casadotrem@gmail.com'];
@@ -688,6 +689,8 @@ app.get('/api/user/me', authenticateToken, async (req, res) => {
         await pool.query("UPDATE users SET role = 'admin' WHERE id = $1", [user.id]);
         user.role = 'admin';
     }
+
+    if (!user.company_role) user.company_role = 'gerente';
 
     const settings = { costPerHour: user.costPerHour, plannedHours: user.plannedHours, webhookUrl: user.webhook_url };
     const features = getEffectiveFeatures(user.plan, user.features_override);
@@ -704,10 +707,20 @@ app.patch('/api/user/settings', authenticateToken, async (req, res) => {
     res.json({ success: true });
 });
 
+app.patch('/api/user/company-role', authenticateToken, async (req, res) => {
+    const { company_role } = req.body;
+    if (!['gerente', 'encarregado', 'operador'].includes(company_role)) {
+        return res.status(400).json({ error: "Nível de acesso inválido" });
+    }
+    await pool.query('UPDATE users SET company_role = $1 WHERE id = $2', [company_role, req.user.id]);
+    res.json({ success: true });
+});
+
 app.get('/api/admin/users', authenticateToken, authenticateAdmin, async (req, res) => {
-    const users = (await pool.query('SELECT id, email, plan, payment_status, trial_expiry, role, features_override FROM users ORDER BY id DESC')).rows;
+    const users = (await pool.query('SELECT id, email, plan, payment_status, trial_expiry, role, company_role, features_override FROM users ORDER BY id DESC')).rows;
     const formatted = users.map(u => ({
         ...u,
+        company_role: u.company_role || 'gerente',
         features: getEffectiveFeatures(u.plan, u.features_override)
     }));
     res.json(formatted);
@@ -722,6 +735,15 @@ app.patch('/api/admin/users/:id/plan', authenticateToken, authenticateAdmin, asy
         currentExp.setDate(currentExp.getDate() + Number(addDays));
         await pool.query('UPDATE users SET trial_expiry = $1 WHERE id = $2', [currentExp.toISOString(), req.params.id]);
     }
+    res.json({ success: true });
+});
+
+app.patch('/api/admin/users/:id/company-role', authenticateToken, authenticateAdmin, async (req, res) => {
+    const { company_role } = req.body;
+    if (!['gerente', 'encarregado', 'operador'].includes(company_role)) {
+        return res.status(400).json({ error: "Nível de acesso inválido" });
+    }
+    await pool.query('UPDATE users SET company_role = $1 WHERE id = $2', [company_role, req.params.id]);
     res.json({ success: true });
 });
 

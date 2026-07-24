@@ -43,6 +43,14 @@ export function Sidebar({ activeSection, onSectionChange, user, maintenance = []
     });
   }, [maintenance]);
 
+  const companyRole = user?.company_role || 'gerente';
+
+  const ROLE_ALLOWED_SECTIONS = {
+    gerente: ['dashboard', 'operador', 'jobs', 'charts', 'materials', 'maintenance', 'encarregado', 'settings'],
+    encarregado: ['dashboard', 'operador', 'jobs', 'charts', 'materials', 'maintenance', 'encarregado'],
+    operador: ['operador', 'jobs', 'maintenance']
+  };
+
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'operador', label: 'Operador', icon: UserCheck },
@@ -100,7 +108,8 @@ export function Sidebar({ activeSection, onSectionChange, user, maintenance = []
       <nav className="flex-1 p-3 space-y-1 mt-4 overflow-y-auto custom-scrollbar">
         {navItems.map((item) => {
           const isFeatureDisabled = user?.features && user.features[item.id] === false;
-          const isDisabled = (isTrialExpired && item.id !== 'settings') || isFeatureDisabled;
+          const isRoleBlocked = companyRole && ROLE_ALLOWED_SECTIONS[companyRole] && !ROLE_ALLOWED_SECTIONS[companyRole].includes(item.id);
+          const isDisabled = (isTrialExpired && item.id !== 'settings') || isFeatureDisabled || isRoleBlocked;
           const showText = isOpen || isMobileOpen;
           return (
             <button

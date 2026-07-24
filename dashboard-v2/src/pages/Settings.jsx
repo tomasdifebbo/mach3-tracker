@@ -19,16 +19,32 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
   const [costPerHour, setCostPerHour] = useState(user?.settings?.costPerHour || 50.0);
   const [plannedHours, setPlannedHours] = useState(user?.settings?.plannedHours || 8);
   const [webhookUrl, setWebhookUrl] = useState(user?.settings?.webhookUrl || '');
+  const [companyRole, setCompanyRole] = useState(user?.company_role || 'gerente');
+  const [savingRole, setSavingRole] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(null); // tracks which plan is loading
   const [status, setStatus] = useState(null);
+
+  const handleRoleChange = async (newRole) => {
+    setCompanyRole(newRole);
+    setSavingRole(true);
+    try {
+      await api.patch('/user/company-role', { company_role: newRole });
+      if (onRefresh) await onRefresh();
+      setStatus({ type: 'success', message: 'Nível de acesso alterado para: ' + newRole.toUpperCase() });
+      setTimeout(() => setStatus(null), 4000);
+    } catch (err) {
+      alert('Erro ao alterar nível de acesso.');
+    } finally {
+      setSavingRole(false);
+    }
+  };
 
   const handleSubscribe = async (plan) => {
     setCheckoutLoading(plan);
     try {
       const resp = await api.createPreference(plan);
       if (resp.init_point) {
-        // Small delay to show feedback before redirect
         setTimeout(() => { window.location.href = resp.init_point; }, 300);
       } else {
         throw new Error(resp.error || 'Link de pagamento não retornado');
@@ -88,6 +104,53 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
       {/* Plans Section */}
       <section className="space-y-8">
         <SubscriptionPlans user={user} />
+      </section>
+
+      {/* Nível de Acesso da Empresa */}
+      <section className="glass p-6 md:p-10 rounded-[32px] md:rounded-[40px] space-y-6">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-purple-500/20 text-purple-400 rounded-2xl">
+            <ShieldCheck size={24} />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-white">Nível de Acesso da Empresa</h3>
+            <p className="text-xs text-text-muted">Alterne o perfil da conta para limitar ou liberar funcionalidades conforme a função do usuário.</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            { id: 'gerente', title: 'Gerente da Fábrica', icon: '👑', desc: 'Acesso total a todas as áreas, relatórios e configurações financeiras' },
+            { id: 'encarregado', title: 'Encarregado de Produção', icon: '👷', desc: 'Acesso a Dashboard, Kanban de O.S., Manutenção, Estoque e Gráficos' },
+            { id: 'operador', title: 'Operador de Maquinário', icon: '🧑‍🔧', desc: 'Terminal do Operador focado no chão de fábrica, O.S. e checklists' },
+          ].map(r => {
+            const isSelected = companyRole === r.id;
+            return (
+              <div
+                key={r.id}
+                onClick={() => handleRoleChange(r.id)}
+                className={`p-5 rounded-3xl border transition-all cursor-pointer flex flex-col justify-between select-none group hover:scale-[1.02] ${
+                  isSelected 
+                    ? 'bg-purple-500/15 border-purple-500 text-white shadow-xl shadow-purple-500/10 ring-2 ring-purple-500/30' 
+                    : 'bg-white/5 border-white/5 text-text-muted hover:border-white/20'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-3xl">{r.icon}</span>
+                    {isSelected ? (
+                      <span className="text-[9px] font-black uppercase tracking-wider bg-purple-500 text-black px-2.5 py-1 rounded-full">ATIVO</span>
+                    ) : (
+                      <span className="text-[9px] font-bold uppercase text-text-muted opacity-60">Clique p/ Selecionar</span>
+                    )}
+                  </div>
+                  <h4 className="font-extrabold text-white text-base mb-1.5 group-hover:text-purple-300 transition-colors">{r.title}</h4>
+                  <p className="text-xs text-text-muted leading-relaxed">{r.desc}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       <hr className="border-border/50" />

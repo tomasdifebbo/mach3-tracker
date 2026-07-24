@@ -52,6 +52,15 @@ export function AdminPortal() {
     }
   };
 
+  const changeCompanyRole = async (id, newRole) => {
+    try {
+      await api.patch(`/admin/users/${id}/company-role`, { company_role: newRole });
+      fetchUsers();
+    } catch (e) {
+      alert('Erro ao alterar perfil do cliente');
+    }
+  };
+
   const extendTrial = async (id, days) => {
     if (!confirm(`Adicionar ${days} dias ao trial deste usuário?`)) return;
     try {
@@ -193,6 +202,16 @@ export function AdminPortal() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end gap-2">
+                            <select 
+                              className="bg-black/50 border border-purple-500/30 text-[11px] font-bold uppercase tracking-wider rounded-xl px-3 py-2 text-purple-300 hover:border-purple-500/60 focus:border-purple-500 transition-all outline-none cursor-pointer appearance-none"
+                              value={u.company_role || 'gerente'}
+                              onChange={(e) => changeCompanyRole(u.id, e.target.value)}
+                              title="Nível de Acesso da Empresa"
+                            >
+                              <option value="gerente" className="bg-zinc-900">👑 Gerente</option>
+                              <option value="encarregado" className="bg-zinc-900">👷 Encarregado</option>
+                              <option value="operador" className="bg-zinc-900">🧑‍🔧 Operador</option>
+                            </select>
                             <select 
                               className="bg-black/50 border border-white/10 text-[11px] font-bold uppercase tracking-wider rounded-xl px-3 py-2 text-white hover:border-purple-500/50 focus:border-purple-500 transition-all outline-none cursor-pointer appearance-none"
                               onChange={(e) => { if(e.target.value) changePlan(u.id, e.target.value); e.target.value=""; }}
