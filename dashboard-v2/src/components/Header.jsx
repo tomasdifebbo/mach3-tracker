@@ -197,13 +197,46 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
             </button>
 
             {showUserMenu && (
-              <div className="absolute right-0 mt-4 w-56 glass rounded-2xl overflow-hidden border border-border shadow-2xl p-1.5 animate-in slide-in-from-top-2 duration-200 z-[200]">
+              <div className="absolute right-0 mt-4 w-64 glass rounded-2xl overflow-hidden border border-border shadow-2xl p-2 animate-in slide-in-from-top-2 duration-200 z-[200]">
+                <div className="px-3 py-2 border-b border-white/10 mb-1">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">Perfil de Acesso Ativo</p>
+                  <div className="flex gap-1 mt-2">
+                    {[
+                      { id: 'gerente', label: '👑 Gerente' },
+                      { id: 'encarregado', label: '👷 Supervisor' },
+                      { id: 'operador', label: '🧑‍🔧 Operador' },
+                    ].map(r => {
+                      const active = (user?.company_role || 'gerente') === r.id;
+                      return (
+                        <button
+                          key={r.id}
+                          onClick={async () => {
+                            try {
+                              await api.patch('/user/company-role', { company_role: r.id });
+                              window.location.reload();
+                            } catch (e) {
+                              alert('Erro ao alterar perfil');
+                            }
+                          }}
+                          className={`flex-1 py-1.5 px-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                            active 
+                              ? 'bg-accent-cyan text-black font-extrabold shadow-sm' 
+                              : 'bg-white/5 text-text-muted hover:text-white hover:bg-white/10'
+                          }`}
+                        >
+                          {r.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <button 
                   onClick={() => {
                     setShowUserMenu(false);
                     if (onSectionChange) onSectionChange('settings');
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-white hover:bg-white/5 transition-colors"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-white hover:bg-white/5 transition-colors cursor-pointer"
                 >
                   <Settings size={16} className="text-text-muted" /> Configurações
                 </button>
@@ -213,7 +246,7 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
                     localStorage.removeItem('mach3_token');
                     window.location.reload();
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-accent-danger hover:bg-accent-danger/10 transition-colors"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-accent-danger hover:bg-accent-danger/10 transition-colors cursor-pointer"
                 >
                   <LogOut size={16} /> Sair
                 </button>
