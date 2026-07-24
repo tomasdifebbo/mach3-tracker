@@ -213,14 +213,17 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
                           onClick={async () => {
                             if (active) return;
                             try {
-                              const resp = await api.patch('/user/company-role', { company_role: r.id });
+                              let resp = await api.patch('/user/company-role', { company_role: r.id });
+                              if (resp && resp.error) {
+                                resp = await api.post('/user/company-role', { company_role: r.id });
+                              }
                               if (resp && resp.error) {
                                 alert(resp.error);
                               } else {
                                 window.location.href = '/';
                               }
                             } catch (e) {
-                              alert('Erro ao alterar perfil');
+                              alert('Erro ao alterar perfil: ' + (e?.message || 'Tente novamente em instantes'));
                             }
                           }}
                           className={`flex-1 py-1.5 px-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${

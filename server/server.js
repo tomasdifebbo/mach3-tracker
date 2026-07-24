@@ -748,14 +748,22 @@ app.patch('/api/user/settings', authenticateToken, async (req, res) => {
     res.json({ success: true });
 });
 
-app.patch('/api/user/company-role', authenticateToken, async (req, res) => {
-    const { company_role } = req.body;
-    if (!['gerente', 'encarregado', 'operador'].includes(company_role)) {
-        return res.status(400).json({ error: "Nível de acesso inválido" });
+const handleRoleUpdate = async (req, res) => {
+    try {
+        const { company_role } = req.body;
+        if (!['gerente', 'encarregado', 'operador'].includes(company_role)) {
+            return res.status(400).json({ error: "Nível de acesso inválido" });
+        }
+        await pool.query('UPDATE users SET company_role = $1 WHERE id = $2', [company_role, req.user.id]);
+        res.json({ success: true, company_role });
+    } catch (err) {
+        console.error('[ROLE UPDATE ERROR]', err);
+        res.status(500).json({ error: "Erro ao atualizar perfil no banco de dados" });
     }
-    await pool.query('UPDATE users SET company_role = $1 WHERE id = $2', [company_role, req.user.id]);
-    res.json({ success: true, company_role });
-});
+};
+
+app.patch('/api/user/company-role', authenticateToken, handleRoleUpdate);
+app.post('/api/user/company-role', authenticateToken, handleRoleUpdate);
 
 app.patch('/api/user/profile-pins', authenticateToken, async (req, res) => {
     const { gerente_pin, supervisor_pin } = req.body;
