@@ -25,18 +25,54 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
   const [checkoutLoading, setCheckoutLoading] = useState(null); // tracks which plan is loading
   const [status, setStatus] = useState(null);
 
+  const [gerentePin, setGerentePin] = useState('');
+  const [supervisorPin, setSupervisorPin] = useState('');
+  const [savingPins, setSavingPins] = useState(false);
+
   const handleRoleChange = async (newRole) => {
-    setCompanyRole(newRole);
+    let pin = '';
+    if (newRole === 'gerente' && user?.has_gerente_pin) {
+      pin = prompt('Digite a Senha/PIN do Gerente:');
+      if (pin === null) return;
+    } else if (newRole === 'encarregado' && user?.has_supervisor_pin) {
+      pin = prompt('Digite a Senha/PIN do Supervisor:');
+      if (pin === null) return;
+    }
+
     setSavingRole(true);
     try {
-      await api.patch('/user/company-role', { company_role: newRole });
-      if (onRefresh) await onRefresh();
-      setStatus({ type: 'success', message: 'Nível de acesso alterado para: ' + newRole.toUpperCase() });
-      setTimeout(() => setStatus(null), 4000);
+      const resp = await api.patch('/user/company-role', { company_role: newRole, pin });
+      if (resp && resp.error) {
+        alert(resp.error);
+      } else {
+        setCompanyRole(newRole);
+        if (onRefresh) await onRefresh();
+        setStatus({ type: 'success', message: 'Nível de acesso alterado para: ' + newRole.toUpperCase() });
+        setTimeout(() => setStatus(null), 4000);
+      }
     } catch (err) {
       alert('Erro ao alterar nível de acesso.');
     } finally {
       setSavingRole(false);
+    }
+  };
+
+  const handleSavePins = async (e) => {
+    e.preventDefault();
+    setSavingPins(true);
+    try {
+      await api.patch('/user/profile-pins', {
+        gerente_pin: gerentePin,
+        supervisor_pin: supervisorPin
+      });
+      if (onRefresh) await onRefresh();
+      alert('Senhas de proteção dos perfis atualizadas com sucesso!');
+      setGerentePin('');
+      setSupervisorPin('');
+    } catch (err) {
+      alert('Erro ao salvar senhas.');
+    } finally {
+      setSavingPins(false);
     }
   };
 
@@ -151,6 +187,53 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
             );
           })}
         </div>
+
+        {/* Form para Definir Senhas dos Perfis */}
+        <form onSubmit={handleSavePins} className="pt-6 border-t border-white/10 space-y-4">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={18} className="text-purple-400" />
+            <h4 className="text-sm font-bold text-white">Proteção por Senha dos Perfis</h4>
+          </div>
+          <p className="text-xs text-text-muted">Defina uma senha para restringir a mudança para os perfis de Gerente ou Supervisor, evitando que operadores alterem configurações.</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest text-text-muted block mb-1.5">
+                Senha do Perfil Gerente (👑) {user?.has_gerente_pin && <span className="text-accent-success">(Protegido por Senha)</span>}
+              </label>
+              <input
+                type="password"
+                placeholder={user?.has_gerente_pin ? '•••• (Digite para alterar)' : 'Criar senha do Gerente (opcional)'}
+                value={gerentePin}
+                onChange={(e) => setGerentePin(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-purple-500"
+              />
+            </div>
+
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest text-text-muted block mb-1.5">
+                Senha do Perfil Supervisor (👷) {user?.has_supervisor_pin && <span className="text-accent-success">(Protegido por Senha)</span>}
+              </label>
+              <input
+                type="password"
+                placeholder={user?.has_supervisor_pin ? '•••• (Digite para alterar)' : 'Criar senha do Supervisor (opcional)'}
+                value={supervisorPin}
+                onChange={(e) => setSupervisorPin(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-purple-500"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              type="submit"
+              disabled={savingPins || (!gerentePin && !supervisorPin)}
+              className="px-5 py-2.5 bg-purple-500 hover:bg-purple-600 disabled:opacity-40 text-black font-black uppercase text-xs rounded-xl transition-all shadow-lg shadow-purple-500/20 cursor-pointer"
+            >
+              {savingPins ? 'Salvação...' : 'Salvar Senhas dos Perfis'}
+            </button>
+          </div>
+        </form>
       </section>
 
       <hr className="border-border/50" />

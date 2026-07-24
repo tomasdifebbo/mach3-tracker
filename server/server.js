@@ -205,6 +205,8 @@ async function initDb() {
             ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expiry TIMESTAMP;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS features_override TEXT;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS company_role TEXT DEFAULT 'gerente';
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS gerente_pin TEXT;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS supervisor_pin TEXT;
 
             -- Kanban and Checklist tables
             CREATE TABLE IF NOT EXISTS kanban_tasks (
@@ -681,7 +683,7 @@ function getEffectiveFeatures(userPlan, overrideJsonStr) {
 
 app.get('/api/user/me', authenticateToken, async (req, res) => {
     await closeStaleJobs(req.user.id);
-    let user = (await pool.query('SELECT id, email, plan, trial_expiry, payment_status, "costPerHour", "plannedHours", role, company_role, webhook_url, features_override FROM users WHERE id = $1', [req.user.id])).rows[0];
+    let user = (await pool.query('SELECT id, email, plan, trial_expiry, payment_status, "costPerHour", "plannedHours", role, company_role, gerente_pin, supervisor_pin, webhook_url, features_override FROM users WHERE id = $1', [req.user.id])).rows[0];
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
 
     const masterEmails = ['tomasdifebbo.tdf@gmail.com', 'admin@mach3.com', 'casadotrem@gmail.com'];
@@ -694,7 +696,15 @@ app.get('/api/user/me', authenticateToken, async (req, res) => {
 
     const settings = { costPerHour: user.costPerHour, plannedHours: user.plannedHours, webhookUrl: user.webhook_url };
     const features = getEffectiveFeatures(user.plan, user.features_override);
-    res.json({ ...user, settings, features });
+    const has_gerente_pin = !!(user.gerente_pin && user.gerente_pin.trim());
+    const has_supervisor_pin = !!(user.supervisor_pin && user.supervisor_pin.trim());
+
+    // Do not leak raw PINs to client
+    const safeUser = { ...user };
+    delete safeUser.gerente_pin;
+    delete safeUser.supervisor_pin;
+
+    res.json({ ...safeUser, has_gerente_pin, has_supervisor_pin, settings, features });
 });
 
 app.patch('/api/user/settings', authenticateToken, async (req, res) => {
@@ -708,11 +718,41 @@ app.patch('/api/user/settings', authenticateToken, async (req, res) => {
 });
 
 app.patch('/api/user/company-role', authenticateToken, async (req, res) => {
-    const { company_role } = req.body;
+    const { company_role, pin } = req.body;
     if (!['gerente', 'encarregado', 'operador'].includes(company_role)) {
         return res.status(400).json({ error: "Nível de acesso inválido" });
     }
+
+    const user = (await pool.query('SELECT gerente_pin, supervisor_pin FROM users WHERE id = $1', [req.user.id])).rows[0];
+
+    // Check PIN requirement if switching to gerente
+    if (company_role === 'gerente' && user && user.gerente_pin && user.gerente_pin.trim()) {
+        if (!pin || String(pin).trim() !== String(user.gerente_pin).trim()) {
+            return res.status(401).json({ error: "Senha do Perfil Gerente incorreta!" });
+        }
+    }
+
+    // Check PIN requirement if switching to encarregado (supervisor)
+    if (company_role === 'encarregado' && user && user.supervisor_pin && user.supervisor_pin.trim()) {
+        if (!pin || String(pin).trim() !== String(user.supervisor_pin).trim()) {
+            return res.status(401).json({ error: "Senha do Perfil Supervisor incorreta!" });
+        }
+    }
+
     await pool.query('UPDATE users SET company_role = $1 WHERE id = $2', [company_role, req.user.id]);
+    res.json({ success: true });
+});
+
+app.patch('/api/user/profile-pins', authenticateToken, async (req, res) => {
+    const { gerente_pin, supervisor_pin } = req.body;
+    await pool.query(
+        'UPDATE users SET gerente_pin = $1, supervisor_pin = $2 WHERE id = $3',
+        [
+            gerente_pin !== undefined ? (gerente_pin ? String(gerente_pin).trim() : null) : null,
+            supervisor_pin !== undefined ? (supervisor_pin ? String(supervisor_pin).trim() : null) : null,
+            req.user.id
+        ]
+    );
     res.json({ success: true });
 });
 

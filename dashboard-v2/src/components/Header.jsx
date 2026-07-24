@@ -211,11 +211,21 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
                         <button
                           key={r.id}
                           onClick={async () => {
-                            try {
-                              await api.patch('/user/company-role', { company_role: r.id });
+                            if (active) return;
+                            let pin = '';
+                            if (r.id === 'gerente' && user?.has_gerente_pin) {
+                              pin = prompt('Digite a Senha/PIN do Gerente:');
+                              if (pin === null) return;
+                            } else if (r.id === 'encarregado' && user?.has_supervisor_pin) {
+                              pin = prompt('Digite a Senha/PIN do Supervisor:');
+                              if (pin === null) return;
+                            }
+
+                            const resp = await api.patch('/user/company-role', { company_role: r.id, pin });
+                            if (resp && resp.error) {
+                              alert(resp.error);
+                            } else {
                               window.location.reload();
-                            } catch (e) {
-                              alert('Erro ao alterar perfil');
                             }
                           }}
                           className={`flex-1 py-1.5 px-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
