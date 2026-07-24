@@ -212,27 +212,15 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
                           key={r.id}
                           onClick={async () => {
                             if (active) return;
-                            let pin = '';
-                            if (r.id === 'gerente' && user?.has_gerente_pin) {
-                              pin = prompt('Digite a Senha/PIN do Gerente:');
-                              if (pin === null) return;
-                            } else if (r.id === 'encarregado' && user?.has_supervisor_pin) {
-                              pin = prompt('Digite a Senha/PIN do Supervisor:');
-                              if (pin === null) return;
-                            }
-
-                            let resp = await api.patch('/user/company-role', { company_role: r.id, pin });
-                            if (resp && resp.error && (resp.error.includes('Senha') || resp.error.includes('incorreta'))) {
-                              const retryPin = prompt(`[${r.label}] ${resp.error}\nDigite a Senha do Perfil:`);
-                              if (retryPin !== null) {
-                                resp = await api.patch('/user/company-role', { company_role: r.id, pin: retryPin });
+                            try {
+                              const resp = await api.patch('/user/company-role', { company_role: r.id });
+                              if (resp && resp.error) {
+                                alert(resp.error);
+                              } else {
+                                window.location.href = '/';
                               }
-                            }
-
-                            if (resp && resp.error) {
-                              alert(resp.error);
-                            } else {
-                              window.location.href = '/';
+                            } catch (e) {
+                              alert('Erro ao alterar perfil');
                             }
                           }}
                           className={`flex-1 py-1.5 px-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
