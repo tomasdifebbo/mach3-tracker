@@ -47,8 +47,8 @@ export function Sidebar({ activeSection, onSectionChange, user, maintenance = []
 
   const ROLE_ALLOWED_SECTIONS = {
     gerente: ['dashboard', 'operador', 'jobs', 'charts', 'materials', 'maintenance', 'encarregado', 'settings'],
-    encarregado: ['dashboard', 'operador', 'jobs', 'charts', 'materials', 'maintenance', 'encarregado'],
-    operador: ['operador', 'jobs', 'maintenance']
+    encarregado: ['dashboard', 'operador', 'jobs', 'charts', 'materials', 'maintenance', 'encarregado', 'settings'],
+    operador: ['operador', 'jobs', 'maintenance', 'settings']
   };
 
   const navItems = [

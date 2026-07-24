@@ -41,7 +41,14 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
 
     setSavingRole(true);
     try {
-      const resp = await api.patch('/user/company-role', { company_role: newRole, pin });
+      let resp = await api.patch('/user/company-role', { company_role: newRole, pin });
+      if (resp && resp.error && (resp.error.includes('Senha') || resp.error.includes('incorreta'))) {
+        const retryPin = prompt(`[${newRole.toUpperCase()}] ${resp.error}\nDigite a Senha do Perfil:`);
+        if (retryPin !== null) {
+          resp = await api.patch('/user/company-role', { company_role: newRole, pin: retryPin });
+        }
+      }
+
       if (resp && resp.error) {
         alert(resp.error);
       } else {

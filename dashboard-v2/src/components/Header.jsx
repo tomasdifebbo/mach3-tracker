@@ -221,7 +221,14 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
                               if (pin === null) return;
                             }
 
-                            const resp = await api.patch('/user/company-role', { company_role: r.id, pin });
+                            let resp = await api.patch('/user/company-role', { company_role: r.id, pin });
+                            if (resp && resp.error && (resp.error.includes('Senha') || resp.error.includes('incorreta'))) {
+                              const retryPin = prompt(`[${r.label}] ${resp.error}\nDigite a Senha do Perfil:`);
+                              if (retryPin !== null) {
+                                resp = await api.patch('/user/company-role', { company_role: r.id, pin: retryPin });
+                              }
+                            }
+
                             if (resp && resp.error) {
                               alert(resp.error);
                             } else {
