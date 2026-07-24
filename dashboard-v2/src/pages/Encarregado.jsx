@@ -1155,11 +1155,10 @@ function ChecklistMaquina({ data, machineKey }) {
     return () => { active = false; };
   }, [machineKey, today]);
 
-  // Combine default items and custom items
-  const allItems = [
-    ...data.items.map((text, idx) => ({ type: 'default', index: idx, text })),
-    ...customItems.map((item, idx) => ({ type: 'custom', id: item.id, index: data.items.length + idx, text: item.item_text }))
-  ];
+  // Use DB items if present (includes auto-seeded default items), fallback to hardcoded
+  const allItems = customItems.length > 0
+    ? customItems.map((item, idx) => ({ id: item.id, index: idx, text: item.item_text }))
+    : data.items.map((text, idx) => ({ index: idx, text }));
 
   const toggle = async (i) => {
     const isDone = !checked.includes(i);
@@ -1189,7 +1188,7 @@ function ChecklistMaquina({ data, machineKey }) {
         item_text: newItemText.trim()
       });
       if (created && created.id) {
-        setCustomItems(prev => [...prev, created]);
+        fetchCustomItems();
         setNewItemText('');
       }
     } catch (err) {
@@ -1205,7 +1204,7 @@ function ChecklistMaquina({ data, machineKey }) {
     const newText = prompt('Editar item do checklist:', item.text);
     if (!newText || !newText.trim() || newText.trim() === item.text) return;
     try {
-      if (item.type === 'custom') {
+      if (item.id) {
         await api.patch(`/checklists/items/${item.id}`, { item_text: newText.trim() });
         fetchCustomItems();
       }
@@ -1217,10 +1216,12 @@ function ChecklistMaquina({ data, machineKey }) {
   const handleDeleteCustomItem = async (e, customId) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm('Deseja excluir este item personalizado do checklist?')) return;
+    if (!confirm('Deseja excluir este item do checklist?')) return;
     try {
-      await api.deleteCustom(`/checklists/items/${customId}`);
-      setCustomItems(prev => prev.filter(item => item.id !== customId));
+      if (customId) {
+        await api.deleteCustom(`/checklists/items/${customId}`);
+        fetchCustomItems();
+      }
     } catch (err) {
       alert('Erro ao excluir item.');
     }
@@ -1287,24 +1288,24 @@ function ChecklistMaquina({ data, machineKey }) {
         {allItems.map((item) => {
           const done = checked.includes(item.index);
           return (
-            <div key={`${item.type}-${item.index}`} className={`flex items-center justify-between gap-4 p-4 hover:bg-white/[0.02] transition-colors group ${done ? 'opacity-60' : ''}`}>
+            <div key={`${item.id || 'def'}-${item.index}`} className={`flex items-center justify-between gap-4 p-4 hover:bg-white/[0.02] transition-colors group ${done ? 'opacity-60' : ''}`}>
               <label className="flex items-start gap-4 flex-1 cursor-pointer">
                 <input type="checkbox" className="mt-0.5 accent-orange-500 w-4 h-4 flex-shrink-0 cursor-pointer" checked={done} onChange={() => toggle(item.index)} />
                 <span className={`text-sm ${done ? 'line-through text-text-muted' : 'text-white/80'}`}>{item.text}</span>
               </label>
-              {item.type === 'custom' && (
+              {item.id && (
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={(e) => handleEditCustomItem(e, item)}
                     className="text-text-muted hover:text-accent-cyan p-1.5 rounded-lg hover:bg-white/5 transition-all cursor-pointer"
-                    title="Editar item"
+                    title="Editar item do checklist"
                   >
                     <Edit2 size={15} />
                   </button>
                   <button
                     onClick={(e) => handleDeleteCustomItem(e, item.id)}
                     className="text-text-muted hover:text-red-400 p-1.5 rounded-lg hover:bg-white/5 transition-all cursor-pointer"
-                    title="Excluir item"
+                    title="Excluir item do checklist"
                   >
                     <Trash2 size={15} />
                   </button>

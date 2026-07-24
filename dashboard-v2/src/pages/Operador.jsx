@@ -713,10 +713,9 @@ function OperadorChecklist({ operatorName, routers = [] }) {
     fetchChecklist();
   }, [selectedMachine]);
 
-  const allItems = [
-    ...currentMachineData.items.map((text, idx) => ({ type: 'default', index: idx, text })),
-    ...customItems.map((item, idx) => ({ type: 'custom', id: item.id, index: currentMachineData.items.length + idx, text: item.item_text }))
-  ];
+  const allItems = customItems.length > 0
+    ? customItems.map((item, idx) => ({ id: item.id, index: idx, text: item.item_text }))
+    : currentMachineData.items.map((text, idx) => ({ index: idx, text }));
 
   const toggleItem = async (i) => {
     const isDone = !checked.includes(i);
@@ -739,7 +738,7 @@ function OperadorChecklist({ operatorName, routers = [] }) {
     const newText = prompt('Editar texto do item do checklist:', item.text);
     if (!newText || !newText.trim() || newText.trim() === item.text) return;
     try {
-      if (item.type === 'custom') {
+      if (item.id) {
         await api.patch(`/checklists/items/${item.id}`, { item_text: newText.trim() });
         fetchCustomItems();
       }
@@ -753,9 +752,9 @@ function OperadorChecklist({ operatorName, routers = [] }) {
     e.stopPropagation();
     if (!confirm('Deseja excluir este item do checklist?')) return;
     try {
-      if (item.type === 'custom') {
+      if (item.id) {
         await api.deleteCustom(`/checklists/items/${item.id}`);
-        setCustomItems(prev => prev.filter(i => i.id !== item.id));
+        fetchCustomItems();
       }
     } catch (err) {
       alert('Erro ao excluir item.');
@@ -878,7 +877,7 @@ function OperadorChecklist({ operatorName, routers = [] }) {
                       Concluído por {operatorName}
                     </span>
                   )}
-                  {item.type === 'custom' && (
+                  {item.id && (
                     <div className="flex items-center gap-1">
                       <button
                         onClick={(e) => handleEditCustom(e, item)}

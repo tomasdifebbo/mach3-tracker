@@ -1451,15 +1451,67 @@ app.post('/api/checklists/clear', authenticateToken, async (req, res) => {
     }
 });
 
+const SEED_CHECKLIST_ITEMS = {
+    router1: [
+        'Nível de óleo do Spindle e lubrificação dos guias lineares',
+        'Limpeza das calhas, mesa de alumínio e duto de sucção de cavacos',
+        'Pressão do ar comprimido da linha (Mínimo 6 bar / 87 PSI)',
+        'Verificação e aperto do porta-ferramentas / pinça ER32',
+        'Teste do botão de parada de emergência do painel',
+        'Conferência do ponto de zero peça (X0, Y0, Z0)'
+    ],
+    router2: [
+        'Inspeção do nível de água do reservatório / Chiller do Spindle',
+        'Verificação visual de folga e sujeira nos eixos X, Y e Z',
+        'Limpeza geral da caixa de resíduos e exaustor',
+        'Verificação de funcionamento dos sensores de fim de curso (homing)',
+        'Checagem do estado físico da fresa instalada'
+    ],
+    laser: [
+        'Temperatura do Chiller de refrigeração do tubo Laser (20°C - 24°C)',
+        'Inspeção e limpeza da lente de foco de 2 polegadas e espelhos',
+        'Verificação da exaustão de fumaça e soprador de ar na ponta',
+        'Teste do feixe guia (Red Dot) e alinhamento básico',
+        'Limpeza e remoção de aparas/retalhos inflamáveis sob o favo de mel'
+    ],
+    geral: [
+        'Uso obrigatório de EPIs (Óculos de proteção, protetor auricular e calçado)',
+        'Conferência da lista de Ordens de Serviço (O.S.) prioritárias do dia',
+        'Organização da área de estoque de materiais (chapas MDF, ACM e Isopor)',
+        'Descarte correto de retalhos e limpeza da bancada ao final do turno'
+    ],
+    qualidade: [
+        'Medição dimensional da primeira peça cortada com paquímetro',
+        'Verificação de rebarbas nos cantos inferiores do material',
+        'Inspeção visual da superfície de acabamento e riscos'
+    ]
+};
+
 // Custom Checklist Items API
 app.get('/api/checklists/items', authenticateToken, async (req, res) => {
     const { machine_key } = req.query;
     if (!machine_key) return res.status(400).json({ error: "Parâmetro machine_key obrigatório." });
     try {
-        const rows = (await pool.query(
+        let rows = (await pool.query(
             'SELECT id, machine_key, item_text FROM checklist_items WHERE machine_key = $1 AND "userId" = $2 ORDER BY id ASC',
             [machine_key, req.user.id]
         )).rows;
+
+        // Auto-seed default items if no items exist for this user & machine_key
+        if (rows.length === 0 && SEED_CHECKLIST_ITEMS[machine_key]) {
+            const defaults = SEED_CHECKLIST_ITEMS[machine_key];
+            for (const text of defaults) {
+                await pool.query(
+                    'INSERT INTO checklist_items (machine_key, item_text, "userId") VALUES ($1, $2, $3)',
+                    [machine_key, text, req.user.id]
+                );
+            }
+            rows = (await pool.query(
+                'SELECT id, machine_key, item_text FROM checklist_items WHERE machine_key = $1 AND "userId" = $2 ORDER BY id ASC',
+                [machine_key, req.user.id]
+            )).rows;
+        }
+
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
