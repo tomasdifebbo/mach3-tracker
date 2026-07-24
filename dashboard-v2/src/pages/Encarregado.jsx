@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   LayoutGrid, Calendar, Columns3, CheckSquare2, Package, TrendingUp,
   AlertCircle, CheckCircle2, Clock, Star, ChevronRight, Zap, Target,
-  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2
+  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2, Edit2
 } from 'lucide-react';
 import { api } from '../services/api';
 import { LinkProjectModal } from '../components/LinkProjectModal';
@@ -1199,6 +1199,21 @@ function ChecklistMaquina({ data, machineKey }) {
     }
   };
 
+  const handleEditCustomItem = async (e, item) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newText = prompt('Editar item do checklist:', item.text);
+    if (!newText || !newText.trim() || newText.trim() === item.text) return;
+    try {
+      if (item.type === 'custom') {
+        await api.patch(`/checklists/items/${item.id}`, { item_text: newText.trim() });
+        fetchCustomItems();
+      }
+    } catch (err) {
+      alert('Erro ao editar item do checklist.');
+    }
+  };
+
   const handleDeleteCustomItem = async (e, customId) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1278,13 +1293,22 @@ function ChecklistMaquina({ data, machineKey }) {
                 <span className={`text-sm ${done ? 'line-through text-text-muted' : 'text-white/80'}`}>{item.text}</span>
               </label>
               {item.type === 'custom' && (
-                <button
-                  onClick={(e) => handleDeleteCustomItem(e, item.id)}
-                  className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-400 p-1 rounded-lg hover:bg-white/5 transition-all cursor-pointer"
-                  title="Excluir item personalizado"
-                >
-                  <Trash2 size={16} />
-                </button>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => handleEditCustomItem(e, item)}
+                    className="text-text-muted hover:text-accent-cyan p-1.5 rounded-lg hover:bg-white/5 transition-all cursor-pointer"
+                    title="Editar item"
+                  >
+                    <Edit2 size={15} />
+                  </button>
+                  <button
+                    onClick={(e) => handleDeleteCustomItem(e, item.id)}
+                    className="text-text-muted hover:text-red-400 p-1.5 rounded-lg hover:bg-white/5 transition-all cursor-pointer"
+                    title="Excluir item"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               )}
             </div>
           );

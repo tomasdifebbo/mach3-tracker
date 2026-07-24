@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   UserCheck, Play, CheckCircle2, AlertTriangle, Clock, 
-  Wrench, CheckSquare, Layers, Cpu, ShieldAlert, Sparkles, RefreshCw
+  Wrench, CheckSquare, Layers, Cpu, ShieldAlert, Sparkles, RefreshCw, Edit2, Trash2
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -733,6 +733,35 @@ function OperadorChecklist({ operatorName, routers = [] }) {
     }
   };
 
+  const handleEditCustom = async (e, item) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newText = prompt('Editar texto do item do checklist:', item.text);
+    if (!newText || !newText.trim() || newText.trim() === item.text) return;
+    try {
+      if (item.type === 'custom') {
+        await api.patch(`/checklists/items/${item.id}`, { item_text: newText.trim() });
+        fetchCustomItems();
+      }
+    } catch (err) {
+      alert('Erro ao editar item do checklist.');
+    }
+  };
+
+  const handleDeleteCustom = async (e, item) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm('Deseja excluir este item do checklist?')) return;
+    try {
+      if (item.type === 'custom') {
+        await api.deleteCustom(`/checklists/items/${item.id}`);
+        setCustomItems(prev => prev.filter(i => i.id !== item.id));
+      }
+    } catch (err) {
+      alert('Erro ao excluir item.');
+    }
+  };
+
   const handleAddCustom = async (e) => {
     e.preventDefault();
     if (!newItemText.trim() || addingItem) return;
@@ -843,11 +872,31 @@ function OperadorChecklist({ operatorName, routers = [] }) {
                   </span>
                 </div>
 
-                {isDone && (
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-accent-success bg-accent-success/20 px-2.5 py-1 rounded-full shrink-0">
-                    Concluído por {operatorName}
-                  </span>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {isDone && (
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-accent-success bg-accent-success/20 px-2.5 py-1 rounded-full">
+                      Concluído por {operatorName}
+                    </span>
+                  )}
+                  {item.type === 'custom' && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => handleEditCustom(e, item)}
+                        className="text-text-muted hover:text-accent-cyan p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+                        title="Editar item do checklist"
+                      >
+                        <Edit2 size={15} />
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteCustom(e, item)}
+                        className="text-text-muted hover:text-red-400 p-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+                        title="Excluir item do checklist"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })

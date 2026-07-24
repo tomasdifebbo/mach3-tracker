@@ -1494,6 +1494,21 @@ app.delete('/api/checklists/items/:id', authenticateToken, async (req, res) => {
     }
 });
 
+app.patch('/api/checklists/items/:id', authenticateToken, async (req, res) => {
+    const { item_text } = req.body;
+    if (!item_text || !item_text.trim()) return res.status(400).json({ error: "Texto do item inválido." });
+    try {
+        const result = await pool.query(
+            'UPDATE checklist_items SET item_text = $1 WHERE id = $2 AND "userId" = $3 RETURNING *',
+            [item_text.trim(), req.params.id, req.user.id]
+        );
+        if (result.rowCount === 0) return res.status(404).json({ error: "Item não encontrado." });
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Operator & Machine Assignment API
 app.get('/api/operators', authenticateToken, async (req, res) => {
     try {
