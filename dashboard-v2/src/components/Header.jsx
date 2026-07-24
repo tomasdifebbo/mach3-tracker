@@ -3,6 +3,7 @@ import {
   Bell, User, Zap, CheckCircle2, Clock, LogOut, Settings, Menu,
   Play, AlertTriangle, Wrench, WifiOff, Timer
 } from 'lucide-react';
+import { api } from '../services/api';
 
 function timeAgo(date) {
   const now = new Date();
