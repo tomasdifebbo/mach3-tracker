@@ -501,8 +501,8 @@ def main():
 import socket
 
 class LaserMonitorThread(threading.Thread):
-    # Tempo (em segundos) sem tráfego de rede para considerar que o corte acabou
-    IDLE_TIMEOUT = 60
+    # Tempo (em segundos) de segurança para considerar um corte esquecido em aberto (4 horas)
+    IDLE_TIMEOUT = 14400
 
     def __init__(self, laser_ip="192.168.0.2", port=5005):
         super().__init__(daemon=True)
@@ -607,7 +607,7 @@ class LaserMonitorThread(threading.Thread):
                     print(f"[+] LASER DOWNLOAD ENVIADO: {file_to_report}")
                     
                     if self.status == "working":
-                        # Finalizar job anterior primeiro
+                        # Finalizar job anterior primeiro ao iniciar um novo download
                         processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
                     
                     processa_inicio(
@@ -632,28 +632,30 @@ class LaserMonitorThread(threading.Thread):
                     except Exception:
                         pass
 
-                # 3. Detectar FIM do corte por inatividade de rede
+                # 3. Detectar FIM do corte (Apenas por timeout longo de segurança de 4 horas)
                 if self.status == "working" and self.last_network_activity > 0:
                     elapsed = time.time() - self.last_network_activity
                     if elapsed >= self.IDLE_TIMEOUT:
-                        print(f"[+] LASER CORTE FINALIZADO (sem atividade de rede por {int(elapsed)}s)")
+                        print(f"[+] LASER CORTE FINALIZADO (timeout de segurança {int(elapsed)}s)")
                         processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
                         self.status = "idle"
                         self.last_network_activity = 0
 
                 # 4. Ping check para conexao de rede com a maquina
-                is_alive = os.system(f"ping -n 1 -w 1000 {self.laser_ip} > nul") == 0
+                is_alive = os.system(f"ping -n 1 -w 1500 {self.laser_ip} > nul") == 0
 
                 if is_alive:
                     if self.status == "offline":
                         print(f"[+] Laser ({self.laser_ip}) ficou ONLINE!")
                         self.status = "idle"
                 else:
-                    if self.status != "offline":
+                    if self.status != "offline" and self.status != "working":
                         print(f"[!] Laser ({self.laser_ip}) desconectada / offline.")
-                        if self.status == "working":
-                            processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
                         self.status = "offline"
+            except Exception as e:
+                pass
+
+            time.sleep(1)
             except Exception as e:
                 pass
 
