@@ -248,15 +248,17 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
                   </div>
                 </div>
 
-                <button 
-                  onClick={() => {
-                    setShowUserMenu(false);
-                    if (onSectionChange) onSectionChange('settings');
-                  }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-white hover:bg-white/5 transition-colors cursor-pointer"
-                >
-                  <Settings size={16} className="text-text-muted" /> Configurações
-                </button>
+                {user?.company_role !== 'operador' && (
+                  <button 
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      if (onSectionChange) onSectionChange('settings');
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-white hover:bg-white/5 transition-colors cursor-pointer"
+                  >
+                    <Settings size={16} className="text-text-muted" /> Configurações
+                  </button>
+                )}
                 <div className="h-px bg-border my-1 mx-2"></div>
                 <button 
                   onClick={() => {

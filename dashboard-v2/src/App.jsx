@@ -155,6 +155,18 @@ function App() {
       return <Settings user={user} onRefresh={loadUser} isTrialExpired={isTrialExpired} />;
     }
 
+    if (user?.company_role === 'operador' && activeSection === 'settings') {
+      return (
+        <div className="p-8 text-center space-y-4 animate-in fade-in duration-300">
+          <div className="text-xl font-bold text-red-400">Acesso Restrito ao Operador</div>
+          <p className="text-sm text-text-muted">As configurações do sistema são restritas ao perfil de Gerente.</p>
+          <button onClick={() => setActiveSection('operador')} className="px-6 py-2.5 bg-accent-cyan text-black font-bold rounded-xl text-xs uppercase tracking-widest cursor-pointer">
+            Voltar ao Terminal do Operador
+          </button>
+        </div>
+      );
+    }
+
     if (user?.features && user.features[activeSection] === false) {
       return (
         <div className="p-8 text-center space-y-4 animate-in fade-in duration-300">
