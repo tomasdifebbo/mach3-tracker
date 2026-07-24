@@ -53,7 +53,7 @@ export function Login({ onLoginSuccess }) {
         setError(data.error || 'Erro na autenticação');
       }
     } catch (err) {
-      setError('Erro de conexão com o servidor');
+      setError(err.message || 'Erro na autenticação. Verifique seu e-mail e senha.');
     }
     setLoading(false);
   };
