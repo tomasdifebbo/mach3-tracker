@@ -631,6 +631,9 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
 }
 
 function OperadorChecklist({ operatorName, routers = [] }) {
+  const deviceRole = localStorage.getItem('mach3_device_role') || 'gerente';
+  const canManageChecklist = deviceRole === 'gerente' || deviceRole === 'encarregado';
+
   const today = new Date().toISOString().split('T')[0];
   const [selectedMachine, setSelectedMachine] = useState('router1');
   const [checked, setChecked] = useState([]);
@@ -877,7 +880,7 @@ function OperadorChecklist({ operatorName, routers = [] }) {
                       Concluído por {operatorName}
                     </span>
                   )}
-                  {item.id && (
+                  {canManageChecklist && item.id && (
                     <div className="flex items-center gap-1">
                       <button
                         onClick={(e) => handleEditCustom(e, item)}
@@ -902,23 +905,25 @@ function OperadorChecklist({ operatorName, routers = [] }) {
         )}
       </div>
 
-      {/* Adicionar Item Personalizado ao Checklist */}
-      <form onSubmit={handleAddCustom} className="flex gap-2 pt-2 border-t border-white/10">
-        <input
-          type="text"
-          value={newItemText}
-          onChange={(e) => setNewItemText(e.target.value)}
-          placeholder={`+ Adicionar novo item ao checklist de ${currentMachineData.name}...`}
-          className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs text-white outline-none focus:border-accent-cyan"
-        />
-        <button
-          type="submit"
-          disabled={addingItem || !newItemText.trim()}
-          className="px-5 py-2 bg-accent-cyan hover:bg-accent-cyan/80 disabled:opacity-50 text-black font-black uppercase text-xs rounded-xl transition-all shadow-md shadow-accent-cyan/20 cursor-pointer"
-        >
-          {addingItem ? '...' : '+ Adicionar'}
-        </button>
-      </form>
+      {/* Adicionar Item Personalizado ao Checklist (Apenas Gerente e Coordenador/Encarregado) */}
+      {canManageChecklist && (
+        <form onSubmit={handleAddCustom} className="flex gap-2 pt-2 border-t border-white/10">
+          <input
+            type="text"
+            value={newItemText}
+            onChange={(e) => setNewItemText(e.target.value)}
+            placeholder={`+ Adicionar novo item ao checklist de ${currentMachineData.name}...`}
+            className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs text-white outline-none focus:border-accent-cyan"
+          />
+          <button
+            type="submit"
+            disabled={addingItem || !newItemText.trim()}
+            className="px-5 py-2 bg-accent-cyan hover:bg-accent-cyan/80 disabled:opacity-50 text-black font-black uppercase text-xs rounded-xl transition-all shadow-md shadow-accent-cyan/20 cursor-pointer"
+          >
+            {addingItem ? '...' : '+ Adicionar'}
+          </button>
+        </form>
+      )}
     </div>
   );
 }
