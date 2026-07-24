@@ -19,7 +19,7 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
   const [costPerHour, setCostPerHour] = useState(user?.settings?.costPerHour || 50.0);
   const [plannedHours, setPlannedHours] = useState(user?.settings?.plannedHours || 8);
   const [webhookUrl, setWebhookUrl] = useState(user?.settings?.webhookUrl || '');
-  const [companyRole, setCompanyRole] = useState(user?.company_role || 'gerente');
+  const [companyRole, setCompanyRole] = useState(localStorage.getItem('mach3_device_role') || user?.company_role || 'gerente');
   const [savingRole, setSavingRole] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(null); // tracks which plan is loading
@@ -32,31 +32,23 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
   const handleRoleChange = async (newRole) => {
     let pin = '';
     if (newRole === 'gerente' && user?.has_gerente_pin) {
-      pin = prompt('Digite a Senha/PIN do Gerente:');
+      pin = prompt('Digite a Senha do Perfil Gerente:');
       if (pin === null) return;
     } else if (newRole === 'encarregado' && user?.has_supervisor_pin) {
-      pin = prompt('Digite a Senha/PIN do Supervisor:');
+      pin = prompt('Digite a Senha do Perfil Supervisor:');
       if (pin === null) return;
     }
 
     setSavingRole(true);
     try {
-      let resp = await api.patch('/user/company-role', { company_role: newRole, pin });
-      if (resp && resp.error && (resp.error.includes('Senha') || resp.error.includes('incorreta'))) {
-        const retryPin = prompt(`[${newRole.toUpperCase()}] ${resp.error}\nDigite a Senha do Perfil:`);
-        if (retryPin !== null) {
-          resp = await api.patch('/user/company-role', { company_role: newRole, pin: retryPin });
-        }
+      const verifyResp = await api.verifyPin(newRole, pin);
+      if (verifyResp && verifyResp.error) {
+        alert(verifyResp.error);
+        return;
       }
-
-      if (resp && resp.error) {
-        alert(resp.error);
-      } else {
-        setCompanyRole(newRole);
-        if (onRefresh) await onRefresh();
-        setStatus({ type: 'success', message: 'Nível de acesso alterado para: ' + newRole.toUpperCase() });
-        setTimeout(() => setStatus(null), 4000);
-      }
+      localStorage.setItem('mach3_device_role', newRole);
+      setCompanyRole(newRole);
+      window.location.href = '/';
     } catch (err) {
       alert('Erro ao alterar nível de acesso.');
     } finally {

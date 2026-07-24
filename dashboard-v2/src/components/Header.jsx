@@ -200,14 +200,15 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
             {showUserMenu && (
               <div className="absolute right-0 mt-4 w-64 glass rounded-2xl overflow-hidden border border-border shadow-2xl p-2 animate-in slide-in-from-top-2 duration-200 z-[200]">
                 <div className="px-3 py-2 border-b border-white/10 mb-1">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">Perfil de Acesso Ativo</p>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">Perfil de Acesso Neste Dispositivo</p>
                   <div className="flex gap-1 mt-2">
                     {[
                       { id: 'gerente', label: '👑 Gerente' },
                       { id: 'encarregado', label: '👷 Supervisor' },
                       { id: 'operador', label: '🧑‍🔧 Operador' },
                     ].map(r => {
-                      const active = (user?.company_role || 'gerente') === r.id;
+                      const deviceRole = localStorage.getItem('mach3_device_role') || user?.company_role || 'gerente';
+                      const active = deviceRole === r.id;
                       return (
                         <button
                           key={r.id}
@@ -223,37 +224,14 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
                             }
 
                             try {
-                              const token = localStorage.getItem('mach3_token');
-                              let resp = await fetch('/api/user/company-role', {
-                                method: 'POST',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                  'Authorization': token ? `Bearer ${token}` : ''
-                                },
-                                body: JSON.stringify({ company_role: r.id, pin })
-                              });
-                              let data = await resp.json();
-
-                              if (data && data.error && (data.error.includes('Senha') || data.error.includes('incorreta'))) {
-                                const retryPin = prompt(`[${r.label}] ${data.error}\nDigite a Senha:`);
-                                if (retryPin !== null) {
-                                  resp = await fetch('/api/user/company-role', {
-                                    method: 'POST',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                      'Authorization': token ? `Bearer ${token}` : ''
-                                    },
-                                    body: JSON.stringify({ company_role: r.id, pin: retryPin })
-                                  });
-                                  data = await resp.json();
-                                }
+                              const verifyResp = await api.verifyPin(r.id, pin);
+                              if (verifyResp && verifyResp.error) {
+                                alert(verifyResp.error);
+                                return;
                               }
-
-                              if (data && data.error) {
-                                alert(data.error);
-                              } else {
-                                window.location.href = '/';
-                              }
+                              // Set device role for THIS device
+                              localStorage.setItem('mach3_device_role', r.id);
+                              window.location.href = '/';
                             } catch (e) {
                               alert('Erro ao alterar perfil: ' + (e?.message || 'Tente novamente'));
                             }

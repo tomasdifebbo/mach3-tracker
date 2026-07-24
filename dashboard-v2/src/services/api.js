@@ -149,6 +149,15 @@ export const api = {
     return safeJson(resp);
   },
 
+  verifyPin: async (role, pin) => {
+    const resp = await fetch(`${API_URL}/api/user/verify-pin`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ role, pin })
+    });
+    return safeJson(resp);
+  },
+
   // Stats
   getStats: async () => {
     const resp = await fetch(`${API_URL}/api/stats`, {

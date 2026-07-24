@@ -43,7 +43,7 @@ export function Sidebar({ activeSection, onSectionChange, user, maintenance = []
     });
   }, [maintenance]);
 
-  const companyRole = user?.company_role || 'gerente';
+  const companyRole = localStorage.getItem('mach3_device_role') || user?.company_role || 'gerente';
 
   const ROLE_ALLOWED_SECTIONS = {
     gerente: ['dashboard', 'operador', 'jobs', 'charts', 'materials', 'maintenance', 'encarregado', 'settings'],

@@ -46,9 +46,12 @@ function App() {
       }
       setIsTrialExpired(trialExpired);
 
-      // Feature / Expiration Redirection Check
+      // Feature / Device Role Redirection Check
+      const deviceRole = localStorage.getItem('mach3_device_role') || userData?.company_role || 'gerente';
       if (trialExpired) {
         setActiveSection('settings');
+      } else if (deviceRole === 'operador') {
+        setActiveSection('operador');
       } else if (userData?.features && userData.features['dashboard'] === false) {
         // If dashboard is disabled by Master Admin, find first allowed section
         const firstAllowed = Object.keys(userData.features).find(k => userData.features[k] === true && k !== 'dashboard');
@@ -155,7 +158,8 @@ function App() {
       return <Settings user={user} onRefresh={loadUser} isTrialExpired={isTrialExpired} />;
     }
 
-    if (user?.company_role === 'operador' && activeSection === 'settings') {
+    const deviceRole = localStorage.getItem('mach3_device_role') || user?.company_role || 'gerente';
+    if (deviceRole === 'operador' && activeSection === 'settings') {
       return (
         <div className="p-8 text-center space-y-4 animate-in fade-in duration-300">
           <div className="text-xl font-bold text-red-400">Acesso Restrito ao Operador</div>

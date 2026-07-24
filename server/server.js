@@ -790,6 +790,35 @@ const handleRoleUpdate = async (req, res) => {
 app.patch('/api/user/company-role', authenticateToken, handleRoleUpdate);
 app.post('/api/user/company-role', authenticateToken, handleRoleUpdate);
 
+app.post('/api/user/verify-pin', authenticateToken, async (req, res) => {
+    try {
+        const { role, pin } = req.body;
+        const user = (await pool.query('SELECT role, gerente_pin, supervisor_pin FROM users WHERE id = $1', [req.user.id])).rows[0];
+        if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
+
+        // Master Admins bypass PIN check
+        if (user.role === 'admin') {
+            return res.json({ success: true });
+        }
+
+        if (role === 'gerente' && user.gerente_pin && user.gerente_pin.trim()) {
+            if (!pin || String(pin).trim() !== String(user.gerente_pin).trim()) {
+                return res.status(401).json({ error: "Senha do Perfil Gerente incorreta!" });
+            }
+        }
+
+        if (role === 'encarregado' && user.supervisor_pin && user.supervisor_pin.trim()) {
+            if (!pin || String(pin).trim() !== String(user.supervisor_pin).trim()) {
+                return res.status(401).json({ error: "Senha do Perfil Supervisor incorreta!" });
+            }
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.patch('/api/user/profile-pins', authenticateToken, async (req, res) => {
     const { gerente_pin, supervisor_pin } = req.body;
     await pool.query(
