@@ -159,11 +159,11 @@ function App() {
     }
 
     const deviceRole = localStorage.getItem('mach3_device_role') || user?.company_role || 'gerente';
-    if (deviceRole === 'operador' && activeSection === 'settings') {
+    if (deviceRole === 'operador' && activeSection !== 'operador') {
       return (
         <div className="p-8 text-center space-y-4 animate-in fade-in duration-300">
           <div className="text-xl font-bold text-red-400">Acesso Restrito ao Operador</div>
-          <p className="text-sm text-text-muted">As configurações do sistema são restritas ao perfil de Gerente.</p>
+          <p className="text-sm text-text-muted">Histórico, Manutenção, Gráficos e Configurações são restritos a Coordenadores e Gerentes.</p>
           <button onClick={() => setActiveSection('operador')} className="px-6 py-2.5 bg-accent-cyan text-black font-bold rounded-xl text-xs uppercase tracking-widest cursor-pointer">
             Voltar ao Terminal do Operador
           </button>
