@@ -155,7 +155,7 @@ export function Materials({ materials = [], onRefresh }) {
                   {editingMaterial ? 'Editar Insumo' : 'Novo Insumo / Material'}
                 </h2>
                 <p className="text-sm text-text-muted">
-                  Cálculo automático de m² baseado na velocidade da fresa (feed rate) e largura do passo.
+                  Cálculo automático de m² baseado nas dimensões máximas (X × Y) atingidas pelo corte na chapa.
                 </p>
               </div>
             </div>
@@ -170,7 +170,7 @@ export function Materials({ materials = [], onRefresh }) {
           </div>
 
           <form onSubmit={handleAddOrUpdate} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Nome do Insumo */}
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1">Nome do Insumo</label>
@@ -197,25 +197,6 @@ export function Materials({ materials = [], onRefresh }) {
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="0.00" 
-                    className="w-full bg-white/5 border border-border px-11 py-3 rounded-2xl outline-none focus:border-accent-cyan/50 transition-all text-white font-bold text-sm"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Velocidade da Fresa (Feed Rate) */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-1 flex items-center justify-between">
-                  <span>Velocidade Fresa</span>
-                  <span className="text-accent-cyan font-mono text-[9px]">mm/min</span>
-                </label>
-                <div className="relative group">
-                  <Gauge size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-cyan transition-colors" />
-                  <input 
-                    type="number" 
-                    value={feedRate}
-                    onChange={(e) => setFeedRate(e.target.value)}
-                    placeholder="3000" 
                     className="w-full bg-white/5 border border-border px-11 py-3 rounded-2xl outline-none focus:border-accent-cyan/50 transition-all text-white font-bold text-sm"
                     required
                   />
@@ -385,8 +366,8 @@ export function Materials({ materials = [], onRefresh }) {
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span>Velocidade Fresa:</span>
-                      <span className="text-white font-bold">{fRate} mm/min</span>
+                      <span>Cálculo Consumo:</span>
+                      <span className="text-accent-cyan font-bold">Máximo X × Y (m²)</span>
                     </div>
                   </div>
                 </div>
