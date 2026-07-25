@@ -421,10 +421,32 @@ app.get('/api/routers', authenticateToken, async (req, res) => {
             )).rows[0];
 
             if (activeJob) {
+                let estMin = activeJob.estimated_minutes ? parseFloat(activeJob.estimated_minutes) : null;
+                
+                // If job was started manually via panel and lacks estimated_minutes,
+                // check recent router logs/jobs created by monitor.py or G-code watcher on this machine
+                if (!estMin) {
+                    const recentEst = (await pool.query(
+                        `SELECT estimated_minutes FROM jobs 
+                         WHERE "userId" = $1 
+                         AND (router_name ILIKE $2 OR router_name ILIKE $3 OR ($4 = true AND router_name ILIKE '%laser%')) 
+                         AND estimated_minutes IS NOT NULL 
+                         AND estimated_minutes > 0 
+                         ORDER BY start_time DESC LIMIT 1`,
+                        [req.user.id, `%${r.name}%`, `%${cleanName}%`, isLaser]
+                    )).rows[0];
+
+                    if (recentEst && recentEst.estimated_minutes) {
+                        estMin = parseFloat(recentEst.estimated_minutes);
+                        // Save to DB so active job retains this estimated time
+                        await pool.query('UPDATE jobs SET estimated_minutes = $1 WHERE id = $2', [estMin, activeJob.id]);
+                    }
+                }
+
                 r.current_job = activeJob.file_name;
                 r.current_job_id = activeJob.id;
                 r.start_time = activeJob.start_time;
-                r.estimated_minutes = activeJob.estimated_minutes ? parseFloat(activeJob.estimated_minutes) : null;
+                r.estimated_minutes = estMin;
                 r.operator_name = activeJob.operator_name || r.operator_name || null;
                 r.status = 'cortando';
             } else {
@@ -1021,7 +1043,24 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
         }
     }
 
-    const estMin = estimated_minutes ? parseFloat(estimated_minutes) : null;
+    let estMin = estimated_minutes ? parseFloat(estimated_minutes) : null;
+    if (!estMin && router_name) {
+        const isLaser = router_name.toLowerCase().includes('laser');
+        const cleanName = router_name.replace(/ruida/i, '').replace(/co2|co₂/i, '').trim();
+        const recentEst = (await pool.query(
+            `SELECT estimated_minutes FROM jobs 
+             WHERE "userId" = $1 
+             AND (router_name ILIKE $2 OR router_name ILIKE $3 OR ($4 = true AND router_name ILIKE '%laser%')) 
+             AND estimated_minutes IS NOT NULL 
+             AND estimated_minutes > 0 
+             ORDER BY start_time DESC LIMIT 1`,
+            [userId, `%${router_name}%`, `%${cleanName}%`, isLaser]
+        )).rows[0];
+
+        if (recentEst && recentEst.estimated_minutes) {
+            estMin = parseFloat(recentEst.estimated_minutes);
+        }
+    }
 
     const result = await pool.query('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, "userId", router_name, estimated_minutes, material_id, material_name, material_price, operator_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id', 
         [cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, router_name || null, estMin, req.body.material_id || null, req.body.material_name || null, req.body.material_price || null, operatorName]);
