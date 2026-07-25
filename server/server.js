@@ -974,15 +974,18 @@ function matchKanbanTitle(jobFileName, jobFolder, cardTitle) {
     return false;
 }
 
-async function autoSyncKanban(userId, jobFileName, jobFolder, routerName, targetStatus) {
+async function autoSyncKanban(userId, jobFileName, jobFolder, routerName, targetStatus, operatorName) {
     try {
         const tasks = (await pool.query('SELECT * FROM kanban_tasks WHERE "userId" = $1', [userId])).rows;
+        let matched = false;
+
         for (const task of tasks) {
             if (matchKanbanTitle(jobFileName, jobFolder, task.title)) {
+                matched = true;
                 if (targetStatus === 'doing' && task.column_id === 'todo') {
                     await pool.query(
-                        'UPDATE kanban_tasks SET column_id = $1, machine = COALESCE($2, machine) WHERE id = $3 AND "userId" = $4',
-                        ['doing', routerName || null, task.id, userId]
+                        'UPDATE kanban_tasks SET column_id = $1, machine = COALESCE($2, machine), operator = COALESCE($3, operator) WHERE id = $4 AND "userId" = $5',
+                        ['doing', routerName || null, operatorName || null, task.id, userId]
                     );
                     console.log(`[KANBAN AUTO-SYNC] Card "${task.title}" (ID ${task.id}) moved from TODO -> DOING (${routerName})`);
                 } else if (targetStatus === 'done' && task.column_id === 'doing') {
@@ -993,6 +996,17 @@ async function autoSyncKanban(userId, jobFileName, jobFolder, routerName, target
                     console.log(`[KANBAN AUTO-SYNC] Card "${task.title}" (ID ${task.id}) moved DOING -> DONE`);
                 }
             }
+        }
+
+        // If job started and no Kanban task matched, automatically add service O.S. based on log!
+        if (!matched && targetStatus === 'doing' && jobFileName && jobFileName !== 'Desconhecido') {
+            const todayStr = new Date().toISOString().split('T')[0];
+            await pool.query(
+                `INSERT INTO kanban_tasks (title, machine, operator, date, priority, column_id, "userId") 
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [jobFileName, routerName || 'Router CNC', operatorName || 'Operador', todayStr, 'alta', 'doing', userId]
+            );
+            console.log(`[KANBAN AUTO-CREATE] Auto-created O.S. card "${jobFileName}" from log on ${routerName}`);
         }
     } catch (err) {
         console.error('[KANBAN AUTO-SYNC ERROR]', err.message);

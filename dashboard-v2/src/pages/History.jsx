@@ -10,7 +10,8 @@ import {
   FileText,
   FileDown,
   Check,
-  X
+  X,
+  PlusCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
@@ -200,6 +201,23 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       onRefresh();
     } catch (err) {
       alert('Erro ao atualizar material');
+    }
+  };
+
+  const handleCreateKanbanFromJob = async (job) => {
+    try {
+      await api.post('/kanban', {
+        title: job.file_name,
+        machine: job.router_name || 'Router CNC',
+        operator: job.operator_name || 'Operador',
+        priority: 'alta',
+        column_id: 'doing',
+        date: new Date().toISOString().split('T')[0]
+      });
+      alert(`Serviço "${job.file_name}" adicionado com sucesso como Ordem de Serviço no Kanban!`);
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      alert('Erro ao criar O.S. a partir do log: ' + err.message);
     }
   };
 
@@ -472,12 +490,23 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                           </button>
                         </div>
                       ) : (
-                        <button 
-                          onClick={() => setConfirmDeleteId(job.id)}
-                          className="p-2.5 bg-white/5 border border-border text-text-muted hover:text-white hover:bg-accent-danger/20 hover:border-accent-danger/40 transition-all rounded-xl shadow-lg opacity-40 group-hover:opacity-100"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleCreateKanbanFromJob(job)}
+                            className="px-2.5 py-1.5 bg-accent-cyan/10 hover:bg-accent-cyan/20 border border-accent-cyan/30 text-accent-cyan rounded-xl text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                            title="Adicionar este serviço do log como Ordem de Serviço no Kanban"
+                          >
+                            <PlusCircle size={13} />
+                            <span>Gerar O.S.</span>
+                          </button>
+                          <button 
+                            onClick={() => setConfirmDeleteId(job.id)}
+                            className="p-2.5 bg-white/5 border border-border text-text-muted hover:text-white hover:bg-accent-danger/20 hover:border-accent-danger/40 transition-all rounded-xl shadow-lg"
+                            title="Excluir do histórico"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       )}
                     </div>
                   </td>
