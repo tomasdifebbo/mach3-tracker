@@ -5,6 +5,14 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 
+const formatDuration = (minutes) => {
+  if (minutes === null || minutes === undefined) return "00:00:00";
+  const h = Math.floor(minutes / 60);
+  const m = Math.floor(minutes % 60);
+  const s = Math.floor((minutes * 60) % 60);
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+};
+
 export function Operador({ jobs = [], routers = [], onRefresh }) {
   const [operatorName, setOperatorName] = useState(localStorage.getItem('mach3_operator_name') || 'Operador Principal');
   const [activeTab, setActiveTab] = useState('os'); // 'os' | 'checklists' | 'ocorrencia'
@@ -156,6 +164,32 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
 
   const activeJobs = kanbanTasks.filter(t => t.column_id === 'doing' || t.column_id === 'todo');
 
+  const activeCuttingJobs = React.useMemo(() => {
+    const openFromJobs = jobs.filter(j => !j.end_time);
+    const list = [...openFromJobs];
+
+    routers.forEach(r => {
+      if ((r.status === 'cortando' || r.current_job) && r.start_time) {
+        const existing = list.find(j => 
+          (j.router_name && r.name && j.router_name.toLowerCase() === r.name.toLowerCase()) ||
+          (j.file_name && r.current_job && j.file_name.toLowerCase() === r.current_job.toLowerCase())
+        );
+        if (!existing) {
+          list.push({
+            id: r.current_job_id || `router-${r.id}`,
+            file_name: r.current_job || 'Corte em Andamento',
+            folder: r.operator_name ? `Operador: ${r.operator_name}` : 'Produção ativa na máquina',
+            router_name: r.name,
+            start_time: r.start_time,
+            estimated_minutes: r.estimated_minutes
+          });
+        }
+      }
+    });
+
+    return list;
+  }, [jobs, routers]);
+
   const [now, setNow] = useState(Date.now());
   const [selectedTaskToStart, setSelectedTaskToStart] = useState({});
 
@@ -246,6 +280,93 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
           </button>
         </div>
       </div>
+
+      {/* Painel de Previsão de Cortes em Andamento em Tempo Real */}
+      {activeCuttingJobs.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-sm font-black uppercase tracking-wider text-accent-cyan flex items-center gap-2">
+              <Play size={16} className="animate-pulse" fill="currentColor" />
+              <span>Cortes em Andamento em Tempo Real ({activeCuttingJobs.length})</span>
+            </h3>
+            <span className="text-[10px] font-bold text-text-muted">Acompanhamento e Previsão ao Vivo</span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {activeCuttingJobs.map(job => {
+              const startDt = new Date(job.start_time);
+              const elapsedMin = Math.max(0, (now - startDt.getTime()) / 60000);
+              const estMin = job.estimated_minutes;
+              const hasEstimate = estMin && estMin > 0;
+              const progress = hasEstimate ? Math.min(100, (elapsedMin / estMin) * 100) : null;
+              const remaining = hasEstimate ? Math.max(0, estMin - elapsedMin) : null;
+              const eta = hasEstimate ? new Date(startDt.getTime() + estMin * 60000) : null;
+              const isNearEnd = progress !== null && progress >= 85;
+
+              return (
+                <div 
+                  key={job.id}
+                  className="bg-accent-cyan/10 border border-accent-cyan/30 rounded-2xl p-4 md:p-6 shadow-[0_0_30px_rgba(6,182,212,0.1)] transition-all"
+                >
+                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-3 gap-4 md:gap-0">
+                    <div className="flex items-center gap-4 md:gap-6">
+                      <div className={`w-10 h-10 md:w-12 md:h-12 shrink-0 rounded-xl flex items-center justify-center text-black ${isNearEnd ? 'bg-accent-success animate-pulse' : 'bg-accent-cyan animate-pulse'}`}>
+                        <Play size={20} className="md:w-6 md:h-6" fill="currentColor" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/20 px-2 py-0.5 rounded">
+                            {job.router_name || 'MÁQUINA'} - EM ANDAMENTO
+                          </span>
+                          <h3 className="text-lg font-bold text-white uppercase truncate max-w-xs md:max-w-md">{job.file_name}</h3>
+                        </div>
+                        <p className="text-xs text-text-muted font-medium opacity-70 truncate max-w-[200px] sm:max-w-sm">{job.folder || 'Sem pasta / O.S. vinculada'}</p>
+                      </div>
+                    </div>
+                    <div className="text-left md:text-right">
+                      <div className="text-2xl md:text-3xl font-mono font-bold text-accent-cyan tracking-tighter tabular-nums">
+                         {formatDuration(elapsedMin)}
+                      </div>
+                      {hasEstimate && (
+                        <div className="text-[10px] font-bold text-text-muted mt-1">
+                          Estimado: {formatDuration(estMin)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Barra de Progresso e Previsão ETA */}
+                  {hasEstimate && (
+                    <div className="mt-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1.5 gap-1 sm:gap-0">
+                        <span className={`text-xs font-bold ${isNearEnd ? 'text-accent-success' : 'text-accent-cyan'}`}>
+                          {progress.toFixed(1)}% concluído
+                        </span>
+                        <span className="text-[10px] sm:text-xs font-bold text-text-muted">
+                          {remaining > 0 
+                            ? `Faltam ${Math.floor(remaining)}min ${Math.floor((remaining % 1) * 60)}s · ETA ${eta.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}` 
+                            : '✅ Finalização prevista atingida!'
+                          }
+                        </span>
+                      </div>
+                      <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden relative">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            isNearEnd 
+                              ? 'bg-gradient-to-r from-accent-cyan to-accent-success shadow-[0_0_12px_rgba(16,185,129,0.5)]' 
+                              : 'bg-accent-cyan shadow-[0_0_12px_rgba(6,182,212,0.5)]'
+                          }`}
+                          style={{ width: `${Math.min(progress, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Cards de Maquinário em Tempo Real com Seleção de Operador por Máquina */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
