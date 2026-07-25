@@ -421,23 +421,10 @@ app.get('/api/routers', authenticateToken, async (req, res) => {
             )).rows[0];
 
             if (activeJob) {
-                let estMin = activeJob.estimated_minutes ? parseFloat(activeJob.estimated_minutes) : null;
-                if (!estMin) {
-                    const kTask = (await pool.query('SELECT estimated_minutes FROM kanban_tasks WHERE "userId" = $1 AND title ILIKE $2 LIMIT 1', [req.user.id, `%${activeJob.file_name}%`])).rows[0];
-                    if (kTask && kTask.estimated_minutes) {
-                        estMin = parseFloat(kTask.estimated_minutes);
-                    } else {
-                        const histJob = (await pool.query('SELECT duration_minutes FROM jobs WHERE "userId" = $1 AND file_name ILIKE $2 AND duration_minutes > 0.1 ORDER BY id DESC LIMIT 1', [req.user.id, `%${activeJob.file_name}%`])).rows[0];
-                        if (histJob && histJob.duration_minutes) {
-                            estMin = parseFloat(histJob.duration_minutes);
-                        }
-                    }
-                }
-
                 r.current_job = activeJob.file_name;
                 r.current_job_id = activeJob.id;
                 r.start_time = activeJob.start_time;
-                r.estimated_minutes = estMin;
+                r.estimated_minutes = activeJob.estimated_minutes ? parseFloat(activeJob.estimated_minutes) : null;
                 r.operator_name = activeJob.operator_name || r.operator_name || null;
                 r.status = 'cortando';
             } else {
@@ -1034,18 +1021,7 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
         }
     }
 
-    let estMin = estimated_minutes ? parseFloat(estimated_minutes) : null;
-    if (!estMin) {
-        const kTask = (await pool.query('SELECT estimated_minutes FROM kanban_tasks WHERE "userId" = $1 AND title ILIKE $2 LIMIT 1', [userId, `%${cleanFileName}%`])).rows[0];
-        if (kTask && kTask.estimated_minutes) {
-            estMin = parseFloat(kTask.estimated_minutes);
-        } else {
-            const histJob = (await pool.query('SELECT duration_minutes FROM jobs WHERE "userId" = $1 AND file_name ILIKE $2 AND duration_minutes > 0.1 ORDER BY id DESC LIMIT 1', [userId, `%${cleanFileName}%`])).rows[0];
-            if (histJob && histJob.duration_minutes) {
-                estMin = parseFloat(histJob.duration_minutes);
-            }
-        }
-    }
+    const estMin = estimated_minutes ? parseFloat(estimated_minutes) : null;
 
     const result = await pool.query('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, "userId", router_name, estimated_minutes, material_id, material_name, material_price, operator_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id', 
         [cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, router_name || null, estMin, req.body.material_id || null, req.body.material_name || null, req.body.material_price || null, operatorName]);
