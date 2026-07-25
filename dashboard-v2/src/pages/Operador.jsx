@@ -224,6 +224,17 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
     }
   };
 
+  const handleSetJobEstimate = async (job, minutes) => {
+    try {
+      if (job.id && typeof job.id === 'number') {
+        await api.patch(`/jobs/${job.id}`, { estimated_minutes: minutes });
+      }
+      if (onRefresh) await onRefresh();
+    } catch (err) {
+      console.error('Erro ao definir tempo estimado:', err);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-500">
       
@@ -358,6 +369,28 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                           }`}
                           style={{ width: `${Math.min(progress, 100)}%` }}
                         />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Quick estimate selector when no estimate exists */}
+                  {!hasEstimate && (
+                    <div className="mt-3 pt-2.5 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <span className="text-[11px] text-text-muted font-bold flex items-center gap-1">
+                        <Clock size={12} className="text-accent-cyan" />
+                        <span>Definir Previsão/Estimado:</span>
+                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {[10, 15, 30, 45, 60, 90].map(m => (
+                          <button
+                            key={m}
+                            type="button"
+                            onClick={() => handleSetJobEstimate(job, m)}
+                            className="px-2.5 py-1 bg-accent-cyan/15 hover:bg-accent-cyan text-accent-cyan hover:text-black border border-accent-cyan/30 rounded-lg text-[10px] font-black transition-all cursor-pointer"
+                          >
+                            +{m}m
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}
