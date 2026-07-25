@@ -168,6 +168,17 @@ export const api = {
     return resp.json();
   },
 
+  rescheduleKanban: async (id, new_date, reason) => {
+    const resp = await fetch(`${API_URL}/api/kanban/${id}/reschedule`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ new_date, reason })
+    });
+    const data = await safeJson(resp);
+    if (!resp.ok) throw new Error(data.error || `Erro ${resp.status}`);
+    return data;
+  },
+
   // Payments
   createPreference: async (planType) => {
     const resp = await fetch(`${API_URL}/api/payments/create-preference`, {

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   LayoutGrid, Calendar, Columns3, CheckSquare2, Package, TrendingUp,
   AlertCircle, CheckCircle2, Clock, Star, ChevronRight, Zap, Target,
-  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2, Edit2
+  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2, Edit2, CalendarClock
 } from 'lucide-react';
 import { api } from '../services/api';
 import { LinkProjectModal } from '../components/LinkProjectModal';
@@ -245,7 +245,7 @@ const PRIORITY_CONFIG = {
   baixa:   { color: 'bg-blue-400', label: 'Baixa', text: 'text-blue-400' },
 };
 
-function KanbanCard({ card, onDragStart, onClick, onArchive }) {
+function KanbanCard({ card, onDragStart, onClick, onArchive, onReschedule }) {
   const p = PRIORITY_CONFIG[card.priority] || PRIORITY_CONFIG.media;
   return (
     <div
@@ -270,18 +270,36 @@ function KanbanCard({ card, onDragStart, onClick, onArchive }) {
           {card.date && <span className="text-[10px] text-text-muted">📅 {card.date}</span>}
           {card.operator && <span className="text-[10px] text-text-muted">👤 {card.operator}</span>}
         </div>
+        {card.reschedule_reason && (
+          <div className="mt-2.5 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-[10px] text-yellow-300 space-y-0.5">
+            <div className="flex items-center gap-1 font-bold">
+              <CalendarClock size={11} className="text-yellow-400 shrink-0" />
+              <span>Reagendado ({card.rescheduled_date || card.date}):</span>
+            </div>
+            <p className="text-[9px] text-yellow-200/90 font-medium pl-3 truncate">Motivo: "{card.reschedule_reason}"</p>
+          </div>
+        )}
       </div>
-      {onArchive && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onArchive(card); }}
-          className="mt-3 w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all
-            bg-accent-success/10 text-accent-success border border-accent-success/20
-            hover:bg-accent-success/25 hover:border-accent-success/50 hover:shadow-sm hover:shadow-accent-success/20
-            opacity-0 group-hover:opacity-100"
-        >
-          <CheckCircle2 size={11} /> Arquivar
-        </button>
-      )}
+
+      <div className="mt-3 flex items-center gap-2">
+        {onReschedule && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onReschedule(card); }}
+            className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all bg-yellow-500/10 text-yellow-300 border border-yellow-500/20 hover:bg-yellow-500/20 opacity-0 group-hover:opacity-100 cursor-pointer"
+            title="Reagendar esta O.S."
+          >
+            <CalendarClock size={12} /> Reagendar
+          </button>
+        )}
+        {onArchive && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onArchive(card); }}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all bg-accent-success/10 text-accent-success border border-accent-success/20 hover:bg-accent-success/25 opacity-0 group-hover:opacity-100 cursor-pointer"
+          >
+            <CheckCircle2 size={11} /> Arquivar
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -622,6 +640,33 @@ function PainelKanban({ jobs = [] }) {
   const [selectedLinkJob, setSelectedLinkJob] = useState(null);
   const [selectedLinkRouter, setSelectedLinkRouter] = useState('');
 
+  // Reschedule Modal State
+  const [rescheduleCard, setRescheduleCard] = useState(null);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleReason, setRescheduleReason] = useState('');
+  const [submittingReschedule, setSubmittingReschedule] = useState(false);
+
+  const handleOpenReschedule = (card) => {
+    setRescheduleCard(card);
+    setRescheduleDate(new Date().toISOString().split('T')[0]);
+    setRescheduleReason('');
+  };
+
+  const handleConfirmReschedule = async (e) => {
+    e.preventDefault();
+    if (!rescheduleCard || !rescheduleReason.trim()) return;
+    setSubmittingReschedule(true);
+    try {
+      await api.rescheduleKanban(rescheduleCard.id, rescheduleDate, rescheduleReason.trim());
+      setRescheduleCard(null);
+      loadKanban();
+    } catch (err) {
+      alert('Erro ao reagendar O.S.: ' + err.message);
+    } finally {
+      setSubmittingReschedule(false);
+    }
+  };
+
   const dragCard = React.useRef(null);
   const dragFrom = React.useRef(null);
 
@@ -959,6 +1004,7 @@ function PainelKanban({ jobs = [] }) {
                   onDragStart={(e, id) => handleDragStart(e, id, col.id)}
                   onClick={(c) => setSelectedCard(c)}
                   onArchive={col.id === 'done' ? (c) => setQueuedForDone({ card: c, fromCol: col.id }) : null}
+                  onReschedule={(c) => handleOpenReschedule(c)}
                 />
               ))}
               {columns[col.id].length === 0 && (
@@ -992,6 +1038,90 @@ function PainelKanban({ jobs = [] }) {
           onConfirm={handleArchiveConfirm}
           onCancel={() => setQueuedForDone(null)}
         />
+      )}
+
+      {/* Modal: Reagendar Ordem de Serviço */}
+      {rescheduleCard && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setRescheduleCard(null)} />
+          
+          <form onSubmit={handleConfirmReschedule} className="relative z-10 w-full max-w-md bg-zinc-950 border border-yellow-500/30 p-6 md:p-8 rounded-3xl shadow-2xl space-y-5 text-white">
+            <div className="flex items-center gap-3 pb-4 border-b border-white/10">
+              <div className="p-3 bg-yellow-500/20 text-yellow-400 rounded-2xl">
+                <CalendarClock size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-white">Reagendar O.S.</h3>
+                <p className="text-xs text-text-muted truncate max-w-[260px]">{rescheduleCard.title}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-black uppercase text-text-muted block mb-1.5">Nova Data Prevista</label>
+                <input
+                  type="date"
+                  value={rescheduleDate}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-yellow-500 cursor-pointer"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase text-text-muted block mb-1.5">Motivo do Reagendamento *</label>
+                <textarea
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  placeholder="Ex: Falta de insumo MDF 15mm, Manutenção na Router 1, Troca de fresa..."
+                  rows={3}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-yellow-500 resize-none"
+                  required
+                />
+              </div>
+
+              {/* Chips de motivos frequentes */}
+              <div className="space-y-1">
+                <span className="text-[9px] font-bold uppercase text-text-muted">Motivos Frequentes:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    '📦 Falta de Insumo / Material',
+                    '🛠️ Manutenção na Máquina',
+                    '⚡ Troca de Fresa / Ferramenta',
+                    '📋 Reorganização da Fila',
+                    '👥 Aguardando Aprovação'
+                  ].map(chip => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => setRescheduleReason(chip)}
+                      className="px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[10px] text-text-muted hover:text-white transition-all cursor-pointer"
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setRescheduleCard(null)}
+                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-text-muted hover:text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={submittingReschedule || !rescheduleReason.trim()}
+                className="px-5 py-2 bg-yellow-500 hover:bg-yellow-600 disabled:opacity-50 text-black font-black uppercase text-xs rounded-xl transition-all shadow-lg shadow-yellow-500/20 cursor-pointer"
+              >
+                {submittingReschedule ? 'Reagendando...' : 'Confirmar Reagendamento'}
+              </button>
+            </div>
+          </form>
+        </div>
       )}
 
       {/* Archive History Panel */}

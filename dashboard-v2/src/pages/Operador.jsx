@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   UserCheck, Play, CheckCircle2, AlertTriangle, Clock, 
-  Wrench, CheckSquare, Layers, Cpu, ShieldAlert, Sparkles, RefreshCw, Edit2, Trash2
+  Wrench, CheckSquare, Layers, Cpu, ShieldAlert, Sparkles, RefreshCw, Edit2, Trash2, CalendarClock
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -24,6 +24,35 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
   const [newOpName, setNewOpName] = useState('');
   const [newOpShift, setNewOpShift] = useState('Geral');
   const [savingOp, setSavingOp] = useState(false);
+
+  // Reschedule Modal State
+  const [rescheduleTask, setRescheduleTask] = useState(null);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleReason, setRescheduleReason] = useState('');
+  const [submittingReschedule, setSubmittingReschedule] = useState(false);
+
+  const handleOpenReschedule = (task) => {
+    setRescheduleTask(task);
+    setRescheduleDate(new Date().toISOString().split('T')[0]);
+    setRescheduleReason('');
+  };
+
+  const handleConfirmReschedule = async (e) => {
+    e.preventDefault();
+    if (!rescheduleTask || !rescheduleReason.trim()) return;
+    setSubmittingReschedule(true);
+    try {
+      await api.rescheduleKanban(rescheduleTask.id, rescheduleDate, rescheduleReason.trim());
+      alert('Ordem de serviço reagendada com sucesso!');
+      setRescheduleTask(null);
+      fetchKanban();
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      alert('Erro ao reagendar O.S.: ' + err.message);
+    } finally {
+      setSubmittingReschedule(false);
+    }
+  };
 
   const fetchKanban = async () => {
     setLoadingTasks(true);
@@ -451,25 +480,45 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                       <div className="text-xs text-text-muted space-y-1">
                         <p><strong>Máquina:</strong> {task.machine || 'Geral'}</p>
                         <p><strong>Operador Designado:</strong> {task.operator || 'Livre'}</p>
+                        {task.date && <p><strong>Data Programada:</strong> {task.date}</p>}
                       </div>
+
+                      {task.reschedule_reason && (
+                        <div className="mt-3 p-2.5 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-[11px] text-yellow-300 space-y-0.5">
+                          <div className="flex items-center gap-1.5 font-bold">
+                            <CalendarClock size={13} className="text-yellow-400 shrink-0" />
+                            <span>Reagendado {task.reschedule_count > 1 ? `(${task.reschedule_count}x)` : ''}:</span>
+                          </div>
+                          <p className="text-[10px] text-yellow-200/90 font-medium pl-4">Motivo: "{task.reschedule_reason}"</p>
+                        </div>
+                      )}
                     </div>
 
                     <div className="pt-4 border-t border-white/5 flex items-center justify-between gap-2">
                       {!isDoing ? (
                         <button
                           onClick={() => handleMoveKanban(task.id, 'doing')}
-                          className="w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-black font-black uppercase text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                          className="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-black font-black uppercase text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
                         >
                           <Play size={14} /> Iniciar Produção
                         </button>
                       ) : (
                         <button
                           onClick={() => handleMoveKanban(task.id, 'done')}
-                          className="w-full py-2.5 bg-accent-success hover:bg-emerald-400 text-black font-black uppercase text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                          className="flex-1 py-2.5 bg-accent-success hover:bg-emerald-400 text-black font-black uppercase text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
                         >
                           <CheckCircle2 size={14} /> Marcar Concluído
                         </button>
                       )}
+
+                      <button
+                        onClick={() => handleOpenReschedule(task)}
+                        className="px-3 py-2.5 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 border border-yellow-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                        title="Reagendar esta Ordem de Serviço"
+                      >
+                        <CalendarClock size={15} />
+                        <span>Reagendar</span>
+                      </button>
                     </div>
                   </div>
                 );
@@ -682,6 +731,90 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Modal: Reagendar Ordem de Serviço */}
+      {rescheduleTask && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setRescheduleTask(null)} />
+          
+          <form onSubmit={handleConfirmReschedule} className="relative z-10 w-full max-w-md bg-zinc-950 border border-yellow-500/30 p-6 md:p-8 rounded-3xl shadow-2xl space-y-5 text-white">
+            <div className="flex items-center gap-3 pb-4 border-b border-white/10">
+              <div className="p-3 bg-yellow-500/20 text-yellow-400 rounded-2xl">
+                <CalendarClock size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-white">Reagendar O.S.</h3>
+                <p className="text-xs text-text-muted truncate max-w-[260px]">{rescheduleTask.title}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-black uppercase text-text-muted block mb-1.5">Nova Data Prevista</label>
+                <input
+                  type="date"
+                  value={rescheduleDate}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-yellow-500 cursor-pointer"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase text-text-muted block mb-1.5">Motivo do Reagendamento *</label>
+                <textarea
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  placeholder="Ex: Falta de insumo MDF 15mm, Manutenção na Router 1, Troca de fresa..."
+                  rows={3}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-yellow-500 resize-none"
+                  required
+                />
+              </div>
+
+              {/* Chips de motivos frequentes */}
+              <div className="space-y-1">
+                <span className="text-[9px] font-bold uppercase text-text-muted">Motivos Frequentes:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    '📦 Falta de Insumo / Material',
+                    '🛠️ Manutenção na Máquina',
+                    '⚡ Troca de Fresa / Ferramenta',
+                    '📋 Reorganização da Fila',
+                    '👥 Aguardando Aprovação'
+                  ].map(chip => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => setRescheduleReason(chip)}
+                      className="px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[10px] text-text-muted hover:text-white transition-all cursor-pointer"
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setRescheduleTask(null)}
+                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-text-muted hover:text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={submittingReschedule || !rescheduleReason.trim()}
+                className="px-5 py-2 bg-yellow-500 hover:bg-yellow-600 disabled:opacity-50 text-black font-black uppercase text-xs rounded-xl transition-all shadow-lg shadow-yellow-500/20 cursor-pointer"
+              >
+                {submittingReschedule ? 'Reagendando...' : 'Confirmar Reagendamento'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

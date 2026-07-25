@@ -228,6 +228,9 @@ async function initDb() {
                 column_id TEXT NOT NULL,
                 "userId" INTEGER
             );
+            ALTER TABLE kanban_tasks ADD COLUMN IF NOT EXISTS reschedule_reason TEXT;
+            ALTER TABLE kanban_tasks ADD COLUMN IF NOT EXISTS rescheduled_date TEXT;
+            ALTER TABLE kanban_tasks ADD COLUMN IF NOT EXISTS reschedule_count INTEGER DEFAULT 0;
 
             CREATE TABLE IF NOT EXISTS checklists (
                 id SERIAL PRIMARY KEY,
@@ -1362,14 +1365,53 @@ app.post('/api/kanban', authenticateToken, async (req, res) => {
 });
 
 app.patch('/api/kanban/:id', authenticateToken, async (req, res) => {
-    const { title, machine, operator, date, priority, column_id } = req.body;
+    const { title, machine, operator, date, priority, column_id, reschedule_reason, rescheduled_date, reschedule_count } = req.body;
     try {
         const r = await pool.query(
-            'UPDATE kanban_tasks SET title = COALESCE($1, title), machine = COALESCE($2, machine), operator = COALESCE($3, operator), date = COALESCE($4, date), priority = COALESCE($5, priority), column_id = COALESCE($6, column_id) WHERE id = $7 AND "userId" = $8 RETURNING *',
-            [title, machine, operator, date, priority, column_id, req.params.id, req.user.id]
+            `UPDATE kanban_tasks 
+             SET title = COALESCE($1, title), 
+                 machine = COALESCE($2, machine), 
+                 operator = COALESCE($3, operator), 
+                 date = COALESCE($4, date), 
+                 priority = COALESCE($5, priority), 
+                 column_id = COALESCE($6, column_id),
+                 reschedule_reason = COALESCE($7, reschedule_reason),
+                 rescheduled_date = COALESCE($8, rescheduled_date),
+                 reschedule_count = COALESCE($9, reschedule_count)
+             WHERE id = $10 AND "userId" = $11 RETURNING *`,
+            [title, machine, operator, date, priority, column_id, reschedule_reason, rescheduled_date, reschedule_count, req.params.id, req.user.id]
         );
         if (r.rowCount === 0) return res.status(404).json({ error: "Tarefa não encontrada." });
         res.json(r.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/kanban/:id/reschedule', authenticateToken, async (req, res) => {
+    const { new_date, reason } = req.body;
+    if (!reason || !reason.trim()) {
+        return res.status(400).json({ error: "Motivo do reagendamento é obrigatório." });
+    }
+    try {
+        const task = (await pool.query('SELECT * FROM kanban_tasks WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id])).rows[0];
+        if (!task) return res.status(404).json({ error: "Tarefa não encontrada." });
+
+        const dateVal = new_date || task.date || new Date().toISOString().split('T')[0];
+        const newCount = (task.reschedule_count || 0) + 1;
+
+        const updated = await pool.query(
+            `UPDATE kanban_tasks 
+             SET date = $1, 
+                 rescheduled_date = $1, 
+                 reschedule_reason = $2, 
+                 reschedule_count = $3, 
+                 column_id = 'todo' 
+             WHERE id = $4 AND "userId" = $5 RETURNING *`,
+            [dateVal, reason.trim(), newCount, req.params.id, req.user.id]
+        );
+
+        res.json(updated.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
