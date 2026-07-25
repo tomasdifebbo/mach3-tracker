@@ -59,16 +59,18 @@ class RuidaMonitor {
 
     async ensureRouterRecord() {
         try {
-            const res = await this.pool.query("SELECT id FROM routers WHERE name ILIKE '%laser%' LIMIT 1");
+            const res = await this.pool.query("SELECT id, name FROM routers WHERE name ILIKE '%laser%' LIMIT 1");
             if (res.rows.length > 0) {
                 this.laserRouterId = res.rows[0].id;
+                this.laserRouterName = res.rows[0].name;
             } else {
                 const newRec = await this.pool.query(
-                    "INSERT INTO routers (name, status, status_note) VALUES ($1, $2, $3) RETURNING id",
-                    ['Laser Ruida 192.168.0.174', 'active', 'Conectada na rede local via UDP 5005']
+                    "INSERT INTO routers (name, status, status_note) VALUES ($1, $2, $3) RETURNING id, name",
+                    ['Laser CO₂ Ruida', 'active', 'Conectada na rede local via UDP 5005']
                 );
                 this.laserRouterId = newRec.rows[0].id;
-                console.log(`[RUIDA MONITOR] Máquina 'Laser Ruida' registrada no DB com ID ${this.laserRouterId}`);
+                this.laserRouterName = newRec.rows[0].name;
+                console.log(`[RUIDA MONITOR] Máquina '${this.laserRouterName}' registrada no DB com ID ${this.laserRouterId}`);
             }
         } catch (err) {
             console.error('[RUIDA DB INIT ERROR]', err.message);
@@ -225,15 +227,16 @@ class RuidaMonitor {
                 const userId = users[0] ? users[0].id : 1;
 
                 const dt = new Date();
+                const targetRouterName = this.laserRouterName || 'Laser CO₂ Ruida';
                 const res = await this.pool.query(
                     'INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, "userId", router_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id',
-                    [jobName, 'Laser', 'IP:' + this.targetIp, dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, 'Laser Ruida']
+                    [jobName, 'Laser', 'IP:' + this.targetIp, dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, targetRouterName]
                 );
                 this.currentJobId = res.rows[0].id;
                 this.currentFileName = jobName;
 
                 if (this.autoSyncKanban) {
-                    this.autoSyncKanban(userId, jobName, 'Laser', 'Laser Ruida', 'doing');
+                    this.autoSyncKanban(userId, jobName, 'Laser', targetRouterName, 'doing');
                 }
             } else if (oldStatus === 'working' && newStatus !== 'working') {
                 if (this.currentJobId) {

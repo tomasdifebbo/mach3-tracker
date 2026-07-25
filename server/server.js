@@ -404,9 +404,20 @@ app.get('/api/routers', authenticateToken, async (req, res) => {
     try {
         const routers = (await pool.query('SELECT * FROM routers WHERE "userId" = $1 ORDER BY id ASC', [req.user.id])).rows;
         for (const r of routers) {
+            const isLaser = r.name.toLowerCase().includes('laser');
+            const cleanName = r.name.replace(/ruida/i, '').replace(/co2|co₂/i, '').trim();
+
             const activeJob = (await pool.query(
-                'SELECT * FROM jobs WHERE "userId" = $1 AND (router_name ILIKE $2 OR router_name ILIKE $3) AND end_time IS NULL ORDER BY start_time DESC LIMIT 1',
-                [req.user.id, `%${r.name}%`, `%${r.name.replace(/ruida/i, '').trim()}%`]
+                `SELECT * FROM jobs 
+                 WHERE "userId" = $1 
+                 AND (
+                   router_name ILIKE $2 
+                   OR router_name ILIKE $3 
+                   OR ($4 = true AND router_name ILIKE '%laser%')
+                 ) 
+                 AND end_time IS NULL 
+                 ORDER BY start_time DESC LIMIT 1`,
+                [req.user.id, `%${r.name}%`, `%${cleanName}%`, isLaser]
             )).rows[0];
 
             if (activeJob) {
@@ -1025,7 +1036,22 @@ app.patch('/api/jobs/latest', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const dt = end_time ? new Date(end_time) : new Date();
 
-    const row = (await pool.query('SELECT * FROM jobs WHERE "userId" = $1 AND end_time IS NULL AND router_name = $2 AND start_time <= $3 ORDER BY start_time DESC LIMIT 1', [userId, router_name || null, dt.toISOString()])).rows[0];
+    const isLaser = router_name && router_name.toLowerCase().includes('laser');
+    const cleanName = router_name ? router_name.replace(/ruida/i, '').replace(/co2|co₂/i, '').trim() : '';
+
+    const row = (await pool.query(
+        `SELECT * FROM jobs 
+         WHERE "userId" = $1 
+         AND end_time IS NULL 
+         AND (
+           router_name = $2 
+           OR router_name ILIKE $3 
+           OR ($4 = true AND router_name ILIKE '%laser%')
+         ) 
+         AND start_time <= $5 
+         ORDER BY start_time DESC LIMIT 1`,
+        [userId, router_name || null, `%${cleanName}%`, isLaser, dt.toISOString()]
+    )).rows[0];
     if (!row) return res.status(404).json({ error: "No open jobs found" });
 
     const startDt = new Date(row.start_time);
