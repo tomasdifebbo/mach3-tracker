@@ -119,8 +119,11 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       const ins = mat ? calculateInsumo({
         durationMinutes: j.duration_minutes || 0,
         pricePerM2: mat.price || 0,
-        feedRateMmMin: mat.feed_rate || 3000,
-        passWidthMm: mat.pass_width || 100
+        maxXMm: j.max_x,
+        maxYMm: j.max_y,
+        boundingAreaM2: j.bounding_area_m2,
+        sheetWidthMm: mat.sheet_width_mm,
+        sheetHeightMm: mat.sheet_height_mm
       }) : null;
       return [
         j.id,
@@ -181,8 +184,11 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
         const insumo = calculateInsumo({
           durationMinutes: job.duration_minutes || 0,
           pricePerM2: mat.price || 0,
-          feedRateMmMin: mat.feed_rate || 3000,
-          passWidthMm: mat.pass_width || 100
+          maxXMm: job.max_x,
+          maxYMm: job.max_y,
+          boundingAreaM2: job.bounding_area_m2,
+          sheetWidthMm: mat.sheet_width_mm,
+          sheetHeightMm: mat.sheet_height_mm
         });
 
         payload = {
@@ -425,8 +431,11 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                             const ins = calculateInsumo({
                               durationMinutes: job.duration_minutes || 0,
                               pricePerM2: m.price || 0,
-                              feedRateMmMin: m.feed_rate || 3000,
-                              passWidthMm: m.pass_width || 100
+                              maxXMm: job.max_x,
+                              maxYMm: job.max_y,
+                              boundingAreaM2: job.bounding_area_m2,
+                              sheetWidthMm: m.sheet_width_mm,
+                              sheetHeightMm: m.sheet_height_mm
                             });
                             return (
                               <button 
@@ -452,8 +461,11 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                       const ins = calculateInsumo({
                         durationMinutes: job.duration_minutes || 0,
                         pricePerM2: mat.price || 0,
-                        feedRateMmMin: mat.feed_rate || 3000,
-                        passWidthMm: mat.pass_width || 100
+                        maxXMm: job.max_x,
+                        maxYMm: job.max_y,
+                        boundingAreaM2: job.bounding_area_m2,
+                        sheetWidthMm: mat.sheet_width_mm,
+                        sheetHeightMm: mat.sheet_height_mm
                       });
                       return (
                         <span className="text-sm font-bold text-accent-cyan">

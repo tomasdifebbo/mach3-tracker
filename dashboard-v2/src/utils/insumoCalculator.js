@@ -1,29 +1,40 @@
 /**
  * Helper para cálculo de consumo de insumos por m²
  * 
- * Fórmula:
- * 1. Metro Linear (m) = (feedRateMmMin / 1000) * durationMinutes
- * 2. Metro Quadrado (m²) = Metro Linear * (passWidthMm / 1000)
- * 3. Custo Insumo (R$) = Metro Quadrado * pricePerM2
+ * Nova regra: Baseado nas dimensões máximas (X × Y) atingidas pelo corte na chapa.
+ * 1. Se boundingAreaM2 estiver disponível, usa a área exata.
+ * 2. Se maxXMm e maxYMm estiverem disponíveis, calcula: (maxXMm / 1000) * (maxYMm / 1000)
+ * 3. Caso contrário, usa as dimensões cadastradas da chapa/material (ex: 2.70m x 1.80m = 4.86 m²).
  */
-export function calculateInsumo({ durationMinutes = 0, pricePerM2 = 0, feedRateMmMin = 3000, passWidthMm = 100 }) {
-  const dur = Math.max(0, Number(durationMinutes) || 0);
+export function calculateInsumo({ 
+  durationMinutes = 0, 
+  pricePerM2 = 0, 
+  maxXMm = null, 
+  maxYMm = null, 
+  boundingAreaM2 = null, 
+  sheetWidthMm = 2700, 
+  sheetHeightMm = 1800 
+}) {
   const price = Math.max(0, Number(pricePerM2) || 0);
-  const feedRate = Math.max(1, Number(feedRateMmMin) || 3000); // mm/min
-  const passWidth = Math.max(1, Number(passWidthMm) || 100);   // mm
+  
+  let areaM2 = 0;
+  
+  if (boundingAreaM2 && Number(boundingAreaM2) > 0) {
+    areaM2 = Number(boundingAreaM2);
+  } else if (maxXMm && maxYMm && Number(maxXMm) > 0 && Number(maxYMm) > 0) {
+    areaM2 = (Number(maxXMm) / 1000) * (Number(maxYMm) / 1000);
+  } else {
+    // Dimensão máxima padrão da chapa (ex: 2.70m x 1.80m = 4.86 m²)
+    const sWidth = Math.max(100, Number(sheetWidthMm) || 2700);
+    const sHeight = Math.max(100, Number(sheetHeightMm) || 1800);
+    areaM2 = (sWidth / 1000) * (sHeight / 1000);
+  }
 
-  // Converter mm/min para m/min e multiplicar pelos minutos
-  const linearMeters = (feedRate / 1000) * dur;
-
-  // Converter mm para m e calcular área m²
-  const areaM2 = linearMeters * (passWidth / 1000);
-
-  // Custo total do insumo
   const totalCost = areaM2 * price;
 
   return {
-    linearMeters: Number(linearMeters.toFixed(2)),
-    areaM2: Number(areaM2.toFixed(3)),
+    linearMeters: 0,
+    areaM2: Number(areaM2.toFixed(2)),
     totalCost: Number(totalCost.toFixed(2))
   };
 }

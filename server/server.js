@@ -1076,8 +1076,12 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
         }
     }
 
-    const result = await pool.query('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, "userId", router_name, estimated_minutes, material_id, material_name, material_price, operator_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id', 
-        [cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, router_name || null, estMin, req.body.material_id || null, req.body.material_name || null, req.body.material_price || null, operatorName]);
+    const maxX = req.body.max_x ? parseFloat(req.body.max_x) : null;
+    const maxY = req.body.max_y ? parseFloat(req.body.max_y) : null;
+    const boundArea = req.body.bounding_area_m2 ? parseFloat(req.body.bounding_area_m2) : (maxX && maxY ? parseFloat(((maxX / 1000) * (maxY / 1000)).toFixed(3)) : null);
+
+    const result = await pool.query('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, "userId", router_name, estimated_minutes, material_id, material_name, material_price, operator_name, max_x, max_y, bounding_area_m2) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id', 
+        [cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, router_name || null, estMin, req.body.material_id || null, req.body.material_name || null, req.body.material_price || null, operatorName, maxX, maxY, boundArea]);
     
     // Auto-sync Kanban card: todo -> doing
     autoSyncKanban(userId, cleanFileName, cleanFolder, router_name, 'doing', operatorName);
@@ -1158,7 +1162,7 @@ app.get('/api/jobs', authenticateToken, async (req, res) => {
 });
 
 app.patch('/api/jobs/:id', authenticateToken, async (req, res) => {
-    const { material_id, material_name, material_price, folder, file_name, start_time, end_time, estimated_minutes } = req.body;
+    const { material_id, material_name, material_price, folder, file_name, start_time, end_time, estimated_minutes, max_x, max_y, bounding_area_m2 } = req.body;
     const fields = [];
     const values = [];
     let idx = 1;
@@ -1171,6 +1175,9 @@ app.patch('/api/jobs/:id', authenticateToken, async (req, res) => {
     if (start_time !== undefined) { fields.push(`start_time = $${idx++}`); values.push(start_time); }
     if (end_time !== undefined) { fields.push(`end_time = $${idx++}`); values.push(end_time); }
     if (estimated_minutes !== undefined) { fields.push(`estimated_minutes = $${idx++}`); values.push(estimated_minutes ? parseFloat(estimated_minutes) : null); }
+    if (max_x !== undefined) { fields.push(`max_x = $${idx++}`); values.push(max_x ? parseFloat(max_x) : null); }
+    if (max_y !== undefined) { fields.push(`max_y = $${idx++}`); values.push(max_y ? parseFloat(max_y) : null); }
+    if (bounding_area_m2 !== undefined) { fields.push(`bounding_area_m2 = $${idx++}`); values.push(bounding_area_m2 ? parseFloat(bounding_area_m2) : null); }
 
     if (fields.length === 0) return res.status(400).json({ error: "No fields to update" });
     values.push(req.params.id, req.user.id);

@@ -212,12 +212,14 @@ def process_queue():
         print(f"[v] {sucessos} eventos sincronizados com a nuvem!")
 
 def simulate_gcode_time(filepath):
-    """Estimate machining time from a G-code file (in minutes)."""
+    """Estimate machining time from a G-code file (in minutes) and extract X/Y bounding box dimensions."""
     try:
         feed_rate = 1000.0
         rapid_rate = 10000.0
         total_time = 0.0
         lx, ly, lz = 0.0, 0.0, 0.0
+        min_x, max_x = float('inf'), float('-inf')
+        min_y, max_y = float('inf'), float('-inf')
         
         with open(filepath, 'r', encoding='cp1252', errors='ignore') as f:
             for line in f:
@@ -235,6 +237,13 @@ def simulate_gcode_time(filepath):
                 ny = float(ym.group(1)) if ym else ly
                 nz = float(zm.group(1)) if zm else lz
                 
+                if xm:
+                    min_x = min(min_x, nx)
+                    max_x = max(max_x, nx)
+                if ym:
+                    min_y = min(min_y, ny)
+                    max_y = max(max_y, ny)
+
                 dist = math.sqrt((nx-lx)**2 + (ny-ly)**2 + (nz-lz)**2)
                 if dist > 0:
                     rate = rapid_rate if ('G00' in line or ('G0 ' in line and 'G01' not in line)) else feed_rate
@@ -242,10 +251,18 @@ def simulate_gcode_time(filepath):
                 
                 lx, ly, lz = nx, ny, nz
         
-        return round(total_time * 1.15, 2)  # 15% overhead for accel/decel
+        est_min = round(total_time * 1.15, 2)
+        bound_x = round(abs(max_x - min_x), 2) if (max_x > float('-inf') and min_x < float('inf')) else None
+        bound_y = round(abs(max_y - min_y), 2) if (max_y > float('-inf') and min_y < float('inf')) else None
+        
+        area_m2 = None
+        if bound_x and bound_y:
+            area_m2 = round((bound_x / 1000.0) * (bound_y / 1000.0), 3)
+
+        return est_min, bound_x, bound_y, area_m2
     except Exception as e:
-        print(f"[!] Erro ao simular tempo: {e}")
-        return None
+        print(f"[!] Erro ao simular tempo e dimensoes: {e}")
+        return None, None, None, None
 
 def processa_inicio(caminho, nome_arquivo, iso_time, origem):
     # Extract actual folder from full file path
@@ -258,18 +275,12 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem):
         project_name = "Desconhecido"
         skip_list = ["ROUTER", "ISOPOR", "ARQUIVO", "CNC", "ARQUIVOS", "2024", "2026", "TOMAS", "MACH3"]
         for p in reversed(folder_parts):
-            if p.upper() not in skip_list and len(p) > 2 and "." not in p:
+            if p and p.upper() not in skip_list and not p.startswith("{"):
                 project_name = p
                 break
-        if project_name == "Desconhecido" and folder_parts:
-            project_name = folder_parts[-1]
 
-    # Skip diagnostic PING lines
-    if "PING" in nome_arquivo.upper():
-        return
-
-    # Simulate machining time for progress bar
-    estimated = None
+    # Simulate machining time and bounding box dimensions for progress bar & m²
+    estimated, max_x_val, max_y_val, area_m2_val = None, None, None, None
     local_path = caminho
     unc_mappings = {
         r"\\TOMAS\arquivos 2024": r"E:\arquivos 2024",
@@ -281,9 +292,9 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem):
             break
     
     if os.path.exists(local_path):
-        estimated = simulate_gcode_time(local_path)
+        estimated, max_x_val, max_y_val, area_m2_val = simulate_gcode_time(local_path)
         if estimated:
-            print(f"[~] Tempo estimado: {estimated:.1f} min ({estimated/60:.1f}h)")
+            print(f"[~] Tempo estimado: {estimated:.1f} min | X={max_x_val}mm Y={max_y_val}mm Area={area_m2_val}m2")
     
     # Auto-detect material from filename
     mat = find_material_match(nome_arquivo)
@@ -303,7 +314,10 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem):
         "estimated_minutes": estimated,
         "material_id": mat_id,
         "material_name": mat_name,
-        "material_price": mat_price
+        "material_price": mat_price,
+        "max_x": max_x_val,
+        "max_y": max_y_val,
+        "bounding_area_m2": area_m2_val
     }
     
     headers = get_headers()
