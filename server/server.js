@@ -410,11 +410,13 @@ app.get('/api/routers', authenticateToken, async (req, res) => {
                 r.current_job = activeJob.file_name;
                 r.current_job_id = activeJob.id;
                 r.start_time = activeJob.start_time;
+                r.estimated_minutes = activeJob.estimated_minutes ? parseFloat(activeJob.estimated_minutes) : null;
                 r.operator_name = activeJob.operator_name || r.operator_name || null;
                 r.status = 'cortando';
             } else {
                 r.current_job = null;
                 r.start_time = null;
+                r.estimated_minutes = null;
             }
         }
         res.json(routers);

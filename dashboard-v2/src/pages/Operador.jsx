@@ -223,13 +223,37 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
         {routers.map((m) => {
           const isCutting = m.status === 'cortando' || !!m.current_job;
           let runtimeFormatted = '00:00:00';
+          let startTimeFormatted = null;
+          let remainingFormatted = null;
+          let etaFormatted = null;
+          let progressPct = null;
 
           if (m.start_time) {
-            const diffSec = Math.max(0, Math.floor((now - new Date(m.start_time).getTime()) / 1000));
+            const startDt = new Date(m.start_time);
+            startTimeFormatted = startDt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            const diffSec = Math.max(0, Math.floor((now - startDt.getTime()) / 1000));
             const hrs = String(Math.floor(diffSec / 3600)).padStart(2, '0');
             const mins = String(Math.floor((diffSec % 3600) / 60)).padStart(2, '0');
             const secs = String(diffSec % 60).padStart(2, '0');
             runtimeFormatted = `${hrs}:${mins}:${secs}`;
+
+            // Check if there is an estimated time (either on router object or from jobs array)
+            const matchingJob = jobs.find(j => !j.end_time && j.router_name && (j.router_name.toLowerCase().includes(m.name.toLowerCase()) || m.name.toLowerCase().includes(j.router_name.toLowerCase())));
+            const estMin = m.estimated_minutes || (matchingJob ? matchingJob.estimated_minutes : null);
+
+            if (estMin && estMin > 0) {
+              const totalEstSec = Math.floor(estMin * 60);
+              const remSec = Math.max(0, totalEstSec - diffSec);
+              const rHrs = String(Math.floor(remSec / 3600)).padStart(2, '0');
+              const rMins = String(Math.floor((remSec % 3600) / 60)).padStart(2, '0');
+              const rSecs = String(remSec % 60).padStart(2, '0');
+              remainingFormatted = `${rHrs}:${rMins}:${rSecs}`;
+
+              const etaDt = new Date(startDt.getTime() + totalEstSec * 1000);
+              etaFormatted = etaDt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+              progressPct = Math.min(100, Math.round((diffSec / totalEstSec) * 100));
+            }
           }
 
           return (
@@ -269,10 +293,45 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                   <span>Job Atual:</span>
                   <span className="text-white font-bold truncate max-w-[140px]">{m.current_job || 'Nenhum'}</span>
                 </div>
+
+                {isCutting && startTimeFormatted && (
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span>Iniciado às:</span>
+                    <span className="text-white font-medium">{startTimeFormatted}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between items-center">
                   <span>Tempo Corrido:</span>
                   <span className="text-accent-cyan font-mono font-bold text-sm">{runtimeFormatted}</span>
                 </div>
+
+                {isCutting && remainingFormatted && (
+                  <>
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span>Tempo Restante:</span>
+                      <span className="text-orange-400 font-mono font-bold">{remainingFormatted}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span>Previsão (ETA):</span>
+                      <span className="text-accent-success font-mono font-bold">{etaFormatted}</span>
+                    </div>
+
+                    {/* Barra de progresso viva */}
+                    <div className="space-y-1 pt-1">
+                      <div className="flex justify-between text-[10px] font-bold">
+                        <span className="text-text-muted">Progresso do Corte</span>
+                        <span className="text-accent-cyan">{progressPct}%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-accent-cyan rounded-full transition-all duration-500"
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Controles de Início/Conclusão Manual pelo Operador */}
