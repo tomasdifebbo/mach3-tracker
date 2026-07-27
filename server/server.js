@@ -1002,15 +1002,23 @@ async function autoSyncKanban(userId, jobFileName, jobFolder, routerName, target
             }
         }
 
-        // If job started and no Kanban task matched, automatically add service O.S. based on log!
+        // If job started and no Kanban task matched by title:
         if (!matched && targetStatus === 'doing' && jobFileName && jobFileName !== 'Desconhecido') {
-            const todayStr = new Date().toISOString().split('T')[0];
-            await pool.query(
-                `INSERT INTO kanban_tasks (title, machine, operator, date, priority, column_id, "userId") 
-                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                [jobFileName, routerName || 'Router CNC', operatorName || 'Operador', todayStr, 'alta', 'doing', userId]
-            );
-            console.log(`[KANBAN AUTO-CREATE] Auto-created O.S. card "${jobFileName}" from log on ${routerName}`);
+            // Check if there is ALREADY an active card on this machine
+            const activeCardOnMachine = tasks.find(t => t.column_id === 'doing' && routerName && t.machine && (t.machine.toLowerCase().includes(routerName.toLowerCase()) || routerName.toLowerCase().includes(t.machine.toLowerCase())));
+            
+            if (activeCardOnMachine) {
+                // Preserves existing card when user renames it! DO NOT create a new duplicate card!
+                console.log(`[KANBAN AUTO-SYNC] Preserving existing active card "${activeCardOnMachine.title}" (ID ${activeCardOnMachine.id}) on ${routerName}`);
+            } else {
+                const todayStr = new Date().toISOString().split('T')[0];
+                await pool.query(
+                    `INSERT INTO kanban_tasks (title, machine, operator, date, priority, column_id, "userId") 
+                     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                    [jobFileName, routerName || 'Router CNC', operatorName || 'Operador', todayStr, 'alta', 'doing', userId]
+                );
+                console.log(`[KANBAN AUTO-CREATE] Auto-created O.S. card "${jobFileName}" from log on ${routerName}`);
+            }
         }
     } catch (err) {
         console.error('[KANBAN AUTO-SYNC ERROR]', err.message);
@@ -1454,6 +1462,8 @@ app.patch('/api/kanban/:id', authenticateToken, async (req, res) => {
     const { title, machine, operator, date, priority, column_id, reschedule_reason, rescheduled_date, reschedule_count, estimated_minutes } = req.body;
     const estMin = estimated_minutes !== undefined ? (estimated_minutes ? parseFloat(estimated_minutes) : null) : null;
     try {
+        const oldTask = (await pool.query('SELECT * FROM kanban_tasks WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id])).rows[0];
+
         const r = await pool.query(
             `UPDATE kanban_tasks 
              SET title = COALESCE($1, title), 
@@ -1470,16 +1480,26 @@ app.patch('/api/kanban/:id', authenticateToken, async (req, res) => {
             [title, machine, operator, date, priority, column_id, reschedule_reason, rescheduled_date, reschedule_count, estMin, req.params.id, req.user.id]
         );
         if (r.rowCount === 0) return res.status(404).json({ error: "Tarefa não encontrada." });
+        const updatedTask = r.rows[0];
+
+        // If title changed, sync active jobs so router logs match the updated card title
+        if (title && oldTask && oldTask.title !== title) {
+            await pool.query(
+                `UPDATE jobs SET file_name = $1 
+                 WHERE "userId" = $2 AND end_time IS NULL AND (file_name ILIKE $3 OR (router_name IS NOT NULL AND router_name ILIKE $4))`,
+                [title, req.user.id, `%${oldTask.title}%`, `%${updatedTask.machine || ''}%`]
+            );
+        }
 
         if (estMin) {
             await pool.query(
                 `UPDATE jobs SET estimated_minutes = $1 
                  WHERE "userId" = $2 AND end_time IS NULL AND (file_name ILIKE $3 OR folder ILIKE $3)`,
-                [estMin, req.user.id, `%${r.rows[0].title}%`]
+                [estMin, req.user.id, `%${updatedTask.title}%`]
             );
         }
 
-        res.json(r.rows[0]);
+        res.json(updatedTask);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
