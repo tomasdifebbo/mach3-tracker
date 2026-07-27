@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   LayoutGrid, Calendar, Columns3, CheckSquare2, Package, TrendingUp,
   AlertCircle, CheckCircle2, Clock, Star, ChevronRight, Zap, Target,
-  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2, Edit2, CalendarClock
+  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2, Edit2, CalendarClock, User
 } from 'lucide-react';
 import { api } from '../services/api';
 import { LinkProjectModal } from '../components/LinkProjectModal';
@@ -245,7 +245,7 @@ const PRIORITY_CONFIG = {
   baixa:   { color: 'bg-blue-400', label: 'Baixa', text: 'text-blue-400' },
 };
 
-function KanbanCard({ card, onDragStart, onClick, onArchive, onReschedule }) {
+function KanbanCard({ card, onDragStart, onClick, onArchive, onReschedule, operatorsList = [], onUpdateOperator }) {
   const p = PRIORITY_CONFIG[card.priority] || PRIORITY_CONFIG.media;
   return (
     <div
@@ -268,7 +268,7 @@ function KanbanCard({ card, onDragStart, onClick, onArchive, onReschedule }) {
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[10px] font-bold bg-white/10 px-2.5 py-1 rounded-full text-text-muted">{card.machine}</span>
           {card.date && <span className="text-[10px] text-text-muted">📅 {card.date}</span>}
-          {card.operator && <span className="text-[10px] text-text-muted">👤 {card.operator}</span>}
+          {card.operator && <span className="text-[10px] text-accent-cyan font-bold bg-accent-cyan/10 px-2 py-0.5 rounded border border-accent-cyan/20">👤 {card.operator}</span>}
         </div>
         {card.reschedule_reason && (
           <div className="mt-2.5 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-[10px] text-yellow-300 space-y-0.5">
@@ -279,6 +279,26 @@ function KanbanCard({ card, onDragStart, onClick, onArchive, onReschedule }) {
             <p className="text-[9px] text-yellow-200/90 font-medium pl-3 truncate">Motivo: "{card.reschedule_reason}"</p>
           </div>
         )}
+      </div>
+
+      {/* Selector para vincular operador em tempo real */}
+      <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between gap-1.5" onClick={(e) => e.stopPropagation()}>
+        <span className="text-[10px] text-text-muted font-bold flex items-center gap-1 shrink-0">
+          <User size={11} className="text-accent-cyan" /> Operador:
+        </span>
+        <select
+          value={card.operator || ''}
+          onChange={(e) => onUpdateOperator && onUpdateOperator(card.id, e.target.value)}
+          className="bg-black/60 border border-white/10 text-[10px] font-bold text-accent-cyan rounded-lg px-2 py-0.5 outline-none cursor-pointer hover:border-accent-cyan/40 transition-colors w-full max-w-[140px] truncate"
+        >
+          <option value="" className="bg-zinc-900 text-white">-- Vincular --</option>
+          {operatorsList.map(op => (
+            <option key={op.id || op.name} value={op.name} className="bg-zinc-900 text-white">👷 {op.name}</option>
+          ))}
+          {card.operator && !operatorsList.some(o => o.name === card.operator) && (
+            <option value={card.operator} className="bg-zinc-900 text-white">👷 {card.operator}</option>
+          )}
+        </select>
       </div>
 
       <div className="mt-3 flex items-center gap-2">
@@ -639,6 +659,38 @@ function PainelKanban({ jobs = [] }) {
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [selectedLinkJob, setSelectedLinkJob] = useState(null);
   const [selectedLinkRouter, setSelectedLinkRouter] = useState('');
+
+  const [operatorsList, setOperatorsList] = useState([]);
+
+  useEffect(() => {
+    const fetchOperators = async () => {
+      try {
+        const ops = await api.getOperators();
+        if (Array.isArray(ops)) setOperatorsList(ops);
+      } catch (err) {
+        console.error('Failed to load operators:', err);
+      }
+    };
+    fetchOperators();
+  }, []);
+
+  const handleUpdateTaskOperator = async (cardId, newOperator) => {
+    try {
+      await api.patch(`/kanban/${cardId}`, { operator: newOperator });
+      setColumns(prev => {
+        const next = { ...prev };
+        for (const colId in next) {
+          next[colId] = next[colId].map(c => 
+            String(c.id) === String(cardId) ? { ...c, operator: newOperator } : c
+          );
+        }
+        return next;
+      });
+    } catch (err) {
+      console.error('Failed to update card operator:', err);
+      loadKanban();
+    }
+  };
 
   // Reschedule Modal State
   const [rescheduleCard, setRescheduleCard] = useState(null);
@@ -1005,6 +1057,8 @@ function PainelKanban({ jobs = [] }) {
                   onClick={(c) => setSelectedCard(c)}
                   onArchive={col.id === 'done' ? (c) => setQueuedForDone({ card: c, fromCol: col.id }) : null}
                   onReschedule={(c) => handleOpenReschedule(c)}
+                  operatorsList={operatorsList}
+                  onUpdateOperator={handleUpdateTaskOperator}
                 />
               ))}
               {columns[col.id].length === 0 && (

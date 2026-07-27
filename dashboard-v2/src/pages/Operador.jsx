@@ -224,6 +224,15 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
     }
   };
 
+  const handleUpdateTaskOperator = async (taskId, newOperator) => {
+    try {
+      await api.patch(`/kanban/${taskId}`, { operator: newOperator });
+      fetchKanban();
+    } catch (err) {
+      console.error('Failed to update task operator:', err);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-500">
       
@@ -600,8 +609,28 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                       <h4 className="text-base font-bold text-white mb-2">{task.title}</h4>
                       <div className="text-xs text-text-muted space-y-1">
                         <p><strong>Máquina:</strong> {task.machine || 'Geral'}</p>
-                        <p><strong>Operador Designado:</strong> {task.operator || 'Livre'}</p>
-                        {task.date && <p><strong>Data Programada:</strong> {task.date}</p>}
+                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/5" onClick={(e) => e.stopPropagation()}>
+                          <span className="font-bold text-white flex items-center gap-1">
+                            <UserCheck size={13} className="text-accent-cyan" /> Operador:
+                          </span>
+                          <select
+                            value={task.operator || ''}
+                            onChange={(e) => handleUpdateTaskOperator(task.id, e.target.value)}
+                            className="bg-black/70 border border-accent-cyan/30 text-[11px] font-bold text-accent-cyan rounded-lg px-2.5 py-1 outline-none cursor-pointer hover:border-accent-cyan transition-colors"
+                          >
+                            <option value="" className="bg-zinc-900 text-white">-- Vincular Operador --</option>
+                            {operatorsList.map(op => (
+                              <option key={op.id || op.name} value={op.name} className="bg-zinc-900 text-white">👷 {op.name}</option>
+                            ))}
+                            {operatorName && !operatorsList.some(o => o.name === operatorName) && (
+                              <option value={operatorName} className="bg-zinc-900 text-white">👷 {operatorName}</option>
+                            )}
+                            {task.operator && !operatorsList.some(o => o.name === task.operator) && task.operator !== operatorName && (
+                              <option value={task.operator} className="bg-zinc-900 text-white">👷 {task.operator}</option>
+                            )}
+                          </select>
+                        </div>
+                        {task.date && <p className="pt-1"><strong>Data Programada:</strong> {task.date}</p>}
                       </div>
 
                       {task.reschedule_reason && (
