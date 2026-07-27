@@ -348,7 +348,39 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                           </span>
                           <h3 className="text-lg font-bold text-white uppercase truncate max-w-xs md:max-w-md">{job.file_name}</h3>
                         </div>
-                        <p className="text-xs text-text-muted font-medium opacity-70 truncate max-w-[200px] sm:max-w-sm">{job.folder || 'Sem pasta / O.S. vinculada'}</p>
+                        <div className="flex items-center gap-3 mt-1 flex-wrap">
+                          <p className="text-xs text-text-muted font-medium opacity-70 truncate max-w-[180px] sm:max-w-xs">{job.folder || 'Sem pasta / O.S. vinculada'}</p>
+                          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                            <span className="text-[11px] font-bold text-white flex items-center gap-1 shrink-0">
+                              <UserCheck size={13} className="text-accent-cyan" /> Operador:
+                            </span>
+                            <select
+                              value={job.operator_name || ''}
+                              onChange={async (e) => {
+                                const newOp = e.target.value;
+                                const targetRouter = routers.find(r => r.name && job.router_name && (r.name.toLowerCase().includes(job.router_name.toLowerCase()) || job.router_name.toLowerCase().includes(r.name.toLowerCase())));
+                                if (targetRouter) {
+                                  await handleAssignOperatorToMachine(targetRouter.id, newOp);
+                                } else {
+                                  await api.patch(`/jobs/${job.id}`, { operator_name: newOp });
+                                  if (onRefresh) onRefresh();
+                                }
+                              }}
+                              className="bg-black/80 border border-accent-cyan/40 text-[11px] font-bold text-accent-cyan rounded-lg px-2 py-0.5 outline-none cursor-pointer hover:border-accent-cyan transition-colors"
+                            >
+                              <option value="" className="bg-zinc-900 text-white">-- Vincular Operador ao Corte --</option>
+                              {operatorsList.map(op => (
+                                <option key={op.id || op.name} value={op.name} className="bg-zinc-900 text-white">👷 {op.name}</option>
+                              ))}
+                              {operatorName && !operatorsList.some(o => o.name === operatorName) && (
+                                <option value={operatorName} className="bg-zinc-900 text-white">👷 {operatorName}</option>
+                              )}
+                              {job.operator_name && !operatorsList.some(o => o.name === job.operator_name) && job.operator_name !== operatorName && (
+                                <option value={job.operator_name} className="bg-zinc-900 text-white">👷 {job.operator_name}</option>
+                              )}
+                            </select>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <div className="text-left md:text-right">
