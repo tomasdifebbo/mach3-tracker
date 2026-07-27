@@ -537,8 +537,10 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                       className="w-full bg-black/60 border border-white/10 text-[11px] font-medium text-white rounded-lg px-2 py-1 outline-none"
                     >
                       <option value="">-- Selecionar O.S. para Iniciar --</option>
-                      {kanbanTasks.filter(t => t.column_id === 'todo').map(t => (
-                        <option key={t.id} value={t.title}>📋 {t.title}</option>
+                      {kanbanTasks.filter(t => t.column_id === 'todo' || t.column_id === 'doing').map(t => (
+                        <option key={t.id} value={t.title}>
+                          {t.column_id === 'doing' ? '⚡ [Em Andamento] ' : '📋 [A Fazer] '}{t.title}
+                        </option>
                       ))}
                     </select>
                     <button

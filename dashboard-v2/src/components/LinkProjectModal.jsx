@@ -18,13 +18,13 @@ export function LinkProjectModal({ job, routerName, onClose, onSuccess }) {
       try {
         const cards = await api.get('/kanban');
         if (Array.isArray(cards)) {
-          // Filter only 'todo' tasks to show as options to link
-          const todoCards = cards.filter(c => c.column_id === 'todo');
-          setKanbanCards(todoCards);
-          if (todoCards.length > 0) {
-            setSelectedCardId(todoCards[0].id);
+          // Filter both 'todo' and 'doing' tasks to show as options to link
+          const activeCards = cards.filter(c => c.column_id === 'todo' || c.column_id === 'doing');
+          setKanbanCards(activeCards);
+          if (activeCards.length > 0) {
+            setSelectedCardId(activeCards[0].id);
           } else {
-            setMode('custom'); // Default to custom if no TODO cards exist
+            setMode('custom');
           }
         }
       } catch (err) {
