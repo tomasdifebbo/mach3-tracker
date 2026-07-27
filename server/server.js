@@ -231,6 +231,7 @@ async function initDb() {
             ALTER TABLE kanban_tasks ADD COLUMN IF NOT EXISTS reschedule_reason TEXT;
             ALTER TABLE kanban_tasks ADD COLUMN IF NOT EXISTS rescheduled_date TEXT;
             ALTER TABLE kanban_tasks ADD COLUMN IF NOT EXISTS reschedule_count INTEGER DEFAULT 0;
+            ALTER TABLE kanban_tasks ADD COLUMN IF NOT EXISTS estimated_minutes REAL;
 
             CREATE TABLE IF NOT EXISTS checklists (
                 id SERIAL PRIMARY KEY,
@@ -1436,11 +1437,12 @@ app.get('/api/kanban', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/kanban', authenticateToken, async (req, res) => {
-    const { title, machine, operator, date, priority, column_id } = req.body;
+    const { title, machine, operator, date, priority, column_id, estimated_minutes } = req.body;
+    const estMin = estimated_minutes ? parseFloat(estimated_minutes) : null;
     try {
         const r = await pool.query(
-            'INSERT INTO kanban_tasks (title, machine, operator, date, priority, column_id, "userId") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-            [title, machine || null, operator || null, date || null, priority || 'media', column_id || 'todo', req.user.id]
+            'INSERT INTO kanban_tasks (title, machine, operator, date, priority, column_id, "userId", estimated_minutes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            [title, machine || null, operator || null, date || null, priority || 'media', column_id || 'todo', req.user.id, estMin]
         );
         res.json(r.rows[0]);
     } catch (err) {
@@ -1449,7 +1451,8 @@ app.post('/api/kanban', authenticateToken, async (req, res) => {
 });
 
 app.patch('/api/kanban/:id', authenticateToken, async (req, res) => {
-    const { title, machine, operator, date, priority, column_id, reschedule_reason, rescheduled_date, reschedule_count } = req.body;
+    const { title, machine, operator, date, priority, column_id, reschedule_reason, rescheduled_date, reschedule_count, estimated_minutes } = req.body;
+    const estMin = estimated_minutes !== undefined ? (estimated_minutes ? parseFloat(estimated_minutes) : null) : null;
     try {
         const r = await pool.query(
             `UPDATE kanban_tasks 
@@ -1461,11 +1464,21 @@ app.patch('/api/kanban/:id', authenticateToken, async (req, res) => {
                  column_id = COALESCE($6, column_id),
                  reschedule_reason = COALESCE($7, reschedule_reason),
                  rescheduled_date = COALESCE($8, rescheduled_date),
-                 reschedule_count = COALESCE($9, reschedule_count)
-             WHERE id = $10 AND "userId" = $11 RETURNING *`,
-            [title, machine, operator, date, priority, column_id, reschedule_reason, rescheduled_date, reschedule_count, req.params.id, req.user.id]
+                 reschedule_count = COALESCE($9, reschedule_count),
+                 estimated_minutes = COALESCE($10, estimated_minutes)
+             WHERE id = $11 AND "userId" = $12 RETURNING *`,
+            [title, machine, operator, date, priority, column_id, reschedule_reason, rescheduled_date, reschedule_count, estMin, req.params.id, req.user.id]
         );
         if (r.rowCount === 0) return res.status(404).json({ error: "Tarefa não encontrada." });
+
+        if (estMin) {
+            await pool.query(
+                `UPDATE jobs SET estimated_minutes = $1 
+                 WHERE "userId" = $2 AND end_time IS NULL AND (file_name ILIKE $3 OR folder ILIKE $3)`,
+                [estMin, req.user.id, `%${r.rows[0].title}%`]
+            );
+        }
+
         res.json(r.rows[0]);
     } catch (err) {
         res.status(500).json({ error: err.message });

@@ -472,6 +472,7 @@ function KanbanCardModal({ card, onClose, onSave, onDelete }) {
   const [operator, setOperator] = useState(card.operator || '');
   const [date, setDate] = useState(card.date || '');
   const [priority, setPriority] = useState(card.priority || 'media');
+  const [estimatedMinutes, setEstimatedMinutes] = useState(card.estimated_minutes || '');
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -484,7 +485,8 @@ function KanbanCardModal({ card, onClose, onSave, onDelete }) {
         machine,
         operator,
         date,
-        priority
+        priority,
+        estimated_minutes: estimatedMinutes ? parseFloat(estimatedMinutes) : null
       });
       onClose();
     } catch (err) {
@@ -562,6 +564,18 @@ function KanbanCardModal({ card, onClose, onSave, onDelete }) {
           </div>
 
           <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">⏱️ Tempo Estimado (Minutos)</label>
+            <input 
+              type="number" 
+              placeholder="ex: 45"
+              value={estimatedMinutes} 
+              onChange={(e) => setEstimatedMinutes(e.target.value)} 
+              className="bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:border-orange-500 focus:outline-none transition-colors"
+            />
+          </div>
+        </div>
+
+          <div className="flex flex-col gap-1">
             <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Prazo</label>
             <input 
               type="text" 
@@ -571,7 +585,6 @@ function KanbanCardModal({ card, onClose, onSave, onDelete }) {
               className="bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:border-orange-500 focus:outline-none transition-colors"
             />
           </div>
-        </div>
 
         <div className="flex items-center gap-3 mt-4">
           {card.id && (

@@ -233,6 +233,25 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
     }
   };
 
+  const handleSetJobEstimate = async (job, minutes) => {
+    try {
+      if (job.id && typeof job.id === 'number') {
+        await api.patch(`/jobs/${job.id}`, { estimated_minutes: minutes });
+      }
+      const kTasks = await api.getKanban();
+      if (Array.isArray(kTasks)) {
+        const matchK = kTasks.find(t => job.file_name && t.title && (t.title.toLowerCase().includes(job.file_name.toLowerCase()) || job.file_name.toLowerCase().includes(t.title.toLowerCase())));
+        if (matchK) {
+          await api.patch(`/kanban/${matchK.id}`, { estimated_minutes: minutes });
+        }
+      }
+      if (onRefresh) await onRefresh();
+      fetchKanban();
+    } catch (err) {
+      console.error('Erro ao definir tempo estimado:', err);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-500">
       
@@ -336,11 +355,18 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                       <div className="text-2xl md:text-3xl font-mono font-bold text-accent-cyan tracking-tighter tabular-nums">
                          {formatDuration(elapsedMin)}
                       </div>
-                      {hasEstimate && (
-                        <div className="text-[10px] font-bold text-text-muted mt-1">
-                          Estimado: {formatDuration(estMin)}
-                        </div>
-                      )}
+                      <button
+                        onClick={() => {
+                          const val = prompt('Digite o tempo estimado para este corte em minutos (ex: 45):', estMin || '30');
+                          if (val && !isNaN(parseFloat(val))) {
+                            handleSetJobEstimate(job, parseFloat(val));
+                          }
+                        }}
+                        className="text-[10px] font-bold text-accent-cyan hover:text-white mt-1 underline cursor-pointer transition-colors block"
+                        title="Clique para definir ou ajustar o tempo estimado em minutos"
+                      >
+                        {hasEstimate ? `Estimado: ${formatDuration(estMin)} ✏️` : `⏱️ Definir Tempo Estimado`}
+                      </button>
                     </div>
                   </div>
 
