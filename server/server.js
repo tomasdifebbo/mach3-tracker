@@ -1785,6 +1785,24 @@ app.patch('/api/routers/:id/operator', authenticateToken, async (req, res) => {
     }
 });
 
+app.patch('/api/routers/:id/estimated', authenticateToken, async (req, res) => {
+    const { estimated_minutes } = req.body;
+    try {
+        const router = (await pool.query('SELECT * FROM routers WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id])).rows[0];
+        if (!router) return res.status(404).json({ error: 'Máquina não encontrada' });
+
+        const estVal = estimated_minutes ? parseFloat(estimated_minutes) : null;
+
+        await pool.query('UPDATE routers SET estimated_minutes = $1 WHERE id = $2 AND "userId" = $3', [estVal, req.params.id, req.user.id]);
+        await pool.query('UPDATE jobs SET estimated_minutes = $1 WHERE "userId" = $2 AND (router_name ILIKE $3 OR router_name ILIKE $4) AND end_time IS NULL', [estVal, req.user.id, `%${router.name}%`, `%${router.name.replace(/ruida/i, '').trim()}%`]);
+        await pool.query('UPDATE kanban_tasks SET estimated_minutes = $1 WHERE "userId" = $2 AND (machine ILIKE $3 OR machine ILIKE $4) AND column_id = $5', [estVal, req.user.id, `%${router.name}%`, `%${router.name.replace(/ruida/i, '').trim()}%`, 'doing']);
+
+        res.json({ success: true, estimated_minutes: estVal });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Kanban Archive API
 app.post('/api/kanban/archive', authenticateToken, async (req, res) => {
     const { kanban_id, title, machine, operator, priority, quality_rating, qty_approved, qty_rejected, observations } = req.body;

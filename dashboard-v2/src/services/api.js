@@ -227,6 +227,15 @@ export const api = {
     return safeJson(resp);
   },
 
+  updateRouterEstimated: async (id, estimated_minutes) => {
+    const resp = await fetch(`${API_URL}/api/routers/${id}/estimated`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ estimated_minutes })
+    });
+    return safeJson(resp);
+  },
+
   getOperators: async () => {
     const resp = await fetch(`${API_URL}/api/operators`, {
       headers: getAuthHeaders(),

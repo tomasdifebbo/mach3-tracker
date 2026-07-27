@@ -233,18 +233,40 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
     }
   };
 
+  const [editingEstimateJob, setEditingEstimateJob] = useState(null);
+
   const handleSetJobEstimate = async (job, minutes) => {
     try {
+      const numMin = parseFloat(minutes);
+      if (isNaN(numMin) || numMin <= 0) return;
+
       if (job.id && typeof job.id === 'number') {
-        await api.patch(`/jobs/${job.id}`, { estimated_minutes: minutes });
+        await api.patch(`/jobs/${job.id}`, { estimated_minutes: numMin }).catch(() => {});
       }
-      const kTasks = await api.getKanban();
-      if (Array.isArray(kTasks)) {
-        const matchK = kTasks.find(t => job.file_name && t.title && (t.title.toLowerCase().includes(job.file_name.toLowerCase()) || job.file_name.toLowerCase().includes(t.title.toLowerCase())));
-        if (matchK) {
-          await api.patch(`/kanban/${matchK.id}`, { estimated_minutes: minutes });
+
+      const rMatch = routers.find(r => r.name && job.router_name && (r.name.toLowerCase().includes(job.router_name.toLowerCase()) || job.router_name.toLowerCase().includes(r.name.toLowerCase())));
+      if (rMatch) {
+        await api.updateRouterEstimated(rMatch.id, numMin).catch(() => {});
+      }
+
+      if (job.router_name) {
+        const activeJobsList = jobs.filter(j => !j.end_time && j.router_name && (j.router_name.toLowerCase().includes(job.router_name.toLowerCase()) || job.router_name.toLowerCase().includes(j.router_name.toLowerCase())));
+        for (const aj of activeJobsList) {
+          await api.patch(`/jobs/${aj.id}`, { estimated_minutes: numMin }).catch(() => {});
         }
       }
+
+      const kTasks = await api.getKanban();
+      if (Array.isArray(kTasks)) {
+        const matchK = kTasks.find(t => 
+          (t.column_id === 'doing' && job.router_name && t.machine && t.machine.toLowerCase().includes(job.router_name.toLowerCase())) ||
+          (job.file_name && t.title && (t.title.toLowerCase().includes(job.file_name.toLowerCase()) || job.file_name.toLowerCase().includes(t.title.toLowerCase())))
+        );
+        if (matchK) {
+          await api.patch(`/kanban/${matchK.id}`, { estimated_minutes: numMin }).catch(() => {});
+        }
+      }
+
       if (onRefresh) await onRefresh();
       fetchKanban();
     } catch (err) {
@@ -388,11 +410,10 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                          {formatDuration(elapsedMin)}
                       </div>
                       <button
-                        onClick={() => {
-                          const val = prompt('Digite o tempo estimado para este corte em minutos (ex: 45):', estMin || '30');
-                          if (val && !isNaN(parseFloat(val))) {
-                            handleSetJobEstimate(job, parseFloat(val));
-                          }
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingEstimateJob(job);
                         }}
                         className="text-[10px] font-bold text-accent-cyan hover:text-white mt-1 underline cursor-pointer transition-colors block"
                         title="Clique para definir ou ajustar o tempo estimado em minutos"
@@ -1028,6 +1049,114 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
         </div>
       )}
 
+      {/* Modal: Definir Tempo Estimado de Corte */}
+      {editingEstimateJob && (
+        <EstimateModal 
+          job={editingEstimateJob} 
+          onClose={() => setEditingEstimateJob(null)} 
+          onSave={handleSetJobEstimate} 
+        />
+      )}
+
+    </div>
+  );
+}
+
+function EstimateModal({ job, onClose, onSave }) {
+  const [minutes, setMinutes] = useState(job?.estimated_minutes || '30');
+  const [submitting, setSubmitting] = useState(false);
+
+  const PRESETS = [10, 15, 30, 45, 60, 90, 120];
+
+  const handleConfirm = async (val) => {
+    const num = parseFloat(val);
+    if (isNaN(num) || num <= 0) return;
+    setSubmitting(true);
+    try {
+      await onSave(job, num);
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao salvar tempo estimado.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-md bg-zinc-950 border border-accent-cyan/30 p-6 md:p-8 rounded-3xl shadow-2xl space-y-6 text-white animate-in zoom-in-95 duration-200">
+        <div className="flex justify-between items-center pb-3 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-accent-cyan/20 text-accent-cyan rounded-2xl">
+              <Clock size={22} />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-white leading-tight">Definir Previsão de Corte</h3>
+              <p className="text-xs text-text-muted font-medium truncate max-w-[220px]">{job?.file_name || 'Corte CNC'}</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="text-text-muted hover:text-white transition-colors font-bold text-xs uppercase">Fechar</button>
+        </div>
+
+        {/* Seleção Rápida */}
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Seleção Rápida (Minutos)</label>
+          <div className="grid grid-cols-4 gap-2">
+            {PRESETS.map(m => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMinutes(m)}
+                className={`py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                  String(minutes) === String(m)
+                    ? 'bg-accent-cyan text-black border-accent-cyan shadow-lg shadow-accent-cyan/20 scale-105'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10 text-white'
+                }`}
+              >
+                +{m}m
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Digite em Minutos */}
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Ou Digite em Minutos</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min="1"
+              max="1440"
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value)}
+              className="flex-1 bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-lg font-mono font-bold text-accent-cyan focus:border-accent-cyan focus:outline-none transition-colors"
+              placeholder="ex: 45"
+            />
+            <span className="text-sm font-bold text-text-muted pr-2">minutos</span>
+          </div>
+        </div>
+
+        {/* Ações */}
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-3 rounded-xl border border-white/10 text-xs font-bold text-text-muted hover:text-white transition-colors uppercase tracking-wider cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            disabled={submitting || !minutes}
+            onClick={() => handleConfirm(minutes)}
+            className="flex-2 px-6 py-3 rounded-xl bg-gradient-to-r from-accent-cyan to-accent-blue text-black font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-accent-cyan/20 hover:opacity-90 disabled:opacity-50 cursor-pointer"
+          >
+            {submitting ? 'Salvando...' : 'Salvar Previsão'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
