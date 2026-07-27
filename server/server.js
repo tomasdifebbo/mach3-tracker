@@ -982,18 +982,21 @@ async function autoSyncKanban(userId, jobFileName, jobFolder, routerName, target
         for (const task of tasks) {
             if (matchKanbanTitle(jobFileName, jobFolder, task.title)) {
                 matched = true;
-                if (targetStatus === 'doing' && task.column_id === 'todo') {
+                if (targetStatus === 'doing') {
                     await pool.query(
                         'UPDATE kanban_tasks SET column_id = $1, machine = COALESCE($2, machine), operator = COALESCE($3, operator) WHERE id = $4 AND "userId" = $5',
                         ['doing', routerName || null, operatorName || null, task.id, userId]
                     );
-                    console.log(`[KANBAN AUTO-SYNC] Card "${task.title}" (ID ${task.id}) moved from TODO -> DOING (${routerName})`);
+                    console.log(`[KANBAN AUTO-SYNC] Card "${task.title}" (ID ${task.id}) moved -> DOING (${routerName})`);
                 } else if (targetStatus === 'done' && task.column_id === 'doing') {
-                    await pool.query(
-                        'UPDATE kanban_tasks SET column_id = $1 WHERE id = $2 AND "userId" = $3',
-                        ['done', task.id, userId]
-                    );
-                    console.log(`[KANBAN AUTO-SYNC] Card "${task.title}" (ID ${task.id}) moved DOING -> DONE`);
+                    const openJobs = (await pool.query('SELECT id FROM jobs WHERE "userId" = $1 AND end_time IS NULL AND (file_name ILIKE $2 OR folder ILIKE $2)', [userId, `%${task.title}%`])).rows;
+                    if (openJobs.length === 0) {
+                        await pool.query(
+                            'UPDATE kanban_tasks SET column_id = $1 WHERE id = $2 AND "userId" = $3',
+                            ['done', task.id, userId]
+                        );
+                        console.log(`[KANBAN AUTO-SYNC] Card "${task.title}" (ID ${task.id}) moved DOING -> DONE`);
+                    }
                 }
             }
         }
@@ -1419,14 +1422,7 @@ app.get('/api/kanban', authenticateToken, async (req, res) => {
         // Auto-sync open running jobs to 'doing'
         const openJobs = (await pool.query('SELECT * FROM jobs WHERE "userId" = $1 AND end_time IS NULL', [req.user.id])).rows;
         for (const j of openJobs) {
-            await autoSyncKanban(req.user.id, j.file_name, j.folder, j.router_name, 'doing');
-        }
-
-        // Auto-sync recent completed jobs to 'done'
-        const todayStr = new Date().toISOString().split('T')[0];
-        const doneJobs = (await pool.query('SELECT * FROM jobs WHERE "userId" = $1 AND end_time >= $2', [req.user.id, todayStr])).rows;
-        for (const j of doneJobs) {
-            await autoSyncKanban(req.user.id, j.file_name, j.folder, j.router_name, 'done');
+            await autoSyncKanban(req.user.id, j.file_name, j.folder, j.router_name, 'doing', j.operator_name);
         }
 
         const rows = (await pool.query(
