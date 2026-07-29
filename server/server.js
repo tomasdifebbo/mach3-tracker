@@ -1174,7 +1174,7 @@ app.get('/api/jobs', authenticateToken, async (req, res) => {
 });
 
 app.patch('/api/jobs/:id', authenticateToken, async (req, res) => {
-    const { material_id, material_name, material_price, folder, file_name, start_time, end_time, estimated_minutes, max_x, max_y, bounding_area_m2 } = req.body;
+    const { material_id, material_name, material_price, folder, file_name, start_time, end_time, estimated_minutes, max_x, max_y, bounding_area_m2, operator_name } = req.body;
     const fields = [];
     const values = [];
     let idx = 1;
@@ -1190,12 +1190,31 @@ app.patch('/api/jobs/:id', authenticateToken, async (req, res) => {
     if (max_x !== undefined) { fields.push(`max_x = $${idx++}`); values.push(max_x ? parseFloat(max_x) : null); }
     if (max_y !== undefined) { fields.push(`max_y = $${idx++}`); values.push(max_y ? parseFloat(max_y) : null); }
     if (bounding_area_m2 !== undefined) { fields.push(`bounding_area_m2 = $${idx++}`); values.push(bounding_area_m2 ? parseFloat(bounding_area_m2) : null); }
+    if (operator_name !== undefined) { fields.push(`operator_name = $${idx++}`); values.push(operator_name); }
 
     if (fields.length === 0) return res.status(400).json({ error: "No fields to update" });
     values.push(req.params.id, req.user.id);
-    const result = await pool.query(`UPDATE jobs SET ${fields.join(', ')} WHERE id = $${idx++} AND "userId" = $${idx++}`, values);
-    if (result.rowCount > 0) res.json({ success: true });
-    else res.status(404).json({ error: "Job not found" });
+    const result = await pool.query(`UPDATE jobs SET ${fields.join(', ')} WHERE id = $${idx++} AND "userId" = $${idx++} RETURNING *`, values);
+    if (result.rowCount > 0) {
+        const updatedJob = result.rows[0];
+        if (operator_name !== undefined && updatedJob) {
+            if (updatedJob.router_name) {
+                await pool.query(
+                    'UPDATE routers SET operator_name = $1 WHERE "userId" = $2 AND (name ILIKE $3 OR name ILIKE $4)',
+                    [operator_name, req.user.id, `%${updatedJob.router_name}%`, `%${updatedJob.router_name.replace(/central|ruida/i, '').trim()}%`]
+                );
+            }
+            if (updatedJob.file_name) {
+                await pool.query(
+                    'UPDATE kanban_tasks SET operator = $1 WHERE "userId" = $2 AND (title ILIKE $3 OR title ILIKE $4) AND column_id = $5',
+                    [operator_name, req.user.id, `%${updatedJob.file_name}%`, `%${updatedJob.folder || updatedJob.file_name}%`, 'doing']
+                );
+            }
+        }
+        res.json({ success: true, job: updatedJob });
+    } else {
+        res.status(404).json({ error: "Job not found" });
+    }
 });
 
 app.delete('/api/jobs/:id', authenticateToken, async (req, res) => {
@@ -1780,24 +1799,6 @@ app.patch('/api/routers/:id/operator', authenticateToken, async (req, res) => {
         );
 
         res.json({ success: true, operator_name: opVal });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.patch('/api/routers/:id/estimated', authenticateToken, async (req, res) => {
-    const { estimated_minutes } = req.body;
-    try {
-        const router = (await pool.query('SELECT * FROM routers WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id])).rows[0];
-        if (!router) return res.status(404).json({ error: 'Máquina não encontrada' });
-
-        const estVal = estimated_minutes ? parseFloat(estimated_minutes) : null;
-
-        await pool.query('UPDATE routers SET estimated_minutes = $1 WHERE id = $2 AND "userId" = $3', [estVal, req.params.id, req.user.id]);
-        await pool.query('UPDATE jobs SET estimated_minutes = $1 WHERE "userId" = $2 AND (router_name ILIKE $3 OR router_name ILIKE $4) AND end_time IS NULL', [estVal, req.user.id, `%${router.name}%`, `%${router.name.replace(/ruida/i, '').trim()}%`]);
-        await pool.query('UPDATE kanban_tasks SET estimated_minutes = $1 WHERE "userId" = $2 AND (machine ILIKE $3 OR machine ILIKE $4) AND column_id = $5', [estVal, req.user.id, `%${router.name}%`, `%${router.name.replace(/ruida/i, '').trim()}%`, 'doing']);
-
-        res.json({ success: true, estimated_minutes: estVal });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
