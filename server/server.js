@@ -376,12 +376,37 @@ async function initDb() {
                 );
             }
         }
+        console.log("Banco de dados PostgreSQL inicializado com sucesso.");
+        runMaintenance();
+        setInterval(runMaintenance, 24 * 60 * 60 * 1000);
     } catch (err) {
         console.error("DB Seed Error:", err);
     }
 }
 
-initDb();
+const RuidaMonitor = require('./ruida_monitor');
+
+initDb().then(() => {
+    try {
+        const ruida = new RuidaMonitor(pool, autoSyncKanban);
+        ruida.start();
+    } catch (err) {
+        console.error('[RUIDA MONITOR START ERROR]', err);
+    }
+});
+
+// Middleware to protect routes
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) return res.sendStatus(401);
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.sendStatus(403);
+        req.user = user;
+        next();
+    });
+}
 
 // ===== ROUTERS STATUS =====
 app.get('/api/routers', authenticateToken, async (req, res) => {
