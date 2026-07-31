@@ -314,7 +314,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
 
   autoTable(doc, {
     startY: 38,
-    head: [['#', 'Data', 'Hora Inicio', 'Hora Fim', 'Arquivo', 'Projeto', 'Router', 'Duracao', 'Custo Est.']],
+    head: [['#', 'Data', 'Hora Inicio', 'Hora Fim', 'Arquivo', 'Projeto', 'Router', 'Operador', 'Duracao', 'Custo Est.']],
     body: filtered.map((j, idx) => {
       const startDt = new Date(j.start_time);
       const endDt = j.end_time ? new Date(j.end_time) : null;
@@ -330,6 +330,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
         j.file_name || 'Desconhecido',
         pName.toUpperCase(),
         j.router_name || 'Central',
+        j.operator_name || 'Desconhecido',
         formatDuration(Math.max(0, dur)),
         `R$ ${cost.toFixed(2)}`
       ];

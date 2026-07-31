@@ -113,7 +113,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   );
 
   const handleExportCSV = () => {
-    const headers = ['ID', 'Arquivo', 'Projeto', 'Inicio', 'Fim', 'Duracao (min)', 'Material', 'm2 Utilizado', 'Custo (R$)', 'Data'];
+    const headers = ['ID', 'Arquivo', 'Projeto', 'Router', 'Operador', 'Inicio', 'Fim', 'Duracao (min)', 'Material', 'm2 Utilizado', 'Custo (R$)', 'Data'];
     const rows = filteredJobs.map(j => {
       const mat = materials.find(m => m.id === j.material_id);
       const ins = mat ? calculateInsumo({
@@ -129,6 +129,8 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
         j.id,
         j.file_name,
         j.folder?.split('|').pop()?.split('\\').pop() || '-',
+        j.router_name || 'Central',
+        j.operator_name || 'Desconhecido',
         formatTime(j.start_time),
         j.end_time ? formatTime(j.end_time) : 'Ativo',
         (j.duration_minutes || 0).toFixed(2),
@@ -274,6 +276,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                 <th className="px-6 py-5">Arquivo</th>
                 <th className="px-6 py-5">Projeto</th>
                 <th className="px-6 py-5">Router</th>
+                <th className="px-6 py-5">Operador</th>
                 <th className="px-6 py-5">Cronograma</th>
                 <th className="px-6 py-5">Duração</th>
                 <th className="px-6 py-5 text-center">Insumo</th>
@@ -387,6 +390,11 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                   <td className="px-6 py-5">
                     <span className={`text-[10px] font-black px-2 py-1 rounded-md border ${job.router_name?.includes('2') ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-orange-500/10 text-orange-400 border-orange-500/20'}`}>
                       {job.router_name || 'Central'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-5">
+                    <span className="text-[10px] font-bold text-accent-cyan bg-accent-cyan/10 px-2.5 py-1 rounded-full border border-accent-cyan/20 flex items-center gap-1.5 w-fit whitespace-nowrap">
+                      👤 {job.operator_name || 'Desconhecido'}
                     </span>
                   </td>
                   <td className="px-6 py-5">
