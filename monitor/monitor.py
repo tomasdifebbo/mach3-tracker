@@ -469,27 +469,41 @@ def main():
                         if not line.strip(): continue
                         parts = line.strip().split(',')
                         if len(parts) >= 4:
-                            data_str, hora_str, caminho_completo = parts[0], parts[1], parts[2]
+                            data_str, hora_str = parts[0], parts[1]
                             
-                            # Logica de identificação de Router:
+                            # Detect tipo (last field is always INICIO/FIM)
+                            tipo = parts[-1].strip().upper()
+                            
+                            # Detect router identity from penultimate field if present
                             identidade_router = name
                             if len(parts) >= 5:
-                                r_name_raw = parts[-2].strip()
-                                r_name_up = r_name_raw.upper()
-                                # Router Naming Standardization
-                                if r_name_up == "ACT10" or "ROUTER 2" in r_name_up or "ROUTER2" in r_name_up:
+                                candidate_router = parts[-2].strip().upper()
+                                # Check if the penultimate field is a known machine identifier
+                                if candidate_router in ("ACT10", "ROUTER 2", "ROUTER2"):
                                     identidade_router = "Router 2"
-                                elif "ROUTER CENTRAL" in r_name_up or "ROUTER 1" in r_name_up or "ROUTER1" in r_name_up:
-                                    identidade_router = "Router 1"
-                                elif "LASER" in r_name_up or "RUIDA" in r_name_up:
+                                    # Path = join everything between time and machine identifier
+                                    caminho_completo = ",".join(parts[2:-2])
+                                elif "ROUTER CENTRAL" in candidate_router or "ROUTER 1" in candidate_router or "ROUTER1" in candidate_router:
+                                    identidade_router = "Router Central"
+                                    caminho_completo = ",".join(parts[2:-2])
+                                elif "LASER" in candidate_router or "RUIDA" in candidate_router:
                                     identidade_router = "Laser Ruida"
-                                elif "\\" in r_name_raw or "/" in r_name_raw or ".TXT" in r_name_up or ".TAP" in r_name_up or ".NC" in r_name_up or len(r_name_raw) > 30:
-                                    identidade_router = name  # Fallback to configured monitor router name
+                                    caminho_completo = ",".join(parts[2:-2])
+                                elif "\\" not in candidate_router and "/" not in candidate_router and ".TXT" not in candidate_router and ".TAP" not in candidate_router and len(candidate_router) <= 20:
+                                    # Looks like a real machine name (short, no path chars)
+                                    identidade_router = candidate_router or name
+                                    caminho_completo = ",".join(parts[2:-2])
                                 else:
-                                    identidade_router = r_name_raw or name
+                                    # Penultimate field looks like a path fragment, not a machine name
+                                    # Path = join everything between time and tipo
+                                    caminho_completo = ",".join(parts[2:-1])
+                            else:
+                                # Exactly 4 fields: date, time, path, tipo
+                                caminho_completo = parts[2]
                             
-                            tipo = parts[-1].strip().upper()
                             nome_arquivo = caminho_completo.split("\\")[-1] if "\\" in caminho_completo else caminho_completo
+                            # Clean trailing whitespace/tabs from file name
+                            nome_arquivo = nome_arquivo.strip()
                             iso_time = parse_mach3_time(data_str, hora_str)
                             
                             log_msg = f"[{iso_time}] {identidade_router} | {tipo} | {nome_arquivo}"
