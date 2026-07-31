@@ -349,10 +349,12 @@ async function initDb() {
             const routerRes = await pool.query('SELECT count(*) as count FROM routers WHERE "userId" = $1', [masterUser.id]);
             if (parseInt(routerRes.rows[0].count) === 0) {
                 console.log("[SEED] Criando routers padrão...");
-                await pool.query('INSERT INTO routers (name, status, "userId") VALUES ($1, $2, $3)', ['Router 1', 'active', masterUser.id]);
-                await pool.query('INSERT INTO routers (name, status, "userId") VALUES ($1, $2, $3)', ['Router 2', 'maintenance', masterUser.id]);
+                await pool.query('INSERT INTO routers (name, status, "userId") VALUES ($1, $2, $3)', ['Router Central', 'active', masterUser.id]);
+                await pool.query('INSERT INTO routers (name, status, "userId") VALUES ($1, $2, $3)', ['Router 2', 'active', masterUser.id]);
                 await pool.query('INSERT INTO routers (name, status, "userId") VALUES ($1, $2, $3)', ['Laser Ruida', 'active', masterUser.id]);
             } else {
+                // Rename Router 1 to Router Central if present
+                await pool.query("UPDATE routers SET name = 'Router Central' WHERE (name ILIKE '%router 1%' OR name ILIKE '%router1%') AND \"userId\" = $1", [masterUser.id]);
                 // Guarantee Laser Ruida router exists
                 const laserCheck = await pool.query("SELECT id FROM routers WHERE name ILIKE '%laser%' AND \"userId\" = $1", [masterUser.id]);
                 if (laserCheck.rows.length === 0) {
@@ -361,48 +363,25 @@ async function initDb() {
                 }
             }
         }
-        
+
         // SEED ROUTER STATUS LOG
         const logRes = await pool.query('SELECT count(*) as count FROM router_status_log');
         if (parseInt(logRes.rows[0].count) === 0) {
             console.log("[SEED] Populando histórico de status inicial...");
             const allRouters = (await pool.query('SELECT * FROM routers')).rows;
             for (const r of allRouters) {
-                await pool.query('INSERT INTO router_status_log (router_id, router_name, status, "userId") VALUES ($1, $2, $3, $4)', [r.id, r.name, r.status, r.userId]);
+                await pool.query(
+                    'INSERT INTO router_status_log (router_id, router_name, status, status_note, started_at, "userId") VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5)',
+                    [r.id, r.name, r.status, 'Status inicial', r.userId]
+                );
             }
         }
-        
-        console.log("Banco de dados PostgreSQL inicializado com sucesso.");
-        runMaintenance();
-        setInterval(runMaintenance, 24 * 60 * 60 * 1000);
-    } catch (e) {
-        console.error("Erro ao inicializar banco de dados:", e);
-    }
-}
-
-const RuidaMonitor = require('./ruida_monitor');
-
-initDb().then(() => {
-    try {
-        const ruida = new RuidaMonitor(pool, autoSyncKanban);
-        ruida.start();
     } catch (err) {
-        console.error('[RUIDA MONITOR START ERROR]', err);
+        console.error("DB Seed Error:", err);
     }
-});
-
-// Middleware to protect routes
-function authenticateToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token) return res.sendStatus(401);
-
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.sendStatus(403);
-        req.user = user;
-        next();
-    });
 }
+
+initDb();
 
 // ===== ROUTERS STATUS =====
 app.get('/api/routers', authenticateToken, async (req, res) => {
@@ -410,6 +389,8 @@ app.get('/api/routers', authenticateToken, async (req, res) => {
         const routers = (await pool.query('SELECT * FROM routers WHERE "userId" = $1 ORDER BY id ASC', [req.user.id])).rows;
         for (const r of routers) {
             const isLaser = r.name.toLowerCase().includes('laser');
+            const isCentral = r.name.toLowerCase().includes('central') || r.name.toLowerCase().includes('1');
+            const isRouter2 = r.name.toLowerCase().includes('2') || r.name.toLowerCase().includes('act10');
             const cleanName = r.name.replace(/ruida/i, '').replace(/co2|co₂/i, '').trim();
 
             const activeJob = (await pool.query(
@@ -419,31 +400,36 @@ app.get('/api/routers', authenticateToken, async (req, res) => {
                    router_name ILIKE $2 
                    OR router_name ILIKE $3 
                    OR ($4 = true AND router_name ILIKE '%laser%')
+                   OR ($5 = true AND (router_name ILIKE '%central%' OR router_name ILIKE '%router 1%'))
+                   OR ($6 = true AND (router_name ILIKE '%router 2%' OR router_name ILIKE '%act10%'))
                  ) 
                  AND end_time IS NULL 
                  ORDER BY start_time DESC LIMIT 1`,
-                [req.user.id, `%${r.name}%`, `%${cleanName}%`, isLaser]
+                [req.user.id, `%${r.name}%`, `%${cleanName}%`, isLaser, isCentral, isRouter2]
             )).rows[0];
 
             if (activeJob) {
                 let estMin = activeJob.estimated_minutes ? parseFloat(activeJob.estimated_minutes) : null;
                 
-                // If job was started manually via panel and lacks estimated_minutes,
-                // check recent router logs/jobs created by monitor.py or G-code watcher on this machine
                 if (!estMin) {
                     const recentEst = (await pool.query(
                         `SELECT estimated_minutes FROM jobs 
                          WHERE "userId" = $1 
-                         AND (router_name ILIKE $2 OR router_name ILIKE $3 OR ($4 = true AND router_name ILIKE '%laser%')) 
+                         AND (
+                           router_name ILIKE $2 
+                           OR router_name ILIKE $3 
+                           OR ($4 = true AND router_name ILIKE '%laser%')
+                           OR ($5 = true AND (router_name ILIKE '%central%' OR router_name ILIKE '%router 1%'))
+                           OR ($6 = true AND (router_name ILIKE '%router 2%' OR router_name ILIKE '%act10%'))
+                         ) 
                          AND estimated_minutes IS NOT NULL 
                          AND estimated_minutes > 0 
                          ORDER BY start_time DESC LIMIT 1`,
-                        [req.user.id, `%${r.name}%`, `%${cleanName}%`, isLaser]
+                        [req.user.id, `%${r.name}%`, `%${cleanName}%`, isLaser, isCentral, isRouter2]
                     )).rows[0];
 
                     if (recentEst && recentEst.estimated_minutes) {
                         estMin = parseFloat(recentEst.estimated_minutes);
-                        // Save to DB so active job retains this estimated time
                         await pool.query('UPDATE jobs SET estimated_minutes = $1 WHERE id = $2', [estMin, activeJob.id]);
                     }
                 }

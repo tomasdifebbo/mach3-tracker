@@ -331,7 +331,11 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
             const routerActiveJob = activeJobs.find(j => {
               const rn = (j.router_name || '').toLowerCase();
               const name = router.name.toLowerCase();
-              return rn === name || rn.includes(name) || name.includes(rn);
+              if (rn === name || rn.includes(name) || name.includes(rn)) return true;
+              if ((rn.includes('central') || rn.includes('router 1')) && (name.includes('central') || name.includes('router 1') || name.includes('1'))) return true;
+              if ((rn.includes('router 2') || rn.includes('act10')) && (name.includes('router 2') || name.includes('act10') || name.includes('2'))) return true;
+              if (rn.includes('laser') && name.includes('laser')) return true;
+              return false;
             });
 
             const handleToggle = async (newStatus) => {
