@@ -55,17 +55,21 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Helper to close stale jobs (> 12 hours)
+// Helper to close stale jobs (> 3 hours or corrupted router_name)
 async function closeStaleJobs(userId) {
     try {
-        const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
-        const staleJobs = (await pool.query('SELECT id, start_time FROM jobs WHERE "userId" = $1 AND end_time IS NULL AND start_time < $2', [userId, twelveHoursAgo])).rows;
+        const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+        const staleJobs = (await pool.query(
+            'SELECT id, start_time, estimated_minutes, router_name FROM jobs WHERE "userId" = $1 AND end_time IS NULL AND (start_time < $2 OR router_name LIKE \'%\\\\%\' OR router_name LIKE \'%.TXT%\' OR router_name LIKE \'%.txt%\')',
+            [userId, threeHoursAgo]
+        )).rows;
 
         for (const job of staleJobs) {
             const start = new Date(job.start_time);
-            const end = new Date(start.getTime() + 10 * 60 * 1000).toISOString();
-            await pool.query('UPDATE jobs SET end_time = $1, duration_minutes = 10 WHERE id = $2', [end, job.id]);
-            console.log(`[CLEANUP] Locked stale job #${job.id} (stuck for > 12h)`);
+            const estMin = job.estimated_minutes ? parseFloat(job.estimated_minutes) : 15;
+            const end = new Date(start.getTime() + estMin * 60 * 1000).toISOString();
+            await pool.query('UPDATE jobs SET end_time = $1, duration_minutes = $2 WHERE id = $3', [end, estMin, job.id]);
+            console.log(`[CLEANUP] Locked stale job #${job.id}`);
         }
     } catch (e) {
         console.error("Cleanup stale jobs error:", e);
@@ -1031,7 +1035,15 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
     let dt = start_time ? new Date(start_time) : new Date();
     let cleanFolder = folder || 'Desconhecido';
     let cleanFileName = file_name || 'Desconhecido';
+    let cleanRouterName = router_name;
     const DEBOUNCE_SECONDS = 2;
+
+    if (cleanRouterName && (cleanRouterName.includes('\\') || cleanRouterName.includes('/') || cleanRouterName.toLowerCase().endsWith('.txt') || cleanRouterName.length > 30)) {
+        const up = cleanRouterName.toUpperCase();
+        if (up.includes('ROUTER 2') || up.includes('ACT10')) cleanRouterName = 'Router 2';
+        else if (up.includes('LASER') || up.includes('RUIDA')) cleanRouterName = 'Laser Ruida';
+        else cleanRouterName = 'Router Central';
+    }
 
     if (cleanFileName.includes('\\') || cleanFileName.includes('/')) {
         const pathParts = cleanFileName.replace(/\\/g, '/').split('/').filter(p => p.length > 0);
@@ -1039,7 +1051,7 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
     }
     if (cleanFolder && cleanFolder.includes(' | ')) cleanFolder = cleanFolder.split(' | ').pop();
 
-    const lastJob = (await pool.query('SELECT start_time, end_time FROM jobs WHERE "userId" = $1 AND router_name = $2 ORDER BY id DESC LIMIT 1', [userId, router_name || null])).rows[0];
+    const lastJob = (await pool.query('SELECT start_time, end_time FROM jobs WHERE "userId" = $1 AND (router_name = $2 OR router_name ILIKE $3) ORDER BY id DESC LIMIT 1', [userId, cleanRouterName || null, `%${cleanRouterName || ''}%`])).rows[0];
     if (lastJob) {
         const lastEventTime = new Date(lastJob.end_time || lastJob.start_time);
         const diffSeconds = (dt - lastEventTime) / 1000;
@@ -1048,7 +1060,7 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
         }
     }
 
-    const openJobs = (await pool.query('SELECT id, start_time FROM jobs WHERE "userId" = $1 AND end_time IS NULL AND router_name = $2', [userId, router_name || null])).rows;
+    const openJobs = (await pool.query('SELECT id, start_time FROM jobs WHERE "userId" = $1 AND end_time IS NULL AND (router_name = $2 OR router_name ILIKE $3 OR router_name LIKE \'%\\\\%\')', [userId, cleanRouterName || null, `%${cleanRouterName || ''}%`])).rows;
     for (const j of openJobs) {
         const prevStart = new Date(j.start_time);
         if (dt > prevStart) {

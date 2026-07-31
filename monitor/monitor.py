@@ -474,15 +474,19 @@ def main():
                             # Logica de identificação de Router:
                             identidade_router = name
                             if len(parts) >= 5:
-                                # A penultima parte em logs de 5 campos é a router
-                                r_name = parts[-2].strip().upper()
+                                r_name_raw = parts[-2].strip()
+                                r_name_up = r_name_raw.upper()
                                 # Router Naming Standardization
-                                if r_name == "ACT10":
+                                if r_name_up == "ACT10" or "ROUTER 2" in r_name_up or "ROUTER2" in r_name_up:
                                     identidade_router = "Router 2"
-                                elif "ROUTER CENTRAL" in str(r_name).upper():
+                                elif "ROUTER CENTRAL" in r_name_up or "ROUTER 1" in r_name_up or "ROUTER1" in r_name_up:
                                     identidade_router = "Router 1"
+                                elif "LASER" in r_name_up or "RUIDA" in r_name_up:
+                                    identidade_router = "Laser Ruida"
+                                elif "\\" in r_name_raw or "/" in r_name_raw or ".TXT" in r_name_up or ".TAP" in r_name_up or ".NC" in r_name_up or len(r_name_raw) > 30:
+                                    identidade_router = name  # Fallback to configured monitor router name
                                 else:
-                                    identidade_router = r_name or "Desconhecido"
+                                    identidade_router = r_name_raw or name
                             
                             tipo = parts[-1].strip().upper()
                             nome_arquivo = caminho_completo.split("\\")[-1] if "\\" in caminho_completo else caminho_completo
