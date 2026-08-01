@@ -55,13 +55,21 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Helper to close stale jobs (> 3 hours or corrupted router_name)
+// Helper to close stale jobs (> 3 hours for routers, > 30 min for laser, or corrupted router_name)
 async function closeStaleJobs(userId) {
     try {
         const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+        const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+
         const staleJobs = (await pool.query(
-            'SELECT id, start_time, estimated_minutes, router_name FROM jobs WHERE "userId" = $1 AND end_time IS NULL AND (start_time < $2 OR router_name LIKE \'%\\\\%\' OR router_name LIKE \'%.TXT%\' OR router_name LIKE \'%.txt%\')',
-            [userId, threeHoursAgo]
+            `SELECT id, start_time, estimated_minutes, router_name FROM jobs 
+             WHERE "userId" = $1 AND end_time IS NULL 
+             AND (
+               start_time < $2 
+               OR (router_name ILIKE '%laser%' AND start_time < $3)
+               OR router_name LIKE '%\\%' OR router_name LIKE '%.TXT%' OR router_name LIKE '%.txt%'
+             )`,
+            [userId, threeHoursAgo, thirtyMinAgo]
         )).rows;
 
         for (const job of staleJobs) {
@@ -69,7 +77,7 @@ async function closeStaleJobs(userId) {
             const estMin = job.estimated_minutes ? parseFloat(job.estimated_minutes) : 15;
             const end = new Date(start.getTime() + estMin * 60 * 1000).toISOString();
             await pool.query('UPDATE jobs SET end_time = $1, duration_minutes = $2 WHERE id = $3', [end, estMin, job.id]);
-            console.log(`[CLEANUP] Locked stale job #${job.id}`);
+            console.log(`[CLEANUP] Locked stale job #${job.id} on ${job.router_name}`);
         }
     } catch (e) {
         console.error("Cleanup stale jobs error:", e);

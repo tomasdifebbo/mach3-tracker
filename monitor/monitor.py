@@ -533,8 +533,8 @@ def main():
 import socket
 
 class LaserMonitorThread(threading.Thread):
-    # Tempo (em segundos) de segurança para considerar um corte esquecido em aberto (4 horas)
-    IDLE_TIMEOUT = 14400
+    # Tempo (em segundos) para auto-finalizar o corte da Laser Ruida após o download (15 minutos)
+    IDLE_TIMEOUT = 900
 
     def __init__(self, laser_ip="192.168.0.2", port=5005):
         super().__init__(daemon=True)

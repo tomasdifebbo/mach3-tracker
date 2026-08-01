@@ -235,10 +235,8 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
 
   const handleSetJobEstimate = async (job, minutes) => {
     try {
-      // IDs come from DB as strings (e.g. "2538") — check it's a valid numeric id
-      const jobId = job.id;
-      if (jobId && !String(jobId).startsWith('router-')) {
-        await api.patch(`/jobs/${jobId}`, { estimated_minutes: minutes });
+      if (job.id && typeof job.id === 'number') {
+        await api.patch(`/jobs/${job.id}`, { estimated_minutes: minutes });
       }
       const kTasks = await api.getKanban();
       if (Array.isArray(kTasks)) {
