@@ -58,6 +58,27 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
   const [selectedLinkJob, setSelectedLinkJob] = useState(null);
   const [selectedLinkRouter, setSelectedLinkRouter] = useState('');
   const activeJobs = jobs.filter(j => !j.end_time);
+
+  const handleSetEstimate = async (job) => {
+    const current = job.estimated_minutes;
+    const val = prompt(
+      `Tempo estimado para "${job.file_name}" em minutos (ex: 45):`,
+      current || ''
+    );
+    if (val === null || val.trim() === '') return;
+    const minutes = parseFloat(val);
+    if (isNaN(minutes) || minutes <= 0) return alert('Valor inválido. Digite o tempo em minutos.');
+    try {
+      const { api } = await import('../services/api');
+      const jobId = job.id;
+      if (jobId && !String(jobId).startsWith('router-')) {
+        await api.patch(`/jobs/${jobId}`, { estimated_minutes: minutes });
+      }
+      if (onRefresh) await onRefresh();
+    } catch (err) {
+      console.error('Erro ao salvar estimativa:', err);
+    }
+  };
   
   // Live Timer Effect for multiple jobs
   useEffect(() => {
@@ -248,11 +269,13 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
                 <div className="text-2xl md:text-3xl font-mono font-bold text-accent-cyan tracking-tighter tabular-nums">
                    {formatDuration(elapsedMin)}
                 </div>
-                {hasEstimate && (
-                  <div className="text-[10px] font-bold text-text-muted mt-1">
-                    Estimado: {formatDuration(estMin)}
-                  </div>
-                )}
+                <button
+                  onClick={() => handleSetEstimate(job)}
+                  className="text-[10px] font-bold text-accent-cyan hover:text-white mt-1 underline cursor-pointer transition-colors block text-right"
+                  title="Clique para definir ou ajustar o tempo estimado"
+                >
+                  {hasEstimate ? `Estimado: ${formatDuration(estMin)} ✏️` : '⏱️ Definir Estimativa'}
+                </button>
               </div>
             </div>
 
