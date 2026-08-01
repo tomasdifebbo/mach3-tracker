@@ -264,7 +264,7 @@ def simulate_gcode_time(filepath):
         print(f"[!] Erro ao simular tempo e dimensoes: {e}")
         return None, None, None, None
 
-def processa_inicio(caminho, nome_arquivo, iso_time, origem, estimated_minutes=None):
+def processa_inicio(caminho, nome_arquivo, iso_time, origem, estimated_minutes=None, max_x=None, max_y=None, area_m2=None):
     # Extract actual folder from full file path
     project_name = "LaserCAD"
     parts = caminho.split("\\")
@@ -280,7 +280,7 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem, estimated_minutes=N
                 break
 
     # Simulate machining time and bounding box dimensions for progress bar & m²
-    estimated, max_x_val, max_y_val, area_m2_val = estimated_minutes, None, None, None
+    estimated, max_x_val, max_y_val, area_m2_val = estimated_minutes, max_x, max_y, area_m2
     local_path = caminho
     unc_mappings = {
         r"\\TOMAS\arquivos 2024": r"E:\arquivos 2024",
@@ -292,9 +292,15 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem, estimated_minutes=N
             break
     
     if os.path.exists(local_path):
-        g_est, max_x_val, max_y_val, area_m2_val = simulate_gcode_time(local_path)
+        g_est, g_max_x, g_max_y, g_area = simulate_gcode_time(local_path)
         if g_est and not estimated:
             estimated = g_est
+        if g_max_x and not max_x_val:
+            max_x_val = g_max_x
+        if g_max_y and not max_y_val:
+            max_y_val = g_max_y
+        if g_area and not area_m2_val:
+            area_m2_val = g_area
         if estimated:
             print(f"[~] Tempo estimado: {estimated:.1f} min | X={max_x_val}mm Y={max_y_val}mm Area={area_m2_val}m2")
     
@@ -551,6 +557,7 @@ class LaserMonitorThread(threading.Thread):
         self.last_network_activity = 0
         self._sniffer_running = False
         self.last_estimated_minutes = None
+        self.last_bbox = (None, None, None)
 
     def get_lasercad_estimated_minutes(self):
         """Captura o tempo estimado de corte do LaserCAD (botão/janela Estimate Work Time) via Win32 API."""
@@ -597,6 +604,74 @@ class LaserMonitorThread(threading.Thread):
         except Exception:
             pass
         return None
+
+    def get_lasercad_bounding_box(self):
+        """Captura as dimensões máximas (X e Y em mm) e área (m²) do projeto ativo no LaserCAD via Win32 API."""
+        try:
+            import ctypes
+            user32 = ctypes.windll.user32
+            WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_int, ctypes.c_int)
+            WM_GETTEXT = 0x000D
+            WM_GETTEXTLENGTH = 0x000E
+
+            def get_wtxt(hwnd):
+                try:
+                    length = user32.SendMessageW(hwnd, WM_GETTEXTLENGTH, 0, 0)
+                    if length > 0:
+                        buff = ctypes.create_unicode_buffer(length + 1)
+                        user32.SendMessageW(hwnd, WM_GETTEXT, length + 1, ctypes.byref(buff))
+                        return buff.value
+                except Exception:
+                    pass
+                return ""
+
+            def get_cls(hwnd):
+                cbuff = ctypes.create_unicode_buffer(256)
+                user32.GetClassNameW(hwnd, cbuff, 256)
+                return cbuff.value
+
+            def get_wtitle(hwnd):
+                length = user32.GetWindowTextLengthW(hwnd)
+                if length > 0:
+                    buff = ctypes.create_unicode_buffer(length + 1)
+                    user32.GetWindowTextW(hwnd, buff, length + 1)
+                    return buff.value
+                return ""
+
+            found_boxes = []
+
+            def enum_win_cb(hwnd, lparam):
+                if user32.IsWindowVisible(hwnd):
+                    title = get_wtitle(hwnd)
+                    if "lasercad" in title.lower() or "laser" in title.lower():
+                        edits = []
+                        def enum_child_cb(chwnd, lparam):
+                            ccls = get_cls(chwnd)
+                            txt = get_wtxt(chwnd)
+                            if ccls == "Edit" and txt:
+                                clean_txt = txt.replace('mm', '').strip()
+                                try:
+                                    val = float(clean_txt)
+                                    if 5.0 <= val <= 3000.0:
+                                        edits.append(val)
+                                except ValueError:
+                                    pass
+                            return True
+                        user32.EnumChildWindows(hwnd, WNDENUMPROC(enum_child_cb), 0)
+                        if len(edits) >= 2:
+                            s_vals = sorted(edits, reverse=True)
+                            mx, my = round(s_vals[0], 2), round(s_vals[1], 2)
+                            area = round((mx / 1000.0) * (my / 1000.0), 4)
+                            found_boxes.append((mx, my, area))
+                return True
+
+            user32.EnumWindows(WNDENUMPROC(enum_win_cb), 0)
+            if found_boxes:
+                found_boxes.sort(key=lambda b: b[2], reverse=True)
+                return found_boxes[0]
+        except Exception:
+            pass
+        return None, None, None
 
     def _start_network_sniffer(self):
         """Inicia thread que escuta tráfego UDP na porta 50200 (AWC controller)."""
@@ -666,10 +741,14 @@ class LaserMonitorThread(threading.Thread):
 
         while self.running:
             try:
-                # 0. Capturar tempo estimado se clicado em 'Estimate Work Time' no LaserCAD
+                # 0. Capturar tempo estimado e dimensões m² se visíveis no LaserCAD
                 captured_est = self.get_lasercad_estimated_minutes()
                 if captured_est:
                     self.last_estimated_minutes = captured_est
+
+                bx, by, barea = self.get_lasercad_bounding_box()
+                if bx and by:
+                    self.last_bbox = (bx, by, barea)
 
                 # 1. Detectar janela "Download Document" do LaserCAD via Win32 API
                 download_visible = self.is_download_dialog_open()
@@ -696,6 +775,10 @@ class LaserMonitorThread(threading.Thread):
                     if est_to_report:
                         print(f"[~] Tempo estimado do LaserCAD capturado: {est_to_report:.2f} min")
 
+                    res_x, res_y, res_area = self.last_bbox if self.last_bbox[0] else self.get_lasercad_bounding_box()
+                    if res_x and res_y:
+                        print(f"[~] Dimensões m² do LaserCAD capturadas: {res_x}mm x {res_y}mm ({res_area} m²)")
+
                     if self.status == "working":
                         # Finalizar job anterior primeiro ao iniciar um novo download
                         processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
@@ -705,11 +788,15 @@ class LaserMonitorThread(threading.Thread):
                         nome_arquivo=file_to_report,
                         iso_time=datetime.datetime.now().astimezone().isoformat(),
                         origem="Laser Ruida",
-                        estimated_minutes=est_to_report
+                        estimated_minutes=est_to_report,
+                        max_x=res_x,
+                        max_y=res_y,
+                        area_m2=res_area
                     )
                     self.status = "working"
                     self.last_network_activity = time.time()
                     self.last_estimated_minutes = None
+                    self.last_bbox = (None, None, None)
 
                 # 2. Checar SoftCfg.ini para atualizar DocName
                 if os.path.exists(soft_cfg_path):
