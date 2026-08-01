@@ -264,7 +264,7 @@ def simulate_gcode_time(filepath):
         print(f"[!] Erro ao simular tempo e dimensoes: {e}")
         return None, None, None, None
 
-def processa_inicio(caminho, nome_arquivo, iso_time, origem):
+def processa_inicio(caminho, nome_arquivo, iso_time, origem, estimated_minutes=None):
     # Extract actual folder from full file path
     project_name = "LaserCAD"
     parts = caminho.split("\\")
@@ -280,7 +280,7 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem):
                 break
 
     # Simulate machining time and bounding box dimensions for progress bar & m²
-    estimated, max_x_val, max_y_val, area_m2_val = None, None, None, None
+    estimated, max_x_val, max_y_val, area_m2_val = estimated_minutes, None, None, None
     local_path = caminho
     unc_mappings = {
         r"\\TOMAS\arquivos 2024": r"E:\arquivos 2024",
@@ -292,7 +292,9 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem):
             break
     
     if os.path.exists(local_path):
-        estimated, max_x_val, max_y_val, area_m2_val = simulate_gcode_time(local_path)
+        g_est, max_x_val, max_y_val, area_m2_val = simulate_gcode_time(local_path)
+        if g_est and not estimated:
+            estimated = g_est
         if estimated:
             print(f"[~] Tempo estimado: {estimated:.1f} min | X={max_x_val}mm Y={max_y_val}mm Area={area_m2_val}m2")
     
@@ -533,8 +535,8 @@ def main():
 import socket
 
 class LaserMonitorThread(threading.Thread):
-    # Tempo (em segundos) para auto-finalizar o corte da Laser Ruida após o download (15 minutos)
-    IDLE_TIMEOUT = 900
+    # Tempo (em segundos) de segurança para considerar um corte esquecido em aberto (4 horas)
+    IDLE_TIMEOUT = 14400
 
     def __init__(self, laser_ip="192.168.0.2", port=5005):
         super().__init__(daemon=True)
@@ -548,6 +550,53 @@ class LaserMonitorThread(threading.Thread):
         # Timestamp da última atividade de rede com a controladora
         self.last_network_activity = 0
         self._sniffer_running = False
+        self.last_estimated_minutes = None
+
+    def get_lasercad_estimated_minutes(self):
+        """Captura o tempo estimado de corte do LaserCAD (botão/janela Estimate Work Time) via Win32 API."""
+        try:
+            import ctypes, re
+            user32 = ctypes.windll.user32
+            WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_int, ctypes.c_int)
+            found_times = []
+
+            def get_wtxt(hwnd):
+                length = user32.GetWindowTextLengthW(hwnd)
+                if length > 0:
+                    buff = ctypes.create_unicode_buffer(length + 1)
+                    user32.GetWindowTextW(hwnd, buff, length + 1)
+                    return buff.value
+                return ""
+
+            def enum_windows_cb(hwnd, lparam):
+                if user32.IsWindowVisible(hwnd):
+                    title = get_wtxt(hwnd)
+                    t_low = title.lower()
+                    if "lasercad" in t_low or "laser" in t_low or "work time" in t_low or "estimate" in t_low:
+                        def enum_child_cb(chwnd, lparam):
+                            txt = get_wtxt(chwnd)
+                            if txt:
+                                m1 = re.search(r'(?:worked\s*times?|work\s*time|estimate\s*time)[:\s]+(\d{1,2}):(\d{2}):(\d{2})', txt, re.IGNORECASE)
+                                if m1:
+                                    h, m, s = map(int, m1.groups())
+                                    tot = h * 60 + m + s / 60.0
+                                    if tot > 0: found_times.append(tot)
+                                elif "work time" in t_low or "estimate" in t_low or "calculat" in t_low:
+                                    m2 = re.search(r'\b(\d{1,2}):(\d{2}):(\d{2})\b', txt)
+                                    if m2:
+                                        h, m, s = map(int, m2.groups())
+                                        tot = h * 60 + m + s / 60.0
+                                        if tot > 0: found_times.append(tot)
+                            return True
+                        user32.EnumChildWindows(hwnd, WNDENUMPROC(enum_child_cb), 0)
+                return True
+
+            user32.EnumWindows(WNDENUMPROC(enum_windows_cb), 0)
+            if found_times:
+                return round(max(found_times), 2)
+        except Exception:
+            pass
+        return None
 
     def _start_network_sniffer(self):
         """Inicia thread que escuta tráfego UDP na porta 50200 (AWC controller)."""
@@ -617,6 +666,11 @@ class LaserMonitorThread(threading.Thread):
 
         while self.running:
             try:
+                # 0. Capturar tempo estimado se clicado em 'Estimate Work Time' no LaserCAD
+                captured_est = self.get_lasercad_estimated_minutes()
+                if captured_est:
+                    self.last_estimated_minutes = captured_est
+
                 # 1. Detectar janela "Download Document" do LaserCAD via Win32 API
                 download_visible = self.is_download_dialog_open()
                 
@@ -638,6 +692,10 @@ class LaserMonitorThread(threading.Thread):
                     file_to_report = self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
                     print(f"[+] LASER DOWNLOAD ENVIADO: {file_to_report}")
                     
+                    est_to_report = self.last_estimated_minutes or self.get_lasercad_estimated_minutes()
+                    if est_to_report:
+                        print(f"[~] Tempo estimado do LaserCAD capturado: {est_to_report:.2f} min")
+
                     if self.status == "working":
                         # Finalizar job anterior primeiro ao iniciar um novo download
                         processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
@@ -646,10 +704,12 @@ class LaserMonitorThread(threading.Thread):
                         caminho=f"LaserCAD\\{file_to_report}",
                         nome_arquivo=file_to_report,
                         iso_time=datetime.datetime.now().astimezone().isoformat(),
-                        origem="Laser Ruida"
+                        origem="Laser Ruida",
+                        estimated_minutes=est_to_report
                     )
                     self.status = "working"
                     self.last_network_activity = time.time()
+                    self.last_estimated_minutes = None
 
                 # 2. Checar SoftCfg.ini para atualizar DocName
                 if os.path.exists(soft_cfg_path):
