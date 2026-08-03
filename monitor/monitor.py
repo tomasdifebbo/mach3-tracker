@@ -891,11 +891,10 @@ class LaserMonitorThread(threading.Thread):
                     except Exception:
                         pass
 
-                # 3. Detectar FIM do corte automaticamente após o bipe / término da máquina
+                # 3. Detectar FIM do corte automaticamente após o tempo de corte físico
                 if self.status == "working":
                     now_ts = time.time()
                     job_dur = (now_ts - self.job_start_time) if self.job_start_time > 0 else 0
-                    idle_sec = (now_ts - self.last_network_activity) if self.last_network_activity > 0 else job_dur
 
                     is_finished = False
                     reason = ""
@@ -906,15 +905,10 @@ class LaserMonitorThread(threading.Thread):
                             is_finished = True
                             reason = f"tempo de corte do LaserCAD concluído ({job_dur:.1f}s / {self.current_estimated_sec:.0f}s)"
 
-                    # Regra B: Se o corte durou mais de 25s e a rede silenciou por 12s (bipe de término da placa)
-                    elif job_dur >= 25 and idle_sec >= 12:
+                    # Regra B: Se NÃO temos o tempo estimado, aguarda 15 minutos de segurança antes de finalizar por inatividade
+                    elif job_dur >= 900:
                         is_finished = True
-                        reason = f"bipe da máquina / silêncio de rede ({int(idle_sec)}s silêncio)"
-
-                    # Regra C: Timeout de segurança (10 min)
-                    elif job_dur >= 600:
-                        is_finished = True
-                        reason = f"timeout de segurança ({int(job_dur)}s)"
+                        reason = f"timeout de inatividade ({int(job_dur)}s)"
 
                     if is_finished:
                         print(f"[+] LASER CORTE FINALIZADO AUTOMATICAMENTE: {reason}")
