@@ -560,6 +560,11 @@ class LaserMonitorThread(threading.Thread):
         self.last_bbox = (None, None, None)
         self.job_start_time = 0
         self.current_estimated_sec = None
+        # Controle do fluxo de dois bipes da Ruida:
+        # pending_job = dados prontos após download (1º bipe), aguardando START do operador
+        self.pending_job = None      # dict com os dados do job após download
+        self.download_done_time = 0  # quando o download terminou (1º bipe)
+        self.net_pulse_count = 0     # conta pulsos de rede para diferenciar download vs START
 
     def get_lasercad_estimated_minutes(self):
         """Captura o tempo estimado de corte do LaserCAD (botão/janela Estimate Work Time) via Win32 API."""
@@ -791,84 +796,86 @@ class LaserMonitorThread(threading.Thread):
                 if bx and by:
                     self.last_bbox = (bx, by, barea)
 
+                # =====================================================
+                # FLUXO RUIDA DE 2 BIPES:
+                # Bipe 1: Arquivo transferido para memória da placa → salvar dados, NÃO abrir job
+                # START: Operador pressiona Start no painel → abrir job com horário real de início
+                # Bipe 2: Corte finalizado → fechar job
+                # =====================================================
+
+                now_ts = time.time()
+                net_active = (self.last_network_activity > 0 and (now_ts - self.last_network_activity) < 2)
+
                 # 1. Detectar janela "Download Document" do LaserCAD via Win32 API
                 download_visible = self.is_download_dialog_open()
-                
+
                 if download_visible and not self.download_dialog_open:
-                    # Dialog acabou de abrir - ler o DocName do SoftCfg.ini
+                    # Dialog abriu: captura dados do job para uso posterior
                     self.download_dialog_open = True
                     doc = self.read_doc_name(soft_cfg_path)
                     if doc:
                         self.last_filename = doc
-                    print(f"[~] Janela Download Document aberta (projeto: {self.last_filename})")
-                
+                    print(f"[~] Download Document aberta — projeto: {self.last_filename}")
+
                 elif not download_visible and self.download_dialog_open:
-                    # Dialog acabou de fechar = Download foi enviado!
+                    # 1º BIPE: Dialog fechou = arquivo enviado para a placa
                     self.download_dialog_open = False
                     doc = self.read_doc_name(soft_cfg_path)
                     if doc:
                         self.last_filename = doc
-                    
-                    file_to_report = self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
-                    print(f"[+] LASER DOWNLOAD ENVIADO: {file_to_report}")
-                    
-                    est_to_report = self.last_estimated_minutes or self.get_lasercad_estimated_minutes()
-                    if est_to_report:
-                        print(f"[~] Tempo estimado do LaserCAD capturado: {est_to_report:.2f} min")
-
-                    res_x, res_y, res_area = self.last_bbox if self.last_bbox[0] else self.get_lasercad_bounding_box()
-                    if res_x and res_y:
-                        print(f"[~] Dimensões m² do LaserCAD capturadas: {res_x}mm x {res_y}mm ({res_area} m²)")
-
-                    if self.status == "working":
-                        # Finalizar job anterior primeiro ao iniciar um novo download
-                        processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
-                    
-                    processa_inicio(
-                        caminho=f"LaserCAD\\{file_to_report}",
-                        nome_arquivo=file_to_report,
-                        iso_time=datetime.datetime.now().astimezone().isoformat(),
-                        origem="Laser Ruida",
-                        estimated_minutes=est_to_report,
-                        max_x=res_x,
-                        max_y=res_y,
-                        area_m2=res_area
-                    )
-                    self.status = "working"
-                    self.job_start_time = time.time()
-                    self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
-                    self.last_network_activity = time.time()
-                    self.last_estimated_minutes = None
-                    self.last_bbox = (None, None, None)
-
-                # 1.5. Trigger automático por início de transmissão de rede com a controladora
-                net_active = (self.last_network_activity > 0 and (time.time() - self.last_network_activity) < 3)
-                if self.status != "working" and net_active:
-                    time.sleep(0.15)  # Aguarda o LaserCAD gravar o SoftCfg.ini atualizado
-                    doc = self.read_doc_name(soft_cfg_path)
-                    if doc:
-                        self.last_filename = doc
-                    file_to_report = self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
-                    print(f"[+] LASER CORTE INICIADO (Transmissão de Rede): {file_to_report}")
 
                     est_to_report = self.last_estimated_minutes or self.get_lasercad_estimated_minutes()
                     res_x, res_y, res_area = self.last_bbox if self.last_bbox[0] else self.get_lasercad_bounding_box()
 
-                    processa_inicio(
-                        caminho=f"LaserCAD\\{file_to_report}",
-                        nome_arquivo=file_to_report,
-                        iso_time=datetime.datetime.now().astimezone().isoformat(),
-                        origem="Laser Ruida",
-                        estimated_minutes=est_to_report,
-                        max_x=res_x,
-                        max_y=res_y,
-                        area_m2=res_area
-                    )
-                    self.status = "working"
-                    self.job_start_time = time.time()
-                    self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
+                    # Salva os dados mas NÃO abre job ainda — aguarda o START do operador
+                    self.pending_job = {
+                        "file_name": self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}",
+                        "est_minutes": est_to_report,
+                        "max_x": res_x,
+                        "max_y": res_y,
+                        "area_m2": res_area,
+                    }
+                    self.download_done_time = now_ts
+                    self.net_pulse_count = 0
+                    print(f"[~] 1º BIPE (download): arquivo '{self.pending_job['file_name']}' carregado na placa — aguardando START")
                     self.last_estimated_minutes = None
                     self.last_bbox = (None, None, None)
+
+                # 2º PULSO DE REDE = START do operador (a placa reporta status ao receber o comando Start)
+                elif net_active and self.pending_job and self.status != "working":
+                    self.net_pulse_count += 1
+                    # Espera pelo menos 2 ciclos de rede para confirmar o START (evita ruído)
+                    if self.net_pulse_count >= 2:
+                        pj = self.pending_job
+                        file_to_report = pj["file_name"]
+                        est_to_report = pj["est_minutes"]
+                        res_x, res_y, res_area = pj["max_x"], pj["max_y"], pj["area_m2"]
+
+                        if self.status == "working":
+                            processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
+
+                        print(f"[+] START DETECTADO — abrindo job: '{file_to_report}'")
+                        processa_inicio(
+                            caminho=f"LaserCAD\\{file_to_report}",
+                            nome_arquivo=file_to_report,
+                            iso_time=datetime.datetime.now().astimezone().isoformat(),
+                            origem="Laser Ruida",
+                            estimated_minutes=est_to_report,
+                            max_x=res_x,
+                            max_y=res_y,
+                            area_m2=res_area
+                        )
+                        self.status = "working"
+                        self.job_start_time = now_ts
+                        self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
+                        self.pending_job = None
+                        self.net_pulse_count = 0
+
+                # Se passou mais de 5 minutos desde o download sem START → cancela pending job
+                elif self.pending_job and (now_ts - self.download_done_time) > 300:
+                    print(f"[~] Pending job expirado sem START — descartando")
+                    self.pending_job = None
+                    self.net_pulse_count = 0
 
                 # 2. Checar SoftCfg.ini para atualizar DocName
                 if os.path.exists(soft_cfg_path):
