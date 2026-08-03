@@ -34,7 +34,7 @@ export function calculateInsumo({
 
   return {
     linearMeters: 0,
-    areaM2: Number(areaM2.toFixed(2)),
+    areaM2: areaM2 < 0.01 && areaM2 > 0 ? Number(areaM2.toFixed(4)) : Number(areaM2.toFixed(2)),
     totalCost: Number(totalCost.toFixed(2))
   };
 }

@@ -477,7 +477,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                       });
                       return (
                         <span className="text-sm font-bold text-accent-cyan">
-                          {ins.areaM2.toFixed(2)} <span className="text-[10px] text-text-muted">m²</span>
+                          {ins.areaM2 < 0.01 && ins.areaM2 > 0 ? ins.areaM2.toFixed(4) : ins.areaM2.toFixed(2)} <span className="text-[10px] text-text-muted">m²</span>
                         </span>
                       );
                     })()}
