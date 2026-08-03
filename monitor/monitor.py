@@ -891,22 +891,29 @@ class LaserMonitorThread(threading.Thread):
                     except Exception:
                         pass
 
-                # 3. Detectar FIM do corte automaticamente após o tempo de corte físico
+                # 3. Detectar FIM do corte automaticamente após o bipe / término do corte físico
                 if self.status == "working":
                     now_ts = time.time()
                     job_dur = (now_ts - self.job_start_time) if self.job_start_time > 0 else 0
+                    idle_sec = (now_ts - self.last_network_activity) if self.last_network_activity > 0 else job_dur
 
                     is_finished = False
                     reason = ""
 
-                    # Regra A: Se temos o tempo estimado do LaserCAD, aguarda o cumprimento do tempo de corte físico
-                    if self.current_estimated_sec and self.current_estimated_sec > 0:
-                        if job_dur >= self.current_estimated_sec * 0.95:
-                            is_finished = True
-                            reason = f"tempo de corte do LaserCAD concluído ({job_dur:.1f}s / {self.current_estimated_sec:.0f}s)"
+                    # Regra A: Se o tempo estimado do LaserCAD foi atingido (95%), encerra
+                    if self.current_estimated_sec and self.current_estimated_sec > 0 and job_dur >= self.current_estimated_sec * 0.95:
+                        is_finished = True
+                        reason = f"tempo estimado de corte concluído ({job_dur:.1f}s / {self.current_estimated_sec:.0f}s)"
 
-                    # Regra B: Se NÃO temos o tempo estimado, aguarda 15 minutos de segurança antes de finalizar por inatividade
-                    elif job_dur >= 900:
+                    # Regra B: Se o corte durou mais de 45s (ou 40% do estimado) e a rede silenciou por 15s (bipe pós-corte da placa)
+                    elif job_dur >= 45 and idle_sec >= 15:
+                        min_req_time = (self.current_estimated_sec * 0.4) if self.current_estimated_sec else 45
+                        if job_dur >= min_req_time:
+                            is_finished = True
+                            reason = f"bipe de conclusão da máquina ({int(idle_sec)}s silêncio pós-corte)"
+
+                    # Regra C: Timeout de segurança (10 min)
+                    elif job_dur >= 600:
                         is_finished = True
                         reason = f"timeout de inatividade ({int(job_dur)}s)"
 
