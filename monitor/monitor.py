@@ -558,6 +558,8 @@ class LaserMonitorThread(threading.Thread):
         self._sniffer_running = False
         self.last_estimated_minutes = None
         self.last_bbox = (None, None, None)
+        self.job_start_time = 0
+        self.current_estimated_sec = None
 
     def get_lasercad_estimated_minutes(self):
         """Captura o tempo estimado de corte do LaserCAD (botão/janela Estimate Work Time) via Win32 API."""
@@ -833,6 +835,8 @@ class LaserMonitorThread(threading.Thread):
                         area_m2=res_area
                     )
                     self.status = "working"
+                    self.job_start_time = time.time()
+                    self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
                     self.last_network_activity = time.time()
                     self.last_estimated_minutes = None
                     self.last_bbox = (None, None, None)
@@ -850,14 +854,37 @@ class LaserMonitorThread(threading.Thread):
                     except Exception:
                         pass
 
-                # 3. Detectar FIM do corte (Apenas por timeout longo de segurança de 4 horas)
-                if self.status == "working" and self.last_network_activity > 0:
-                    elapsed = time.time() - self.last_network_activity
-                    if elapsed >= self.IDLE_TIMEOUT:
-                        print(f"[+] LASER CORTE FINALIZADO (timeout de segurança {int(elapsed)}s)")
+                # 3. Detectar FIM do corte automaticamente após o bipe / término da transmissão
+                if self.status == "working":
+                    now_ts = time.time()
+                    job_dur = (now_ts - self.job_start_time) if self.job_start_time > 0 else 0
+                    idle_sec = (now_ts - self.last_network_activity) if self.last_network_activity > 0 else job_dur
+
+                    is_finished = False
+                    reason = ""
+
+                    # Regra A: Tempo estimado foi atingido/superado E a comunicação silenciou (bipe ocorreu)
+                    if self.current_estimated_sec and job_dur >= self.current_estimated_sec and idle_sec >= 5:
+                        is_finished = True
+                        reason = f"tempo estimado ({self.current_estimated_sec:.0f}s) + bipe/silêncio de rede"
+
+                    # Regra B: Comunicação de rede cessou por mais de 15 segundos após corte ativo de pelo menos 10s
+                    elif self.last_network_activity > 0 and idle_sec >= 15 and job_dur >= 10:
+                        is_finished = True
+                        reason = f"bipe/fim de transmissão ({int(idle_sec)}s silêncio)"
+
+                    # Regra C: Timeout de segurança (se a máquina for deixada em aberto por 10 min de inatividade)
+                    elif idle_sec >= 600 and job_dur >= 30:
+                        is_finished = True
+                        reason = f"timeout de inatividade ({int(idle_sec)}s)"
+
+                    if is_finished:
+                        print(f"[+] LASER CORTE FINALIZADO AUTOMATICAMENTE: {reason}")
                         processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
                         self.status = "idle"
                         self.last_network_activity = 0
+                        self.job_start_time = 0
+                        self.current_estimated_sec = None
 
                 # 4. Ping check para conexao de rede com a maquina
                 is_alive = os.system(f"ping -n 1 -w 1500 {self.laser_ip} > nul") == 0
