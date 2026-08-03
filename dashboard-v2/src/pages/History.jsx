@@ -135,7 +135,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
         j.end_time ? formatTime(j.end_time) : 'Ativo',
         (j.duration_minutes || 0).toFixed(2),
         j.material_name || '-',
-        ins ? ins.areaM2.toFixed(3) : '-',
+        ins ? ins.areaM2.toFixed(4) : '-',
         (((j.duration_minutes || 0) / 60 * costPerHour) + (j.material_price || 0)).toFixed(2),
         formatDate(j.start_time)
       ];
@@ -453,7 +453,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                               >
                                 <span>{m.name}</span>
                                 <span className="text-[9px] font-mono text-accent-cyan group-hover:text-black font-black">
-                                  {ins.areaM2}m² ({formatCurrency(ins.totalCost)})
+                                  {ins.areaM2.toFixed(4)}m² ({formatCurrency(ins.totalCost)})
                                 </span>
                               </button>
                             );
@@ -477,7 +477,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                       });
                       return (
                         <span className="text-sm font-bold text-accent-cyan">
-                          {ins.areaM2 < 0.01 && ins.areaM2 > 0 ? ins.areaM2.toFixed(4) : ins.areaM2.toFixed(2)} <span className="text-[10px] text-text-muted">m²</span>
+                          {ins.areaM2.toFixed(4)} <span className="text-[10px] text-text-muted">m²</span>
                         </span>
                       );
                     })()}
