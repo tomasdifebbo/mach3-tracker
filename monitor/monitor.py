@@ -844,6 +844,7 @@ class LaserMonitorThread(threading.Thread):
                 # 1.5. Trigger automático por início de transmissão de rede com a controladora
                 net_active = (self.last_network_activity > 0 and (time.time() - self.last_network_activity) < 3)
                 if self.status != "working" and net_active:
+                    time.sleep(0.15)  # Aguarda o LaserCAD gravar o SoftCfg.ini atualizado
                     doc = self.read_doc_name(soft_cfg_path)
                     if doc:
                         self.last_filename = doc
@@ -948,13 +949,38 @@ class LaserMonitorThread(threading.Thread):
             return False
 
     def read_doc_name(self, cfg_path):
+        """Lê o nome do documento ativo verificando o SoftCfg.ini e o título da janela do LaserCAD."""
+        doc_from_title = None
         try:
-            with open(cfg_path, 'r', encoding='utf-8', errors='ignore') as f:
-                for line in f:
-                    if line.strip().startswith('DocName='):
-                        val = line.strip().split('=', 1)[1].strip()
-                        if val and len(val) >= 2:
-                            return val
+            def enum_win_cb(hwnd, lparam):
+                nonlocal doc_from_title
+                if user32.IsWindowVisible(hwnd):
+                    title = get_wtitle(hwnd)
+                    if ("lasercad" in title.lower() or "lasercut" in title.lower()) and "-" in title:
+                        parts = title.split("-", 1)
+                        if len(parts) > 1:
+                            raw = parts[1].strip()
+                            clean = raw.split("\\")[-1].split("/")[-1]
+                            if "." in clean:
+                                clean = clean.rsplit(".", 1)[0]
+                            if clean and clean.lower() != "untitled" and len(clean) >= 2:
+                                doc_from_title = clean
+                return True
+            user32.EnumWindows(WNDENUMPROC(enum_win_cb), 0)
+        except Exception:
+            pass
+
+        if doc_from_title:
+            return doc_from_title
+
+        try:
+            if os.path.exists(cfg_path):
+                with open(cfg_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    for line in f:
+                        if line.strip().startswith('DocName='):
+                            val = line.strip().split('=', 1)[1].strip()
+                            if val and len(val) >= 1 and val.lower() != 'untitled':
+                                return val
         except Exception:
             pass
         return None
