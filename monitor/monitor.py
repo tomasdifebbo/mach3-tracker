@@ -841,6 +841,34 @@ class LaserMonitorThread(threading.Thread):
                     self.last_estimated_minutes = None
                     self.last_bbox = (None, None, None)
 
+                # 1.5. Trigger automático por início de transmissão de rede com a controladora
+                net_active = (self.last_network_activity > 0 and (time.time() - self.last_network_activity) < 3)
+                if self.status != "working" and net_active:
+                    doc = self.read_doc_name(soft_cfg_path)
+                    if doc:
+                        self.last_filename = doc
+                    file_to_report = self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
+                    print(f"[+] LASER CORTE INICIADO (Transmissão de Rede): {file_to_report}")
+
+                    est_to_report = self.last_estimated_minutes or self.get_lasercad_estimated_minutes()
+                    res_x, res_y, res_area = self.last_bbox if self.last_bbox[0] else self.get_lasercad_bounding_box()
+
+                    processa_inicio(
+                        caminho=f"LaserCAD\\{file_to_report}",
+                        nome_arquivo=file_to_report,
+                        iso_time=datetime.datetime.now().astimezone().isoformat(),
+                        origem="Laser Ruida",
+                        estimated_minutes=est_to_report,
+                        max_x=res_x,
+                        max_y=res_y,
+                        area_m2=res_area
+                    )
+                    self.status = "working"
+                    self.job_start_time = time.time()
+                    self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
+                    self.last_estimated_minutes = None
+                    self.last_bbox = (None, None, None)
+
                 # 2. Checar SoftCfg.ini para atualizar DocName
                 if os.path.exists(soft_cfg_path):
                     try:
@@ -903,15 +931,17 @@ class LaserMonitorThread(threading.Thread):
             time.sleep(1)
 
     def is_download_dialog_open(self):
-        """Detectar se a janela 'Download Document' do LaserCAD está aberta via Win32 API"""
+        """Detectar se a janela de Download / Transmissão do LaserCAD está aberta via Win32 API"""
         try:
             import ctypes
             user32 = ctypes.windll.user32
             
-            # FindWindowW procura janela pelo título exato
-            hwnd = user32.FindWindowW(None, "Download Document")
-            if hwnd and user32.IsWindowVisible(hwnd):
-                return True
+            # Check multiple common window titles for download/transfer in LaserCAD
+            titles = ["Download Document", "Download", "Baixar", "Enviar", "Transfer", "Download File"]
+            for t in titles:
+                hwnd = user32.FindWindowW(None, t)
+                if hwnd and user32.IsWindowVisible(hwnd):
+                    return True
             return False
         except Exception:
             return False
