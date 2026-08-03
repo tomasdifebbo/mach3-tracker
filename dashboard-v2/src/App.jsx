@@ -94,7 +94,7 @@ function App() {
         await fetchData();
       };
       init();
-      const interval = setInterval(fetchData, 10000);
+      const interval = setInterval(fetchData, 4000);
       return () => clearInterval(interval);
     } else {
       setLoading(false);
