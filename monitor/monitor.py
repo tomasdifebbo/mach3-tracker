@@ -917,30 +917,22 @@ class LaserMonitorThread(threading.Thread):
                     except Exception:
                         pass
 
-                # 3. Detectar FIM do corte automaticamente após término / bipe da máquina
+                # 3. Detectar FIM do corte automaticamente após término físico
                 if self.status == "working":
                     now_ts = time.time()
                     job_dur = (now_ts - self.job_start_time) if self.job_start_time > 0 else 0
-                    idle_sec = (now_ts - self.last_network_activity) if self.last_network_activity > 0 else job_dur
 
                     is_finished = False
                     reason = ""
 
-                    # Regra A: Se temos o tempo estimado do LaserCAD, encerra aos 95% do tempo
+                    # Regra A: Se temos o tempo estimado do LaserCAD, encerra quando atinge o tempo de corte físico (85% a 95%)
                     if self.current_estimated_sec and self.current_estimated_sec > 0:
-                        if job_dur >= self.current_estimated_sec * 0.95:
+                        if job_dur >= self.current_estimated_sec * 0.85:
                             is_finished = True
                             reason = f"tempo estimado de corte concluído ({job_dur:.1f}s / {self.current_estimated_sec:.0f}s)"
 
-                    # Regra B: Se o corte já durou o tempo mínimo necessário (ex: 60s ou 50% do estimado) e a rede silenciou por 15s (bipe)
-                    if not is_finished:
-                        min_req = (self.current_estimated_sec * 0.5) if self.current_estimated_sec else 60
-                        if job_dur >= min_req and idle_sec >= 15:
-                            is_finished = True
-                            reason = f"bipe de conclusão / silêncio da placa ({int(idle_sec)}s silêncio)"
-
-                    # Regra C: Timeout de segurança (15 min)
-                    if not is_finished and job_dur >= 900:
+                    # Regra B: Se NÃO temos o tempo estimado, aguarda 20 minutos como timeout de segurança
+                    elif job_dur >= 1200:
                         is_finished = True
                         reason = f"timeout de inatividade ({int(job_dur)}s)"
 
