@@ -847,15 +847,14 @@ class LaserMonitorThread(threading.Thread):
                     self.job_start_time = now_ts
                     self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
                     self.last_network_activity = now_ts
+                    self.last_filename = None
                     self.last_estimated_minutes = None
                     self.last_bbox = (None, None, None)
 
                 # 1.5. Trigger automático por início de transmissão de rede
                 elif net_active and self.status != "working":
                     doc = self.read_doc_name(soft_cfg_path)
-                    if doc:
-                        self.last_filename = doc
-                    file_to_report = self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
+                    file_to_report = doc or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
                     print(f"[+] LASER TRANSMISSÃO DE REDE — ABRINDO JOB: {file_to_report}")
 
                     est_to_report = self.last_estimated_minutes or self.get_lasercad_estimated_minutes()
@@ -875,6 +874,7 @@ class LaserMonitorThread(threading.Thread):
                     self.job_start_time = now_ts
                     self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
                     self.last_network_activity = now_ts
+                    self.last_filename = None
                     self.last_estimated_minutes = None
                     self.last_bbox = (None, None, None)
 
@@ -891,29 +891,22 @@ class LaserMonitorThread(threading.Thread):
                     except Exception:
                         pass
 
-                # 3. Detectar FIM do corte automaticamente após o bipe / término do corte físico
+                # 3. Detectar FIM do corte automaticamente após o tempo de corte físico
                 if self.status == "working":
                     now_ts = time.time()
                     job_dur = (now_ts - self.job_start_time) if self.job_start_time > 0 else 0
-                    idle_sec = (now_ts - self.last_network_activity) if self.last_network_activity > 0 else job_dur
 
                     is_finished = False
                     reason = ""
 
-                    # Regra A: Se o tempo estimado do LaserCAD foi atingido (95%), encerra
-                    if self.current_estimated_sec and self.current_estimated_sec > 0 and job_dur >= self.current_estimated_sec * 0.95:
-                        is_finished = True
-                        reason = f"tempo estimado de corte concluído ({job_dur:.1f}s / {self.current_estimated_sec:.0f}s)"
-
-                    # Regra B: Se o corte durou mais de 45s (ou 40% do estimado) e a rede silenciou por 15s (bipe pós-corte da placa)
-                    elif job_dur >= 45 and idle_sec >= 15:
-                        min_req_time = (self.current_estimated_sec * 0.4) if self.current_estimated_sec else 45
-                        if job_dur >= min_req_time:
+                    # Regra A: Se temos o tempo estimado do LaserCAD, aguarda o cumprimento do tempo de corte físico
+                    if self.current_estimated_sec and self.current_estimated_sec > 0:
+                        if job_dur >= self.current_estimated_sec * 0.95:
                             is_finished = True
-                            reason = f"bipe de conclusão da máquina ({int(idle_sec)}s silêncio pós-corte)"
+                            reason = f"tempo estimado de corte concluído ({job_dur:.1f}s / {self.current_estimated_sec:.0f}s)"
 
-                    # Regra C: Timeout de segurança (10 min)
-                    elif job_dur >= 600:
+                    # Regra B: Se NÃO temos o tempo estimado, aguarda 30 minutos de inatividade como timeout de segurança
+                    elif job_dur >= 1800:
                         is_finished = True
                         reason = f"timeout de inatividade ({int(job_dur)}s)"
 
@@ -924,6 +917,7 @@ class LaserMonitorThread(threading.Thread):
                         self.last_network_activity = 0
                         self.job_start_time = 0
                         self.current_estimated_sec = None
+                        self.last_filename = None
 
                 # 4. Ping check para conexao de rede com a maquina
                 is_alive = os.system(f"ping -n 1 -w 1500 {self.laser_ip} > nul") == 0
