@@ -755,19 +755,19 @@ class LaserMonitorThread(threading.Thread):
         t.start()
 
     def _sniffer_via_netstat(self):
-        """Fallback: checa conexões ativas com o IP da laser via netstat."""
+        """Fallback: checa conexões ativas com o IP da laser via netstat em alta frequência."""
         while self.running:
             try:
                 import subprocess
                 result = subprocess.run(
                     ["netstat", "-n"],
-                    capture_output=True, text=True, timeout=5
+                    capture_output=True, text=True, timeout=3
                 )
                 if self.laser_ip in result.stdout:
                     self.last_network_activity = time.time()
             except Exception:
                 pass
-            time.sleep(5)
+            time.sleep(0.5)
 
     def run(self):
         print(f"[*] Monitor de Laser (LaserCAD/AWC) iniciado no IP {self.laser_ip}...")
@@ -878,7 +878,7 @@ class LaserMonitorThread(threading.Thread):
                     self.last_estimated_minutes = None
                     self.last_bbox = (None, None, None)
 
-                # 2. Checar SoftCfg.ini para atualizar DocName
+                # 2. Checar SoftCfg.ini para atualizar DocName / Novo Envio
                 if os.path.exists(soft_cfg_path):
                     try:
                         mtime = os.path.getmtime(soft_cfg_path)
@@ -887,26 +887,60 @@ class LaserMonitorThread(threading.Thread):
                             doc = self.read_doc_name(soft_cfg_path)
                             if doc:
                                 self.last_filename = doc
-                                print(f"[~] Projeto LaserCAD atualizado: {doc}")
+                                print(f"[~] SoftCfg.ini atualizado: {doc}")
+
+                                # Se a máquina não estiver cortando, inicia o job imediatamente pelo evento do arquivo
+                                if self.status != "working":
+                                    file_to_report = doc
+                                    print(f"[+] LASER ARQUIVO DETECTADO — ABRINDO JOB: {file_to_report}")
+
+                                    est_to_report = self.last_estimated_minutes or self.get_lasercad_estimated_minutes()
+                                    res_x, res_y, res_area = self.last_bbox if self.last_bbox[0] else self.get_lasercad_bounding_box()
+
+                                    processa_inicio(
+                                        caminho=f"LaserCAD\\{file_to_report}",
+                                        nome_arquivo=file_to_report,
+                                        iso_time=datetime.datetime.now().astimezone().isoformat(),
+                                        origem="Laser Ruida",
+                                        estimated_minutes=est_to_report,
+                                        max_x=res_x,
+                                        max_y=res_y,
+                                        area_m2=res_area
+                                    )
+                                    self.status = "working"
+                                    self.job_start_time = now_ts
+                                    self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
+                                    self.last_network_activity = now_ts
+                                    self.last_filename = None
+                                    self.last_estimated_minutes = None
+                                    self.last_bbox = (None, None, None)
                     except Exception:
                         pass
 
-                # 3. Detectar FIM do corte automaticamente após o tempo de corte físico
+                # 3. Detectar FIM do corte automaticamente após término / bipe da máquina
                 if self.status == "working":
                     now_ts = time.time()
                     job_dur = (now_ts - self.job_start_time) if self.job_start_time > 0 else 0
+                    idle_sec = (now_ts - self.last_network_activity) if self.last_network_activity > 0 else job_dur
 
                     is_finished = False
                     reason = ""
 
-                    # Regra A: Se temos o tempo estimado do LaserCAD, aguarda o cumprimento do tempo de corte físico
+                    # Regra A: Se temos o tempo estimado do LaserCAD, encerra aos 95% do tempo
                     if self.current_estimated_sec and self.current_estimated_sec > 0:
                         if job_dur >= self.current_estimated_sec * 0.95:
                             is_finished = True
                             reason = f"tempo estimado de corte concluído ({job_dur:.1f}s / {self.current_estimated_sec:.0f}s)"
 
-                    # Regra B: Se NÃO temos o tempo estimado, aguarda 30 minutos de inatividade como timeout de segurança
-                    elif job_dur >= 1800:
+                    # Regra B: Se o corte já durou o tempo mínimo necessário (ex: 60s ou 50% do estimado) e a rede silenciou por 15s (bipe)
+                    if not is_finished:
+                        min_req = (self.current_estimated_sec * 0.5) if self.current_estimated_sec else 60
+                        if job_dur >= min_req and idle_sec >= 15:
+                            is_finished = True
+                            reason = f"bipe de conclusão / silêncio da placa ({int(idle_sec)}s silêncio)"
+
+                    # Regra C: Timeout de segurança (15 min)
+                    if not is_finished and job_dur >= 900:
                         is_finished = True
                         reason = f"timeout de inatividade ({int(job_dur)}s)"
 
