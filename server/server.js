@@ -55,21 +55,13 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Helper to close stale jobs (> 3 hours for routers, > 30 min for laser, or corrupted router_name)
+// Helper to close stale jobs (> 3 hours or corrupted router_name)
 async function closeStaleJobs(userId) {
     try {
         const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
-        const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-
         const staleJobs = (await pool.query(
-            `SELECT id, start_time, estimated_minutes, router_name FROM jobs 
-             WHERE "userId" = $1 AND end_time IS NULL 
-             AND (
-               start_time < $2 
-               OR (router_name ILIKE '%laser%' AND start_time < $3)
-               OR router_name LIKE '%\\%' OR router_name LIKE '%.TXT%' OR router_name LIKE '%.txt%'
-             )`,
-            [userId, threeHoursAgo, thirtyMinAgo]
+            'SELECT id, start_time, estimated_minutes, router_name FROM jobs WHERE "userId" = $1 AND end_time IS NULL AND (start_time < $2 OR router_name LIKE \'%\\\\%\' OR router_name LIKE \'%.TXT%\' OR router_name LIKE \'%.txt%\')',
+            [userId, threeHoursAgo]
         )).rows;
 
         for (const job of staleJobs) {
@@ -77,7 +69,7 @@ async function closeStaleJobs(userId) {
             const estMin = job.estimated_minutes ? parseFloat(job.estimated_minutes) : 15;
             const end = new Date(start.getTime() + estMin * 60 * 1000).toISOString();
             await pool.query('UPDATE jobs SET end_time = $1, duration_minutes = $2 WHERE id = $3', [end, estMin, job.id]);
-            console.log(`[CLEANUP] Locked stale job #${job.id} on ${job.router_name}`);
+            console.log(`[CLEANUP] Locked stale job #${job.id}`);
         }
     } catch (e) {
         console.error("Cleanup stale jobs error:", e);
@@ -1013,34 +1005,43 @@ async function autoSyncKanban(userId, jobFileName, jobFolder, routerName, target
                     );
                     console.log(`[KANBAN AUTO-SYNC] Card "${task.title}" (ID ${task.id}) moved -> DOING (${routerName})`);
                 } else if (targetStatus === 'done' && task.column_id === 'doing') {
-                    const openJobs = (await pool.query('SELECT id FROM jobs WHERE "userId" = $1 AND end_time IS NULL AND (file_name ILIKE $2 OR folder ILIKE $2)', [userId, `%${task.title}%`])).rows;
-                    if (openJobs.length === 0) {
-                        await pool.query(
-                            'UPDATE kanban_tasks SET column_id = $1 WHERE id = $2 AND "userId" = $3',
-                            ['done', task.id, userId]
-                        );
-                        console.log(`[KANBAN AUTO-SYNC] Card "${task.title}" (ID ${task.id}) moved DOING -> DONE`);
-                    }
+                    await pool.query(
+                        'UPDATE kanban_tasks SET column_id = $1 WHERE id = $2 AND "userId" = $3',
+                        ['done', task.id, userId]
+                    );
+                    console.log(`[KANBAN AUTO-SYNC] Card "${task.title}" (ID ${task.id}) moved DOING -> DONE`);
                 }
             }
         }
 
-        // If job started and no Kanban task matched by title:
-        if (!matched && targetStatus === 'doing' && jobFileName && jobFileName !== 'Desconhecido') {
-            // Check if there is ALREADY an active card on this machine
-            const activeCardOnMachine = tasks.find(t => t.column_id === 'doing' && routerName && t.machine && (t.machine.toLowerCase().includes(routerName.toLowerCase()) || routerName.toLowerCase().includes(t.machine.toLowerCase())));
-            
-            if (activeCardOnMachine) {
-                // Preserves existing card when user renames it! DO NOT create a new duplicate card!
-                console.log(`[KANBAN AUTO-SYNC] Preserving existing active card "${activeCardOnMachine.title}" (ID ${activeCardOnMachine.id}) on ${routerName}`);
-            } else {
+        if (targetStatus === 'doing') {
+            // Mover cartões antigos da mesma máquina de DOING -> DONE ao iniciar um novo serviço
+            if (routerName) {
+                const previousActiveCards = tasks.filter(t => t.column_id === 'doing' && t.machine && (t.machine.toLowerCase().includes(routerName.toLowerCase()) || routerName.toLowerCase().includes(t.machine.toLowerCase())));
+                for (const oldCard of previousActiveCards) {
+                    if (!jobFileName || !oldCard.title.toLowerCase().includes(jobFileName.toLowerCase())) {
+                        await pool.query('UPDATE kanban_tasks SET column_id = $1 WHERE id = $2 AND "userId" = $3', ['done', oldCard.id, userId]);
+                        console.log(`[KANBAN AUTO-SYNC] Cartão antigo "${oldCard.title}" (ID ${oldCard.id}) movido DOING -> DONE em ${routerName}`);
+                    }
+                }
+            }
+
+            // Criar novo cartão Kanban com o nome exato do arquivo se não houver correspondência
+            if (!matched && jobFileName && jobFileName !== 'Desconhecido') {
                 const todayStr = new Date().toISOString().split('T')[0];
                 await pool.query(
                     `INSERT INTO kanban_tasks (title, machine, operator, date, priority, column_id, "userId") 
                      VALUES ($1, $2, $3, $4, $5, $6, $7)`,
                     [jobFileName, routerName || 'Router CNC', operatorName || 'Operador', todayStr, 'alta', 'doing', userId]
                 );
-                console.log(`[KANBAN AUTO-CREATE] Auto-created O.S. card "${jobFileName}" from log on ${routerName}`);
+                console.log(`[KANBAN AUTO-CREATE] Cartão O.S. criado: "${jobFileName}" em ${routerName}`);
+            }
+        } else if (targetStatus === 'done' && routerName) {
+            // Ao finalizar o serviço, mover qualquer cartão em DOING desta máquina para DONE
+            const activeOnMachine = tasks.filter(t => t.column_id === 'doing' && t.machine && (t.machine.toLowerCase().includes(routerName.toLowerCase()) || routerName.toLowerCase().includes(t.machine.toLowerCase())));
+            for (const card of activeOnMachine) {
+                await pool.query('UPDATE kanban_tasks SET column_id = $1 WHERE id = $2 AND "userId" = $3', ['done', card.id, userId]);
+                console.log(`[KANBAN AUTO-SYNC] Cartão finalizado "${card.title}" (ID ${card.id}) DOING -> DONE em ${routerName}`);
             }
         }
     } catch (err) {
