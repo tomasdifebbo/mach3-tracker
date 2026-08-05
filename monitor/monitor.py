@@ -560,8 +560,8 @@ class LaserMonitorThread(threading.Thread):
         self.last_bbox = (None, None, None)
         self.job_start_time = 0
         self.current_estimated_sec = None
+        self.pending_filename = None  # Nome capturado DO DIÁLOGO enquanto a janela de Download estava aberta
         # Controle do fluxo de dois bipes da Ruida:
-        # pending_job = dados prontos após download (1º bipe), aguardando START do operador
         self.pending_job = None      # dict com os dados do job após download
         self.download_done_time = 0  # quando o download terminou (1º bipe)
         self.net_pulse_count = 0     # conta pulsos de rede para diferenciar download vs START
@@ -809,22 +809,21 @@ class LaserMonitorThread(threading.Thread):
                 # 1. Detectar janela "Download Document" do LaserCAD via Win32 API
                 download_visible = self.is_download_dialog_open()
 
-                if download_visible and not self.download_dialog_open:
-                    # Dialog acabou de abrir - capturar nome do projeto do campo Name / titulo
-                    self.download_dialog_open = True
+                if download_visible:
+                    if not self.download_dialog_open:
+                        self.download_dialog_open = True
+                    # Enquanto o diálogo estiver aberto, captura continuamente o nome digitado no campo Name / título
                     doc = self.read_doc_name(soft_cfg_path)
                     if doc:
+                        self.pending_filename = doc
                         self.last_filename = doc
-                    print(f"[~] Download Document aberta — projeto capturado: {self.last_filename}")
 
                 elif not download_visible and self.download_dialog_open:
                     # Dialog acabou de fechar = Download foi enviado!
                     self.download_dialog_open = False
-                    doc = self.read_doc_name(soft_cfg_path)
-                    if doc:
-                        self.last_filename = doc
-
-                    file_to_report = self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
+                    
+                    # Usa o nome capturado ENQUANTO a janela estava aberta (não re-lê o .ini antigo pós-fechamento)
+                    file_to_report = self.pending_filename or self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
                     print(f"[+] LASER DOWNLOAD ENVIADO — ABRINDO JOB: {file_to_report}")
 
                     est_to_report = self.last_estimated_minutes or self.get_lasercad_estimated_minutes()
@@ -847,6 +846,7 @@ class LaserMonitorThread(threading.Thread):
                     self.job_start_time = now_ts
                     self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
                     self.last_network_activity = now_ts
+                    self.pending_filename = None
                     self.last_filename = None
                     self.last_estimated_minutes = None
                     self.last_bbox = (None, None, None)
