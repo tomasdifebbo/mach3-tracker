@@ -315,7 +315,7 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem, estimated_minutes=N
 
     payload = {
         "file_name": nome_arquivo,
-        "folder": f"{origem} | {project_name}",
+        "folder": "LaserCAD" if "laser" in origem.lower() else f"{origem} | {project_name}",
         "file_path": caminho,
         "start_time": iso_time,
         "router_name": origem,
