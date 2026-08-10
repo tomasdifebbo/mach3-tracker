@@ -155,7 +155,7 @@ function App() {
     );
   }
 
-  const renderSection = () => {
+  const renderContent = () => {
     if (isTrialExpired) {
       return <Settings user={user} onRefresh={loadUser} isTrialExpired={isTrialExpired} />;
     }
