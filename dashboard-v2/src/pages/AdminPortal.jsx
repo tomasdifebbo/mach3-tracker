@@ -21,18 +21,23 @@ const ALL_FEATURES = [
 export function AdminPortal() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null); // User for Feature Checklist modal
   const [editingFeatures, setEditingFeatures] = useState({});
   const [savingFeatures, setSavingFeatures] = useState(false);
 
   const fetchUsers = async () => {
+    setError(null);
     try {
       const data = await api.get('/admin/users');
       if (Array.isArray(data)) {
         setUsers(data);
+      } else if (data && data.error) {
+        setError(data.error);
       }
     } catch (e) {
       console.error(e);
+      setError("Erro ao conectar com o servidor.");
     } finally {
       setLoading(false);
     }
