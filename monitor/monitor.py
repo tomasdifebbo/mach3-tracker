@@ -315,7 +315,7 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem, estimated_minutes=N
 
     payload = {
         "file_name": nome_arquivo,
-        "folder": "LaserCAD" if "laser" in origem.lower() else f"{origem} | {project_name}",
+        "folder": f"{origem} | {project_name}" if project_name and project_name not in ("LaserCAD", "Desconhecido", "Geral") else "LaserCAD",
         "file_path": caminho,
         "start_time": iso_time,
         "router_name": origem,
@@ -561,6 +561,7 @@ class LaserMonitorThread(threading.Thread):
         self.job_start_time = 0
         self.current_estimated_sec = None
         self.pending_filename = None  # Nome capturado DO DIÁLOGO enquanto a janela de Download estava aberta
+        self.pending_filepath = None  # Caminho completo do projeto capturado (CorelDRAW / LaserCAD)
         # Controle do fluxo de dois bipes da Ruida:
         self.pending_job = None      # dict com os dados do job após download
         self.download_done_time = 0  # quando o download terminou (1º bipe)
@@ -812,19 +813,22 @@ class LaserMonitorThread(threading.Thread):
                 if download_visible:
                     if not self.download_dialog_open:
                         self.download_dialog_open = True
-                    # Enquanto o diálogo estiver aberto, captura continuamente o nome digitado no campo Name / título
-                    doc = self.read_doc_name(soft_cfg_path)
+                    # Enquanto o diálogo estiver aberto, captura continuamente o nome e caminho do CorelDRAW / LaserCAD
+                    doc, fpath = self.read_doc_info(soft_cfg_path)
                     if doc:
                         self.pending_filename = doc
                         self.last_filename = doc
+                    if fpath:
+                        self.pending_filepath = fpath
 
                 elif not download_visible and self.download_dialog_open:
                     # Dialog acabou de fechar = Download foi enviado!
                     self.download_dialog_open = False
                     
-                    # Usa o nome capturado ENQUANTO a janela estava aberta (não re-lê o .ini antigo pós-fechamento)
-                    file_to_report = self.pending_filename or self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
-                    print(f"[+] LASER DOWNLOAD ENVIADO — ABRINDO JOB: {file_to_report}")
+                    doc, fpath = self.read_doc_info(soft_cfg_path)
+                    file_to_report = self.pending_filename or doc or self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
+                    path_to_report = self.pending_filepath or fpath or f"LaserCAD\\{file_to_report}"
+                    print(f"[+] LASER DOWNLOAD ENVIADO — ABRINDO JOB: {file_to_report} (Caminho: {path_to_report})")
 
                     est_to_report = self.last_estimated_minutes or self.get_lasercad_estimated_minutes()
                     res_x, res_y, res_area = self.last_bbox if self.last_bbox[0] else self.get_lasercad_bounding_box()
@@ -833,7 +837,7 @@ class LaserMonitorThread(threading.Thread):
                         processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
 
                     processa_inicio(
-                        caminho=f"LaserCAD\\{file_to_report}",
+                        caminho=path_to_report,
                         nome_arquivo=file_to_report,
                         iso_time=datetime.datetime.now().astimezone().isoformat(),
                         origem="Laser Ruida",
@@ -847,21 +851,23 @@ class LaserMonitorThread(threading.Thread):
                     self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
                     self.last_network_activity = now_ts
                     self.pending_filename = None
+                    self.pending_filepath = None
                     self.last_filename = None
                     self.last_estimated_minutes = None
                     self.last_bbox = (None, None, None)
 
                 # 1.5. Trigger automático por início de transmissão de rede
                 elif net_active and self.status != "working":
-                    doc = self.read_doc_name(soft_cfg_path)
+                    doc, fpath = self.read_doc_info(soft_cfg_path)
                     file_to_report = doc or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
-                    print(f"[+] LASER TRANSMISSÃO DE REDE — ABRINDO JOB: {file_to_report}")
+                    path_to_report = fpath or f"LaserCAD\\{file_to_report}"
+                    print(f"[+] LASER TRANSMISSÃO DE REDE — ABRINDO JOB: {file_to_report} (Caminho: {path_to_report})")
 
                     est_to_report = self.last_estimated_minutes or self.get_lasercad_estimated_minutes()
                     res_x, res_y, res_area = self.last_bbox if self.last_bbox[0] else self.get_lasercad_bounding_box()
 
                     processa_inicio(
-                        caminho=f"LaserCAD\\{file_to_report}",
+                        caminho=path_to_report,
                         nome_arquivo=file_to_report,
                         iso_time=datetime.datetime.now().astimezone().isoformat(),
                         origem="Laser Ruida",
@@ -874,6 +880,8 @@ class LaserMonitorThread(threading.Thread):
                     self.job_start_time = now_ts
                     self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
                     self.last_network_activity = now_ts
+                    self.pending_filename = None
+                    self.pending_filepath = None
                     self.last_filename = None
                     self.last_estimated_minutes = None
                     self.last_bbox = (None, None, None)
@@ -884,7 +892,7 @@ class LaserMonitorThread(threading.Thread):
                         mtime = os.path.getmtime(soft_cfg_path)
                         if mtime > self.last_cfg_mtime:
                             self.last_cfg_mtime = mtime
-                            doc = self.read_doc_name(soft_cfg_path)
+                            doc, fpath = self.read_doc_info(soft_cfg_path)
                             if doc:
                                 self.last_filename = doc
                                 print(f"[~] SoftCfg.ini atualizado: {doc}")
@@ -892,13 +900,14 @@ class LaserMonitorThread(threading.Thread):
                                 # Se a máquina não estiver cortando, inicia o job imediatamente pelo evento do arquivo
                                 if self.status != "working":
                                     file_to_report = doc
-                                    print(f"[+] LASER ARQUIVO DETECTADO — ABRINDO JOB: {file_to_report}")
+                                    path_to_report = fpath or f"LaserCAD\\{file_to_report}"
+                                    print(f"[+] LASER ARQUIVO DETECTADO — ABRINDO JOB: {file_to_report} (Caminho: {path_to_report})")
 
                                     est_to_report = self.last_estimated_minutes or self.get_lasercad_estimated_minutes()
                                     res_x, res_y, res_area = self.last_bbox if self.last_bbox[0] else self.get_lasercad_bounding_box()
 
                                     processa_inicio(
-                                        caminho=f"LaserCAD\\{file_to_report}",
+                                        caminho=path_to_report,
                                         nome_arquivo=file_to_report,
                                         iso_time=datetime.datetime.now().astimezone().isoformat(),
                                         origem="Laser Ruida",
@@ -911,6 +920,8 @@ class LaserMonitorThread(threading.Thread):
                                     self.job_start_time = now_ts
                                     self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
                                     self.last_network_activity = now_ts
+                                    self.pending_filename = None
+                                    self.pending_filepath = None
                                     self.last_filename = None
                                     self.last_estimated_minutes = None
                                     self.last_bbox = (None, None, None)
@@ -977,15 +988,47 @@ class LaserMonitorThread(threading.Thread):
         except Exception:
             return False
 
-    def read_doc_name(self, cfg_path):
-        """Lê o nome do documento ativo do Download Document dialog, Window Title e SoftCfg.ini."""
+    def read_doc_info(self, cfg_path):
+        """
+        Lê as informações ativas (Nome do Documento e Caminho Completo do Arquivo/Projeto)
+        procurando no CorelDRAW, no LaserCAD, em Arquivos Recentes e no SoftCfg.ini.
+        Retorna uma tupla: (doc_name, full_file_path)
+        """
         doc_from_dialog = None
         doc_from_title = None
+        path_from_title = None
+        corel_doc_name = None
+        corel_file_path = None
 
-        # 1. Tentar ler do campo 'Name:' do diálogo Download Document
+        # 1. Checar Janela Ativa do CorelDRAW (onde o operador desenvolve os projetos do LaserCAD)
+        try:
+            def enum_corel_cb(hwnd, lparam):
+                nonlocal corel_doc_name, corel_file_path
+                if user32.IsWindowVisible(hwnd):
+                    title = get_wtitle(hwnd)
+                    if "corel" in title.lower():
+                        raw_path = None
+                        if "[" in title and "]" in title:
+                            raw_path = title.split("[", 1)[1].split("]", 1)[0].strip()
+                        elif "-" in title:
+                            raw_path = title.rsplit("-", 1)[1].strip()
+                        
+                        if raw_path and ("\\" in raw_path or "/" in raw_path):
+                            if raw_path.endswith("*"):
+                                raw_path = raw_path[:-1].strip()
+                            clean_name = raw_path.split("\\")[-1].split("/")[-1]
+                            if clean_name and not clean_name.lower().startswith("sem t") and not clean_name.lower().startswith("untitled"):
+                                corel_doc_name = clean_name
+                                corel_file_path = raw_path
+                return True
+            user32.EnumWindows(WNDENUMPROC(enum_corel_cb), 0)
+        except Exception:
+            pass
+
+        # 2. Tentar ler do campo 'Name:' do diálogo Download Document ou Título do LaserCAD
         try:
             def enum_win_cb(hwnd, lparam):
-                nonlocal doc_from_dialog, doc_from_title
+                nonlocal doc_from_dialog, doc_from_title, path_from_title
                 if user32.IsWindowVisible(hwnd):
                     title = get_wtitle(hwnd)
                     if "download" in title.lower():
@@ -993,7 +1036,6 @@ class LaserMonitorThread(threading.Thread):
                             nonlocal doc_from_dialog
                             if get_cls(chwnd) == "Edit":
                                 txt = get_wtxt(chwnd)
-                                # Ignora textos numéricos simples, dimensões com mm ou %
                                 if txt and len(txt) >= 1 and not txt.replace('.','').replace(',','').isdigit() and 'mm' not in txt.lower() and '%' not in txt:
                                     if doc_from_dialog is None:
                                         doc_from_dialog = txt
@@ -1003,6 +1045,8 @@ class LaserMonitorThread(threading.Thread):
                         parts = title.split("-", 1)
                         if len(parts) > 1:
                             raw = parts[1].strip()
+                            if "\\" in raw or "/" in raw:
+                                path_from_title = raw
                             clean = raw.split("\\")[-1].split("/")[-1]
                             if "." in clean:
                                 clean = clean.rsplit(".", 1)[0]
@@ -1013,12 +1057,20 @@ class LaserMonitorThread(threading.Thread):
         except Exception:
             pass
 
-        if doc_from_dialog:
-            return doc_from_dialog
-        if doc_from_title:
-            return doc_from_title
+        # Prioridade de Retorno:
+        # A) Se encontrou caminho/arquivo no CorelDRAW
+        if corel_file_path and corel_doc_name:
+            return corel_doc_name, corel_file_path
 
-        # 2. Fallback para o SoftCfg.ini
+        # B) Se encontrou no diálogo de Download do LaserCAD
+        if doc_from_dialog:
+            return doc_from_dialog, path_from_title or f"LaserCAD\\{doc_from_dialog}"
+
+        # C) Se encontrou no título da janela do LaserCAD
+        if doc_from_title:
+            return doc_from_title, path_from_title or f"LaserCAD\\{doc_from_title}"
+
+        # D) Fallback para o SoftCfg.ini
         try:
             if os.path.exists(cfg_path):
                 with open(cfg_path, 'r', encoding='utf-8', errors='ignore') as f:
@@ -1026,10 +1078,15 @@ class LaserMonitorThread(threading.Thread):
                         if line.strip().startswith('DocName='):
                             val = line.strip().split('=', 1)[1].strip()
                             if val and len(val) >= 1 and val.lower() != 'untitled':
-                                return val
+                                return val, f"LaserCAD\\{val}"
         except Exception:
             pass
-        return None
+
+        return None, None
+
+    def read_doc_name(self, cfg_path):
+        doc, _ = self.read_doc_info(cfg_path)
+        return doc
 
     def find_recent_lasercad_file(self, search_dirs):
         now = time.time()
