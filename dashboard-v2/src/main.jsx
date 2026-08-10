@@ -30,12 +30,18 @@ class ErrorBoundary extends React.Component {
           </p>
           <button 
             onClick={() => {
-              window.location.reload();
+              try { localStorage.removeItem('dismissed_notifs'); } catch(e){}
+              window.location.href = '/';
             }}
-            className="px-6 py-3 bg-cyan-400 hover:bg-cyan-300 text-black font-black rounded-xl text-xs uppercase tracking-widest transition-all cursor-pointer shadow-lg shadow-cyan-400/20"
+            className="px-6 py-3 bg-cyan-400 hover:bg-cyan-300 text-black font-black rounded-xl text-xs uppercase tracking-widest transition-all cursor-pointer shadow-lg shadow-cyan-400/20 mb-4"
           >
             Recarregar Sistema
           </button>
+          {this.state.error && (
+            <div className="text-[10px] font-mono text-slate-500 max-w-lg truncate bg-black/40 p-2 rounded border border-white/5">
+              {String(this.state.error?.message || this.state.error)}
+            </div>
+          )}
         </div>
       );
     }

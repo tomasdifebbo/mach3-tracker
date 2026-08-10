@@ -230,8 +230,8 @@ function App() {
       
       <main className="flex-1 flex flex-col overflow-hidden w-full">
         <Header 
-          title={titles[activeSection][0]} 
-          subtitle={titles[activeSection][1]} 
+          title={titles[activeSection]?.[0] || 'MACH3 Tracker'} 
+          subtitle={titles[activeSection]?.[1] || 'Gerenciamento de Fábrica'} 
           user={user} 
           jobs={jobs}
           routers={routers}
