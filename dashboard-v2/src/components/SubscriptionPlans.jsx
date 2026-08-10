@@ -5,10 +5,18 @@ import { api } from '../services/api';
 export function SubscriptionPlans({ user }) {
   const [checkoutLoading, setCheckoutLoading] = useState(null);
 
+  // Check trial expiration
+  const isTrialExpired = user?.trial_expiry ? new Date(user.trial_expiry) < new Date() : false;
+
+  // Active status per plan
+  const isStarterActive = user?.plan === 'starter' && !isTrialExpired;
+  const isProActive = user?.plan === 'pro';
+  const isBusinessActive = user?.plan === 'business';
+
   const handleSubscribe = async (planType) => {
     setCheckoutLoading(planType);
     try {
-      const resp = await api.createPaymentPreference(planType);
+      const resp = await (api.createPaymentPreference ? api.createPaymentPreference(planType) : api.createPreference(planType));
       if (resp && resp.init_point) {
         window.location.href = resp.init_point;
       } else {
@@ -17,7 +25,7 @@ export function SubscriptionPlans({ user }) {
       }
     } catch (err) {
       console.error(err);
-      alert("Erro ao conectar com o provedor de pagamento.");
+      alert("Erro ao conectar com o provedor de pagamento: " + (err.message || err));
       setCheckoutLoading(null);
     }
   };
@@ -25,10 +33,12 @@ export function SubscriptionPlans({ user }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       {/* Starter Plan */}
-      <div className={`glass p-6 sm:p-10 rounded-3xl sm:rounded-[40px] border-border/30 flex flex-col items-center group hover:scale-105 transition-all duration-500 ${user?.plan === 'starter' ? 'ring-2 ring-accent-cyan/50' : ''}`}>
-        {user?.plan === 'starter' && <span className="text-[10px] uppercase font-black tracking-widest text-accent-cyan mb-4">Plano Atual</span>}
+      <div className={`glass p-6 sm:p-10 rounded-3xl sm:rounded-[40px] border-border/30 flex flex-col items-center group hover:scale-105 transition-all duration-500 ${isStarterActive ? 'ring-2 ring-accent-cyan/50' : ''}`}>
+        {isStarterActive && <span className="text-[10px] uppercase font-black tracking-widest text-accent-cyan mb-4">Plano Atual</span>}
         <h3 className="text-xl font-bold mb-1 text-white">Starter</h3>
-        <div className="text-xs font-bold text-accent-cyan uppercase tracking-widest mb-3">30 Dias Grátis</div>
+        <div className="text-xs font-bold text-accent-cyan uppercase tracking-widest mb-3">
+          {isTrialExpired ? 'Degustação Encerrada' : '30 Dias Grátis'}
+        </div>
         <div className="flex flex-col items-center mb-6">
           <div className="text-3xl font-black text-white">
             R$ 59,90<span className="text-xs font-medium text-text-muted">/mês</span>
@@ -47,10 +57,18 @@ export function SubscriptionPlans({ user }) {
         </ul>
         <button 
           onClick={() => handleSubscribe('starter')}
-          disabled={!!checkoutLoading || user?.plan === 'starter'}
-          className="w-full py-4 rounded-2xl bg-white/5 border border-border group-hover:bg-white/10 group-hover:border-accent-cyan/30 transition-all font-black uppercase tracking-widest text-xs text-white disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          disabled={!!checkoutLoading || isStarterActive}
+          className="w-full py-4 rounded-2xl bg-accent-cyan text-black hover:scale-105 active:scale-95 transition-all font-black uppercase tracking-widest text-xs shadow-xl shadow-accent-cyan/20 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
         >
-          {checkoutLoading === 'starter' ? <><Loader2 size={16} className="animate-spin" /> Processando...</> : user?.plan === 'starter' ? '✓ Plano Atual' : 'Assinar Starter'}
+          {checkoutLoading === 'starter' ? (
+            <><Loader2 size={16} className="animate-spin" /> Processando...</>
+          ) : isStarterActive ? (
+            '✓ Plano Atual'
+          ) : isTrialExpired && user?.plan === 'starter' ? (
+            'Renovar Starter (R$ 59,90)'
+          ) : (
+            'Assinar Starter'
+          )}
         </button>
       </div>
 

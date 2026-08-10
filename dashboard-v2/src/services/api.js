@@ -191,6 +191,17 @@ export const api = {
     return data;
   },
 
+  createPaymentPreference: async (planType) => {
+    const resp = await fetch(`${API_URL}/api/payments/create-preference`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ planType })
+    });
+    const data = await safeJson(resp);
+    if (!resp.ok) throw new Error(data.error || `Erro ${resp.status}`);
+    return data;
+  },
+
   getPaymentStatus: async () => {
     const resp = await fetch(`${API_URL}/api/payments/status`, {
       headers: getAuthHeaders(),
