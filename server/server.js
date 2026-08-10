@@ -797,7 +797,11 @@ app.get('/api/user/me', authenticateToken, async (req, res) => {
     let user = (await pool.query('SELECT id, email, plan, trial_expiry, payment_status, "costPerHour", "plannedHours", role, company_role, gerente_pin, supervisor_pin, webhook_url, features_override FROM users WHERE id = $1', [req.user.id])).rows[0];
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
 
-    const masterEmails = ['tomasdifebbo.tdf@gmail.com', 'admin@mach3.com', 'casadotrem@gmail.com'];
+    const masterEmails = ['tomasdifebbo.tdf@gmail.com', 'admin@mach3.com', 'casadotrem@gmail.com', 'demo@mach3tracker.com'];
+    if (user.email.toLowerCase().includes('demo')) {
+        user.plan = 'business';
+        user.role = 'admin';
+    }
     if (masterEmails.includes(user.email) && user.role !== 'admin') {
         await pool.query("UPDATE users SET role = 'admin' WHERE id = $1", [user.id]);
         user.role = 'admin';

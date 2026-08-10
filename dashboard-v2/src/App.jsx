@@ -17,6 +17,7 @@ import { PaymentResult } from './pages/PaymentResult';
 import { PaymentModal } from './components/PaymentModal';
 import { Encarregado } from './pages/Encarregado';
 import { Operador } from './pages/Operador';
+import { DemoTourModal } from './components/DemoTourModal';
 
 function App() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -207,9 +208,12 @@ function App() {
     'encarregado': ['Encarregado', 'Planner operacional e checklists'],
   };
 
+  const [isDemoTourOpen, setIsDemoTourOpen] = useState(false);
+
   return (
     <div className="flex h-screen bg-bg-main overflow-hidden text-slate-200 relative">
       {isTrialExpired && <PaymentModal user={user} />}
+      <DemoTourModal isOpen={isDemoTourOpen} onClose={() => setIsDemoTourOpen(false)} setActiveSection={setActiveSection} />
       
       <Sidebar 
         activeSection={activeSection} 
@@ -233,12 +237,13 @@ function App() {
           routers={routers}
           maintenance={maintenance}
           onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          onOpenDemoTour={() => setIsDemoTourOpen(true)}
           onSectionChange={(section) => {
             if (!isTrialExpired) setActiveSection(section);
           }}
         />
         
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
           {renderSection()}
         </div>
       </main>

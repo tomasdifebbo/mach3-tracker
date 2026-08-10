@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Bell, User, Zap, CheckCircle2, Clock, LogOut, Settings, Menu,
-  Play, AlertTriangle, Wrench, WifiOff, Timer
+  Play, AlertTriangle, Wrench, WifiOff, Timer, Sparkles
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -17,7 +17,7 @@ function timeAgo(date) {
   return `${days}d atrás`;
 }
 
-export function Header({ title, subtitle, user, jobs = [], routers = [], maintenance = [], onMenuToggle, onSectionChange }) {
+export function Header({ title, subtitle, user, jobs = [], routers = [], maintenance = [], onMenuToggle, onOpenDemoTour, onSectionChange }) {
   const expiry = user?.trial_expiry ? new Date(user.trial_expiry) : null;
   const daysLeft = expiry ? Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24)) : 0;
 
@@ -163,6 +163,19 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
       </div>
 
       <div className="flex items-center gap-2 sm:gap-6">
+
+        {/* Demo Tour Button */}
+        {onOpenDemoTour && (
+          <button
+            onClick={onOpenDemoTour}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 text-xs font-bold transition-all shadow-md shadow-cyan-500/10 cursor-pointer"
+            title="Abrir o Guia Interativo de Apresentação para Clientes"
+          >
+            <Sparkles size={14} className="animate-pulse text-cyan-400" />
+            <span className="hidden sm:inline">Guia de Apresentação</span>
+            <span className="sm:hidden">Guia</span>
+          </button>
+        )}
 
         {/* User Status / Plan */}
         {user && (
