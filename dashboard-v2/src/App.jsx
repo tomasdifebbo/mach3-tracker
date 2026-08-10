@@ -30,6 +30,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('mach3_token'));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTrialExpired, setIsTrialExpired] = useState(false);
+  const [isDemoTourOpen, setIsDemoTourOpen] = useState(false);
 
   // Auth Check & User Data
   const loadUser = async () => {
@@ -207,8 +208,6 @@ function App() {
     'settings': ['Configurações', 'Ajustes de custo e produção'],
     'encarregado': ['Encarregado', 'Planner operacional e checklists'],
   };
-
-  const [isDemoTourOpen, setIsDemoTourOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-bg-main overflow-hidden text-slate-200 relative">
