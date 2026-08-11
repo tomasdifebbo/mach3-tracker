@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { clsx } from 'clsx';
 import { 
   Filter, 
   Download, 
@@ -106,11 +107,54 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
     
     return Object.values(groups).sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
   };
+  const [selectedRouter, setSelectedRouter] = useState('all');
+  const [selectedDateRange, setSelectedDateRange] = useState('all');
+  const [selectedOperator, setSelectedOperator] = useState('all');
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
 
-  const filteredJobs = consolidateJobs(jobs).filter(j => 
-    j.file_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    j.folder?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const availableRouters = Array.from(new Set(jobs.map(j => j.router_name).filter(Boolean)));
+  const availableOperators = Array.from(new Set(jobs.map(j => j.operator_name).filter(Boolean)));
+
+  const activeFilterCount = (selectedRouter !== 'all' ? 1 : 0) + 
+                            (selectedDateRange !== 'all' ? 1 : 0) + 
+                            (selectedOperator !== 'all' ? 1 : 0) + 
+                            (searchTerm.trim() ? 1 : 0);
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setSelectedRouter('all');
+    setSelectedDateRange('all');
+    setSelectedOperator('all');
+  };
+
+  const filteredJobs = consolidateJobs(jobs).filter(j => {
+    const matchesText = !searchTerm || 
+      j.file_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      j.folder?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesRouter = selectedRouter === 'all' || 
+      (j.router_name && j.router_name.toLowerCase().includes(selectedRouter.toLowerCase()));
+
+    const matchesOperator = selectedOperator === 'all' || 
+      (j.operator_name && j.operator_name.toLowerCase() === selectedOperator.toLowerCase());
+
+    let matchesDate = true;
+    if (selectedDateRange !== 'all' && j.start_time) {
+      const jobDate = new Date(j.start_time);
+      const now = new Date();
+      if (selectedDateRange === 'today') {
+        matchesDate = jobDate.toDateString() === now.toDateString();
+      } else if (selectedDateRange === '7days') {
+        const diffDays = (now - jobDate) / (1000 * 3600 * 24);
+        matchesDate = diffDays <= 7;
+      } else if (selectedDateRange === '30days') {
+        const diffDays = (now - jobDate) / (1000 * 3600 * 24);
+        matchesDate = diffDays <= 30;
+      }
+    }
+
+    return matchesText && matchesRouter && matchesOperator && matchesDate;
+  });
 
   const handleExportCSV = () => {
     const headers = ['ID', 'Arquivo', 'Projeto', 'Router', 'Operador', 'Inicio', 'Fim', 'Duracao (min)', 'Material', 'm2 Utilizado', 'Custo (R$)', 'Data'];
@@ -232,39 +276,133 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   return (
     <div className="p-4 md:p-8 space-y-4 md:space-y-6">
       {/* Filters Bar */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 glass p-4 rounded-2xl relative z-10">
-        <div className="flex items-center gap-2 md:gap-4 flex-1 w-full md:min-w-[300px]">
-          <div className="flex items-center gap-2 bg-white/5 border border-border px-4 py-2 rounded-xl focus-within:border-accent-cyan/50 flex-1">
-            <Search size={18} className="text-text-muted" />
-            <input 
-              type="text" 
-              placeholder="Filtrar por nome ou projeto..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-transparent border-none outline-none text-sm w-full"
-            />
+      <div className="space-y-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 glass p-4 rounded-2xl relative z-10">
+          <div className="flex items-center gap-2 md:gap-4 flex-1 w-full md:min-w-[300px]">
+            <div className="flex items-center gap-2 bg-white/5 border border-border px-4 py-2 rounded-xl focus-within:border-accent-cyan/50 flex-1">
+              <Search size={18} className="text-text-muted" />
+              <input 
+                type="text" 
+                placeholder="Filtrar por nome do arquivo ou projeto..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="bg-transparent border-none outline-none text-sm w-full text-white placeholder-text-muted"
+              />
+              {searchTerm && (
+                <button onClick={() => setSearchTerm('')} className="text-text-muted hover:text-white">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            <button 
+              onClick={() => setShowFilterPanel(!showFilterPanel)}
+              className={clsx(
+                "flex items-center gap-2 px-3.5 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer",
+                showFilterPanel || activeFilterCount > 0
+                  ? "bg-accent-cyan/20 border-accent-cyan text-accent-cyan shadow-lg shadow-accent-cyan/10"
+                  : "bg-white/5 border-border text-text-muted hover:text-white"
+              )}
+            >
+              <Filter size={18} />
+              <span className="hidden sm:inline">Filtros</span>
+              {activeFilterCount > 0 && (
+                <span className="bg-accent-cyan text-black text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
           </div>
-          <button className="p-2.5 bg-white/5 border border-border rounded-xl text-text-muted hover:text-white transition-all">
-            <Filter size={20} />
-          </button>
+
+          <div className="flex items-center gap-2 md:gap-3 justify-between w-full md:w-auto">
+            <button 
+              onClick={handleExportCSV}
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 md:px-5 py-2 md:py-2.5 bg-white/5 border border-border text-white font-black uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl hover:bg-white/10 hover:scale-105 active:scale-95 transition-all"
+            >
+              <Download size={16} /> CSV
+            </button>
+            <button 
+              onClick={() => handleExportPdf('all')}
+              disabled={exportingPdf}
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 md:px-5 py-2 md:py-2.5 bg-gradient-to-r from-accent-blue to-accent-cyan text-white font-black uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-accent-cyan/20 disabled:opacity-50"
+            >
+              <FileDown size={16} />
+              {exportingPdf ? 'Gerando...' : 'Exportar PDF'}
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-3 justify-between w-full md:w-auto">
-          <button 
-            onClick={handleExportCSV}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 md:px-5 py-2 md:py-2.5 bg-white/5 border border-border text-white font-black uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl hover:bg-white/10 hover:scale-105 active:scale-95 transition-all"
+        {/* Collapsible Filter Panel */}
+        {showFilterPanel && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="glass p-4 rounded-2xl border border-accent-cyan/30 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end animate-in fade-in duration-200"
           >
-            <Download size={16} /> CSV
-          </button>
-          <button 
-            onClick={() => handleExportPdf('all')}
-            disabled={exportingPdf}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3 md:px-5 py-2 md:py-2.5 bg-gradient-to-r from-accent-blue to-accent-cyan text-white font-black uppercase tracking-widest text-[10px] md:text-[11px] rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-accent-cyan/20 disabled:opacity-50"
-          >
-            <FileDown size={16} />
-            {exportingPdf ? 'Gerando...' : 'Exportar PDF'}
-          </button>
-        </div>
+            {/* Filter 1: Machine / Router */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-accent-cyan flex items-center gap-1.5">
+                <Layers size={12} /> Máquina / Router
+              </label>
+              <select
+                value={selectedRouter}
+                onChange={(e) => setSelectedRouter(e.target.value)}
+                className="w-full bg-slate-900 border border-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-accent-cyan cursor-pointer"
+              >
+                <option value="all">Todas as Máquinas</option>
+                {availableRouters.map(r => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filter 2: Date Range */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-accent-cyan flex items-center gap-1.5">
+                <Calendar size={12} /> Período de Data
+              </label>
+              <select
+                value={selectedDateRange}
+                onChange={(e) => setSelectedDateRange(e.target.value)}
+                className="w-full bg-slate-900 border border-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-accent-cyan cursor-pointer"
+              >
+                <option value="all">Todo o Histórico</option>
+                <option value="today">Somente Hoje</option>
+                <option value="7days">Últimos 7 Dias</option>
+                <option value="30days">Últimos 30 Dias</option>
+              </select>
+            </div>
+
+            {/* Filter 3: Operator */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-accent-cyan flex items-center gap-1.5">
+                <FileText size={12} /> Operador
+              </label>
+              <select
+                value={selectedOperator}
+                onChange={(e) => setSelectedOperator(e.target.value)}
+                className="w-full bg-slate-900 border border-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-accent-cyan cursor-pointer"
+              >
+                <option value="all">Todos os Operadores</option>
+                {availableOperators.map(op => (
+                  <option key={op} value={op}>{op}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Reset Button */}
+            <div>
+              <button
+                onClick={resetFilters}
+                disabled={activeFilterCount === 0}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white/5 border border-border hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 text-text-muted rounded-xl text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <X size={14} /> Limpar Filtros
+              </button>
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {/* Table Container */}
