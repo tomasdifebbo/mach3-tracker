@@ -988,6 +988,77 @@ class LaserMonitorThread(threading.Thread):
         except Exception:
             return False
 
+    def extract_path_from_window_title(self, title):
+        if not title:
+            return None
+        try:
+            # 1. Match full Windows path e.g. C:\Folder\file.cdr
+            win_path_match = re.search(r'([a-zA-Z]:\\[^\*\>\<\?\"]+)', title)
+            if win_path_match:
+                p = win_path_match.group(1).strip()
+                if " - " in p:
+                    p = p.split(" - ")[0].strip()
+                if ']' in p:
+                    p = p.split(']')[0].strip()
+                return p.rstrip('*]').strip()
+
+            # 2. Match UNC path e.g. \\Server\Folder\file.cdr
+            unc_path_match = re.search(r'(\\\\[^\*\>\<\?\"]+)', title)
+            if unc_path_match:
+                p = unc_path_match.group(1).strip()
+                if " - " in p:
+                    p = p.split(" - ")[0].strip()
+                if ']' in p:
+                    p = p.split(']')[0].strip()
+                return p.rstrip('*]').strip()
+
+            # 3. Match filename ending in .cdr, .pw5, .dxf, .ai
+            cdr_match = re.search(r'([^\s\\/\[\]]+\.(?:cdr|pw5|dxf|ai))', title, re.IGNORECASE)
+            if cdr_match:
+                return cdr_match.group(1)
+        except Exception:
+            pass
+        return None
+
+    def find_file_on_disk_by_name(self, target_name):
+        if not target_name or target_name.lower().startswith('doc') or target_name.lower() == 'untitled':
+            return None
+        clean_target = target_name.lower().replace('.cdr','').replace('.pw5','').replace('.dxf','').strip()
+        if len(clean_target) < 3:
+            return None
+            
+        home = os.path.expanduser("~")
+        search_dirs = [
+            r"E:\arquivos 2024",
+            r"E:\arquivos 2026",
+            r"D:\arquivos 2026",
+            r"C:\Projetos",
+            r"C:\Clientes",
+            os.path.join(home, "Desktop"),
+            os.path.join(home, "Downloads"),
+            os.path.join(home, "Documents")
+        ]
+        
+        matches = []
+        for d in search_dirs:
+            if os.path.exists(d):
+                try:
+                    for root, _, files in os.walk(d):
+                        for f in files:
+                            if clean_target in f.lower() and f.lower().endswith(('.cdr', '.pw5', '.dxf', '.ai')):
+                                fp = os.path.join(root, f)
+                                try:
+                                    matches.append((fp, os.path.getmtime(fp)))
+                                except Exception:
+                                    pass
+                except Exception:
+                    pass
+                    
+        if matches:
+            matches.sort(key=lambda x: x[1], reverse=True)
+            return matches[0][0]
+        return None
+
     def read_doc_info(self, cfg_path):
         """
         Lê as informações ativas (Nome do Documento e Caminho Completo do Arquivo/Projeto)
@@ -1007,19 +1078,13 @@ class LaserMonitorThread(threading.Thread):
                 if user32.IsWindowVisible(hwnd):
                     title = get_wtitle(hwnd)
                     if "corel" in title.lower():
-                        raw_path = None
-                        if "[" in title and "]" in title:
-                            raw_path = title.split("[", 1)[1].split("]", 1)[0].strip()
-                        elif "-" in title:
-                            raw_path = title.rsplit("-", 1)[1].strip()
-                        
-                        if raw_path and ("\\" in raw_path or "/" in raw_path):
-                            if raw_path.endswith("*"):
-                                raw_path = raw_path[:-1].strip()
-                            clean_name = raw_path.split("\\")[-1].split("/")[-1]
-                            if clean_name and not clean_name.lower().startswith("sem t") and not clean_name.lower().startswith("untitled"):
-                                corel_doc_name = clean_name
-                                corel_file_path = raw_path
+                        extracted = self.extract_path_from_window_title(title)
+                        if extracted:
+                            if "\\" in extracted or "/" in extracted:
+                                corel_file_path = extracted
+                                corel_doc_name = extracted.split("\\")[-1].split("/")[-1]
+                            elif not corel_doc_name:
+                                corel_doc_name = extracted
                 return True
             user32.EnumWindows(WNDENUMPROC(enum_corel_cb), 0)
         except Exception:
@@ -1042,35 +1107,38 @@ class LaserMonitorThread(threading.Thread):
                             return True
                         user32.EnumChildWindows(hwnd, WNDENUMPROC(enum_child), 0)
                     elif ("lasercad" in title.lower() or "lasercut" in title.lower()) and "-" in title:
-                        parts = title.split("-", 1)
-                        if len(parts) > 1:
-                            raw = parts[1].strip()
-                            if "\\" in raw or "/" in raw:
-                                path_from_title = raw
-                            clean = raw.split("\\")[-1].split("/")[-1]
-                            if "." in clean:
-                                clean = clean.rsplit(".", 1)[0]
-                            if clean and clean.lower() != "untitled" and len(clean) >= 2:
-                                doc_from_title = clean
+                        extracted = self.extract_path_from_window_title(title)
+                        if extracted:
+                            if "\\" in extracted or "/" in extracted:
+                                path_from_title = extracted
+                                doc_from_title = extracted.split("\\")[-1].split("/")[-1]
+                            elif not doc_from_title:
+                                doc_from_title = extracted
                 return True
             user32.EnumWindows(WNDENUMPROC(enum_win_cb), 0)
         except Exception:
             pass
 
-        # Prioridade de Retorno:
-        # A) Se encontrou caminho/arquivo no CorelDRAW
+        # A) Se encontrou caminho completo no CorelDRAW:
         if corel_file_path and corel_doc_name:
             return corel_doc_name, corel_file_path
 
-        # B) Se encontrou no diálogo de Download do LaserCAD
+        # B) Se temos o nome (ex: PRATELEIR), busca o caminho correspondente no disco:
+        target_name = corel_doc_name or doc_from_dialog or doc_from_title
+        if target_name:
+            disk_path = self.find_file_on_disk_by_name(target_name)
+            if disk_path:
+                return target_name, disk_path
+
+        # C) Se encontrou no diálogo de Download do LaserCAD
         if doc_from_dialog:
             return doc_from_dialog, path_from_title or f"LaserCAD\\{doc_from_dialog}"
 
-        # C) Se encontrou no título da janela do LaserCAD
+        # D) Se encontrou no título da janela do LaserCAD
         if doc_from_title:
             return doc_from_title, path_from_title or f"LaserCAD\\{doc_from_title}"
 
-        # D) Fallback para o SoftCfg.ini
+        # E) Fallback para o SoftCfg.ini
         try:
             if os.path.exists(cfg_path):
                 with open(cfg_path, 'r', encoding='utf-8', errors='ignore') as f:
@@ -1078,7 +1146,8 @@ class LaserMonitorThread(threading.Thread):
                         if line.strip().startswith('DocName='):
                             val = line.strip().split('=', 1)[1].strip()
                             if val and len(val) >= 1 and val.lower() != 'untitled':
-                                return val, f"LaserCAD\\{val}"
+                                disk_path = self.find_file_on_disk_by_name(val)
+                                return val, disk_path or f"LaserCAD\\{val}"
         except Exception:
             pass
 
