@@ -1059,6 +1059,42 @@ class LaserMonitorThread(threading.Thread):
             return matches[0][0]
         return None
 
+    def find_most_recent_cdr_file(self, max_age_seconds=14400):
+        home = os.path.expanduser("~")
+        search_dirs = [
+            r"E:\arquivos 2024",
+            r"E:\arquivos 2026",
+            r"D:\arquivos 2026",
+            r"C:\Projetos",
+            r"C:\Clientes",
+            os.path.join(home, "Desktop"),
+            os.path.join(home, "Downloads"),
+            os.path.join(home, "Documents")
+        ]
+        
+        now = time.time()
+        newest_file = None
+        newest_mtime = 0
+        
+        for d in search_dirs:
+            if os.path.exists(d):
+                try:
+                    for root, _, files in os.walk(d):
+                        for f in files:
+                            if f.lower().endswith(('.cdr', '.pw5', '.dxf', '.ai')):
+                                fp = os.path.join(root, f)
+                                try:
+                                    mtime = os.path.getmtime(fp)
+                                    if (now - mtime) < max_age_seconds and mtime > newest_mtime:
+                                        newest_mtime = mtime
+                                        newest_file = fp
+                                except Exception:
+                                    pass
+                except Exception:
+                    pass
+                    
+        return newest_file
+
     def read_doc_info(self, cfg_path):
         """
         Lê as informações ativas (Nome do Documento e Caminho Completo do Arquivo/Projeto)
@@ -1075,18 +1111,22 @@ class LaserMonitorThread(threading.Thread):
         try:
             def enum_corel_cb(hwnd, lparam):
                 nonlocal corel_doc_name, corel_file_path
-                if user32.IsWindowVisible(hwnd):
-                    title = get_wtitle(hwnd)
-                    if "corel" in title.lower():
-                        extracted = self.extract_path_from_window_title(title)
-                        if extracted:
-                            if "\\" in extracted or "/" in extracted:
-                                corel_file_path = extracted
-                                corel_doc_name = extracted.split("\\")[-1].split("/")[-1]
-                            elif not corel_doc_name:
-                                corel_doc_name = extracted
+                title = get_wtitle(hwnd)
+                if title and "corel" in title.lower():
+                    extracted = self.extract_path_from_window_title(title)
+                    if extracted:
+                        if "\\" in extracted or "/" in extracted:
+                            corel_file_path = extracted
+                            corel_doc_name = extracted.split("\\")[-1].split("/")[-1]
+                        elif not corel_doc_name:
+                            corel_doc_name = extracted
                 return True
-            user32.EnumWindows(WNDENUMPROC(enum_corel_cb), 0)
+
+            hdesk = user32.OpenDesktopW("Default", 0, False, 0x0100)
+            if hdesk:
+                user32.EnumDesktopWindows(hdesk, WNDENUMPROC(enum_corel_cb), 0)
+            else:
+                user32.EnumWindows(WNDENUMPROC(enum_corel_cb), 0)
         except Exception:
             pass
 
@@ -1094,8 +1134,8 @@ class LaserMonitorThread(threading.Thread):
         try:
             def enum_win_cb(hwnd, lparam):
                 nonlocal doc_from_dialog, doc_from_title, path_from_title
-                if user32.IsWindowVisible(hwnd):
-                    title = get_wtitle(hwnd)
+                title = get_wtitle(hwnd)
+                if title:
                     if "download" in title.lower():
                         def enum_child(chwnd, lparam):
                             nonlocal doc_from_dialog
@@ -1115,30 +1155,41 @@ class LaserMonitorThread(threading.Thread):
                             elif not doc_from_title:
                                 doc_from_title = extracted
                 return True
-            user32.EnumWindows(WNDENUMPROC(enum_win_cb), 0)
+
+            hdesk = user32.OpenDesktopW("Default", 0, False, 0x0100)
+            if hdesk:
+                user32.EnumDesktopWindows(hdesk, WNDENUMPROC(enum_win_cb), 0)
+            else:
+                user32.EnumWindows(WNDENUMPROC(enum_win_cb), 0)
         except Exception:
             pass
 
-        # A) Se encontrou caminho completo no CorelDRAW:
-        if corel_file_path and corel_doc_name:
+        # A) Se encontrou caminho completo válido no CorelDRAW:
+        if corel_file_path and corel_doc_name and not corel_doc_name.lower().startswith('doc'):
             return corel_doc_name, corel_file_path
 
         # B) Se temos o nome (ex: PRATELEIR), busca o caminho correspondente no disco:
         target_name = corel_doc_name or doc_from_dialog or doc_from_title
-        if target_name:
+        if target_name and not target_name.lower().startswith('doc') and target_name.lower() != 'untitled':
             disk_path = self.find_file_on_disk_by_name(target_name)
             if disk_path:
                 return target_name, disk_path
 
-        # C) Se encontrou no diálogo de Download do LaserCAD
+        # C) FALLBACK PARA ARQUIVO RECENTE NO DISCO (.cdr / .pw5 editado nas últimas 4h):
+        recent_cdr = self.find_most_recent_cdr_file(max_age_seconds=14400)
+        if recent_cdr:
+            clean_name = recent_cdr.split("\\")[-1].split("/")[-1]
+            return clean_name, recent_cdr
+
+        # D) Se encontrou no diálogo de Download do LaserCAD
         if doc_from_dialog:
             return doc_from_dialog, path_from_title or f"LaserCAD\\{doc_from_dialog}"
 
-        # D) Se encontrou no título da janela do LaserCAD
+        # E) Se encontrou no título da janela do LaserCAD
         if doc_from_title:
             return doc_from_title, path_from_title or f"LaserCAD\\{doc_from_title}"
 
-        # E) Fallback para o SoftCfg.ini
+        # F) Fallback para o SoftCfg.ini
         try:
             if os.path.exists(cfg_path):
                 with open(cfg_path, 'r', encoding='utf-8', errors='ignore') as f:
