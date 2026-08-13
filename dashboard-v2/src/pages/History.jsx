@@ -34,6 +34,24 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   const pdfMenuRef = useRef(null);
   const [editingJobId, setEditingJobId] = useState(null);
   const [editingValue, setEditingValue] = useState('');
+  
+  // Operator Editing States
+  const [operatorsList, setOperatorsList] = useState([]);
+  const [editingOperatorJobId, setEditingOperatorJobId] = useState(null);
+  const [customOperatorValue, setCustomOperatorValue] = useState('');
+  const [isCustomOperatorInput, setIsCustomOperatorInput] = useState(false);
+
+  useEffect(() => {
+    const fetchOperators = async () => {
+      try {
+        const list = await api.getOperators();
+        if (Array.isArray(list)) setOperatorsList(list);
+      } catch (err) {
+        console.error('Failed to load operators list:', err);
+      }
+    };
+    fetchOperators();
+  }, []);
 
   const handleUpdateProjectName = async (job, newName) => {
     try {
@@ -45,6 +63,20 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       onRefresh();
     } catch (err) {
       alert('Erro ao atualizar nome do projeto');
+    }
+  };
+
+  const handleUpdateOperatorName = async (job, newOperatorName) => {
+    try {
+      const targetIds = job.ids || [job.id];
+      for (const id of targetIds) {
+        await api.patch(`/jobs/${id}`, { operator_name: newOperatorName });
+      }
+      setEditingOperatorJobId(null);
+      setIsCustomOperatorInput(false);
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      alert('Erro ao atualizar operador do job');
     }
   };
 
@@ -531,9 +563,95 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                     </span>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="text-[10px] font-bold text-accent-cyan bg-accent-cyan/10 px-2.5 py-1 rounded-full border border-accent-cyan/20 flex items-center gap-1.5 w-fit whitespace-nowrap">
-                      👤 {job.operator_name || 'Desconhecido'}
-                    </span>
+                    {editingOperatorJobId === job.id ? (
+                      <div className="flex items-center gap-1.5 min-w-[170px] relative z-20">
+                        {!isCustomOperatorInput ? (
+                          <select
+                            value={job.operator_name || ''}
+                            onChange={(e) => {
+                              if (e.target.value === '__custom__') {
+                                setIsCustomOperatorInput(true);
+                                setCustomOperatorValue(job.operator_name || '');
+                              } else {
+                                handleUpdateOperatorName(job, e.target.value);
+                              }
+                            }}
+                            className="bg-slate-900 border border-accent-cyan/60 rounded-xl px-2 py-1 text-xs text-white focus:outline-none focus:border-accent-cyan w-full cursor-pointer shadow-lg shadow-black/50"
+                            autoFocus
+                          >
+                            <option value="" disabled>Selecionar Operador...</option>
+                            {operatorsList.map(op => (
+                              <option key={op.id || op.name} value={op.name}>
+                                {op.name} {op.shift ? `(${op.shift})` : ''}
+                              </option>
+                            ))}
+                            {job.operator_name && !operatorsList.some(o => o.name === job.operator_name) && (
+                              <option value={job.operator_name}>{job.operator_name}</option>
+                            )}
+                            <option value="__custom__">✏️ Outro (Digitar Nome)...</option>
+                          </select>
+                        ) : (
+                          <div className="flex items-center gap-1 w-full">
+                            <input
+                              type="text"
+                              value={customOperatorValue}
+                              onChange={(e) => setCustomOperatorValue(e.target.value)}
+                              placeholder="Nome do Operador"
+                              className="bg-black/70 border border-accent-cyan rounded-xl px-2 py-1 text-xs text-white focus:outline-none w-full"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleUpdateOperatorName(job, customOperatorValue);
+                                } else if (e.key === 'Escape') {
+                                  setEditingOperatorJobId(null);
+                                  setIsCustomOperatorInput(false);
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={() => handleUpdateOperatorName(job, customOperatorValue)}
+                              className="p-1 hover:bg-white/10 rounded-lg text-accent-success transition-all cursor-pointer shrink-0"
+                              title="Salvar Operador"
+                            >
+                              <Check size={14} />
+                            </button>
+                          </div>
+                        )}
+                        <button
+                          onClick={() => {
+                            setEditingOperatorJobId(null);
+                            setIsCustomOperatorInput(false);
+                          }}
+                          className="p-1 hover:bg-white/10 rounded-lg text-text-muted hover:text-white transition-all cursor-pointer shrink-0"
+                          title="Cancelar"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 group/op min-w-[130px]">
+                        <span 
+                          onClick={() => {
+                            setEditingOperatorJobId(job.id);
+                            setIsCustomOperatorInput(false);
+                          }}
+                          className="text-[10px] font-bold text-accent-cyan bg-accent-cyan/10 px-2.5 py-1 rounded-full border border-accent-cyan/20 flex items-center gap-1.5 w-fit whitespace-nowrap cursor-pointer hover:bg-accent-cyan/20 hover:border-accent-cyan/40 transition-all"
+                          title="Clique para alterar o operador"
+                        >
+                          👤 {job.operator_name || 'Desconhecido'}
+                        </span>
+                        <button
+                          onClick={() => {
+                            setEditingOperatorJobId(job.id);
+                            setIsCustomOperatorInput(false);
+                          }}
+                          className="p-1 text-[10px] text-text-muted hover:text-white hover:bg-white/5 rounded-lg opacity-0 group-hover/op:opacity-100 transition-all cursor-pointer"
+                          title="Alterar Operador"
+                        >
+                          ✏️
+                        </button>
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex flex-col gap-0.5 min-w-[100px]">
