@@ -50,7 +50,7 @@ function formatDuration(minutes) {
  * @param {Date} [options.startDate] - Start of custom date range
  * @param {Date} [options.endDate] - End of custom date range
  */
-export function generateProductionReport({ jobs = [], user = {}, filterType = 'all', startDate, endDate, routerStatusLog = [], maintenanceSchedule = [] }) {
+export function generateProductionReport({ jobs = [], user = {}, filterType = 'all', startDate, endDate, routerStatusLog = [], maintenanceSchedule = [], operators = [] }) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -514,6 +514,140 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
         5: { halign: 'left', cellWidth: 80 },
         6: { halign: 'center', cellWidth: 20 },
         7: { halign: 'center', fontStyle: 'bold', cellWidth: 20 },
+      },
+      margin: { left: 20, right: 20 },
+      didDrawPage: (data) => {
+        drawFooter(doc, pageWidth, pageHeight);
+      }
+    });
+  }
+
+  // ===== PAGE 5: OPERATOR ALLOCATION STATUS =====
+  if (operators.length > 0) {
+    doc.addPage('landscape');
+    
+    // Header bar
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pageWidth, 30, 'F');
+    doc.setFillColor(168, 85, 247); // purple-500
+    doc.rect(0, 30, pageWidth, 1.5, 'F');
+
+    doc.setTextColor(168, 85, 247);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Alocacao da Equipe - Posicao dos Operadores', 20, 18);
+
+    doc.setTextColor(148, 163, 184);
+    doc.setFontSize(9);
+    const availCount = operators.filter(op => (op.status || 'disponivel') === 'disponivel').length;
+    const externalCount = operators.filter(op => op.status === 'externo').length;
+    const otherSectorCount = operators.filter(op => op.status === 'outro_setor').length;
+    const absentCount = operators.filter(op => op.status === 'ausente').length;
+    doc.text(`${operators.length} operadores | ${availCount} na fabrica | Gerado em: ${now.toLocaleDateString('pt-BR')} as ${now.toLocaleTimeString('pt-BR')}`, pageWidth - 20, 18, { align: 'right' });
+
+    // Summary KPI cards for operators
+    const opCardY = 38;
+    const opCardH = 22;
+    const opGap = 8;
+    const opCardW = (pageWidth - 40 - opGap * 3) / 4;
+
+    const opKpis = [
+      { label: 'NA FABRICA', value: `${availCount}`, color: [16, 185, 129] },
+      { label: 'SERVICO EXTERNO', value: `${externalCount}`, color: [245, 158, 11] },
+      { label: 'OUTRO SETOR', value: `${otherSectorCount}`, color: [59, 130, 246] },
+      { label: 'FOLGA / AUSENTE', value: `${absentCount}`, color: [113, 113, 122] },
+    ];
+
+    opKpis.forEach((kpi, i) => {
+      const x = 20 + i * (opCardW + opGap);
+      doc.setFillColor(30, 41, 59);
+      doc.roundedRect(x, opCardY, opCardW, opCardH, 3, 3, 'F');
+      doc.setFillColor(...kpi.color);
+      doc.rect(x, opCardY, opCardW, 2, 'F');
+      doc.setTextColor(148, 163, 184);
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+      doc.text(kpi.label, x + opCardW / 2, opCardY + 9, { align: 'center' });
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(kpi.value, x + opCardW / 2, opCardY + 19, { align: 'center' });
+    });
+
+    const STATUS_LABELS = {
+      disponivel: 'NA FABRICA (DISPONIVEL)',
+      externo: 'SERVICO EXTERNO',
+      outro_setor: 'OUTRO SETOR DA FABRICA',
+      ausente: 'FOLGA / AUSENTE'
+    };
+
+    // Find which machine each available operator is on
+    const getOperatorMachine = (opName) => {
+      const job = filtered.find(j => j.operator_name && j.operator_name.toLowerCase() === opName.toLowerCase() && !j.end_time);
+      if (job) return job.router_name || 'Maquina ativa';
+      return '-';
+    };
+
+    // Sort: unavailable first (externo, outro_setor, ausente), then available
+    const sortedOps = [...operators].sort((a, b) => {
+      const order = { ausente: 0, externo: 1, outro_setor: 2, disponivel: 3 };
+      return (order[a.status || 'disponivel'] || 3) - (order[b.status || 'disponivel'] || 3);
+    });
+
+    autoTable(doc, {
+      startY: opCardY + opCardH + 10,
+      head: [['Operador', 'Turno', 'Status Atual', 'Posicao / Maquina']],
+      body: sortedOps.map((op) => {
+        const status = op.status || 'disponivel';
+        const statusLabel = STATUS_LABELS[status] || 'DISPONIVEL';
+        const isAvailable = status === 'disponivel';
+        const machine = isAvailable ? getOperatorMachine(op.name) : (op.location || statusLabel);
+
+        return [
+          op.name.toUpperCase(),
+          op.shift || 'Geral',
+          statusLabel,
+          machine
+        ];
+      }),
+      theme: 'plain',
+      styles: {
+        fontSize: 9,
+        cellPadding: 4,
+        textColor: [226, 232, 240],
+        lineColor: [51, 65, 85],
+        lineWidth: 0.1,
+      },
+      headStyles: {
+        fillColor: [30, 41, 59],
+        textColor: [168, 85, 247],
+        fontStyle: 'bold',
+        fontSize: 8,
+        cellPadding: 5,
+      },
+      alternateRowStyles: {
+        fillColor: [15, 23, 42],
+      },
+      columnStyles: {
+        0: { halign: 'left', fontStyle: 'bold', cellWidth: 60 },
+        1: { halign: 'center', cellWidth: 30 },
+        2: { halign: 'center', cellWidth: 70 },
+        3: { halign: 'left', cellWidth: 80 },
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 2) {
+          const val = data.cell.raw;
+          if (val.includes('EXTERNO')) {
+            data.cell.styles.textColor = [245, 158, 11]; // amber
+          } else if (val.includes('OUTRO SETOR')) {
+            data.cell.styles.textColor = [59, 130, 246]; // blue
+          } else if (val.includes('FOLGA') || val.includes('AUSENTE')) {
+            data.cell.styles.textColor = [113, 113, 122]; // zinc
+          } else {
+            data.cell.styles.textColor = [16, 185, 129]; // emerald
+          }
+          data.cell.styles.fontStyle = 'bold';
+        }
       },
       margin: { left: 20, right: 20 },
       didDrawPage: (data) => {

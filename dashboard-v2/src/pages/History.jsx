@@ -99,7 +99,8 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
     try {
       const routerStatusLog = await api.getRouterStatusLog();
       const maintenanceSchedule = await api.getMaintenance();
-      generateProductionReport({ jobs, user, filterType, routerStatusLog, maintenanceSchedule });
+      const operators = await api.getOperators();
+      generateProductionReport({ jobs, user, filterType, routerStatusLog, maintenanceSchedule, operators: Array.isArray(operators) ? operators : [] });
     } catch (err) {
       console.error('Erro ao gerar PDF:', err);
       alert('Erro ao gerar PDF: ' + err.message);
