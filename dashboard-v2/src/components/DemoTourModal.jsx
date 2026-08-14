@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { Sparkles, ChevronRight, ChevronLeft, X, CheckCircle2, Play, Activity, Cpu, Layers, BarChart2, Package, Wrench, ShieldCheck } from 'lucide-react';
+import { 
+  Sparkles, ChevronRight, ChevronLeft, X, CheckCircle2, 
+  Activity, Layers, BarChart2, Package, Wrench, Clock, HardHat, Settings, Users
+} from 'lucide-react';
 
 export function DemoTourModal({ isOpen, onClose, setActiveSection }) {
   const [currentStep, setCurrentStep] = useState(0);
@@ -11,64 +14,82 @@ export function DemoTourModal({ isOpen, onClose, setActiveSection }) {
       id: 'dashboard',
       section: 'dashboard',
       icon: Activity,
-      badge: 'Etapa 1 de 7 • Monitoramento',
+      badge: 'Etapa 1 de 9 • Telemetria ao Vivo',
       title: '🚀 Status & Telemetria em Tempo Real',
-      description: 'Acompanhe todas as suas CNC Routers e Lasers conectadas simultaneamente. Veja quem está operando, qual arquivo está sendo cortado, porcentagem de progresso e status operacional em tempo real.',
-      tip: '💡 Dica para o Cliente: Elimina a necessidade do gerente caminhar até a oficina para saber o status das máquinas.'
+      description: 'Acompanhe simultaneamente todas as suas Router CNC, Laser Ruida e Máquina a Vácuo. Visualize quem está operando, o arquivo em execução, barra de progresso em tempo real, tempo restante e previsão de término (ETA).',
+      tip: '💡 Dica para a Apresentação: Mostre como o gerente visualiza todas as máquinas da fábrica em uma única tela sem precisar caminhar até a oficina.'
     },
     {
-      id: 'operador',
+      id: 'equipe_hoje',
       section: 'operador',
-      icon: Cpu,
-      badge: 'Etapa 2 de 7 • Chão de Fábrica',
-      title: '👤 Modo Operador de Produção',
-      description: 'Interface simplificada otimizada para tablets e monitores ao lado da máquina. Permite ao operador visualizar o trabalho atual, conferir o checklist operacional e trocar de operador via PIN seguro.',
-      tip: '💡 Dica para o Cliente: Garante rastreabilidade total de qual operador produziu cada lote de peças.'
+      icon: Users,
+      badge: 'Etapa 2 de 9 • Alocação da Equipe',
+      title: '👷 Painel Equipe Hoje & Controle de Status',
+      description: 'Gestão visual de onde cada colaborador está atuando no momento: 🟢 Na Fábrica, 🟡 Serviço Externo, 🔵 Outro Setor, 🍱 Horário de Almoço ou ⚫ Folga/Ausente. Operadores alocados fora são bloqueados automaticamente de vinculações a máquinas.',
+      tip: '💡 Dica para a Apresentação: Altere o status de um operador ao vivo e mostre a cor do badge mudando e o bloqueio automático nas máquinas.'
+    },
+    {
+      id: 'timesheet',
+      section: 'operador',
+      icon: Clock,
+      badge: 'Etapa 3 de 9 • Rastreamento Diário',
+      title: '⏱️ Linha do Tempo & Timesheet Diário',
+      description: 'Registro de tempo 100% automático por período. A cada troca de atividade ou início de almoço, o sistema encerra o tempo anterior, calcula a duração exata e vincula opcionalmente à Ordem de Serviço (Kanban).',
+      tip: '💡 Dica para a Apresentação: Destaque o rastreio completo do dia do colaborador com cálculo automático de horas gastas em cada trabalho.'
+    },
+    {
+      id: 'encarregado',
+      section: 'encarregado',
+      icon: HardHat,
+      badge: 'Etapa 4 de 9 • Gestão de Produção',
+      title: '📋 Quadro Kanban de Ordens de Serviço (O.S.)',
+      description: 'Painel Kanban interativo para gerenciar o fluxo da fábrica (A Fazer / Em Produção / Concluído). Permite direcionar trabalhos para Máquinas CNC, Laser, Vácuo, Serviços Externos e Outros Setores com prazos e prioridades.',
+      tip: '💡 Dica para a Apresentação: Mostre como a O.S. avança automaticamente quando o operador inicia ou conclui um trabalho.'
     },
     {
       id: 'historico',
       section: 'jobs',
       icon: Layers,
-      badge: 'Etapa 3 de 7 • Rastreabilidade',
-      title: '📊 Histórico de Produção & Cálculo de m²',
-      description: 'Cada trabalho executado registra automaticamente: data/hora exatas de início e fim, duração real, dimensões da peça em mm, área total produzida em m² e valor total do material consumido.',
-      tip: '💡 Dica para o Cliente: Exporte relatórios em PDF e CSV com um clique para orçamentos e auditorias.'
+      badge: 'Etapa 5 de 9 • Rastreabilidade & PDF',
+      title: '📊 Histórico de Produção & Relatório PDF em 6 Páginas',
+      description: 'Registro histórico de todas as peças cortadas com cálculo de área em m², duração e custo de matéria-prima. Gera um Relatório PDF Profissional de 6 páginas com alto contraste (Resumo por Projeto, Manutenção, Peças e Timesheet da Equipe).',
+      tip: '💡 Dica para a Apresentação: Abra a opção "Exportar PDF" para demonstrar o relatório completo gerado em segundos.'
     },
     {
       id: 'graficos',
       section: 'charts',
       icon: BarChart2,
-      badge: 'Etapa 4 de 7 • Relatórios',
-      title: '📈 Gráficos de Produtividade & OEE',
-      description: 'Gráficos gerenciais intuitivos mostrando horas trabalhadas por máquina, comparação entre tempo estimado vs. tempo real de corte, consumo mensal de chapas e eficiência operacional.',
-      tip: '💡 Dica para o Cliente: Identifique gargalos e máquinas ociosas para maximizar seu faturamento diário.'
+      badge: 'Etapa 6 de 9 • Eficiência & OEE',
+      title: '📈 Gráficos de Produtividade & Métricas OEE',
+      description: 'Análise de eficiência operacional baseada nos índices globais OEE (Disponibilidade, Desempenho e Qualidade). Gráficos de uso por máquina, tempo estimado vs. tempo real e consumo mensal de chapas.',
+      tip: '💡 Dica para a Apresentação: Explique como os gráficos ajudam a identificar máquinas ociosas e otimizar o ritmo de produção.'
     },
     {
       id: 'materiais',
       section: 'materials',
       icon: Package,
-      badge: 'Etapa 5 de 7 • Custos',
-      title: '📦 Cadastro de Materiais & Custos',
-      description: 'Cadastre o custo por m² de chapas (Acrílico, MDF, ACM, PVC, Inox). O sistema reconhece automaticamente o material pelo nome do arquivo ou configuração e calcula o custo de insumo de cada peça.',
-      tip: '💡 Dica para o Cliente: Saiba o custo exato em Reais (R$) de matéria-prima gasta em cada trabalho.'
-    },
-    {
-      id: 'encarregado',
-      section: 'encarregado',
-      icon: ShieldCheck,
-      badge: 'Etapa 6 de 7 • Produção',
-      title: '📋 Quadro Kanban de Ordens de Serviço (O.S.)',
-      description: 'Gestão visual de Ordens de Serviço (A Fazer / Em Produção / Concluído). Quando o operador envia o arquivo do CorelDRAW ou LaserCAD, a O.S. no Kanban avança automaticamente!',
-      tip: '💡 Dica para o Cliente: Automação total entre os arquivos enviados do computador e o painel do encarregado.'
+      badge: 'Etapa 7 de 9 • Gestão de Custos',
+      title: '📦 Cadastro de Materiais & Calculadora de Insumos',
+      description: 'Cadastre o custo por m² de chapas (MDF, Acrílico, ACM, PVC, Inox, Isopor). O sistema identifica o material pelo nome do projeto e calcula o custo em Reais (R$) consumido por peça.',
+      tip: '💡 Dica para a Apresentação: Mostre o valor exato de matéria-prima economizado ao evitar refugos e perdas de estoque.'
     },
     {
       id: 'manutencao',
       section: 'maintenance',
       icon: Wrench,
-      badge: 'Etapa 7 de 7 • Manutenção',
-      title: '🛠️ Manutenção Preventiva & Horímetro',
-      description: 'Controle inteligente de manutenção preventiva (lubrificação dos guias lineares, troca de fluido dos chillers laser, limpeza de lentes). Emite alertas para evitar quebras dispendiosas.',
-      tip: '💡 Dica para o Cliente: Proteja o investimento de suas máquinas CNC prevenindo desgastes precoces.'
+      badge: 'Etapa 8 de 9 • Conservação & Falhas',
+      title: '🛠️ Manutenção Preventiva, Horímetro & Ocorrências',
+      description: 'Controle de horímetro, trocas de fluido/lentes, lubrificação de guias e agendamento de revisões. Conta com formulário de Reporte de Falhas para que o operador notifique o encarregado imediatamente.',
+      tip: '💡 Dica para a Apresentação: Evite paradas não planejadas e garanta maior vida útil aos equipamentos da fábrica.'
+    },
+    {
+      id: 'settings',
+      section: 'settings',
+      icon: Settings,
+      badge: 'Etapa 9 de 9 • Controle de Acesso',
+      title: '⚙️ Permissões por Perfil (Gerente, Encarregado, Operador)',
+      description: 'Controle estrito de acesso e permissões de telas. O perfil Operador tem visão exclusiva do terminal de operação, enquanto Gerentes e Encarregados possuem acesso total a custos, relatórios e Kanban.',
+      tip: '💡 Dica para a Apresentação: Demonstre a segurança de dados e a facilidade de configurar tablets dedicados ao chão de fábrica.'
     }
   ];
 
