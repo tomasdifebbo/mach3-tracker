@@ -316,7 +316,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
 
   autoTable(doc, {
     startY: 38,
-    head: [['#', 'Data', 'Inicio', 'Fim', 'Arquivo', 'Projeto', 'Router', 'Operador', 'Duracao', 'Custo (R$)']],
+    head: [['#', 'Data', 'Inicio', 'Fim', 'Arquivo', 'Projeto', 'Router', 'Operador', 'Qtd', 'Duracao', 'Custo (R$)']],
     body: filtered.map((j, idx) => {
       const startDt = new Date(j.start_time);
       const endDt = j.end_time ? new Date(j.end_time) : null;
@@ -333,6 +333,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
         pName.toUpperCase(),
         j.router_name || 'Central',
         j.operator_name || 'Desconhecido',
+        `${j.quantity || 1}`,
         formatDuration(Math.max(0, dur)),
         `R$ ${cost.toFixed(2)}`
       ];
@@ -360,15 +361,16 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
     },
     columnStyles: {
       0: { cellWidth: 8, halign: 'center' },
-      1: { cellWidth: 18, halign: 'center' },
-      2: { cellWidth: 13, halign: 'center' },
-      3: { cellWidth: 13, halign: 'center' },
-      4: { cellWidth: 60, halign: 'left' },
-      5: { cellWidth: 60, halign: 'left' },
+      1: { cellWidth: 17, halign: 'center' },
+      2: { cellWidth: 12, halign: 'center' },
+      3: { cellWidth: 12, halign: 'center' },
+      4: { cellWidth: 55, halign: 'left' },
+      5: { cellWidth: 55, halign: 'left' },
       6: { cellWidth: 20, halign: 'center' },
       7: { cellWidth: 22, halign: 'center' },
-      8: { cellWidth: 20, halign: 'center' },
-      9: { cellWidth: 28, halign: 'right', fontStyle: 'bold' },
+      8: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
+      9: { cellWidth: 20, halign: 'center' },
+      10: { cellWidth: 28, halign: 'right', fontStyle: 'bold' },
     },
     margin: { left: 8, right: 8 },
     didDrawPage: (data) => {

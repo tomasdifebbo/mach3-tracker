@@ -37,11 +37,13 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   const [editingJobId, setEditingJobId] = useState(null);
   const [editingValue, setEditingValue] = useState('');
   
-  // Operator Editing States
+  // Operator & Quantity Editing States
   const [operatorsList, setOperatorsList] = useState([]);
   const [editingOperatorJobId, setEditingOperatorJobId] = useState(null);
   const [customOperatorValue, setCustomOperatorValue] = useState('');
   const [isCustomOperatorInput, setIsCustomOperatorInput] = useState(false);
+  const [editingQtyJobId, setEditingQtyJobId] = useState(null);
+  const [editingQtyValue, setEditingQtyValue] = useState('1');
 
   useEffect(() => {
     const fetchOperators = async () => {
@@ -79,6 +81,21 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       if (onRefresh) onRefresh();
     } catch (err) {
       alert('Erro ao atualizar operador do job');
+    }
+  };
+
+  const handleUpdateQuantity = async (job, newQuantity) => {
+    try {
+      const qtyNum = parseInt(newQuantity);
+      if (isNaN(qtyNum) || qtyNum < 1) return;
+      const targetIds = job.ids || [job.id];
+      for (const id of targetIds) {
+        await api.patch(`/jobs/${id}`, { quantity: qtyNum });
+      }
+      setEditingQtyJobId(null);
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      alert('Erro ao atualizar quantidade do job');
     }
   };
 
@@ -201,7 +218,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   });
 
   const handleExportCSV = () => {
-    const headers = ['ID', 'Arquivo', 'Projeto', 'Router', 'Operador', 'Inicio', 'Fim', 'Duracao (min)', 'Material', 'm2 Utilizado', 'Custo (R$)', 'Data'];
+    const headers = ['ID', 'Arquivo', 'Projeto', 'Router', 'Operador', 'Quantidade', 'Inicio', 'Fim', 'Duracao (min)', 'Material', 'm2 Utilizado', 'Custo (R$)', 'Data'];
     const rows = filteredJobs.map(j => {
       const mat = materials.find(m => m.id === j.material_id);
       const ins = mat ? calculateInsumo({
@@ -219,6 +236,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
         j.folder?.split('|').pop()?.split('\\').pop() || '-',
         j.router_name || 'Central',
         j.operator_name || 'Desconhecido',
+        j.quantity || 1,
         formatTime(j.start_time),
         j.end_time ? formatTime(j.end_time) : 'Ativo',
         (j.duration_minutes || 0).toFixed(2),
@@ -459,6 +477,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                 <th className="px-6 py-5">Projeto</th>
                 <th className="px-6 py-5">Router</th>
                 <th className="px-6 py-5">Operador</th>
+                <th className="px-4 py-5 text-center">Qtd</th>
                 <th className="px-6 py-5">Cronograma</th>
                 <th className="px-6 py-5">Duração</th>
                 <th className="px-6 py-5 text-center">Insumo</th>
@@ -669,6 +688,65 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                             ✏️
                           </button>
                         )}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-4 py-5 text-center">
+                    {editingQtyJobId === job.id ? (
+                      <div className="flex items-center justify-center gap-1 min-w-[90px]">
+                        <input
+                          type="number"
+                          min="1"
+                          value={editingQtyValue}
+                          onChange={(e) => setEditingQtyValue(e.target.value)}
+                          className="w-16 bg-slate-900 border border-orange-500 rounded-lg px-2 py-1 text-xs font-bold text-white text-center outline-none"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleUpdateQuantity(job, editingQtyValue);
+                            } else if (e.key === 'Escape') {
+                              setEditingQtyJobId(null);
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => handleUpdateQuantity(job, editingQtyValue)}
+                          className="p-1 hover:bg-white/10 rounded text-accent-success cursor-pointer"
+                          title="Salvar Quantidade"
+                        >
+                          <Check size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-1">
+                        <span 
+                          onClick={() => {
+                            if (canEditOperator || job.router_name?.toLowerCase().includes('vacuo') || job.router_name?.toLowerCase().includes('vácuo')) {
+                              setEditingQtyJobId(job.id);
+                              setEditingQtyValue(String(job.quantity || 1));
+                            }
+                          }}
+                          className={clsx(
+                            "text-xs font-black px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 cursor-pointer",
+                            (job.router_name?.toLowerCase().includes('vacuo') || job.router_name?.toLowerCase().includes('vácuo'))
+                              ? "bg-purple-500/20 text-purple-300 border-purple-500/40 hover:bg-purple-500/30"
+                              : "bg-white/5 text-white border-white/10 hover:border-white/20"
+                          )}
+                          title="Clique para ajustar quantidade (Alimentação Manual/Encarregado)"
+                        >
+                          {(job.router_name?.toLowerCase().includes('vacuo') || job.router_name?.toLowerCase().includes('vácuo')) && '📦 '}
+                          {job.quantity || 1} UN
+                        </span>
+                        <button
+                          onClick={() => {
+                            setEditingQtyJobId(job.id);
+                            setEditingQtyValue(String(job.quantity || 1));
+                          }}
+                          className="p-1 text-[10px] text-text-muted hover:text-white rounded hover:bg-white/5 cursor-pointer"
+                          title="Ajustar Quantidade"
+                        >
+                          ✏️
+                        </button>
                       </div>
                     )}
                   </td>

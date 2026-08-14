@@ -135,8 +135,10 @@ async function initDb() {
                 material_name TEXT,
                 material_price REAL,
                 router_name TEXT,
-                estimated_minutes REAL
+                estimated_minutes REAL,
+                quantity INTEGER DEFAULT 1
             );
+            ALTER TABLE jobs ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1;
             CREATE TABLE IF NOT EXISTS routers (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
@@ -1165,9 +1167,10 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
     const maxX = req.body.max_x ? parseFloat(req.body.max_x) : null;
     const maxY = req.body.max_y ? parseFloat(req.body.max_y) : null;
     const boundArea = req.body.bounding_area_m2 ? parseFloat(req.body.bounding_area_m2) : (maxX && maxY ? parseFloat(((maxX / 1000) * (maxY / 1000)).toFixed(3)) : null);
+    const initialQty = req.body.quantity ? parseInt(req.body.quantity) : 1;
 
-    const result = await pool.query('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, "userId", router_name, estimated_minutes, material_id, material_name, material_price, operator_name, max_x, max_y, bounding_area_m2) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id', 
-        [cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, router_name || null, estMin, req.body.material_id || null, req.body.material_name || null, req.body.material_price || null, operatorName, maxX, maxY, boundArea]);
+    const result = await pool.query('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, "userId", router_name, estimated_minutes, material_id, material_name, material_price, operator_name, max_x, max_y, bounding_area_m2, quantity) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING id', 
+        [cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, router_name || null, estMin, req.body.material_id || null, req.body.material_name || null, req.body.material_price || null, operatorName, maxX, maxY, boundArea, initialQty]);
     
     // Auto-sync Kanban card: todo -> doing
     autoSyncKanban(userId, cleanFileName, cleanFolder, router_name, 'doing', operatorName);
@@ -1265,6 +1268,7 @@ app.patch('/api/jobs/:id', authenticateToken, async (req, res) => {
     if (max_y !== undefined) { fields.push(`max_y = $${idx++}`); values.push(max_y ? parseFloat(max_y) : null); }
     if (bounding_area_m2 !== undefined) { fields.push(`bounding_area_m2 = $${idx++}`); values.push(bounding_area_m2 ? parseFloat(bounding_area_m2) : null); }
     if (operator_name !== undefined) { fields.push(`operator_name = $${idx++}`); values.push(operator_name); }
+    if (req.body.quantity !== undefined) { fields.push(`quantity = $${idx++}`); values.push(req.body.quantity ? parseInt(req.body.quantity) : 1); }
 
     if (fields.length === 0) return res.status(400).json({ error: "No fields to update" });
     values.push(req.params.id, req.user.id);
