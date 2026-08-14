@@ -590,6 +590,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       externo: 'SERVICO EXTERNO',
       outro_setor: 'OUTRO SETOR DA FABRICA',
       almoco: 'HORARIO DE ALMOCO',
+      limpeza: 'LIMPEZA E MANUTENCAO DO SETOR',
       ausente: 'FOLGA / AUSENTE'
     };
 
@@ -694,6 +695,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       externo: 'SERVICO EXTERNO',
       outro_setor: 'OUTRO SETOR',
       almoco: 'ALMOCO',
+      limpeza: 'LIMPEZA E MANUTENCAO',
       ausente: 'FOLGA / AUSENTE'
     };
 

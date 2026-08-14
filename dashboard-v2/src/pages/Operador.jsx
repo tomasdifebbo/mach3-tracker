@@ -193,7 +193,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
   // Operator status management
   const handleStatusSelect = (op, newStatus) => {
     const loc = OPERATOR_STATUS_CONFIG[newStatus]?.label || '';
-    if (newStatus === 'externo' || newStatus === 'outro_setor' || newStatus === 'disponivel') {
+    if (newStatus === 'externo' || newStatus === 'outro_setor' || newStatus === 'limpeza' || newStatus === 'disponivel') {
       setPendingKanbanLink({ op, newStatus, newLocation: loc });
       setSelectedKanbanTask('');
       setAllocationNotes('');
@@ -219,6 +219,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
     externo:    { label: 'Serviço Externo', color: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/30', icon: ExternalLink, dot: 'bg-amber-400' },
     outro_setor:{ label: 'Outro Setor', color: 'text-blue-400', bg: 'bg-blue-500/15', border: 'border-blue-500/30', icon: Building2, dot: 'bg-blue-400' },
     almoco:     { label: 'Horário de Almoço', color: 'text-orange-400', bg: 'bg-orange-500/15', border: 'border-orange-500/30', icon: Utensils, dot: 'bg-orange-400' },
+    limpeza:    { label: 'Limpeza e Manutenção', color: 'text-cyan-400', bg: 'bg-cyan-500/15', border: 'border-cyan-500/30', icon: Sparkles, dot: 'bg-cyan-400' },
     ausente:    { label: 'Folga / Ausente', color: 'text-zinc-400', bg: 'bg-zinc-500/15', border: 'border-zinc-500/30', icon: Moon, dot: 'bg-zinc-500' }
   };
 
@@ -463,6 +464,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                     >
                       <option value="disponivel" className="bg-zinc-900 text-white">🟢 Na Fábrica (Disponível)</option>
                       <option value="almoco" className="bg-zinc-900 text-white">🍱 Horário de Almoço</option>
+                      <option value="limpeza" className="bg-zinc-900 text-white">🧹 Limpeza e Manutenção do Setor</option>
                       <option value="externo" className="bg-zinc-900 text-white">🟡 Serviço Externo</option>
                       <option value="outro_setor" className="bg-zinc-900 text-white">🔵 Outro Setor da Fábrica</option>
                       <option value="ausente" className="bg-zinc-900 text-white">⚫ Folga / Ausente</option>

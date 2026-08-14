@@ -23,10 +23,10 @@ export function DemoTourModal({ isOpen, onClose, setActiveSection }) {
       id: 'equipe_hoje',
       section: 'operador',
       icon: Users,
-      badge: 'Etapa 2 de 9 • Alocação da Equipe & Almoço',
-      title: '👷 Painel Equipe Hoje & Botão de Almoço 🍱',
-      description: 'Gestão visual de alocação de pessoal: 🟢 Na Fábrica, 🍱 Horário de Almoço (com botão de 1 clique para ir/voltar do almoço), 🟡 Serviço Externo, 🔵 Outro Setor da Fábrica ou ⚫ Folga/Ausente. Operadores alocados fora ou em almoço são bloqueados de vínculo a máquinas automaticamente.',
-      tip: '💡 Dica para o Cliente: Garante que você saiba exatamente onde cada operador está no momento e evita apontamento de máquina durante o horário de almoço.'
+      badge: 'Etapa 2 de 9 • Alocação da Equipe & Status',
+      title: '👷 Painel Equipe Hoje, Almoço 🍱 & Limpeza 🧹',
+      description: 'Gestão visual de alocação de pessoal: 🟢 Na Fábrica, 🍱 Horário de Almoço, 🧹 Limpeza e Manutenção do Setor, 🟡 Serviço Externo, 🔵 Outro Setor ou ⚫ Folga/Ausente. Operadores alocados fora, em almoço ou limpeza são bloqueados de vínculo a máquinas automaticamente.',
+      tip: '💡 Dica para o Cliente: Garante que você saiba exatamente onde cada operador está no momento e evita apontamento incorreto de máquina.'
     },
     {
       id: 'timesheet',
