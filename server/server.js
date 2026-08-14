@@ -2013,9 +2013,67 @@ app.patch('/api/operators/:id/status', authenticateToken, async (req, res) => {
 
 app.get('/api/operators/time-logs', authenticateToken, async (req, res) => {
     try {
+        const userId = req.user.id;
         const { date } = req.query;
+
+        // Auto-reconcile: If an operator has an active cutting job, but their open log is 'Na Fábrica' or started before the job, split into a new card!
+        const openLogs = (await pool.query(
+            'SELECT * FROM operator_time_logs WHERE "userId" = $1 AND end_time IS NULL AND status = \'disponivel\'',
+            [userId]
+        )).rows;
+
+        for (const log of openLogs) {
+            const opName = log.operator_name;
+            if (!opName) continue;
+
+            const activeJob = (await pool.query(
+                `SELECT * FROM jobs 
+                 WHERE "userId" = $1 
+                 AND LOWER(operator_name) = LOWER($2) 
+                 AND end_time IS NULL 
+                 ORDER BY id DESC LIMIT 1`,
+                [userId, opName]
+            )).rows[0];
+
+            if (activeJob) {
+                const jobStart = new Date(activeJob.start_time);
+                const logStart = new Date(log.start_time);
+
+                // If the open log started BEFORE the job started (or has different file name):
+                if (log.kanban_title !== activeJob.file_name && jobStart > logStart) {
+                    // Close open log at jobStart time
+                    const durMin = Math.max(0.1, (jobStart - logStart) / 60000);
+                    await pool.query(
+                        'UPDATE operator_time_logs SET end_time = $1, duration_minutes = $2 WHERE id = $3',
+                        [jobStart.toISOString(), parseFloat(durMin.toFixed(2)), log.id]
+                    );
+
+                    // Insert NEW log card starting at jobStart time
+                    const machineLoc = activeJob.router_name ? `⚙️ ${activeJob.router_name}` : 'Na Máquina';
+                    await pool.query(
+                        `INSERT INTO operator_time_logs (
+                            "userId", operator_id, operator_name, status, location, kanban_title, start_time
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                        [userId, log.operator_id, opName, 'disponivel', machineLoc, activeJob.file_name, jobStart.toISOString()]
+                    );
+
+                    await pool.query(
+                        `UPDATE operators SET location = $1 WHERE id = $2 AND "userId" = $3`,
+                        [machineLoc, log.operator_id, userId]
+                    );
+                } else if (!log.kanban_title || log.location === 'Na Fábrica') {
+                    // Just update location and title if timestamps match
+                    const machineLoc = activeJob.router_name ? `⚙️ ${activeJob.router_name}` : 'Na Máquina';
+                    await pool.query(
+                        `UPDATE operator_time_logs SET location = $1, kanban_title = $2 WHERE id = $3`,
+                        [machineLoc, activeJob.file_name, log.id]
+                    );
+                }
+            }
+        }
+
         let query = 'SELECT * FROM operator_time_logs WHERE "userId" = $1';
-        const params = [req.user.id];
+        const params = [userId];
 
         if (date) {
             query += ' AND DATE(start_time) = DATE($2)';
