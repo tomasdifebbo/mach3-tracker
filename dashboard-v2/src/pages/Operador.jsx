@@ -115,7 +115,9 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
     try {
       await api.addOperator(newOpName.trim(), newOpShift);
       setNewOpName('');
-      fetchOperators();
+      await fetchOperators();
+      await fetchTimeLogs();
+      if (onRefresh) onRefresh();
     } catch (err) {
       alert('Erro ao cadastrar operador');
     } finally {

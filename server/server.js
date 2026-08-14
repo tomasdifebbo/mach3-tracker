@@ -1830,10 +1830,20 @@ app.post('/api/operators', authenticateToken, async (req, res) => {
     if (!name || !name.trim()) return res.status(400).json({ error: "Nome do operador é obrigatório." });
     try {
         const result = await pool.query(
-            'INSERT INTO operators (name, shift, "userId") VALUES ($1, $2, $3) RETURNING *',
-            [name.trim(), shift || 'Geral', req.user.id]
+            'INSERT INTO operators (name, shift, "userId", status, location) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [name.trim(), shift || 'Geral', req.user.id, 'disponivel', 'Na Fábrica']
         );
-        res.json(result.rows[0]);
+        const newOp = result.rows[0];
+
+        // Create initial timeline log for newly created operator
+        await pool.query(
+            `INSERT INTO operator_time_logs (
+                "userId", operator_id, operator_name, status, location, start_time
+            ) VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)`,
+            [req.user.id, newOp.id, newOp.name, 'disponivel', 'Na Fábrica']
+        );
+
+        res.json(newOp);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
