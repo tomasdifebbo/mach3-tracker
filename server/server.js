@@ -379,6 +379,12 @@ async function initDb() {
                     console.log("[SEED] Adicionando máquina Laser Ruida...");
                     await pool.query('INSERT INTO routers (name, status, "userId") VALUES ($1, $2, $3)', ['Laser Ruida', 'active', masterUser.id]);
                 }
+                // Guarantee Máquina a Vácuo router exists
+                const vacuoCheck = await pool.query("SELECT id FROM routers WHERE (name ILIKE '%vacuo%' OR name ILIKE '%vácuo%') AND \"userId\" = $1", [masterUser.id]);
+                if (vacuoCheck.rows.length === 0) {
+                    console.log("[SEED] Adicionando Máquina a Vácuo...");
+                    await pool.query('INSERT INTO routers (name, status, "userId") VALUES ($1, $2, $3)', ['Máquina a Vácuo', 'active', masterUser.id]);
+                }
             }
         }
 
@@ -429,11 +435,23 @@ function authenticateToken(req, res, next) {
 // ===== ROUTERS STATUS =====
 app.get('/api/routers', authenticateToken, async (req, res) => {
     try {
-        const routers = (await pool.query('SELECT * FROM routers WHERE "userId" = $1 ORDER BY id ASC', [req.user.id])).rows;
+        let routers = (await pool.query('SELECT * FROM routers WHERE "userId" = $1 ORDER BY id ASC', [req.user.id])).rows;
+        
+        // Auto-provision "Máquina a Vácuo" if missing for user
+        const hasVacuo = routers.some(r => r.name.toLowerCase().includes('vacuo') || r.name.toLowerCase().includes('vácuo'));
+        if (!hasVacuo) {
+            const newVacuo = (await pool.query(
+                'INSERT INTO routers (name, status, "userId") VALUES ($1, $2, $3) RETURNING *',
+                ['Máquina a Vácuo', 'active', req.user.id]
+            )).rows[0];
+            routers.push(newVacuo);
+        }
+
         for (const r of routers) {
             const isLaser = r.name.toLowerCase().includes('laser');
             const isCentral = r.name.toLowerCase().includes('central') || r.name.toLowerCase().includes('1');
             const isRouter2 = r.name.toLowerCase().includes('2') || r.name.toLowerCase().includes('act10');
+            const isVacuo = r.name.toLowerCase().includes('vacuo') || r.name.toLowerCase().includes('vácuo');
             const cleanName = r.name.replace(/ruida/i, '').replace(/co2|co₂/i, '').trim();
 
             const activeJob = (await pool.query(
@@ -445,10 +463,11 @@ app.get('/api/routers', authenticateToken, async (req, res) => {
                    OR ($4 = true AND router_name ILIKE '%laser%')
                    OR ($5 = true AND (router_name ILIKE '%central%' OR router_name ILIKE '%router 1%'))
                    OR ($6 = true AND (router_name ILIKE '%router 2%' OR router_name ILIKE '%act10%'))
+                   OR ($7 = true AND (router_name ILIKE '%vacuo%' OR router_name ILIKE '%vácuo%'))
                  ) 
                  AND end_time IS NULL 
                  ORDER BY start_time DESC LIMIT 1`,
-                [req.user.id, `%${r.name}%`, `%${cleanName}%`, isLaser, isCentral, isRouter2]
+                [req.user.id, `%${r.name}%`, `%${cleanName}%`, isLaser, isCentral, isRouter2, isVacuo]
             )).rows[0];
 
             if (activeJob) {
