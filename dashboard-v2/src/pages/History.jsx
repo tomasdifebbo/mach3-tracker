@@ -510,7 +510,28 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
-              {filteredJobs.map((job) => (
+              {filteredJobs.map((job) => {
+                const mat = materials.find(m => String(m.id) === String(job.material_id) || (job.material_name && m.name.toLowerCase() === job.material_name.toLowerCase()));
+                let effectiveMaterialCost = job.material_price || 0;
+                let effectiveAreaM2 = 0;
+
+                if (mat) {
+                  const ins = calculateInsumo({
+                    durationMinutes: job.duration_minutes || 0,
+                    pricePerM2: mat.price || 0,
+                    maxXMm: job.max_x,
+                    maxYMm: job.max_y,
+                    boundingAreaM2: job.bounding_area_m2,
+                    sheetWidthMm: mat.sheet_width_mm,
+                    sheetHeightMm: mat.sheet_height_mm
+                  });
+                  effectiveAreaM2 = ins.areaM2 * (job.quantity || 1);
+                  effectiveMaterialCost = ins.totalCost * (job.quantity || 1);
+                } else if (job.material_price && (job.quantity || 1) > 0) {
+                  effectiveMaterialCost = job.material_price;
+                }
+
+                return (
                 <tr key={job.id} className="border-b border-border/40 hover:bg-white/5 transition-colors group">
                   <td className="px-6 py-5 min-w-[250px] max-w-[400px]">
                     <div className="flex flex-col">
@@ -793,7 +814,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                       </button>
                       {job.material_name && (
                         <span className="text-[9px] font-mono text-accent-cyan/80 font-bold bg-accent-cyan/10 px-2 py-0.5 rounded-md">
-                          Insumo: {formatCurrency(job.material_price || 0)}
+                          Insumo: {formatCurrency(effectiveMaterialCost)}
                         </span>
                       )}
                     </div>
@@ -841,28 +862,16 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                     </AnimatePresence>
                   </td>
                   <td className="px-6 py-5 text-center whitespace-nowrap">
-                    {(() => {
-                      const mat = materials.find(m => m.id === job.material_id);
-                      if (!mat) return <span className="text-text-muted text-xs">-</span>;
-                      const ins = calculateInsumo({
-                        durationMinutes: job.duration_minutes || 0,
-                        pricePerM2: mat.price || 0,
-                        maxXMm: job.max_x,
-                        maxYMm: job.max_y,
-                        boundingAreaM2: job.bounding_area_m2,
-                        sheetWidthMm: mat.sheet_width_mm,
-                        sheetHeightMm: mat.sheet_height_mm
-                      });
-                      const totalAreaM2 = ins.areaM2 * (job.quantity || 1);
-                      return (
-                        <span className="text-sm font-bold text-accent-cyan">
-                          {totalAreaM2.toFixed(4)} <span className="text-[10px] text-text-muted">m²</span>
-                        </span>
-                      );
-                    })()}
+                    {effectiveAreaM2 > 0 ? (
+                      <span className="text-sm font-bold text-accent-cyan">
+                        {effectiveAreaM2.toFixed(4)} <span className="text-[10px] text-text-muted">m²</span>
+                      </span>
+                    ) : (
+                      <span className="text-text-muted text-xs">-</span>
+                    )}
                   </td>
                   <td className="px-6 py-5 font-black text-white text-sm tracking-tighter whitespace-nowrap">
-                    {formatCurrency(((job.duration_minutes || 0) / 60 * costPerHour) + (job.material_price || 0))}
+                    {formatCurrency(((job.duration_minutes || 0) / 60 * costPerHour) + effectiveMaterialCost)}
                   </td>
                   <td className="px-6 py-5">
                     <div className="text-[10px] text-text-muted font-black tracking-widest uppercase text-accent-cyan whitespace-nowrap">
@@ -910,7 +919,8 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                     </div>
                   </td>
                 </tr>
-              ))}
+              );
+            })}
             </tbody>
           </table>
           
