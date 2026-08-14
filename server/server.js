@@ -265,6 +265,9 @@ async function initDb() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
+            ALTER TABLE operators ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'disponivel';
+            ALTER TABLE operators ADD COLUMN IF NOT EXISTS location TEXT DEFAULT 'Na Fábrica';
+
             CREATE TABLE IF NOT EXISTS kaizens (
                 id SERIAL PRIMARY KEY,
                 title TEXT NOT NULL,
@@ -1806,6 +1809,24 @@ app.delete('/api/operators/:id', authenticateToken, async (req, res) => {
     try {
         await pool.query('DELETE FROM operators WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id]);
         res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.patch('/api/operators/:id/status', authenticateToken, async (req, res) => {
+    const { status, location } = req.body;
+    const validStatuses = ['disponivel', 'externo', 'outro_setor', 'ausente'];
+    if (!validStatuses.includes(status)) {
+        return res.status(400).json({ error: 'Status inválido. Use: disponivel, externo, outro_setor, ausente' });
+    }
+    try {
+        const result = await pool.query(
+            'UPDATE operators SET status = $1, location = $2 WHERE id = $3 AND "userId" = $4 RETURNING *',
+            [status, location || '', req.params.id, req.user.id]
+        );
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Operador não encontrado' });
+        res.json({ success: true, operator: result.rows[0] });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

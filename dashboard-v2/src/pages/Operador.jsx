@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   UserCheck, Play, CheckCircle2, AlertTriangle, Clock, 
-  Wrench, CheckSquare, Layers, Cpu, ShieldAlert, Sparkles, RefreshCw, Edit2, Trash2, CalendarClock
+  Wrench, CheckSquare, Layers, Cpu, ShieldAlert, Sparkles, RefreshCw, Edit2, Trash2, CalendarClock,
+  ExternalLink, Building2, Moon, ChevronDown, Users
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -164,6 +165,26 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
 
   const activeJobs = kanbanTasks.filter(t => t.column_id === 'doing' || t.column_id === 'todo');
 
+  // Operator status management
+  const handleUpdateOperatorStatus = async (opId, newStatus, newLocation) => {
+    try {
+      await api.updateOperatorStatus(opId, newStatus, newLocation);
+      fetchOperators();
+    } catch (err) {
+      alert('Erro ao atualizar status do operador');
+    }
+  };
+
+  const OPERATOR_STATUS_CONFIG = {
+    disponivel: { label: 'Na Fábrica', color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', icon: CheckCircle2, dot: 'bg-emerald-400' },
+    externo:    { label: 'Serviço Externo', color: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/30', icon: ExternalLink, dot: 'bg-amber-400' },
+    outro_setor:{ label: 'Outro Setor', color: 'text-blue-400', bg: 'bg-blue-500/15', border: 'border-blue-500/30', icon: Building2, dot: 'bg-blue-400' },
+    ausente:    { label: 'Folga / Ausente', color: 'text-zinc-400', bg: 'bg-zinc-500/15', border: 'border-zinc-500/30', icon: Moon, dot: 'bg-zinc-500' }
+  };
+
+  const availableOperators = useMemo(() => operatorsList.filter(op => (op.status || 'disponivel') === 'disponivel'), [operatorsList]);
+  const unavailableCount = operatorsList.length - availableOperators.length;
+
   const activeCuttingJobs = React.useMemo(() => {
     const openFromJobs = jobs.filter(j => !j.end_time);
     const list = [...openFromJobs];
@@ -309,6 +330,83 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
         </div>
       </div>
 
+      {/* Painel Equipe Hoje */}
+      {operatorsList.length > 0 && (
+        <div className="glass p-5 md:p-6 rounded-3xl border border-white/10 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-black uppercase tracking-wider text-purple-300 flex items-center gap-2">
+              <Users size={16} /> Equipe Hoje
+            </h3>
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                ✅ {availableOperators.length} disponíveis
+              </span>
+              {unavailableCount > 0 && (
+                <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+                  ⚠️ {unavailableCount} fora
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {operatorsList.map(op => {
+              const st = OPERATOR_STATUS_CONFIG[op.status || 'disponivel'];
+              const StatusIcon = st.icon;
+              const isAvailable = (op.status || 'disponivel') === 'disponivel';
+              
+              // Check if operator is currently assigned to a machine
+              const assignedRouter = routers.find(r => r.operator_name && r.operator_name.toLowerCase() === op.name.toLowerCase());
+              const assignedJob = activeCuttingJobs.find(j => j.operator_name && j.operator_name.toLowerCase() === op.name.toLowerCase());
+              const machineInfo = assignedRouter ? assignedRouter.name : (assignedJob ? assignedJob.router_name : null);
+
+              return (
+                <div key={op.id} className={`relative p-3.5 rounded-2xl border ${st.border} ${st.bg} transition-all hover:scale-[1.02]`}>
+                  <div className="flex items-start gap-3">
+                    {/* Avatar */}
+                    <div className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-sm font-black ${isAvailable ? 'bg-emerald-500/20 text-emerald-300' : st.bg + ' ' + st.color}`}>
+                      {op.name.charAt(0).toUpperCase()}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-white truncate">{op.name}</p>
+                      <p className="text-[10px] text-text-muted font-medium mt-0.5">Turno: {op.shift || 'Geral'}</p>
+                      
+                      {/* Status Badge */}
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <span className={`w-2 h-2 rounded-full ${st.dot} ${isAvailable && machineInfo ? 'animate-pulse' : ''}`} />
+                        <span className={`text-[10px] font-bold ${st.color}`}>
+                          {isAvailable && machineInfo ? `Na Máquina (${machineInfo})` : st.label}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status Selector */}
+                  <div className="mt-3 relative">
+                    <select
+                      value={op.status || 'disponivel'}
+                      onChange={(e) => {
+                        const newStatus = e.target.value;
+                        const loc = OPERATOR_STATUS_CONFIG[newStatus]?.label || '';
+                        handleUpdateOperatorStatus(op.id, newStatus, loc);
+                      }}
+                      className={`w-full bg-black/40 border ${st.border} rounded-xl px-3 py-1.5 text-[11px] font-bold ${st.color} outline-none cursor-pointer appearance-none pr-7 transition-all hover:bg-black/60`}
+                    >
+                      <option value="disponivel" className="bg-zinc-900 text-white">🟢 Na Fábrica (Disponível)</option>
+                      <option value="externo" className="bg-zinc-900 text-white">🟡 Serviço Externo</option>
+                      <option value="outro_setor" className="bg-zinc-900 text-white">🔵 Outro Setor da Fábrica</option>
+                      <option value="ausente" className="bg-zinc-900 text-white">⚫ Folga / Ausente</option>
+                    </select>
+                    <ChevronDown size={12} className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${st.color}`} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Painel de Previsão de Cortes em Andamento em Tempo Real */}
       {activeCuttingJobs.length > 0 && (
         <div className="space-y-4">
@@ -377,14 +475,14 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                               className="bg-black/80 border border-accent-cyan/40 text-[11px] font-bold text-accent-cyan rounded-lg px-2 py-0.5 outline-none cursor-pointer hover:border-accent-cyan transition-colors"
                             >
                               <option value="" className="bg-zinc-900 text-white">-- Vincular Operador ao Corte --</option>
-                              {operatorsList.map(op => (
+                              {availableOperators.map(op => (
                                 <option key={op.id || op.name} value={op.name} className="bg-zinc-900 text-white">👷 {op.name}</option>
                               ))}
                               {operatorName && !operatorsList.some(o => o.name === operatorName) && (
                                 <option value={operatorName} className="bg-zinc-900 text-white">👷 {operatorName}</option>
                               )}
-                              {job.operator_name && !operatorsList.some(o => o.name === job.operator_name) && job.operator_name !== operatorName && (
-                                <option value={job.operator_name} className="bg-zinc-900 text-white">👷 {job.operator_name}</option>
+                              {job.operator_name && !availableOperators.some(o => o.name === job.operator_name) && job.operator_name !== operatorName && (
+                                <option value={job.operator_name} className="bg-zinc-900 text-white">👷 {job.operator_name} (alocado fora)</option>
                               )}
                             </select>
                           </div>
@@ -502,13 +600,16 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                   className="w-full bg-zinc-900 border border-white/10 text-xs font-bold text-white rounded-lg px-2.5 py-1.5 outline-none focus:border-accent-cyan cursor-pointer"
                 >
                   <option value="" className="bg-zinc-900 text-text-muted">-- Selecionar Operador --</option>
-                  {operatorsList.map(op => (
+                  {availableOperators.map(op => (
                     <option key={op.id} value={op.name} className="bg-zinc-900 text-white">
                       👷 {op.name} ({op.shift})
                     </option>
                   ))}
                   {operatorName && !operatorsList.some(o => o.name === operatorName) && (
                     <option value={operatorName} className="bg-zinc-900 text-white">👷 {operatorName}</option>
+                  )}
+                  {m.operator_name && !availableOperators.some(o => o.name === m.operator_name) && m.operator_name !== operatorName && (
+                    <option value={m.operator_name} className="bg-zinc-900 text-white">👷 {m.operator_name} (alocado fora)</option>
                   )}
                 </select>
               </div>
@@ -687,14 +788,14 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                             className="bg-black/70 border border-accent-cyan/30 text-[11px] font-bold text-accent-cyan rounded-lg px-2.5 py-1 outline-none cursor-pointer hover:border-accent-cyan transition-colors"
                           >
                             <option value="" className="bg-zinc-900 text-white">-- Vincular Operador --</option>
-                            {operatorsList.map(op => (
+                            {availableOperators.map(op => (
                               <option key={op.id || op.name} value={op.name} className="bg-zinc-900 text-white">👷 {op.name}</option>
                             ))}
                             {operatorName && !operatorsList.some(o => o.name === operatorName) && (
                               <option value={operatorName} className="bg-zinc-900 text-white">👷 {operatorName}</option>
                             )}
-                            {task.operator && !operatorsList.some(o => o.name === task.operator) && task.operator !== operatorName && (
-                              <option value={task.operator} className="bg-zinc-900 text-white">👷 {task.operator}</option>
+                            {task.operator && !availableOperators.some(o => o.name === task.operator) && task.operator !== operatorName && (
+                              <option value={task.operator} className="bg-zinc-900 text-white">👷 {task.operator} (alocado fora)</option>
                             )}
                           </select>
                         </div>

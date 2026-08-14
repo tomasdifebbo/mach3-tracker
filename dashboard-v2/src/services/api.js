@@ -264,6 +264,15 @@ export const api = {
     return safeJson(resp);
   },
 
+  updateOperatorStatus: async (id, status, location) => {
+    const resp = await fetch(`${API_URL}/api/operators/${id}/status`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status, location })
+    });
+    return safeJson(resp);
+  },
+
   getRouterStatusLog: async () => {
     const resp = await fetch(`${API_URL}/api/routers/status-log`, { 
       headers: getAuthHeaders(),
