@@ -587,6 +587,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       disponivel: 'NA FABRICA (DISPONIVEL)',
       externo: 'SERVICO EXTERNO',
       outro_setor: 'OUTRO SETOR DA FABRICA',
+      almoco: 'HORARIO DE ALMOCO',
       ausente: 'FOLGA / AUSENTE'
     };
 
@@ -690,6 +691,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       disponivel: 'NA FABRICA',
       externo: 'SERVICO EXTERNO',
       outro_setor: 'OUTRO SETOR',
+      almoco: 'ALMOCO',
       ausente: 'FOLGA / AUSENTE'
     };
 

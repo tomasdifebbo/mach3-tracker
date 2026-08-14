@@ -1860,9 +1860,9 @@ app.delete('/api/operators/:id', authenticateToken, async (req, res) => {
 
 app.patch('/api/operators/:id/status', authenticateToken, async (req, res) => {
     const { status, location, kanban_task_id, kanban_title, notes } = req.body;
-    const validStatuses = ['disponivel', 'externo', 'outro_setor', 'ausente'];
+    const validStatuses = ['disponivel', 'externo', 'outro_setor', 'almoco', 'ausente'];
     if (!validStatuses.includes(status)) {
-        return res.status(400).json({ error: 'Status inválido. Use: disponivel, externo, outro_setor, ausente' });
+        return res.status(400).json({ error: 'Status inválido. Use: disponivel, externo, outro_setor, almoco, ausente' });
     }
     try {
         const opResult = await pool.query('SELECT * FROM operators WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id]);

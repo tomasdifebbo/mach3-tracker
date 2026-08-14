@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   UserCheck, Play, CheckCircle2, AlertTriangle, Clock, 
   Wrench, CheckSquare, Layers, Cpu, ShieldAlert, Sparkles, RefreshCw, Edit2, Trash2, CalendarClock,
-  ExternalLink, Building2, Moon, ChevronDown, Users
+  ExternalLink, Building2, Moon, ChevronDown, Users, Utensils
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -212,6 +212,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
     disponivel: { label: 'Na Fábrica', color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', icon: CheckCircle2, dot: 'bg-emerald-400' },
     externo:    { label: 'Serviço Externo', color: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/30', icon: ExternalLink, dot: 'bg-amber-400' },
     outro_setor:{ label: 'Outro Setor', color: 'text-blue-400', bg: 'bg-blue-500/15', border: 'border-blue-500/30', icon: Building2, dot: 'bg-blue-400' },
+    almoco:     { label: 'Horário de Almoço', color: 'text-orange-400', bg: 'bg-orange-500/15', border: 'border-orange-500/30', icon: Utensils, dot: 'bg-orange-400' },
     ausente:    { label: 'Folga / Ausente', color: 'text-zinc-400', bg: 'bg-zinc-500/15', border: 'border-zinc-500/30', icon: Moon, dot: 'bg-zinc-500' }
   };
 
@@ -353,6 +354,36 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
             placeholder="Nome do Operador"
             className="bg-black/50 border border-white/10 rounded-xl px-3 py-1.5 text-xs font-bold text-white outline-none focus:border-accent-cyan transition-colors"
           />
+          {/* Botão de Almoço do Operador */}
+          {(() => {
+            const currentOp = operatorsList.find(o => o.name.toLowerCase() === operatorName.toLowerCase()) || operatorsList[0];
+            const inLunch = currentOp && currentOp.status === 'almoco';
+
+            return (
+              <button
+                onClick={() => {
+                  if (!currentOp) {
+                    alert('Nenhum operador selecionado.');
+                    return;
+                  }
+                  if (inLunch) {
+                    executeStatusUpdate(currentOp.id, 'disponivel', 'Na Fábrica', null, null, null);
+                  } else {
+                    executeStatusUpdate(currentOp.id, 'almoco', 'Horário de Almoço', null, null, null);
+                  }
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg ${
+                  inLunch
+                    ? 'bg-emerald-500 hover:bg-emerald-600 text-black shadow-emerald-500/20 animate-pulse'
+                    : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-black shadow-orange-500/20'
+                }`}
+              >
+                <Utensils size={16} />
+                {inLunch ? '🟢 Voltar do Almoço' : '🍱 Ir para o Almoço'}
+              </button>
+            );
+          })()}
+
           <button
             onClick={() => setShowOccurrenceModal(true)}
             className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer"
@@ -425,6 +456,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                       className={`w-full bg-black/40 border ${st.border} rounded-xl px-3 py-1.5 text-[11px] font-bold ${st.color} outline-none cursor-pointer appearance-none pr-7 transition-all hover:bg-black/60`}
                     >
                       <option value="disponivel" className="bg-zinc-900 text-white">🟢 Na Fábrica (Disponível)</option>
+                      <option value="almoco" className="bg-zinc-900 text-white">🍱 Horário de Almoço</option>
                       <option value="externo" className="bg-zinc-900 text-white">🟡 Serviço Externo</option>
                       <option value="outro_setor" className="bg-zinc-900 text-white">🔵 Outro Setor da Fábrica</option>
                       <option value="ausente" className="bg-zinc-900 text-white">⚫ Folga / Ausente</option>
