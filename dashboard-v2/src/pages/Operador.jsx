@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   UserCheck, Play, CheckCircle2, AlertTriangle, Clock, 
   Wrench, CheckSquare, Layers, Cpu, ShieldAlert, Sparkles, RefreshCw, Edit2, Trash2, CalendarClock,
-  ExternalLink, Building2, Moon, ChevronDown, Users, Utensils
+  ExternalLink, Building2, Moon, ChevronDown, Users, Utensils, LogOut
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -215,12 +215,13 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
   };
 
   const OPERATOR_STATUS_CONFIG = {
-    disponivel: { label: 'Na Fábrica', color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', icon: CheckCircle2, dot: 'bg-emerald-400' },
-    externo:    { label: 'Serviço Externo', color: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/30', icon: ExternalLink, dot: 'bg-amber-400' },
-    outro_setor:{ label: 'Outro Setor', color: 'text-blue-400', bg: 'bg-blue-500/15', border: 'border-blue-500/30', icon: Building2, dot: 'bg-blue-400' },
-    almoco:     { label: 'Horário de Almoço', color: 'text-orange-400', bg: 'bg-orange-500/15', border: 'border-orange-500/30', icon: Utensils, dot: 'bg-orange-400' },
-    limpeza:    { label: 'Limpeza e Manutenção', color: 'text-cyan-400', bg: 'bg-cyan-500/15', border: 'border-cyan-500/30', icon: Sparkles, dot: 'bg-cyan-400' },
-    ausente:    { label: 'Folga / Ausente', color: 'text-zinc-400', bg: 'bg-zinc-500/15', border: 'border-zinc-500/30', icon: Moon, dot: 'bg-zinc-500' }
+    disponivel:     { label: 'Na Fábrica', color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', icon: CheckCircle2, dot: 'bg-emerald-400' },
+    externo:        { label: 'Serviço Externo', color: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/30', icon: ExternalLink, dot: 'bg-amber-400' },
+    outro_setor:    { label: 'Outro Setor', color: 'text-blue-400', bg: 'bg-blue-500/15', border: 'border-blue-500/30', icon: Building2, dot: 'bg-blue-400' },
+    almoco:         { label: 'Horário de Almoço', color: 'text-orange-400', bg: 'bg-orange-500/15', border: 'border-orange-500/30', icon: Utensils, dot: 'bg-orange-400' },
+    limpeza:        { label: 'Limpeza e Manutenção', color: 'text-cyan-400', bg: 'bg-cyan-500/15', border: 'border-cyan-500/30', icon: Sparkles, dot: 'bg-cyan-400' },
+    fim_expediente: { label: 'Fim de Expediente', color: 'text-purple-400', bg: 'bg-purple-500/15', border: 'border-purple-500/30', icon: LogOut, dot: 'bg-purple-400' },
+    ausente:        { label: 'Folga / Ausente', color: 'text-zinc-400', bg: 'bg-zinc-500/15', border: 'border-zinc-500/30', icon: Moon, dot: 'bg-zinc-500' }
   };
 
   const availableOperators = useMemo(() => operatorsList.filter(op => (op.status || 'disponivel') === 'disponivel'), [operatorsList]);
@@ -391,6 +392,37 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
             );
           })()}
 
+          {/* Botão de Fim de Expediente do Operador */}
+          {(() => {
+            const currentOp = operatorsList.find(o => o.name.toLowerCase() === operatorName.toLowerCase()) || operatorsList[0];
+            const isFimExpediente = currentOp && currentOp.status === 'fim_expediente';
+
+            return (
+              <button
+                onClick={() => {
+                  if (!currentOp) {
+                    alert('Nenhum operador selecionado.');
+                    return;
+                  }
+                  if (isFimExpediente) {
+                    executeStatusUpdate(currentOp.id, 'disponivel', 'Na Fábrica', null, null, null);
+                  } else {
+                    executeStatusUpdate(currentOp.id, 'fim_expediente', 'Fim de Expediente', null, null, null);
+                  }
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg ${
+                  isFimExpediente
+                    ? 'bg-emerald-500 hover:bg-emerald-600 text-black shadow-emerald-500/20 animate-pulse'
+                    : 'bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 border border-purple-500/40 shadow-purple-500/10'
+                }`}
+                title={isFimExpediente ? 'Clique para retornar ao trabalho e iniciar novo expediente' : 'Clique para encerrar expediente do operador (saída)'}
+              >
+                <LogOut size={16} />
+                {isFimExpediente ? '🟢 Iniciar Expediente' : '🏁 Encerrar Expediente'}
+              </button>
+            );
+          })()}
+
           <button
             onClick={() => setShowOccurrenceModal(true)}
             className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer"
@@ -467,6 +499,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                       <option value="limpeza" className="bg-zinc-900 text-white">🧹 Limpeza e Manutenção do Setor</option>
                       <option value="externo" className="bg-zinc-900 text-white">🟡 Serviço Externo</option>
                       <option value="outro_setor" className="bg-zinc-900 text-white">🔵 Outro Setor da Fábrica</option>
+                      <option value="fim_expediente" className="bg-zinc-900 text-white">🏁 Fim de Expediente (Foi Embora)</option>
                       <option value="ausente" className="bg-zinc-900 text-white">⚫ Folga / Ausente</option>
                     </select>
                     <ChevronDown size={12} className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${st.color}`} />

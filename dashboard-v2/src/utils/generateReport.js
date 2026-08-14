@@ -591,6 +591,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       outro_setor: 'OUTRO SETOR DA FABRICA',
       almoco: 'HORARIO DE ALMOCO',
       limpeza: 'LIMPEZA E MANUTENCAO DO SETOR',
+      fim_expediente: 'FIM DO EXPEDIENTE (SAIDA)',
       ausente: 'FOLGA / AUSENTE'
     };
 
@@ -696,6 +697,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       outro_setor: 'OUTRO SETOR',
       almoco: 'ALMOCO',
       limpeza: 'LIMPEZA E MANUTENCAO',
+      fim_expediente: 'FIM DO EXPEDIENTE',
       ausente: 'FOLGA / AUSENTE'
     };
 
