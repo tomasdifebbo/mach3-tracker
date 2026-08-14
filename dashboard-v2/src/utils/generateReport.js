@@ -266,19 +266,21 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
     styles: {
       fontSize: 8,
       cellPadding: 3,
-      textColor: [226, 232, 240], // slate-200
+      fillColor: [30, 41, 59], // dark slate-800 for primary rows
+      textColor: [255, 255, 255], // crisp white text
       lineColor: [51, 65, 85], // slate-700
       lineWidth: 0.2,
     },
     headStyles: {
-      fillColor: [30, 41, 59], // slate-800
+      fillColor: [15, 23, 42], // dark slate-900
       textColor: [6, 182, 212], // cyan
       fontStyle: 'bold',
-      fontSize: 7,
+      fontSize: 7.5,
       cellPadding: 4,
     },
     alternateRowStyles: {
-      fillColor: [15, 23, 42], // slate-900
+      fillColor: [15, 23, 42], // dark slate-900 for alternate rows
+      textColor: [255, 255, 255],
     },
     columnStyles: {
       0: { cellWidth: 80 },
@@ -339,13 +341,14 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
     styles: {
       fontSize: 7,
       cellPadding: 2.5,
-      textColor: [226, 232, 240],
+      fillColor: [30, 41, 59],
+      textColor: [255, 255, 255],
       lineColor: [51, 65, 85],
       lineWidth: 0.1,
       overflow: 'ellipsize',
     },
     headStyles: {
-      fillColor: [30, 41, 59],
+      fillColor: [15, 23, 42],
       textColor: [6, 182, 212],
       fontStyle: 'bold',
       fontSize: 6.5,
@@ -353,6 +356,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
     },
     alternateRowStyles: {
       fillColor: [15, 23, 42],
+      textColor: [255, 255, 255],
     },
     columnStyles: {
       0: { halign: 'center' },
@@ -415,12 +419,13 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       styles: {
         fontSize: 8,
         cellPadding: 3,
-        textColor: [226, 232, 240],
+        fillColor: [30, 41, 59],
+        textColor: [255, 255, 255],
         lineColor: [51, 65, 85],
         lineWidth: 0.1,
       },
       headStyles: {
-        fillColor: [30, 41, 59],
+        fillColor: [15, 23, 42],
         textColor: [239, 68, 68],
         fontStyle: 'bold',
         fontSize: 7.5,
@@ -428,6 +433,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       },
       alternateRowStyles: {
         fillColor: [15, 23, 42],
+        textColor: [255, 255, 255],
       },
       columnStyles: {
         0: { halign: 'left', fontStyle: 'bold' },
@@ -491,12 +497,13 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       styles: {
         fontSize: 8,
         cellPadding: 3,
-        textColor: [226, 232, 240],
+        fillColor: [30, 41, 59],
+        textColor: [255, 255, 255],
         lineColor: [51, 65, 85],
         lineWidth: 0.1,
       },
       headStyles: {
-        fillColor: [30, 41, 59],
+        fillColor: [15, 23, 42],
         textColor: [16, 185, 129],
         fontStyle: 'bold',
         fontSize: 7.5,
@@ -504,6 +511,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       },
       alternateRowStyles: {
         fillColor: [15, 23, 42],
+        textColor: [255, 255, 255],
       },
       columnStyles: {
         0: { halign: 'left', fontStyle: 'bold', cellWidth: 20 },
@@ -614,12 +622,13 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       styles: {
         fontSize: 9,
         cellPadding: 4,
-        textColor: [226, 232, 240],
+        fillColor: [30, 41, 59],
+        textColor: [255, 255, 255],
         lineColor: [51, 65, 85],
         lineWidth: 0.1,
       },
       headStyles: {
-        fillColor: [30, 41, 59],
+        fillColor: [15, 23, 42],
         textColor: [168, 85, 247],
         fontStyle: 'bold',
         fontSize: 8,
@@ -627,6 +636,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       },
       alternateRowStyles: {
         fillColor: [15, 23, 42],
+        textColor: [255, 255, 255],
       },
       columnStyles: {
         0: { halign: 'left', fontStyle: 'bold', cellWidth: 60 },
