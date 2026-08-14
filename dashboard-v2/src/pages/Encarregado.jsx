@@ -524,16 +524,26 @@ function KanbanCardModal({ card, onClose, onSave, onDelete }) {
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Máquina</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Máquina / Local</label>
             <select 
               value={machine} 
               onChange={(e) => setMachine(e.target.value)}
               className="bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:border-orange-500 focus:outline-none transition-colors cursor-pointer"
             >
-              <option value="Router CNC">Router CNC</option>
-              <option value="Laser">Laser</option>
-              <option value="Vácuo">Vácuo</option>
-              <option value="Impressão 3D">Impressão 3D</option>
+              <optgroup label="🏭 Máquinas da Fábrica" className="bg-zinc-900 text-orange-400 font-bold">
+                <option value="Router CNC" className="bg-zinc-900 text-white">Router CNC</option>
+                <option value="Router Central 1325" className="bg-zinc-900 text-white">Router Central 1325</option>
+                <option value="Router 2" className="bg-zinc-900 text-white">Router 2</option>
+                <option value="Laser Ruida CO2 1390" className="bg-zinc-900 text-white">Laser Ruida CO2 1390</option>
+                <option value="Mesa de Vácuo" className="bg-zinc-900 text-white">Mesa de Vácuo</option>
+                <option value="Impressão 3D" className="bg-zinc-900 text-white">Impressão 3D</option>
+              </optgroup>
+              <optgroup label="📍 Status & Locais" className="bg-zinc-900 text-purple-400 font-bold">
+                <option value="Na Fábrica (Disponível)" className="bg-zinc-900 text-white">🟢 Na Fábrica (Disponível)</option>
+                <option value="Serviço Externo" className="bg-zinc-900 text-white">🟡 Serviço Externo</option>
+                <option value="Outro Setor da Fábrica" className="bg-zinc-900 text-white">🔵 Outro Setor da Fábrica</option>
+                <option value="Folga / Ausente" className="bg-zinc-900 text-white">⚫ Folga / Ausente</option>
+              </optgroup>
             </select>
           </div>
 
