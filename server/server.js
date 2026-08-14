@@ -1175,30 +1175,54 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
     // Auto-sync Kanban card: todo -> doing
     autoSyncKanban(userId, cleanFileName, cleanFolder, router_name, 'doing', operatorName);
 
-    // Auto-update operator's active time log in real-time with machine & job file
+    // Create a new distinct card in the operator's timeline for this machine job execution
     if (operatorName) {
         try {
             const opRes = (await pool.query(
-                'SELECT id FROM operators WHERE LOWER(name) = LOWER($1) AND "userId" = $2 LIMIT 1',
+                'SELECT id, name FROM operators WHERE LOWER(name) = LOWER($1) AND "userId" = $2 LIMIT 1',
                 [operatorName.trim(), userId]
             )).rows[0];
 
             if (opRes) {
+                // 1. Close open logs for this operator
+                const openLogs = (await pool.query(
+                    'SELECT * FROM operator_time_logs WHERE operator_id = $1 AND "userId" = $2 AND end_time IS NULL ORDER BY start_time DESC',
+                    [opRes.id, userId]
+                )).rows;
+
+                for (const log of openLogs) {
+                    const startLogDt = new Date(log.start_time);
+                    const durMin = Math.max(0.1, (dt - startLogDt) / 60000);
+                    await pool.query(
+                        'UPDATE operator_time_logs SET end_time = $1, duration_minutes = $2 WHERE id = $3',
+                        [dt.toISOString(), parseFloat(durMin.toFixed(2)), log.id]
+                    );
+                }
+
+                // 2. Open a NEW card for this cutting activity
+                const machineLoc = router_name ? `⚙️ ${router_name}` : 'Na Máquina';
                 await pool.query(
-                    `UPDATE operator_time_logs 
-                     SET location = $1, kanban_title = $2 
-                     WHERE operator_id = $3 AND "userId" = $4 AND end_time IS NULL AND status = 'disponivel'`,
-                    [router_name || 'Na Máquina', cleanFileName, opRes.id, userId]
+                    `INSERT INTO operator_time_logs (
+                        "userId", operator_id, operator_name, status, location, kanban_title, start_time
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                    [
+                        userId,
+                        opRes.id,
+                        opRes.name,
+                        'disponivel',
+                        machineLoc,
+                        cleanFileName,
+                        dt.toISOString()
+                    ]
                 );
+
                 await pool.query(
-                    `UPDATE operators 
-                     SET location = $1 
-                     WHERE id = $2 AND "userId" = $3 AND status = 'disponivel'`,
-                    [router_name || 'Na Máquina', opRes.id, userId]
+                    `UPDATE operators SET location = $1 WHERE id = $2 AND "userId" = $3`,
+                    [machineLoc, opRes.id, userId]
                 );
             }
         } catch (opErr) {
-            console.error('Erro ao sincronizar time log do operador:', opErr);
+            console.error('Erro ao criar novo card no timeline do operador:', opErr);
         }
     }
 
@@ -1240,6 +1264,47 @@ app.patch('/api/jobs/latest', authenticateToken, async (req, res) => {
     
     // Auto-sync Kanban card: doing/todo -> done
     autoSyncKanban(userId, row.file_name, row.folder, router_name, 'done');
+
+    // Close operator's machine cutting time log and open new 'Na Fábrica' card
+    if (row.operator_name) {
+        try {
+            const opRes = (await pool.query(
+                'SELECT id, name FROM operators WHERE LOWER(name) = LOWER($1) AND "userId" = $2 LIMIT 1',
+                [row.operator_name.trim(), userId]
+            )).rows[0];
+
+            if (opRes) {
+                const openLogs = (await pool.query(
+                    'SELECT * FROM operator_time_logs WHERE operator_id = $1 AND "userId" = $2 AND end_time IS NULL ORDER BY start_time DESC',
+                    [opRes.id, userId]
+                )).rows;
+
+                for (const log of openLogs) {
+                    const startLogDt = new Date(log.start_time);
+                    const durMin = Math.max(0.1, (dt - startLogDt) / 60000);
+                    await pool.query(
+                        'UPDATE operator_time_logs SET end_time = $1, duration_minutes = $2 WHERE id = $3',
+                        [dt.toISOString(), parseFloat(durMin.toFixed(2)), log.id]
+                    );
+                }
+
+                // Create a new 'Na Fábrica' card starting at completion time
+                await pool.query(
+                    `INSERT INTO operator_time_logs (
+                        "userId", operator_id, operator_name, status, location, start_time
+                    ) VALUES ($1, $2, $3, $4, $5, $6)`,
+                    [userId, opRes.id, opRes.name, 'disponivel', 'Na Fábrica', dt.toISOString()]
+                );
+
+                await pool.query(
+                    `UPDATE operators SET location = $1 WHERE id = $2 AND "userId" = $3 AND status = 'disponivel'`,
+                    ['Na Fábrica', opRes.id, userId]
+                );
+            }
+        } catch (opErr) {
+            console.error('Erro ao encerrar time log do operador no fim do job:', opErr);
+        }
+    }
     
     // Dispatch Webhook if user has one configured
     try {
