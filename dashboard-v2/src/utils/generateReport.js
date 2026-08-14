@@ -316,7 +316,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
 
   autoTable(doc, {
     startY: 38,
-    head: [['#', 'Data', 'Hora Inicio', 'Hora Fim', 'Arquivo', 'Projeto', 'Router', 'Operador', 'Duracao', 'Custo Est.']],
+    head: [['#', 'Data', 'Inicio', 'Fim', 'Arquivo', 'Projeto', 'Router', 'Operador', 'Duracao', 'Custo (R$)']],
     body: filtered.map((j, idx) => {
       const startDt = new Date(j.start_time);
       const endDt = j.end_time ? new Date(j.end_time) : null;
@@ -339,8 +339,8 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
     }),
     theme: 'plain',
     styles: {
-      fontSize: 7,
-      cellPadding: 2.5,
+      fontSize: 6.5,
+      cellPadding: 2,
       fillColor: [30, 41, 59],
       textColor: [255, 255, 255],
       lineColor: [51, 65, 85],
@@ -352,24 +352,25 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       textColor: [6, 182, 212],
       fontStyle: 'bold',
       fontSize: 6.5,
-      cellPadding: 3,
+      cellPadding: 2.5,
     },
     alternateRowStyles: {
       fillColor: [15, 23, 42],
       textColor: [255, 255, 255],
     },
     columnStyles: {
-      0: { halign: 'center' },
-      1: { halign: 'left' },
-      2: { halign: 'center' },
-      3: { halign: 'center' },
-      4: { cellWidth: 'auto' },
-      5: { cellWidth: 'auto' },
-      6: { halign: 'center' },
-      7: { halign: 'center' },
-      8: { halign: 'right' },
+      0: { cellWidth: 8, halign: 'center' },
+      1: { cellWidth: 18, halign: 'center' },
+      2: { cellWidth: 13, halign: 'center' },
+      3: { cellWidth: 13, halign: 'center' },
+      4: { cellWidth: 60, halign: 'left' },
+      5: { cellWidth: 60, halign: 'left' },
+      6: { cellWidth: 20, halign: 'center' },
+      7: { cellWidth: 22, halign: 'center' },
+      8: { cellWidth: 20, halign: 'center' },
+      9: { cellWidth: 28, halign: 'right', fontStyle: 'bold' },
     },
-    margin: { left: 10, right: 10 },
+    margin: { left: 8, right: 8 },
     didDrawPage: (data) => {
       drawFooter(doc, pageWidth, pageHeight);
     }
