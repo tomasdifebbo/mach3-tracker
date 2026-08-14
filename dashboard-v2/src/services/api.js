@@ -264,11 +264,30 @@ export const api = {
     return safeJson(resp);
   },
 
-  updateOperatorStatus: async (id, status, location) => {
+  updateOperatorStatus: async (id, status, location, kanban_task_id = null, kanban_title = null, notes = null) => {
     const resp = await fetch(`${API_URL}/api/operators/${id}/status`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ status, location })
+      body: JSON.stringify({ status, location, kanban_task_id, kanban_title, notes })
+    });
+    return safeJson(resp);
+  },
+
+  getOperatorTimeLogs: async (date = null) => {
+    const url = date ? `${API_URL}/api/operators/time-logs?date=${date}` : `${API_URL}/api/operators/time-logs`;
+    const resp = await fetch(url, {
+      headers: getAuthHeaders(),
+      cache: 'no-store'
+    });
+    if (!resp.ok) return [];
+    return resp.json();
+  },
+
+  updateOperatorTimeLog: async (logId, payload) => {
+    const resp = await fetch(`${API_URL}/api/operators/time-logs/${logId}`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload)
     });
     return safeJson(resp);
   },

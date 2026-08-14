@@ -268,6 +268,21 @@ async function initDb() {
             ALTER TABLE operators ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'disponivel';
             ALTER TABLE operators ADD COLUMN IF NOT EXISTS location TEXT DEFAULT 'Na Fábrica';
 
+            CREATE TABLE IF NOT EXISTS operator_time_logs (
+                id SERIAL PRIMARY KEY,
+                "userId" INTEGER NOT NULL,
+                operator_id INTEGER REFERENCES operators(id) ON DELETE CASCADE,
+                operator_name TEXT NOT NULL,
+                status TEXT NOT NULL,
+                location TEXT,
+                kanban_task_id INTEGER REFERENCES kanban_tasks(id) ON DELETE SET NULL,
+                kanban_title TEXT,
+                start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                end_time TIMESTAMP,
+                duration_minutes REAL,
+                notes TEXT
+            );
+
             CREATE TABLE IF NOT EXISTS kaizens (
                 id SERIAL PRIMARY KEY,
                 title TEXT NOT NULL,
@@ -1815,18 +1830,94 @@ app.delete('/api/operators/:id', authenticateToken, async (req, res) => {
 });
 
 app.patch('/api/operators/:id/status', authenticateToken, async (req, res) => {
-    const { status, location } = req.body;
+    const { status, location, kanban_task_id, kanban_title, notes } = req.body;
     const validStatuses = ['disponivel', 'externo', 'outro_setor', 'ausente'];
     if (!validStatuses.includes(status)) {
         return res.status(400).json({ error: 'Status inválido. Use: disponivel, externo, outro_setor, ausente' });
     }
     try {
-        const result = await pool.query(
-            'UPDATE operators SET status = $1, location = $2 WHERE id = $3 AND "userId" = $4 RETURNING *',
+        const opResult = await pool.query('SELECT * FROM operators WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id]);
+        if (opResult.rowCount === 0) return res.status(404).json({ error: 'Operador não encontrado' });
+        const operator = opResult.rows[0];
+
+        // 1. Update status in operators table
+        await pool.query(
+            'UPDATE operators SET status = $1, location = $2 WHERE id = $3 AND "userId" = $4',
             [status, location || '', req.params.id, req.user.id]
         );
-        if (result.rowCount === 0) return res.status(404).json({ error: 'Operador não encontrado' });
-        res.json({ success: true, operator: result.rows[0] });
+
+        // 2. Close any open log for this operator
+        const openLogs = (await pool.query(
+            'SELECT * FROM operator_time_logs WHERE operator_id = $1 AND "userId" = $2 AND end_time IS NULL ORDER BY start_time DESC',
+            [req.params.id, req.user.id]
+        )).rows;
+
+        const now = new Date();
+        for (const log of openLogs) {
+            const startDt = new Date(log.start_time);
+            const durMin = Math.max(0.1, (now - startDt) / 60000);
+            await pool.query(
+                'UPDATE operator_time_logs SET end_time = $1, duration_minutes = $2 WHERE id = $3',
+                [now.toISOString(), parseFloat(durMin.toFixed(2)), log.id]
+            );
+        }
+
+        // 3. Open new log for new status/location/kanban task
+        const newLogResult = await pool.query(
+            `INSERT INTO operator_time_logs (
+                "userId", operator_id, operator_name, status, location, kanban_task_id, kanban_title, notes, start_time
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+            [
+                req.user.id,
+                operator.id,
+                operator.name,
+                status,
+                location || status,
+                kanban_task_id || null,
+                kanban_title || null,
+                notes || null,
+                now.toISOString()
+            ]
+        );
+
+        res.json({ success: true, operator: { ...operator, status, location }, newLog: newLogResult.rows[0] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/operators/time-logs', authenticateToken, async (req, res) => {
+    try {
+        const { date } = req.query;
+        let query = 'SELECT * FROM operator_time_logs WHERE "userId" = $1';
+        const params = [req.user.id];
+
+        if (date) {
+            query += ' AND DATE(start_time) = DATE($2)';
+            params.push(date);
+        }
+        query += ' ORDER BY start_time DESC';
+
+        const logs = (await pool.query(query, params)).rows;
+        res.json(logs);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.patch('/api/operators/time-logs/:logId', authenticateToken, async (req, res) => {
+    try {
+        const { kanban_task_id, kanban_title, notes } = req.body;
+        const result = await pool.query(
+            `UPDATE operator_time_logs 
+             SET kanban_task_id = COALESCE($1, kanban_task_id), 
+                 kanban_title = COALESCE($2, kanban_title), 
+                 notes = COALESCE($3, notes)
+             WHERE id = $4 AND "userId" = $5 RETURNING *`,
+            [kanban_task_id || null, kanban_title || null, notes || null, req.params.logId, req.user.id]
+        );
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Registro não encontrado' });
+        res.json({ success: true, log: result.rows[0] });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

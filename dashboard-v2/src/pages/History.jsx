@@ -100,7 +100,16 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       const routerStatusLog = await api.getRouterStatusLog();
       const maintenanceSchedule = await api.getMaintenance();
       const operators = await api.getOperators();
-      generateProductionReport({ jobs, user, filterType, routerStatusLog, maintenanceSchedule, operators: Array.isArray(operators) ? operators : [] });
+      const operatorTimeLogs = await api.getOperatorTimeLogs();
+      generateProductionReport({ 
+        jobs, 
+        user, 
+        filterType, 
+        routerStatusLog, 
+        maintenanceSchedule, 
+        operators: Array.isArray(operators) ? operators : [],
+        operatorTimeLogs: Array.isArray(operatorTimeLogs) ? operatorTimeLogs : []
+      });
     } catch (err) {
       console.error('Erro ao gerar PDF:', err);
       alert('Erro ao gerar PDF: ' + err.message);

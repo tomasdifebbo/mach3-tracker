@@ -50,7 +50,7 @@ function formatDuration(minutes) {
  * @param {Date} [options.startDate] - Start of custom date range
  * @param {Date} [options.endDate] - End of custom date range
  */
-export function generateProductionReport({ jobs = [], user = {}, filterType = 'all', startDate, endDate, routerStatusLog = [], maintenanceSchedule = [], operators = [] }) {
+export function generateProductionReport({ jobs = [], user = {}, filterType = 'all', startDate, endDate, routerStatusLog = [], maintenanceSchedule = [], operators = [], operatorTimeLogs = [] }) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -661,6 +661,88 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
         }
       },
       margin: { left: 20, right: 20 },
+      didDrawPage: (data) => {
+        drawFooter(doc, pageWidth, pageHeight);
+      }
+    });
+  }
+
+  // ===== PAGE 6: CHRONOLOGICAL TIMESHEET LOGS =====
+  if (operatorTimeLogs.length > 0) {
+    doc.addPage('landscape');
+    
+    // Header bar
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pageWidth, 30, 'F');
+    doc.setFillColor(6, 182, 212); // cyan-500
+    doc.rect(0, 30, pageWidth, 1.5, 'F');
+
+    doc.setTextColor(6, 182, 212);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Rastreamento Cronologico da Equipe (Timesheet Diario)', 20, 18);
+
+    doc.setTextColor(148, 163, 184);
+    doc.setFontSize(9);
+    doc.text(`${operatorTimeLogs.length} apontamentos | ${periodLabel}`, pageWidth - 20, 18, { align: 'right' });
+
+    const STATUS_SHORT = {
+      disponivel: 'NA FABRICA',
+      externo: 'SERVICO EXTERNO',
+      outro_setor: 'OUTRO SETOR',
+      ausente: 'FOLGA / AUSENTE'
+    };
+
+    autoTable(doc, {
+      startY: 38,
+      head: [['#', 'Operador', 'Hora Inicio', 'Hora Fim', 'Duracao', 'Status', 'Local / Atividade', 'Ordem de Servico (Kanban)']],
+      body: operatorTimeLogs.map((log, idx) => {
+        const startDt = new Date(log.start_time);
+        const endDt = log.end_time ? new Date(log.end_time) : null;
+        const durMin = log.duration_minutes || (endDt ? (endDt - startDt) / 60000 : (now - startDt) / 60000);
+
+        return [
+          `${idx + 1}`,
+          (log.operator_name || 'Operador').toUpperCase(),
+          startDt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+          endDt ? endDt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'Em andamento',
+          formatDuration(Math.max(0, durMin)),
+          STATUS_SHORT[log.status] || (log.status || '-').toUpperCase(),
+          log.location || log.status || '-',
+          log.kanban_title ? `O.S. ${log.kanban_title}` : '-'
+        ];
+      }),
+      theme: 'plain',
+      styles: {
+        fontSize: 7.5,
+        cellPadding: 3,
+        fillColor: [30, 41, 59],
+        textColor: [255, 255, 255],
+        lineColor: [51, 65, 85],
+        lineWidth: 0.1,
+      },
+      headStyles: {
+        fillColor: [15, 23, 42],
+        textColor: [6, 182, 212],
+        fontStyle: 'bold',
+        fontSize: 7,
+        cellPadding: 3.5,
+      },
+      alternateRowStyles: {
+        fillColor: [15, 23, 42],
+        textColor: [255, 255, 255],
+      },
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 40, halign: 'left', fontStyle: 'bold' },
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 20, halign: 'center' },
+        4: { cellWidth: 25, halign: 'center' },
+        5: { cellWidth: 35, halign: 'center' },
+        6: { cellWidth: 55, halign: 'left' },
+        7: { cellWidth: 60, halign: 'left' },
+      },
+      margin: { left: 10, right: 10 },
       didDrawPage: (data) => {
         drawFooter(doc, pageWidth, pageHeight);
       }

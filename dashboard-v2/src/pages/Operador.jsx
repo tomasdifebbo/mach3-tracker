@@ -86,9 +86,26 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
     }
   };
 
+  // Time logs and Kanban linking states
+  const [timeLogs, setTimeLogs] = useState([]);
+  const [pendingKanbanLink, setPendingKanbanLink] = useState(null);
+  const [selectedKanbanTask, setSelectedKanbanTask] = useState('');
+  const [allocationNotes, setAllocationNotes] = useState('');
+
+  const fetchTimeLogs = async () => {
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const data = await api.getOperatorTimeLogs(todayStr);
+      if (Array.isArray(data)) setTimeLogs(data);
+    } catch (err) {
+      console.error('Failed to load time logs:', err);
+    }
+  };
+
   useEffect(() => {
     fetchKanban();
     fetchOperators();
+    fetchTimeLogs();
   }, []);
 
   const handleAddOperator = async (e) => {
@@ -166,10 +183,24 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
   const activeJobs = kanbanTasks.filter(t => t.column_id === 'doing' || t.column_id === 'todo');
 
   // Operator status management
-  const handleUpdateOperatorStatus = async (opId, newStatus, newLocation) => {
+  const handleStatusSelect = (op, newStatus) => {
+    const loc = OPERATOR_STATUS_CONFIG[newStatus]?.label || '';
+    if (newStatus === 'externo' || newStatus === 'outro_setor' || newStatus === 'disponivel') {
+      setPendingKanbanLink({ op, newStatus, newLocation: loc });
+      setSelectedKanbanTask('');
+      setAllocationNotes('');
+    } else {
+      executeStatusUpdate(op.id, newStatus, loc, null, null, null);
+    }
+  };
+
+  const executeStatusUpdate = async (opId, newStatus, newLocation, kanbanId, kanbanTitle, notes) => {
     try {
-      await api.updateOperatorStatus(opId, newStatus, newLocation);
+      await api.updateOperatorStatus(opId, newStatus, newLocation, kanbanId, kanbanTitle, notes);
+      setPendingKanbanLink(null);
       fetchOperators();
+      fetchTimeLogs();
+      fetchKanban();
     } catch (err) {
       alert('Erro ao atualizar status do operador');
     }
@@ -387,9 +418,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                     <select
                       value={op.status || 'disponivel'}
                       onChange={(e) => {
-                        const newStatus = e.target.value;
-                        const loc = OPERATOR_STATUS_CONFIG[newStatus]?.label || '';
-                        handleUpdateOperatorStatus(op.id, newStatus, loc);
+                        handleStatusSelect(op, e.target.value);
                       }}
                       className={`w-full bg-black/40 border ${st.border} rounded-xl px-3 py-1.5 text-[11px] font-bold ${st.color} outline-none cursor-pointer appearance-none pr-7 transition-all hover:bg-black/60`}
                     >
@@ -400,6 +429,72 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                     </select>
                     <ChevronDown size={12} className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${st.color}`} />
                   </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Linha do Tempo da Equipe Hoje (Timesheet) */}
+      {operatorsList.length > 0 && (
+        <div className="glass p-5 md:p-6 rounded-3xl border border-white/10 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-black uppercase tracking-wider text-accent-cyan flex items-center gap-2">
+              <Clock size={16} /> Linha do Tempo da Equipe Hoje (Rastreamento do Dia)
+            </h3>
+            <span className="text-[10px] font-bold text-text-muted">Apontamento automático por período</span>
+          </div>
+
+          <div className="space-y-4 divide-y divide-white/5">
+            {operatorsList.map(op => {
+              const opLogs = timeLogs.filter(l => l.operator_id === op.id);
+              const activeLog = opLogs.find(l => !l.end_time);
+
+              return (
+                <div key={op.id} className="pt-3 first:pt-0 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-white">👷 {op.name}</span>
+                      <span className="text-[10px] text-text-muted">Turno: {op.shift || 'Geral'}</span>
+                    </div>
+                    {activeLog && (
+                      <span className="text-[10px] font-bold text-accent-cyan bg-accent-cyan/10 border border-accent-cyan/20 px-2.5 py-0.5 rounded-full animate-pulse">
+                        Em atividade: {activeLog.location || activeLog.status}
+                      </span>
+                    )}
+                  </div>
+
+                  {opLogs.length === 0 ? (
+                    <p className="text-[11px] text-text-muted italic pl-4">Nenhum registro de alocação hoje.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 pl-2 border-l-2 border-accent-cyan/30">
+                      {opLogs.map(log => {
+                        const st = OPERATOR_STATUS_CONFIG[log.status || 'disponivel'] || OPERATOR_STATUS_CONFIG.disponivel;
+                        const startStr = new Date(log.start_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                        const endStr = log.end_time ? new Date(log.end_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'Agora';
+                        const durMin = log.duration_minutes || (log.end_time ? (new Date(log.end_time) - new Date(log.start_time)) / 60000 : (now - new Date(log.start_time).getTime()) / 60000);
+
+                        return (
+                          <div key={log.id} className={`p-2.5 rounded-xl border ${st.border} ${st.bg} space-y-1 text-xs`}>
+                            <div className="flex items-center justify-between text-[10px]">
+                              <span className={`font-bold ${st.color}`}>{startStr} → {endStr} ({formatDuration(durMin)})</span>
+                              <span className={`px-1.5 py-0.5 rounded font-black text-[9px] ${st.bg} ${st.color}`}>{st.label}</span>
+                            </div>
+                            <p className="font-bold text-white text-[11px] truncate">{log.location || log.status}</p>
+                            {log.kanban_title && (
+                              <p className="text-[10px] text-purple-300 font-medium truncate flex items-center gap-1">
+                                📋 O.S.: {log.kanban_title}
+                              </p>
+                            )}
+                            {log.notes && (
+                              <p className="text-[9px] text-text-muted italic truncate">Obs: {log.notes}</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -1047,6 +1142,84 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                 className="px-5 py-2.5 rounded-xl border border-white/10 text-xs font-bold uppercase tracking-wider text-text-muted hover:text-white cursor-pointer"
               >
                 Concluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Vincular Kanban O.S. ao Status */}
+      {pendingKanbanLink && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setPendingKanbanLink(null)} />
+          
+          <div className="relative z-10 w-full max-w-md bg-zinc-950 border border-purple-500/40 p-6 rounded-3xl shadow-2xl space-y-4 text-white">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <Users size={18} className="text-purple-400" />
+                <h3 className="font-bold text-sm">Alocação de {pendingKanbanLink.op.name}</h3>
+              </div>
+              <button onClick={() => setPendingKanbanLink(null)} className="text-text-muted hover:text-white">✕</button>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs text-text-muted">Novo Status: <strong className="text-white">{OPERATOR_STATUS_CONFIG[pendingKanbanLink.newStatus]?.label}</strong></p>
+              <p className="text-xs text-text-muted">Deseja vincular este período a uma Ordem de Serviço (Kanban)?</p>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] font-black uppercase text-purple-300 block mb-1">Ordem de Serviço (Kanban)</label>
+                <select
+                  value={selectedKanbanTask}
+                  onChange={(e) => setSelectedKanbanTask(e.target.value)}
+                  className="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-purple-500 cursor-pointer"
+                >
+                  <option value="">-- Nenhuma O.S. (Atividade Geral) --</option>
+                  {kanbanTasks.map(t => (
+                    <option key={t.id} value={t.id}>
+                      [{t.column_id === 'doing' ? 'EM ANDAMENTO' : 'A FAZER'}] {t.title} {t.operator ? `(${t.operator})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase text-purple-300 block mb-1">Observações / Detalhes do Local (Opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Instalação no Cliente ABC / Setor de Pintura"
+                  value={allocationNotes}
+                  onChange={(e) => setAllocationNotes(e.target.value)}
+                  className="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-purple-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
+              <button
+                onClick={() => executeStatusUpdate(pendingKanbanLink.op.id, pendingKanbanLink.newStatus, pendingKanbanLink.newLocation, null, null, null)}
+                className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-text-muted hover:text-white transition-all cursor-pointer"
+              >
+                Pular (Sem O.S.)
+              </button>
+              <button
+                onClick={() => {
+                  const matchedTask = kanbanTasks.find(t => String(t.id) === String(selectedKanbanTask));
+                  const kanbanTitle = matchedTask ? matchedTask.title : null;
+                  const loc = allocationNotes.trim() || pendingKanbanLink.newLocation;
+                  executeStatusUpdate(
+                    pendingKanbanLink.op.id,
+                    pendingKanbanLink.newStatus,
+                    loc,
+                    selectedKanbanTask || null,
+                    kanbanTitle,
+                    allocationNotes.trim() || null
+                  );
+                }}
+                className="px-5 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-purple-500/20 cursor-pointer"
+              >
+                Confirmar Alocação
               </button>
             </div>
           </div>
