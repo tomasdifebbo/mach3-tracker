@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Sparkles, ChevronRight, ChevronLeft, X, CheckCircle2, 
-  Activity, Layers, BarChart2, Package, Wrench, Clock, HardHat, Settings, Users
+  Activity, Layers, BarChart2, Package, Wrench, Clock, HardHat, Settings, Users, Utensils
 } from 'lucide-react';
 
 export function DemoTourModal({ isOpen, onClose, setActiveSection }) {
@@ -15,54 +15,54 @@ export function DemoTourModal({ isOpen, onClose, setActiveSection }) {
       section: 'dashboard',
       icon: Activity,
       badge: 'Etapa 1 de 9 • Telemetria ao Vivo',
-      title: '🚀 Status & Telemetria em Tempo Real',
-      description: 'Acompanhe simultaneamente todas as suas Router CNC, Laser Ruida e Máquina a Vácuo. Visualize quem está operando, o arquivo em execução, barra de progresso em tempo real, tempo restante e previsão de término (ETA).',
-      tip: '💡 Dica para a Apresentação: Mostre como o gerente visualiza todas as máquinas da fábrica em uma única tela sem precisar caminhar até a oficina.'
+      title: '🚀 Status & Telemetria em Tempo Real (CNC, Laser & Vácuo)',
+      description: 'Acompanhe simultaneamente todas as suas Router CNC, Laser Ruida CO2 e a nova Máquina a Vácuo (Termoformadora). Visualize quem está operando cada máquina, o arquivo em execução, barra de progresso em tempo real, tempo decorrido e a previsão exata de término (ETA).',
+      tip: '💡 Dica para o Cliente: Permite ao gerente monitorar 100% da fábrica em uma única tela sem precisar caminhar até a oficina.'
     },
     {
       id: 'equipe_hoje',
       section: 'operador',
       icon: Users,
-      badge: 'Etapa 2 de 9 • Alocação da Equipe',
-      title: '👷 Painel Equipe Hoje & Controle de Status',
-      description: 'Gestão visual de onde cada colaborador está atuando no momento: 🟢 Na Fábrica, 🟡 Serviço Externo, 🔵 Outro Setor, 🍱 Horário de Almoço ou ⚫ Folga/Ausente. Operadores alocados fora são bloqueados automaticamente de vinculações a máquinas.',
-      tip: '💡 Dica para a Apresentação: Altere o status de um operador ao vivo e mostre a cor do badge mudando e o bloqueio automático nas máquinas.'
+      badge: 'Etapa 2 de 9 • Alocação da Equipe & Almoço',
+      title: '👷 Painel Equipe Hoje & Botão de Almoço 🍱',
+      description: 'Gestão visual de alocação de pessoal: 🟢 Na Fábrica, 🍱 Horário de Almoço (com botão de 1 clique para ir/voltar do almoço), 🟡 Serviço Externo, 🔵 Outro Setor da Fábrica ou ⚫ Folga/Ausente. Operadores alocados fora ou em almoço são bloqueados de vínculo a máquinas automaticamente.',
+      tip: '💡 Dica para o Cliente: Garante que você saiba exatamente onde cada operador está no momento e evita apontamento de máquina durante o horário de almoço.'
     },
     {
       id: 'timesheet',
       section: 'operador',
       icon: Clock,
       badge: 'Etapa 3 de 9 • Rastreamento Diário',
-      title: '⏱️ Linha do Tempo & Timesheet Diário',
-      description: 'Registro de tempo 100% automático por período. A cada troca de atividade ou início de almoço, o sistema encerra o tempo anterior, calcula a duração exata e vincula opcionalmente à Ordem de Serviço (Kanban).',
-      tip: '💡 Dica para a Apresentação: Destaque o rastreio completo do dia do colaborador com cálculo automático de horas gastas em cada trabalho.'
+      title: '⏱️ Linha do Tempo Diária (Cards Individuais por Trabalho)',
+      description: 'Rastreamento 100% automático por período. A cada início de corte, troca de setor ou ida ao almoço, o sistema encerra o card anterior e abre um NOVO CARD INDEPENDENTE com horário de início, término e duração exata de cada tarefa.',
+      tip: '💡 Dica para o Cliente: Histórico limpo sem sobreposição de horários, mostrando exatamente quanto tempo cada peça ou trabalho levou.'
     },
     {
       id: 'encarregado',
       section: 'encarregado',
       icon: HardHat,
       badge: 'Etapa 4 de 9 • Gestão de Produção',
-      title: '📋 Quadro Kanban de Ordens de Serviço (O.S.)',
-      description: 'Painel Kanban interativo para gerenciar o fluxo da fábrica (A Fazer / Em Produção / Concluído). Permite direcionar trabalhos para Máquinas CNC, Laser, Vácuo, Serviços Externos e Outros Setores com prazos e prioridades.',
-      tip: '💡 Dica para a Apresentação: Mostre como a O.S. avança automaticamente quando o operador inicia ou conclui um trabalho.'
+      title: '📋 Quadro Kanban de O.S. & Apontamentos',
+      description: 'Painel Kanban interativo para gerenciar o fluxo da fábrica (A Fazer / Em Produção / Concluído). Permite direcionar trabalhos para Routers CNC, Laser, Vácuo, Serviços Externos e Outros Setores com prazos e prioridades.',
+      tip: '💡 Dica para o Cliente: Avanço automático de status quando o operador dispara o arquivo de corte na máquina.'
     },
     {
       id: 'historico',
       section: 'jobs',
       icon: Layers,
       badge: 'Etapa 5 de 9 • Rastreabilidade & PDF',
-      title: '📊 Histórico de Produção & Relatório PDF em 6 Páginas',
-      description: 'Registro histórico de todas as peças cortadas com cálculo de área em m², duração e custo de matéria-prima. Gera um Relatório PDF Profissional de 6 páginas com alto contraste (Resumo por Projeto, Manutenção, Peças e Timesheet da Equipe).',
-      tip: '💡 Dica para a Apresentação: Abra a opção "Exportar PDF" para demonstrar o relatório completo gerado em segundos.'
+      title: '📊 Histórico de Produção, Coluna Qtd & PDF em 6 Páginas',
+      description: 'Rastreio de todas as peças cortadas com m², dimensões (X/Y mm), insumo consumido e custo em R$. Conta com Coluna de Quantidade (Qtd) ajustável manualmente pelo encarregado (especial para Vácuo) e Relatório PDF de 6 páginas em alto contraste (Resumo, Histórico, Manutenção, Peças, Alocação e Timesheet).',
+      tip: '💡 Dica para o Cliente: Exporte relatórios executivos com timesheet completo, manutenções e gráficos prontos para reuniões ou clientes.'
     },
     {
       id: 'graficos',
       section: 'charts',
       icon: BarChart2,
       badge: 'Etapa 6 de 9 • Eficiência & OEE',
-      title: '📈 Gráficos de Produtividade & Métricas OEE',
-      description: 'Análise de eficiência operacional baseada nos índices globais OEE (Disponibilidade, Desempenho e Qualidade). Gráficos de uso por máquina, tempo estimado vs. tempo real e consumo mensal de chapas.',
-      tip: '💡 Dica para a Apresentação: Explique como os gráficos ajudam a identificar máquinas ociosas e otimizar o ritmo de produção.'
+      title: '📈 Gráficos de Produtividade & Métricas Globais OEE',
+      description: 'Cálculo automático de OEE (Disponibilidade, Desempenho e Qualidade). Gráficos intuitivos comparando tempo estimado vs. tempo real de corte, consumo mensal de chapas e horas produtivas por máquina e por turno.',
+      tip: '💡 Dica para o Cliente: Identifique gargalos e máquinas ociosas para maximizar o faturamento diário da sua fábrica.'
     },
     {
       id: 'materiais',
@@ -70,8 +70,8 @@ export function DemoTourModal({ isOpen, onClose, setActiveSection }) {
       icon: Package,
       badge: 'Etapa 7 de 9 • Gestão de Custos',
       title: '📦 Cadastro de Materiais & Calculadora de Insumos',
-      description: 'Cadastre o custo por m² de chapas (MDF, Acrílico, ACM, PVC, Inox, Isopor). O sistema identifica o material pelo nome do projeto e calcula o custo em Reais (R$) consumido por peça.',
-      tip: '💡 Dica para a Apresentação: Mostre o valor exato de matéria-prima economizado ao evitar refugos e perdas de estoque.'
+      description: 'Cadastre o custo por m² de chapas (MDF, Acrílico, ACM, PVC, Inox, Isopor). O sistema identifica automaticamente o material pelo nome do projeto e calcula o custo consumido em Reais (R$) por lote cortado.',
+      tip: '💡 Dica para o Cliente: Elimine surpresas no custo final e saiba exatamente quanto gastou de matéria-prima em cada cliente.'
     },
     {
       id: 'manutencao',
@@ -79,8 +79,8 @@ export function DemoTourModal({ isOpen, onClose, setActiveSection }) {
       icon: Wrench,
       badge: 'Etapa 8 de 9 • Conservação & Falhas',
       title: '🛠️ Manutenção Preventiva, Horímetro & Ocorrências',
-      description: 'Controle de horímetro, trocas de fluido/lentes, lubrificação de guias e agendamento de revisões. Conta com formulário de Reporte de Falhas para que o operador notifique o encarregado imediatamente.',
-      tip: '💡 Dica para a Apresentação: Evite paradas não planejadas e garanta maior vida útil aos equipamentos da fábrica.'
+      description: 'Controle de horímetro acumulado, alertas de lubrificação de guias lineares, troca de fluido de chillers e limpeza de lentes. Formulário direto de Reporte de Falhas para o operador notificar paradas ao encarregado.',
+      tip: '💡 Dica para o Cliente: Proteja o investimento dos seus equipamentos prevenindo paradas não planejadas e quebras dispendiosas.'
     },
     {
       id: 'settings',
@@ -88,8 +88,8 @@ export function DemoTourModal({ isOpen, onClose, setActiveSection }) {
       icon: Settings,
       badge: 'Etapa 9 de 9 • Controle de Acesso',
       title: '⚙️ Permissões por Perfil (Gerente, Encarregado, Operador)',
-      description: 'Controle estrito de acesso e permissões de telas. O perfil Operador tem visão exclusiva do terminal de operação, enquanto Gerentes e Encarregados possuem acesso total a custos, relatórios e Kanban.',
-      tip: '💡 Dica para a Apresentação: Demonstre a segurança de dados e a facilidade de configurar tablets dedicados ao chão de fábrica.'
+      description: 'Segurança e controle de permissões por perfil. O perfil Operador tem acesso apenas ao terminal simplificado de produção, enquanto Encarregados e Gerentes gerenciam custos, relatórios, Kanban e parâmetros.',
+      tip: '💡 Dica para o Cliente: Interface otimizada para ser instalada em tablets ao lado de cada CNC/Laser no chão de fábrica.'
     }
   ];
 
@@ -128,10 +128,10 @@ export function DemoTourModal({ isOpen, onClose, setActiveSection }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
       {/* Backdrop overlay */}
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-md" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose}></div>
 
       {/* Modal Container */}
-      <div className="relative z-10 w-full max-w-2xl bg-slate-900/95 border border-cyan-500/30 p-6 sm:p-8 rounded-3xl shadow-[0_0_50px_rgba(6,182,212,0.25)] flex flex-col gap-6 animate-in zoom-in-95 duration-300">
+      <div className="relative z-10 w-full max-w-2xl bg-slate-900/95 border border-cyan-500/30 p-6 sm:p-8 rounded-3xl shadow-[0_0_60px_rgba(6,182,212,0.3)] flex flex-col gap-6 animate-in zoom-in-95 duration-300">
         
         {/* Header Bar */}
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
@@ -141,7 +141,7 @@ export function DemoTourModal({ isOpen, onClose, setActiveSection }) {
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase tracking-widest text-cyan-400 block">{step.badge}</span>
-              <h3 className="text-base font-bold text-white tracking-tight">Guia Interativo de Apresentação</h3>
+              <h3 className="text-base font-bold text-white tracking-tight">Guia Interativo de Apresentação Mach3 Tracker</h3>
             </div>
           </div>
           <button 
@@ -152,10 +152,18 @@ export function DemoTourModal({ isOpen, onClose, setActiveSection }) {
           </button>
         </div>
 
+        {/* Progress Bar */}
+        <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+          <div 
+            className="bg-gradient-to-r from-cyan-400 to-blue-500 h-full transition-all duration-300 shadow-sm"
+            style={{ width: `${((currentStep + 1) / tourSteps.length) * 100}%` }}
+          />
+        </div>
+
         {/* Step Body */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-md shadow-cyan-500/5">
               <Icon size={28} />
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">{step.title}</h2>
@@ -165,21 +173,27 @@ export function DemoTourModal({ isOpen, onClose, setActiveSection }) {
             {step.description}
           </p>
 
-          <div className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-200 text-xs font-medium flex items-start gap-3">
+          <div className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 text-cyan-200 text-xs font-medium flex items-start gap-3 shadow-inner">
             <span className="text-base">💡</span>
             <span>{step.tip}</span>
           </div>
         </div>
 
         {/* Step Indicators Dots */}
-        <div className="flex items-center justify-center gap-2 py-2">
+        <div className="flex items-center justify-center gap-1.5 py-1">
           {tourSteps.map((s, idx) => (
             <button
               key={s.id}
               onClick={() => handleSelectStep(idx)}
-              className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${idx === currentStep ? 'w-8 bg-cyan-400 shadow-md shadow-cyan-400/50' : 'w-2.5 bg-white/20 hover:bg-white/40'}`}
-              title={`Ir para etapa ${idx + 1}`}
-            />
+              className={`h-7 rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center text-[10px] font-black ${
+                idx === currentStep 
+                  ? 'w-9 bg-cyan-400 text-black shadow-md shadow-cyan-400/50' 
+                  : 'w-7 bg-white/10 text-white/60 hover:bg-white/20 hover:text-white'
+              }`}
+              title={`Etapa ${idx + 1}: ${s.title}`}
+            >
+              {idx + 1}
+            </button>
           ))}
         </div>
 
