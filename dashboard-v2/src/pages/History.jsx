@@ -89,8 +89,30 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       const qtyNum = parseInt(newQuantity);
       if (isNaN(qtyNum) || qtyNum < 1) return;
       const targetIds = job.ids || [job.id];
+
+      let newMaterialPrice = job.material_price || 0;
+      const mat = materials.find(m => m.id === job.material_id);
+      if (mat) {
+        const insumo = calculateInsumo({
+          durationMinutes: job.duration_minutes || 0,
+          pricePerM2: mat.price || 0,
+          maxXMm: job.max_x,
+          maxYMm: job.max_y,
+          boundingAreaM2: job.bounding_area_m2,
+          sheetWidthMm: mat.sheet_width_mm,
+          sheetHeightMm: mat.sheet_height_mm
+        });
+        newMaterialPrice = insumo.totalCost * qtyNum;
+      } else if (job.material_price && (job.quantity || 1) > 0) {
+        const unitPrice = job.material_price / (job.quantity || 1);
+        newMaterialPrice = unitPrice * qtyNum;
+      }
+
       for (const id of targetIds) {
-        await api.patch(`/jobs/${id}`, { quantity: qtyNum });
+        await api.patch(`/jobs/${id}`, { 
+          quantity: qtyNum,
+          material_price: newMaterialPrice 
+        });
       }
       setEditingQtyJobId(null);
       if (onRefresh) onRefresh();
@@ -302,7 +324,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
         payload = {
           material_id: mat.id,
           material_name: mat.name,
-          material_price: insumo.totalCost
+          material_price: insumo.totalCost * (job.quantity || 1)
         };
       }
 
@@ -798,6 +820,9 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                               sheetWidthMm: m.sheet_width_mm,
                               sheetHeightMm: m.sheet_height_mm
                             });
+                            const qty = job.quantity || 1;
+                            const totalAreaM2 = ins.areaM2 * qty;
+                            const totalCost = ins.totalCost * qty;
                             return (
                               <button 
                                 key={m.id}
@@ -806,7 +831,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                               >
                                 <span>{m.name}</span>
                                 <span className="text-[9px] font-mono text-accent-cyan group-hover:text-black font-black">
-                                  {ins.areaM2.toFixed(4)}m² ({formatCurrency(ins.totalCost)})
+                                  {totalAreaM2.toFixed(4)}m² ({formatCurrency(totalCost)})
                                 </span>
                               </button>
                             );
@@ -828,9 +853,10 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                         sheetWidthMm: mat.sheet_width_mm,
                         sheetHeightMm: mat.sheet_height_mm
                       });
+                      const totalAreaM2 = ins.areaM2 * (job.quantity || 1);
                       return (
                         <span className="text-sm font-bold text-accent-cyan">
-                          {ins.areaM2.toFixed(4)} <span className="text-[10px] text-text-muted">m²</span>
+                          {totalAreaM2.toFixed(4)} <span className="text-[10px] text-text-muted">m²</span>
                         </span>
                       );
                     })()}
