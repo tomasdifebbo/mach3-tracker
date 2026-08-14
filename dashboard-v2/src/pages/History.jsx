@@ -25,6 +25,8 @@ const formatDate = (iso) => iso ? new Date(iso).toLocaleDateString('pt-BR') : '-
 
 export function History({ jobs = [], materials = [], onRefresh, user }) {
   const costPerHour = user?.settings?.costPerHour || 50;
+  const userCompanyRole = localStorage.getItem('mach3_device_role') || user?.company_role || 'gerente';
+  const canEditOperator = userCompanyRole === 'gerente' || userCompanyRole === 'encarregado' || user?.role === 'admin';
   const [searchTerm, setSearchTerm] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
@@ -563,7 +565,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                     </span>
                   </td>
                   <td className="px-6 py-5">
-                    {editingOperatorJobId === job.id ? (
+                    {canEditOperator && editingOperatorJobId === job.id ? (
                       <div className="flex items-center gap-1.5 min-w-[170px] relative z-20">
                         {!isCustomOperatorInput ? (
                           <select
@@ -632,24 +634,31 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                       <div className="flex items-center gap-1.5 group/op min-w-[130px]">
                         <span 
                           onClick={() => {
-                            setEditingOperatorJobId(job.id);
-                            setIsCustomOperatorInput(false);
+                            if (canEditOperator) {
+                              setEditingOperatorJobId(job.id);
+                              setIsCustomOperatorInput(false);
+                            }
                           }}
-                          className="text-[10px] font-bold text-accent-cyan bg-accent-cyan/10 px-2.5 py-1 rounded-full border border-accent-cyan/20 flex items-center gap-1.5 w-fit whitespace-nowrap cursor-pointer hover:bg-accent-cyan/20 hover:border-accent-cyan/40 transition-all"
-                          title="Clique para alterar o operador"
+                          className={clsx(
+                            "text-[10px] font-bold text-accent-cyan bg-accent-cyan/10 px-2.5 py-1 rounded-full border border-accent-cyan/20 flex items-center gap-1.5 w-fit whitespace-nowrap transition-all",
+                            canEditOperator && "cursor-pointer hover:bg-accent-cyan/20 hover:border-accent-cyan/40"
+                          )}
+                          title={canEditOperator ? "Clique para alterar o operador" : undefined}
                         >
                           👤 {job.operator_name || 'Desconhecido'}
                         </span>
-                        <button
-                          onClick={() => {
-                            setEditingOperatorJobId(job.id);
-                            setIsCustomOperatorInput(false);
-                          }}
-                          className="p-1 text-[10px] text-text-muted hover:text-white hover:bg-white/5 rounded-lg opacity-0 group-hover/op:opacity-100 transition-all cursor-pointer"
-                          title="Alterar Operador"
-                        >
-                          ✏️
-                        </button>
+                        {canEditOperator && (
+                          <button
+                            onClick={() => {
+                              setEditingOperatorJobId(job.id);
+                              setIsCustomOperatorInput(false);
+                            }}
+                            className="p-1 text-[10px] text-text-muted hover:text-white hover:bg-white/5 rounded-lg opacity-0 group-hover/op:opacity-100 transition-all cursor-pointer"
+                            title="Alterar Operador"
+                          >
+                            ✏️
+                          </button>
+                        )}
                       </div>
                     )}
                   </td>
