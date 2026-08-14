@@ -106,6 +106,12 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
     fetchKanban();
     fetchOperators();
     fetchTimeLogs();
+
+    const interval = setInterval(() => {
+      fetchTimeLogs();
+    }, 8000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleAddOperator = async (e) => {
@@ -485,6 +491,18 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
               const opLogs = timeLogs.filter(l => l.operator_id === op.id);
               const activeLog = opLogs.find(l => !l.end_time);
 
+              // Find current machine and active cutting job on that machine for this operator
+              const activeMachine = routers.find(r => r.operator_name && r.operator_name.toLowerCase() === op.name.toLowerCase());
+              const activeJobOnMachine = jobs.find(j => !j.end_time && j.operator_name && j.operator_name.toLowerCase() === op.name.toLowerCase());
+
+              const currentActivityLabel = activeLog
+                ? (activeLog.status === 'disponivel'
+                    ? (activeMachine
+                        ? `${activeMachine.name} ${activeJobOnMachine ? `(Cortando: ${activeJobOnMachine.file_name})` : '(Disponível)'}`
+                        : (activeJobOnMachine ? `${activeJobOnMachine.router_name || 'Na Máquina'} (${activeJobOnMachine.file_name})` : 'Na Fábrica'))
+                    : (activeLog.location || activeLog.status))
+                : 'Sem registro';
+
               return (
                 <div key={op.id} className="pt-3 first:pt-0 space-y-2">
                   <div className="flex items-center justify-between">
@@ -494,7 +512,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                     </div>
                     {activeLog && (
                       <span className="text-[10px] font-bold text-accent-cyan bg-accent-cyan/10 border border-accent-cyan/20 px-2.5 py-0.5 rounded-full animate-pulse">
-                        Em atividade: {activeLog.location || activeLog.status}
+                        Em atividade: {currentActivityLabel}
                       </span>
                     )}
                   </div>
@@ -509,16 +527,32 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                         const endStr = log.end_time ? new Date(log.end_time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'Agora';
                         const durMin = log.duration_minutes || (log.end_time ? (new Date(log.end_time) - new Date(log.start_time)) / 60000 : (now - new Date(log.start_time).getTime()) / 60000);
 
+                        const isLogActive = !log.end_time;
+                        let cardLocation = log.location || log.status;
+                        if (isLogActive && log.status === 'disponivel') {
+                          if (activeMachine && activeJobOnMachine) {
+                            cardLocation = `⚙️ ${activeMachine.name} (Cortando)`;
+                          } else if (activeMachine) {
+                            cardLocation = `⚙️ ${activeMachine.name}`;
+                          } else if (activeJobOnMachine) {
+                            cardLocation = `⚙️ ${activeJobOnMachine.router_name || 'Na Máquina'} (Cortando)`;
+                          }
+                        }
+
+                        const cardJobTitle = log.kanban_title || (isLogActive && activeJobOnMachine ? activeJobOnMachine.file_name : null);
+
                         return (
-                          <div key={log.id} className={`p-2.5 rounded-xl border ${st.border} ${st.bg} space-y-1 text-xs`}>
+                          <div key={log.id} className={`p-2.5 rounded-xl border ${st.border} ${st.bg} space-y-1 text-xs shadow-sm`}>
                             <div className="flex items-center justify-between text-[10px]">
                               <span className={`font-bold ${st.color}`}>{startStr} → {endStr} ({formatDuration(durMin)})</span>
                               <span className={`px-1.5 py-0.5 rounded font-black text-[9px] ${st.bg} ${st.color}`}>{st.label}</span>
                             </div>
-                            <p className="font-bold text-white text-[11px] truncate">{log.location || log.status}</p>
-                            {log.kanban_title && (
+                            <p className="font-bold text-white text-[11px] truncate flex items-center gap-1">
+                              {cardLocation}
+                            </p>
+                            {cardJobTitle && (
                               <p className="text-[10px] text-purple-300 font-medium truncate flex items-center gap-1">
-                                📋 O.S.: {log.kanban_title}
+                                📋 O.S. / Arquivo: {cardJobTitle}
                               </p>
                             )}
                             {log.notes && (

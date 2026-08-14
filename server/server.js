@@ -1175,6 +1175,33 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
     // Auto-sync Kanban card: todo -> doing
     autoSyncKanban(userId, cleanFileName, cleanFolder, router_name, 'doing', operatorName);
 
+    // Auto-update operator's active time log in real-time with machine & job file
+    if (operatorName) {
+        try {
+            const opRes = (await pool.query(
+                'SELECT id FROM operators WHERE LOWER(name) = LOWER($1) AND "userId" = $2 LIMIT 1',
+                [operatorName.trim(), userId]
+            )).rows[0];
+
+            if (opRes) {
+                await pool.query(
+                    `UPDATE operator_time_logs 
+                     SET location = $1, kanban_title = $2 
+                     WHERE operator_id = $3 AND "userId" = $4 AND end_time IS NULL AND status = 'disponivel'`,
+                    [router_name || 'Na Máquina', cleanFileName, opRes.id, userId]
+                );
+                await pool.query(
+                    `UPDATE operators 
+                     SET location = $1 
+                     WHERE id = $2 AND "userId" = $3 AND status = 'disponivel'`,
+                    [router_name || 'Na Máquina', opRes.id, userId]
+                );
+            }
+        } catch (opErr) {
+            console.error('Erro ao sincronizar time log do operador:', opErr);
+        }
+    }
+
     res.json({ id: result.rows[0].id, success: true });
 });
 
@@ -1979,6 +2006,32 @@ app.patch('/api/routers/:id/operator', authenticateToken, async (req, res) => {
             'UPDATE kanban_tasks SET operator = $1 WHERE "userId" = $2 AND (machine ILIKE $3 OR machine ILIKE $4) AND column_id = $5',
             [opVal, req.user.id, `%${router.name}%`, `%${router.name.replace(/ruida/i, '').trim()}%`, 'doing']
         );
+
+        // Sync operator's active time log location
+        if (opVal) {
+            const opRes = (await pool.query(
+                'SELECT id FROM operators WHERE LOWER(name) = LOWER($1) AND "userId" = $2 LIMIT 1',
+                [opVal, req.user.id]
+            )).rows[0];
+
+            if (opRes) {
+                const activeJob = (await pool.query(
+                    'SELECT file_name FROM jobs WHERE "userId" = $1 AND (router_name ILIKE $2 OR router_name ILIKE $3) AND end_time IS NULL ORDER BY id DESC LIMIT 1',
+                    [req.user.id, `%${router.name}%`, `%${router.name.replace(/ruida/i, '').trim()}%`]
+                )).rows[0];
+
+                await pool.query(
+                    `UPDATE operator_time_logs 
+                     SET location = $1, kanban_title = COALESCE($2, kanban_title) 
+                     WHERE operator_id = $3 AND "userId" = $4 AND end_time IS NULL AND status = 'disponivel'`,
+                    [router.name, activeJob ? activeJob.file_name : null, opRes.id, req.user.id]
+                );
+                await pool.query(
+                    `UPDATE operators SET location = $1 WHERE id = $2 AND "userId" = $3 AND status = 'disponivel'`,
+                    [router.name, opRes.id, req.user.id]
+                );
+            }
+        }
 
         res.json({ success: true, operator_name: opVal });
     } catch (err) {
