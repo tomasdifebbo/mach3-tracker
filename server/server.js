@@ -1901,7 +1901,21 @@ app.get('/api/checklists/items', authenticateToken, async (req, res) => {
         )).rows;
 
         // Auto-seed default items if no items exist for this user & machine_key
-        if (rows.length === 0 && SEED_CHECKLIST_ITEMS[machine_key]) {
+        // OR if existing items are in old format (missing [Encarregado]/[Operador] role tags)
+        const needsReseed = rows.length === 0 || (
+            SEED_CHECKLIST_ITEMS[machine_key] &&
+            rows.length > 0 &&
+            !rows.some(r => r.item_text.includes('[Encarregado]') || r.item_text.includes('[Operador]'))
+        );
+
+        if (needsReseed && SEED_CHECKLIST_ITEMS[machine_key]) {
+            // Delete old-format items (only default ones, preserve any user-added custom items)
+            if (rows.length > 0) {
+                await pool.query(
+                    'DELETE FROM checklist_items WHERE machine_key = $1 AND "userId" = $2',
+                    [machine_key, req.user.id]
+                );
+            }
             const defaults = SEED_CHECKLIST_ITEMS[machine_key];
             for (const text of defaults) {
                 await pool.query(
