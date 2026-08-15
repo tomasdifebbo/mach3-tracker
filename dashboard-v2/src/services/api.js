@@ -283,6 +283,21 @@ export const api = {
     return resp.json();
   },
 
+  getOperatorTimeLogsRange: async (dateFrom, dateTo) => {
+    let url = `${API_URL}/api/operators/time-logs`;
+    if (dateFrom && dateTo) {
+      url += `?date_from=${dateFrom}&date_to=${dateTo}`;
+    } else if (dateFrom) {
+      url += `?date_from=${dateFrom}`;
+    }
+    const resp = await fetch(url, {
+      headers: getAuthHeaders(),
+      cache: 'no-store'
+    });
+    if (!resp.ok) return [];
+    return resp.json();
+  },
+
   updateOperatorTimeLog: async (logId, payload) => {
     const resp = await fetch(`${API_URL}/api/operators/time-logs/${logId}`, {
       method: 'PATCH',

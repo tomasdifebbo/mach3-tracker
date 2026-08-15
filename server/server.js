@@ -2143,8 +2143,14 @@ app.get('/api/operators/time-logs', authenticateToken, async (req, res) => {
         const params = [userId];
 
         if (date) {
-            query += ' AND DATE(start_time) = DATE($2)';
+            query += ' AND DATE(start_time) = DATE($' + (params.length + 1) + ')';
             params.push(date);
+        } else if (req.query.date_from && req.query.date_to) {
+            query += ' AND DATE(start_time) >= DATE($' + (params.length + 1) + ') AND DATE(start_time) <= DATE($' + (params.length + 2) + ')';
+            params.push(req.query.date_from, req.query.date_to);
+        } else if (req.query.date_from) {
+            query += ' AND DATE(start_time) >= DATE($' + (params.length + 1) + ')';
+            params.push(req.query.date_from);
         }
         query += ' ORDER BY start_time DESC';
 
