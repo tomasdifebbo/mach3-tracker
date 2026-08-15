@@ -1009,6 +1009,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
       )}
 
       {/* Cards de Maquinário em Tempo Real com Seleção de Operador por Máquina */}
+      {isManagerOrEncarregado && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {routers.map((m) => {
           const isCutting = m.status === 'cortando' || !!m.current_job;
@@ -1168,6 +1169,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
           );
         })}
       </div>
+      )}
 
       {/* Navegação de Abas do Operador */}
       <div className="flex gap-2 border-b border-white/10 pb-2">
