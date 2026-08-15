@@ -20,6 +20,9 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
   const [kanbanTasks, setKanbanTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
 
+  const deviceRole = localStorage.getItem('mach3_device_role') || 'gerente';
+  const isManagerOrEncarregado = deviceRole === 'gerente' || deviceRole === 'encarregado';
+
   // Quick occurrence form
   const [showOccurrenceModal, setShowOccurrenceModal] = useState(false);
   const [occMachine, setOccMachine] = useState('Router CNC');
@@ -550,7 +553,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
       )}
 
       {/* Linha do Tempo da Equipe Hoje (Timesheet) */}
-      {operatorsList.length > 0 && (
+      {isManagerOrEncarregado && operatorsList.length > 0 && (
         <div className="glass p-5 md:p-6 rounded-3xl border border-white/10 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-black uppercase tracking-wider text-accent-cyan flex items-center gap-2">
@@ -624,7 +627,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
       )}
 
       {/* Histórico da Linha do Tempo — Filtro por Semana/Mês + Resumo por Operador */}
-      {operatorsList.length > 0 && (
+      {isManagerOrEncarregado && operatorsList.length > 0 && (
         <div className="glass p-5 md:p-6 rounded-3xl border border-white/10 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h3 className="text-sm font-black uppercase tracking-wider text-purple-300 flex items-center gap-2">
