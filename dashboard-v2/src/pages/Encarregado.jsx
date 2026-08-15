@@ -1276,48 +1276,80 @@ function PainelKanban({ jobs = [] }) {
 const MACHINE_CHECKLISTS = {
   router: {
     label: '🔩 Router CNC',
-    title: 'Router CNC — Setup Diário',
+    title: 'Router CNC — Setup Operacional & Auditoria do Encarregado',
     supply: 'Fresas retas, fresas de acabamento, pontas de gravação, pinças ER sobressalentes.',
     items: [
-      'Verificar fixação e nivelamento do material na mesa (vácuo ou garras).',
-      'Inspecionar desgaste da fresa — fresas cegas causam rebarba e vibração.',
-      'Efetuar referenciamento nos três eixos (Zero XY e Z-Probe).',
-      'Ligar exaustor/coletor de pó antes do início da usinagem.',
-      'Limpar e lubrificar cremalheiras e fusos de esferas com óleo recomendado.',
+      '[Operador] Verificar fixação e nivelamento do material na mesa (vácuo ou garras).',
+      '[Operador] Inspecionar desgaste da fresa — fresas cegas causam rebarba e vibração.',
+      '[Operador] Efetuar referenciamento nos três eixos (Zero XY e Z-Probe).',
+      '[Operador] Ligar exaustor/coletor de pó antes do início da usinagem.',
+      '[Operador] Limpar e lubrificar cremalheiras e fusos de esferas com óleo recomendado.',
+      '[Encarregado] 👔 AUDITORIA: Conferir espessura real do lote de chapas com paquímetro antes de liberar a usinagem.',
+      '[Encarregado] 👔 SEGURANÇA: Auditar uso obrigatório de óculos de proteção, protetor auricular e calçado fechado do operador.',
+      '[Encarregado] 👔 VALIDAÇÃO: Conferir se o diâmetro e tipo da fresa instalada confere exatamente com a O.S.',
+      '[Encarregado] 👔 VÁCUO: Verificar manômetro da bomba de vácuo (Mínimo -0.7 a -0.8 bar) para retenção total da chapa.',
+      '[Encarregado] 👔 LIBERAÇÃO: Inspecionar dimensões X/Y e esquadro da 1ª peça cortada antes de autorizar lote.'
     ]
   },
   laser: {
     label: '🔴 Laser',
-    title: 'Corte a Laser — Setup Diário',
+    title: 'Corte a Laser — Setup Operacional & Auditoria do Encarregado',
     supply: 'Lentes de foco ZnSe, espelhos refletores, filtros de carvão ativado.',
     items: [
-      'Limpar a lente focal e espelhos defletores (álcool isopropílico + lenço óptico).',
-      'Verificar temperatura do Chiller — ideal entre 18°C e 22°C.',
-      'Ligar exaustor e testar sucção da colmeia/mesa de corte.',
-      'Testar fluxo do gás de assistência (Air Assist) antes de iniciar.',
-      'Inspecionar trilhos lineares quanto a acúmulo de fuligem e resíduos.',
+      '[Operador] Limpar a lente focal e espelhos defletores (álcool isopropílico + lenço óptico).',
+      '[Operador] Verificar temperatura do Chiller — ideal entre 18°C e 22°C.',
+      '[Operador] Ligar exaustor e testar sucção da colmeia/mesa de corte.',
+      '[Operador] Testar fluxo do gás de assistência (Air Assist) antes de iniciar.',
+      '[Operador] Inspecionar trilhos lineares quanto a acúmulo de fuligem e resíduos.',
+      '[Encarregado] 👔 ANTI-INCÊNDIO: Checar extintor de incêndio CO2/Pó Químico carregado e desobstruído ao lado do laser.',
+      '[Encarregado] 👔 ALINHAMENTO: Realizar teste de pulso (Beam Alignment) nos 4 cantos da mesa para focar potência do tubo.',
+      '[Encarregado] 👔 TRIAGEM: Auditar lote de material liberado garantindo que NENHUM plástico tóxico (ex: PVC) vá para o laser.',
+      '[Encarregado] 👔 REFRIGERAÇÃO: Testar sensor de travamento automático do Chiller e conferir nível de água desmineralizada.',
+      '[Encarregado] 👔 QUALIDADE: Validar transparência do canto da 1ª peça cortada (sem ranhuras ou queima).'
     ]
   },
   vacuo: {
     label: '💨 Vácuo',
-    title: 'Moldadora a Vácuo — Setup Diário',
+    title: 'Moldadora a Vácuo — Setup Operacional & Auditoria do Encarregado',
     supply: 'Chapas PSA, ABS, PETG; resistências sobressalentes; óleo para bomba de vácuo.',
     items: [
-      'Inspecionar borrachas de vedação da moldura de aperto (evita perda de sucção).',
-      'Ligar resistências e verificar aquecimento uniforme da chapa plástica.',
-      'Confirmar nível de óleo da bomba de vácuo (visor de nível).',
-      'Limpar moldes de resina/MDF, retirando rebarbas e poeiras do ciclo anterior.',
+      '[Operador] Inspecionar borrachas de vedação da moldura de aperto (evita perda de sucção).',
+      '[Operador] Ligar resistências e verificar aquecimento uniforme da chapa plástica.',
+      '[Operador] Confirmar nível de óleo da bomba de vácuo (visor de nível).',
+      '[Operador] Limpar moldes de resina/MDF, retirando rebarbas e poeiras do ciclo anterior.',
+      '[Encarregado] 👔 GABARITO & MOLDE: Verificar se o molde possui ângulos de saída suficientes (draft angle) e alívio de ar.',
+      '[Encarregado] 👔 PULMÃO DE VÁCUO: Checar pressão negativa acumulada no reservatório para sucção de impacto perfeita.',
+      '[Encarregado] 👔 TEMPERATURA & TEMPO: Auditar pirômetro infravermelho e tempo de forno para o polímero (PSAI/PETG/ABS).',
+      '[Encarregado] 👔 PROTEÇÃO PNEUMÁTICA: Validar funcionamento do acionamento bimanual e travas de segurança da mesa pneumática.',
+      '[Encarregado] 👔 INSPEÇÃO DE ESTICAMENTO: Inspecionar 1ª peça moldada garantindo que não haja afinamento crítico nem bolhas.'
     ]
   },
   impressao3d: {
     label: '🧱 Impressão 3D',
-    title: 'Impressoras 3D — Setup Diário',
+    title: 'Impressoras 3D — Setup Operacional & Auditoria do Encarregado',
     supply: 'Filamentos PLA, ABS, PETG; bicos (nozzles 0.4mm e 0.6mm); fitas de aderência.',
     items: [
-      'Verificar nivelamento da mesa de impressão (Bed Leveling manual ou automático).',
-      'Limpar a mesa com álcool isopropílico para adesão correta da primeira camada.',
-      'Inspecionar bico (nozzle) por resíduos e entupimentos de filamento queimado.',
-      'Confirmar que os filamentos estão armazenados em ambiente seco (caixa selada ou estufa).',
+      '[Operador] Verificar nivelamento da mesa de impressão (Bed Leveling manual ou automático).',
+      '[Operador] Limpar a mesa com álcool isopropílico para adesão correta da primeira camada.',
+      '[Operador] Inspecionar bico (nozzle) por resíduos e entupimentos de filamento queimado.',
+      '[Operador] Confirmar que os filamentos estão armazenados em ambiente seco (caixa selada ou estufa).',
+      '[Encarregado] 👔 FATIAMENTO & INFILL: Validar no arquivo fatiado a densidade de preenchimento (Infill %) e suportes da O.S.',
+      '[Encarregado] 👔 DESUMIDIFICAÇÃO: Auditar se os carretéis de filamento (PLA/PETG/ABS) estão no desumidificador com sílica.',
+      '[Encarregado] 👔 PRIMEIRA CAMADA: Inspecionar a adesão e o Z-Offset da 1ª camada antes de liberar para execução longa.',
+      '[Encarregado] 👔 LAVAGEM E CURA (SLA): Auditar tempos de banho de IPA e câmara de cura UV para peças em resina.'
+    ]
+  },
+  encarregado_geral: {
+    label: '👔 Ronda do Encarregado',
+    title: 'Ronda Geral da Oficina — Verificações de Liderança do Encarregado',
+    supply: 'Manômetros de ar, multímetro, paquímetro digital, prancha de O.S. e checklists.',
+    items: [
+      '[Encarregado] 👔 PRESENÇA DA EQUIPE: Auditar no sistema se todos os operadores estão com status correto (Na Fábrica, Almoço, Externo, Limpeza).',
+      '[Encarregado] 👔 COMPRESSOR DE AR: Drenar purgadores de água condensada dos compressores e conferir pressão da linha (6 a 8 bar).',
+      '[Encarregado] 👔 SEGURANÇA 5S: Realizar ronda nas bancadas garantindo corredores limpos, saídas livres e ferramentas organizadas.',
+      '[Encarregado] 👔 QUADRO KANBAN: Auditar Ordens de Serviço prioritárias do dia e resolver gargalos/bloqueios com a produção.',
+      '[Encarregado] 👔 QUADRO ELÉTRICO: Checar temperatura e ausência de aquecimento nos disjuntores e nobreaks das CNCs.',
+      '[Encarregado] 👔 REUSO DE MATÉRIA-PRIMA: Inspecionar área de descarte e garantir reaproveitamento inteligente de sobras de chapas.'
     ]
   }
 };
@@ -1329,6 +1361,7 @@ function ChecklistMaquina({ data, machineKey }) {
   const [newItemText, setNewItemText] = useState('');
   const [addingItem, setAddingItem] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [roleFilter, setRoleFilter] = useState('all'); // 'all' | 'encarregado' | 'operador'
 
   const fetchCustomItems = async () => {
     try {
@@ -1366,6 +1399,13 @@ function ChecklistMaquina({ data, machineKey }) {
   const allItems = customItems.length > 0
     ? customItems.map((item, idx) => ({ id: item.id, index: idx, text: item.item_text }))
     : data.items.map((text, idx) => ({ index: idx, text }));
+
+  const filteredDisplayItems = allItems.filter(item => {
+    const isEncarregado = item.text.includes('[Encarregado]') || item.text.includes('👔');
+    if (roleFilter === 'encarregado') return isEncarregado;
+    if (roleFilter === 'operador') return !isEncarregado;
+    return true;
+  });
 
   const toggle = async (i) => {
     const isDone = !checked.includes(i);
@@ -1458,11 +1498,17 @@ function ChecklistMaquina({ data, machineKey }) {
     );
   }
 
+  const encarregadoCount = allItems.filter(i => i.text.includes('[Encarregado]') || i.text.includes('👔')).length;
+  const operadorCount = allItems.filter(i => i.text.includes('[Operador]')).length;
+
   return (
     <div className="glass rounded-2xl border border-white/5 overflow-hidden">
-      <div className="p-6 border-b border-white/5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-black uppercase tracking-widest text-white">{data.title}</h3>
+      <div className="p-6 border-b border-white/5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-widest text-white">{data.title}</h3>
+            {data.supply && <p className="text-[11px] text-text-muted mt-0.5">Insumos/Ferramental: {data.supply}</p>}
+          </div>
           <div className="flex items-center gap-3">
             {allDone && (
               <span className="text-[10px] font-black bg-accent-success/10 text-accent-success border border-accent-success/20 px-3 py-1 rounded-full">✓ COMPLETO</span>
@@ -1475,6 +1521,7 @@ function ChecklistMaquina({ data, machineKey }) {
             </button>
           </div>
         </div>
+
         {/* Progress bar */}
         <div className="flex items-center gap-3">
           <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
@@ -1485,20 +1532,67 @@ function ChecklistMaquina({ data, machineKey }) {
           </div>
           <span className="text-xs font-black text-text-muted min-w-[50px] text-right">{checked.length}/{allItems.length}</span>
         </div>
-        <p className="text-[10px] text-text-muted mt-2 flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-accent-success inline-block"></span>
-          Progresso salvo automaticamente para hoje ({today})
-        </p>
+
+        {/* Role Filter Selector */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
+          <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider mr-1">Filtrar por Responsabilidade:</span>
+          <button
+            onClick={() => setRoleFilter('all')}
+            className={`px-3 py-1 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
+              roleFilter === 'all' ? 'bg-white/10 text-white border border-white/20' : 'text-text-muted hover:text-white'
+            }`}
+          >
+            📋 Todos os Itens ({allItems.length})
+          </button>
+          <button
+            onClick={() => setRoleFilter('encarregado')}
+            className={`px-3 py-1 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
+              roleFilter === 'encarregado' 
+                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm' 
+                : 'text-text-muted hover:text-purple-300'
+            }`}
+          >
+            👔 Inspeções do Encarregado ({encarregadoCount})
+          </button>
+          <button
+            onClick={() => setRoleFilter('operador')}
+            className={`px-3 py-1 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
+              roleFilter === 'operador' 
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm' 
+                : 'text-text-muted hover:text-cyan-300'
+            }`}
+          >
+            👷 Setup do Operador ({operadorCount})
+          </button>
+        </div>
       </div>
 
       <div className="divide-y divide-white/5">
-        {allItems.map((item) => {
+        {filteredDisplayItems.map((item) => {
           const done = checked.includes(item.index);
+          const isEncarregado = item.text.includes('[Encarregado]') || item.text.includes('👔');
+          const isOperador = item.text.includes('[Operador]');
+          const cleanText = item.text
+            .replace(/^\[Encarregado\]\s*/i, '')
+            .replace(/^\[Operador\]\s*/i, '');
+
           return (
             <div key={`${item.id || 'def'}-${item.index}`} className={`flex items-center justify-between gap-4 p-4 hover:bg-white/[0.02] transition-colors group ${done ? 'opacity-60' : ''}`}>
-              <label className="flex items-start gap-4 flex-1 cursor-pointer">
+              <label className="flex items-start gap-3 flex-1 cursor-pointer">
                 <input type="checkbox" className="mt-0.5 accent-orange-500 w-4 h-4 flex-shrink-0 cursor-pointer" checked={done} onChange={() => toggle(item.index)} />
-                <span className={`text-sm ${done ? 'line-through text-text-muted' : 'text-white/80'}`}>{item.text}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1">
+                  {isEncarregado && (
+                    <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30 shrink-0 w-fit">
+                      👔 VERIFICAÇÃO DO ENCARREGADO
+                    </span>
+                  )}
+                  {isOperador && (
+                    <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shrink-0 w-fit">
+                      👷 SETUP DO OPERADOR
+                    </span>
+                  )}
+                  <span className={`text-sm font-medium ${done ? 'line-through text-text-muted' : 'text-white/90'}`}>{cleanText}</span>
+                </div>
               </label>
               {item.id && (
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
