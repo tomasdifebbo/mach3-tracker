@@ -673,6 +673,13 @@ class LaserMonitorThread(threading.Thread):
                                 txt = get_wtxt(chwnd)
                                 if txt:
                                     clean = txt.replace('mm', '').strip()
+                                    if ',' in clean and '.' in clean:
+                                        if clean.rfind(',') > clean.rfind('.'):
+                                            clean = clean.replace('.', '').replace(',', '.')
+                                        else:
+                                            clean = clean.replace(',', '')
+                                    elif ',' in clean:
+                                        clean = clean.replace(',', '.')
                                     try:
                                         val = float(clean)
                                         # Object Bar edit controls are in top-left toolbar area (rel_x < 400, rel_y < 160)
@@ -936,9 +943,9 @@ class LaserMonitorThread(threading.Thread):
                     is_finished = False
                     reason = ""
 
-                    # Regra A: Se temos o tempo estimado do LaserCAD, encerra quando atinge o tempo de corte físico (85% a 95%)
+                    # Regra A: Se temos o tempo estimado do LaserCAD, encerra quando atinge o tempo de corte físico (105% como margem de segurança)
                     if self.current_estimated_sec and self.current_estimated_sec > 0:
-                        if job_dur >= self.current_estimated_sec * 0.85:
+                        if job_dur >= self.current_estimated_sec * 1.05:
                             is_finished = True
                             reason = f"tempo estimado de corte concluído ({job_dur:.1f}s / {self.current_estimated_sec:.0f}s)"
 
