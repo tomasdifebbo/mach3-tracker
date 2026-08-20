@@ -1182,12 +1182,6 @@ class LaserMonitorThread(threading.Thread):
             if disk_path:
                 return target_name, disk_path
 
-        # C) FALLBACK PARA ARQUIVO RECENTE NO DISCO (.cdr / .pw5 editado nas últimas 4h):
-        recent_cdr = self.find_most_recent_cdr_file(max_age_seconds=14400)
-        if recent_cdr:
-            clean_name = recent_cdr.split("\\")[-1].split("/")[-1]
-            return clean_name, recent_cdr
-
         # D) Se encontrou no diálogo de Download do LaserCAD
         if doc_from_dialog:
             return doc_from_dialog, path_from_title or f"LaserCAD\\{doc_from_dialog}"
@@ -1208,6 +1202,12 @@ class LaserMonitorThread(threading.Thread):
                                 return val, disk_path or f"LaserCAD\\{val}"
         except Exception:
             pass
+
+        # C) FALLBACK PARA ARQUIVO RECENTE NO DISCO (.cdr / .pw5 editado nas últimas 4h):
+        recent_cdr = self.find_most_recent_cdr_file(max_age_seconds=14400)
+        if recent_cdr:
+            clean_name = recent_cdr.split("\\")[-1].split("/")[-1]
+            return clean_name, recent_cdr
 
         return None, None
 
