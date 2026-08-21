@@ -1023,6 +1023,11 @@ class LaserMonitorThread(threading.Thread):
             cdr_match = re.search(r'([^\s\\/\[\]]+\.(?:cdr|pw5|dxf|ai))', title, re.IGNORECASE)
             if cdr_match:
                 return cdr_match.group(1)
+
+            # 4. Match CorelDRAW bracket format e.g. [Document Name]
+            bracket_match = re.search(r'\[([^\]]+)\]', title)
+            if bracket_match:
+                return bracket_match.group(1).rstrip('*').strip()
         except Exception:
             pass
         return None
@@ -1181,6 +1186,10 @@ class LaserMonitorThread(threading.Thread):
             disk_path = self.find_file_on_disk_by_name(target_name)
             if disk_path:
                 return target_name, disk_path
+            
+            # Mesmo não achando o arquivo salvo no disco, se pegamos um nome real do Corel, usamos ele
+            if corel_doc_name:
+                return corel_doc_name, f"CorelDRAW\\{corel_doc_name}"
 
         # D) Se encontrou no diálogo de Download do LaserCAD
         if doc_from_dialog:
