@@ -96,7 +96,8 @@ function App() {
         await fetchData();
       };
       init();
-      const interval = setInterval(fetchData, 4000);
+      // Increase polling interval to 25 seconds to save bandwidth (was 4s)
+      const interval = setInterval(fetchData, 25000);
       return () => clearInterval(interval);
     } else {
       setLoading(false);
