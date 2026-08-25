@@ -527,22 +527,33 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                   </div>
 
                   {/* Status Selector */}
-                  <div className="mt-3 relative">
-                    <select
-                      value={op.status || 'disponivel'}
-                      onChange={(e) => {
-                        handleStatusSelect(op, e.target.value);
-                      }}
-                      className={`w-full bg-black/40 border ${st.border} rounded-xl px-3 py-1.5 text-[11px] font-bold ${st.color} outline-none cursor-pointer appearance-none pr-7 transition-all hover:bg-black/60`}
-                    >
-                      <option value="disponivel" className="bg-zinc-900 text-white">🟢 Na Fábrica (Disponível)</option>
-                      <option value="almoco" className="bg-zinc-900 text-white">🍱 Horário de Almoço</option>
-                      <option value="limpeza" className="bg-zinc-900 text-white">🧹 Limpeza e Manutenção do Setor</option>
-                      <option value="externo" className="bg-zinc-900 text-white">🟡 Serviço Externo</option>
-                      <option value="outro_setor" className="bg-zinc-900 text-white">🔵 Outro Setor da Fábrica</option>
-                      <option value="fim_expediente" className="bg-zinc-900 text-white">🏁 Fim de Expediente (Foi Embora)</option>
-                      <option value="ausente" className="bg-zinc-900 text-white">⚫ Folga / Ausente</option>
-                    </select>
+                  <div className="mt-3 relative flex items-center gap-1.5">
+                    <div className="flex-1">
+                      <select
+                        value={op.status || 'disponivel'}
+                        onChange={(e) => {
+                          handleStatusSelect(op, e.target.value);
+                        }}
+                        className={`w-full bg-black/40 border ${st.border} rounded-xl px-3 py-1.5 text-[11px] font-bold ${st.color} outline-none cursor-pointer appearance-none pr-7 transition-all hover:bg-black/60`}
+                      >
+                        <option value="disponivel" className="bg-zinc-900 text-white">🟢 Na Fábrica (Disponível)</option>
+                        <option value="almoco" className="bg-zinc-900 text-white">🍱 Horário de Almoço</option>
+                        <option value="limpeza" className="bg-zinc-900 text-white">🧹 Limpeza e Manutenção do Setor</option>
+                        <option value="externo" className="bg-zinc-900 text-white">🟡 Serviço Externo</option>
+                        <option value="outro_setor" className="bg-zinc-900 text-white">🔵 Outro Setor da Fábrica</option>
+                        <option value="fim_expediente" className="bg-zinc-900 text-white">🏁 Fim de Expediente (Foi Embora)</option>
+                        <option value="ausente" className="bg-zinc-900 text-white">⚫ Folga / Ausente</option>
+                      </select>
+                    </div>
+                    {(!op.status || op.status === 'disponivel') && (
+                      <button
+                        onClick={() => handleStatusSelect(op, 'disponivel')}
+                        title="Trocar Projeto / Nova O.S."
+                        className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl px-2.5 py-1.5 hover:bg-emerald-500/30 hover:scale-105 transition-all flex items-center justify-center shrink-0"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <ChevronDown size={12} className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${st.color}`} />
                   </div>
                 </div>
