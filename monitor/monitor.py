@@ -213,6 +213,8 @@ def process_queue():
 
 def simulate_gcode_time(filepath):
     """Estimate machining time from a G-code file (in minutes) and extract X/Y bounding box dimensions."""
+    if filepath.lower().endswith(('.cdr', '.pw5', '.ud5', '.ai', '.pdf')):
+        return None, None, None, None
     try:
         feed_rate = 1000.0
         rapid_rate = 10000.0
