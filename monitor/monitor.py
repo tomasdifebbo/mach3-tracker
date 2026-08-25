@@ -267,19 +267,30 @@ def simulate_gcode_time(filepath):
         return None, None, None, None
 
 def processa_inicio(caminho, nome_arquivo, iso_time, origem, estimated_minutes=None, max_x=None, max_y=None, area_m2=None):
+    # Se o caminho for um arquivo real, use o nome original (com extensão) ao invés do nome truncado
+    if "\\" in caminho or "/" in caminho:
+        real_name = caminho.split("\\")[-1].split("/")[-1]
+        if "." in real_name and len(real_name) > len(nome_arquivo):
+            nome_arquivo = real_name
+
     # Extract actual folder from full file path
     project_name = "LaserCAD"
     parts = caminho.split("\\")
     if len(parts) > 2:
-        # Improved project folder extraction for deep UNC paths
         full_parts = [p for p in caminho.split("\\") if p]
         folder_parts = full_parts[:-1] if len(full_parts) > 1 else full_parts
-        project_name = "Desconhecido"
         skip_list = ["ROUTER", "ISOPOR", "ARQUIVO", "CNC", "ARQUIVOS", "2024", "2026", "TOMAS", "MACH3"]
+        
+        valid_folders = []
         for p in reversed(folder_parts):
             if p and p.upper() not in skip_list and not p.startswith("{"):
-                project_name = p
-                break
+                valid_folders.append(p)
+                if len(valid_folders) == 2:
+                    break
+                    
+        if valid_folders:
+            valid_folders.reverse() # Coloca na ordem original (ex: Projeto -> Subpasta)
+            project_name = " | ".join(valid_folders)
 
     # Simulate machining time and bounding box dimensions for progress bar & m²
     estimated, max_x_val, max_y_val, area_m2_val = estimated_minutes, max_x, max_y, area_m2
