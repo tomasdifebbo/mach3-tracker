@@ -1192,11 +1192,15 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
 
                 for (const log of openLogs) {
                     const startLogDt = new Date(log.start_time);
-                    const durMin = Math.max(0.1, (dt - startLogDt) / 60000);
-                    await pool.query(
-                        'UPDATE operator_time_logs SET end_time = $1, duration_minutes = $2 WHERE id = $3',
-                        [dt.toISOString(), parseFloat(durMin.toFixed(2)), log.id]
-                    );
+                    const durMin = (dt - startLogDt) / 60000;
+                    if (durMin < 0.4) {
+                        await pool.query('DELETE FROM operator_time_logs WHERE id = $1', [log.id]);
+                    } else {
+                        await pool.query(
+                            'UPDATE operator_time_logs SET end_time = $1, duration_minutes = $2 WHERE id = $3',
+                            [dt.toISOString(), parseFloat(durMin.toFixed(2)), log.id]
+                        );
+                    }
                 }
 
                 // 2. Open a NEW card for this cutting activity
@@ -1255,8 +1259,9 @@ app.patch('/api/jobs/latest', authenticateToken, async (req, res) => {
     const startDt = new Date(row.start_time);
     const durationMinutes = (dt - startDt) / (1000 * 60);
 
-    if (durationMinutes < 0.05) {
+    if (durationMinutes < 0.4) {
         await pool.query('DELETE FROM jobs WHERE id = $1', [row.id]);
+        await pool.query('DELETE FROM operator_time_logs WHERE "userId" = $1 AND start_time = $2', [userId, row.start_time]);
         return res.json({ id: row.id, deleted: true });
     }
 
@@ -1281,11 +1286,15 @@ app.patch('/api/jobs/latest', authenticateToken, async (req, res) => {
 
                 for (const log of openLogs) {
                     const startLogDt = new Date(log.start_time);
-                    const durMin = Math.max(0.1, (dt - startLogDt) / 60000);
-                    await pool.query(
-                        'UPDATE operator_time_logs SET end_time = $1, duration_minutes = $2 WHERE id = $3',
-                        [dt.toISOString(), parseFloat(durMin.toFixed(2)), log.id]
-                    );
+                    const durMin = (dt - startLogDt) / 60000;
+                    if (durMin < 0.4) {
+                        await pool.query('DELETE FROM operator_time_logs WHERE id = $1', [log.id]);
+                    } else {
+                        await pool.query(
+                            'UPDATE operator_time_logs SET end_time = $1, duration_minutes = $2 WHERE id = $3',
+                            [dt.toISOString(), parseFloat(durMin.toFixed(2)), log.id]
+                        );
+                    }
                 }
 
                 // Create a new 'Na Fábrica' card starting at completion time
@@ -2138,6 +2147,9 @@ app.get('/api/operators/time-logs', authenticateToken, async (req, res) => {
                 }
             }
         }
+
+        // Auto-cleanup micro duplicate logs (< 0.4 min / 24s) from operator timeline
+        await pool.query('DELETE FROM operator_time_logs WHERE "userId" = $1 AND duration_minutes IS NOT NULL AND duration_minutes < 0.4', [userId]);
 
         let query = 'SELECT * FROM operator_time_logs WHERE "userId" = $1';
         const params = [userId];
