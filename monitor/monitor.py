@@ -826,10 +826,11 @@ class LaserMonitorThread(threading.Thread):
             try:
                 import subprocess
                 result = subprocess.run(
-                    ["netstat", "-n"],
+                    ["netstat", "-an"],
                     capture_output=True, text=True, timeout=3
                 )
-                if self.laser_ip in result.stdout:
+                stdout = result.stdout or ""
+                if self.laser_ip in stdout or "50200" in stdout:
                     self.last_network_activity = time.time()
             except Exception:
                 pass
@@ -862,15 +863,8 @@ class LaserMonitorThread(threading.Thread):
                 if bx and by:
                     self.last_bbox = (bx, by, barea)
 
-                # =====================================================
-                # FLUXO RUIDA DE 2 BIPES:
-                # Bipe 1: Arquivo transferido para memória da placa → salvar dados, NÃO abrir job
-                # START: Operador pressiona Start no painel → abrir job com horário real de início
-                # Bipe 2: Corte finalizado → fechar job
-                # =====================================================
-
                 now_ts = time.time()
-                net_active = (self.last_network_activity > 0 and (now_ts - self.last_network_activity) < 2)
+                net_active = (self.last_network_activity > 0 and (now_ts - self.last_network_activity) < 5)
 
                 # 1. Detectar janela "Download Document" do LaserCAD via Win32 API
                 download_visible = self.is_download_dialog_open()
@@ -878,7 +872,6 @@ class LaserMonitorThread(threading.Thread):
                 if download_visible:
                     if not self.download_dialog_open:
                         self.download_dialog_open = True
-                    # Enquanto o diálogo estiver aberto, captura continuamente o nome e caminho do CorelDRAW / LaserCAD
                     doc, fpath = self.read_doc_info(soft_cfg_path)
                     if doc:
                         self.pending_filename = doc
@@ -887,7 +880,6 @@ class LaserMonitorThread(threading.Thread):
                         self.pending_filepath = fpath
 
                 elif not download_visible and self.download_dialog_open:
-                    # Dialog acabou de fechar = Download foi enviado!
                     self.download_dialog_open = False
                     
                     doc, fpath = self.read_doc_info(soft_cfg_path)
@@ -921,77 +913,48 @@ class LaserMonitorThread(threading.Thread):
                     self.last_estimated_minutes = None
                     self.last_bbox = (None, None, None)
 
-                # 1.5. Trigger automático por início de transmissão de rede
-                elif net_active and self.status != "working":
+                # 1.5. Trigger por transmissão de rede ou novo arquivo enviado
+                elif net_active or (os.path.exists(soft_cfg_path) and os.path.getmtime(soft_cfg_path) > self.last_cfg_mtime):
+                    if os.path.exists(soft_cfg_path):
+                        self.last_cfg_mtime = os.path.getmtime(soft_cfg_path)
+                        
                     doc, fpath = self.read_doc_info(soft_cfg_path)
-                    file_to_report = doc or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
+                    file_to_report = doc or self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
                     path_to_report = fpath or f"LaserCAD\\{file_to_report}"
-                    print(f"[+] LASER TRANSMISSÃO DE REDE — ABRINDO JOB: {file_to_report} (Caminho: {path_to_report})")
+                    
+                    should_open = False
+                    if self.status != "working":
+                        should_open = True
+                    elif (now_ts - self.job_start_time) > 30: # Job anterior já tem mais de 30s
+                        print(f"[~] Encerrando job anterior para abrir novo envio: {file_to_report}")
+                        processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
+                        should_open = True
 
-                    est_to_report = self.last_estimated_minutes or self.get_lasercad_estimated_minutes()
-                    res_x, res_y, res_area = self.last_bbox if self.last_bbox[0] else self.get_lasercad_bounding_box()
+                    if should_open:
+                        print(f"[+] LASER EVENTO DETECTADO — ABRINDO JOB: {file_to_report} (Caminho: {path_to_report})")
 
-                    processa_inicio(
-                        caminho=path_to_report,
-                        nome_arquivo=file_to_report,
-                        iso_time=datetime.datetime.now().astimezone().isoformat(),
-                        origem="Laser Ruida",
-                        estimated_minutes=est_to_report,
-                        max_x=res_x,
-                        max_y=res_y,
-                        area_m2=res_area
-                    )
-                    self.status = "working"
-                    self.job_start_time = now_ts
-                    self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
-                    self.last_network_activity = now_ts
-                    self.pending_filename = None
-                    self.pending_filepath = None
-                    self.last_filename = None
-                    self.last_estimated_minutes = None
-                    self.last_bbox = (None, None, None)
+                        est_to_report = self.last_estimated_minutes or self.get_lasercad_estimated_minutes()
+                        res_x, res_y, res_area = self.last_bbox if self.last_bbox[0] else self.get_lasercad_bounding_box()
 
-                # 2. Checar SoftCfg.ini para atualizar DocName / Novo Envio
-                if os.path.exists(soft_cfg_path):
-                    try:
-                        mtime = os.path.getmtime(soft_cfg_path)
-                        if mtime > self.last_cfg_mtime:
-                            self.last_cfg_mtime = mtime
-                            doc, fpath = self.read_doc_info(soft_cfg_path)
-                            if doc:
-                                self.last_filename = doc
-                                print(f"[~] SoftCfg.ini atualizado: {doc}")
-
-                                # Se a máquina não estiver cortando, inicia o job imediatamente pelo evento do arquivo
-                                if self.status != "working":
-                                    file_to_report = doc
-                                    path_to_report = fpath or f"LaserCAD\\{file_to_report}"
-                                    print(f"[+] LASER ARQUIVO DETECTADO — ABRINDO JOB: {file_to_report} (Caminho: {path_to_report})")
-
-                                    est_to_report = self.last_estimated_minutes or self.get_lasercad_estimated_minutes()
-                                    res_x, res_y, res_area = self.last_bbox if self.last_bbox[0] else self.get_lasercad_bounding_box()
-
-                                    processa_inicio(
-                                        caminho=path_to_report,
-                                        nome_arquivo=file_to_report,
-                                        iso_time=datetime.datetime.now().astimezone().isoformat(),
-                                        origem="Laser Ruida",
-                                        estimated_minutes=est_to_report,
-                                        max_x=res_x,
-                                        max_y=res_y,
-                                        area_m2=res_area
-                                    )
-                                    self.status = "working"
-                                    self.job_start_time = now_ts
-                                    self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
-                                    self.last_network_activity = now_ts
-                                    self.pending_filename = None
-                                    self.pending_filepath = None
-                                    self.last_filename = None
-                                    self.last_estimated_minutes = None
-                                    self.last_bbox = (None, None, None)
-                    except Exception:
-                        pass
+                        processa_inicio(
+                            caminho=path_to_report,
+                            nome_arquivo=file_to_report,
+                            iso_time=datetime.datetime.now().astimezone().isoformat(),
+                            origem="Laser Ruida",
+                            estimated_minutes=est_to_report,
+                            max_x=res_x,
+                            max_y=res_y,
+                            area_m2=res_area
+                        )
+                        self.status = "working"
+                        self.job_start_time = now_ts
+                        self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
+                        self.last_network_activity = now_ts
+                        self.pending_filename = None
+                        self.pending_filepath = None
+                        self.last_filename = None
+                        self.last_estimated_minutes = None
+                        self.last_bbox = (None, None, None)
 
                 # 3. Detectar FIM do corte automaticamente após término físico
                 if self.status == "working":
@@ -1007,10 +970,13 @@ class LaserMonitorThread(threading.Thread):
                             is_finished = True
                             reason = f"tempo estimado de corte concluído ({job_dur:.1f}s / {self.current_estimated_sec:.0f}s)"
 
-                    # Regra B: Se NÃO temos o tempo estimado, aguarda 20 minutos como timeout de segurança
-                    elif job_dur >= 1200:
+                    # Regra B: Se NÃO temos o tempo estimado, encerra se inativo por 90s (após 3min de job) ou após 5min máximo
+                    elif job_dur >= 180 and (self.last_network_activity == 0 or (now_ts - self.last_network_activity) > 60):
                         is_finished = True
-                        reason = f"timeout de inatividade ({int(job_dur)}s)"
+                        reason = f"inatividade de rede pós-corte ({int(job_dur)}s)"
+                    elif job_dur >= 300:
+                        is_finished = True
+                        reason = f"timeout máximo de corte ({int(job_dur)}s)"
 
                     if is_finished:
                         print(f"[+] LASER CORTE FINALIZADO AUTOMATICAMENTE: {reason}")
