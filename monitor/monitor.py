@@ -552,6 +552,51 @@ def main():
 # MONITOR LASERCAD & RUIDA LASER (UDP 5005 / PORTA 50200)
 # ==========================================
 import socket
+import ctypes
+import ctypes.wintypes
+
+try:
+    user32 = ctypes.windll.user32
+    WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.wintypes.BOOL, ctypes.wintypes.HWND, ctypes.wintypes.LPARAM)
+    WM_GETTEXT = 0x000D
+    WM_GETTEXTLENGTH = 0x000E
+
+    def get_wtitle(hwnd):
+        try:
+            length = user32.GetWindowTextLengthW(hwnd)
+            if length > 0:
+                buff = ctypes.create_unicode_buffer(length + 1)
+                user32.GetWindowTextW(hwnd, buff, length + 1)
+                return buff.value
+        except Exception:
+            pass
+        return ""
+
+    def get_wtxt(hwnd):
+        try:
+            length = user32.SendMessageW(hwnd, WM_GETTEXTLENGTH, 0, 0)
+            if length > 0:
+                buff = ctypes.create_unicode_buffer(length + 1)
+                user32.SendMessageW(hwnd, WM_GETTEXT, length + 1, ctypes.byref(buff))
+                return buff.value
+        except Exception:
+            pass
+        return ""
+
+    def get_cls(hwnd):
+        try:
+            cbuff = ctypes.create_unicode_buffer(256)
+            user32.GetClassNameW(hwnd, cbuff, 256)
+            return cbuff.value
+        except Exception:
+            pass
+        return ""
+except Exception:
+    user32 = None
+    WNDENUMPROC = None
+    def get_wtitle(hwnd): return ""
+    def get_wtxt(hwnd): return ""
+    def get_cls(hwnd): return ""
 
 class LaserMonitorThread(threading.Thread):
     # Tempo (em segundos) de segurança para considerar um corte esquecido em aberto (4 horas)
