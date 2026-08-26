@@ -1138,8 +1138,18 @@ class LaserMonitorThread(threading.Thread):
                 nonlocal corel_doc_name, corel_file_path
                 title = get_wtitle(hwnd)
                 if title and "corel" in title.lower():
+                    # Ignorar janelas de sistema/utilitários que contêm "corel" no caminho
+                    title_lower = title.lower()
+                    if "gdi+" in title_lower or "interprocesscontroller" in title_lower:
+                        return True
+                    # Só aceitar janelas que parecem ser a janela principal do CorelDRAW
+                    if not title_lower.startswith("coreldraw"):
+                        return True
                     extracted = self.extract_path_from_window_title(title)
                     if extracted:
+                        # Ignorar caminhos de executáveis
+                        if extracted.lower().endswith(".exe"):
+                            return True
                         if "\\" in extracted or "/" in extracted:
                             corel_file_path = extracted
                             corel_doc_name = extracted.split("\\")[-1].split("/")[-1]

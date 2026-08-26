@@ -1,0 +1,12 @@
+import os
+
+task_log = r"C:\Users\Atelier Arte\.gemini\antigravity\brain\8f090ab8-74bd-4612-87a2-ab2800f39185\.system_generated\tasks\task-5583.log"
+if os.path.exists(task_log):
+    print("=== TASK 5583 LOG ===")
+    with open(task_log, "r", encoding="utf-8", errors="ignore") as f:
+        content = f.read()
+        print("Total log size:", len(content))
+        print("Last 2000 chars:")
+        print(content[-2000:])
+else:
+    print("Task log not found at", task_log)
