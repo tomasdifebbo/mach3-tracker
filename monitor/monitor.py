@@ -1023,22 +1023,31 @@ class LaserMonitorThread(threading.Thread):
         if not title:
             return None
         try:
+            clean_title = title
+            # Strip known app prefixes
+            for prefix in ["CorelDRAW - ", "LaserCAD - ", "LaserCut - "]:
+                if clean_title.lower().startswith(prefix.lower()):
+                    clean_title = clean_title[len(prefix):].strip()
+                    break
+
             # 1. Match full Windows path e.g. C:\Folder\file.cdr
-            win_path_match = re.search(r'([a-zA-Z]:\\[^\*\>\<\?\"]+)', title)
+            win_path_match = re.search(r'([a-zA-Z]:\\[^\*\>\<\?\"]+)', clean_title)
             if win_path_match:
                 p = win_path_match.group(1).strip()
-                if " - " in p:
-                    p = p.split(" - ")[0].strip()
+                for suffix in [" - CorelDRAW", " - LaserCAD", " - LaserCut"]:
+                    if p.lower().endswith(suffix.lower()):
+                        p = p[:-len(suffix)].strip()
                 if ']' in p:
                     p = p.split(']')[0].strip()
                 return p.rstrip('*]').strip()
 
             # 2. Match UNC path e.g. \\Server\Folder\file.cdr
-            unc_path_match = re.search(r'(\\\\[^\*\>\<\?\"]+)', title)
+            unc_path_match = re.search(r'(\\\\[^\*\>\<\?\"]+)', clean_title)
             if unc_path_match:
                 p = unc_path_match.group(1).strip()
-                if " - " in p:
-                    p = p.split(" - ")[0].strip()
+                for suffix in [" - CorelDRAW", " - LaserCAD", " - LaserCut"]:
+                    if p.lower().endswith(suffix.lower()):
+                        p = p[:-len(suffix)].strip()
                 if ']' in p:
                     p = p.split(']')[0].strip()
                 return p.rstrip('*]').strip()
