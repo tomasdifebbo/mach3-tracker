@@ -279,11 +279,19 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem, estimated_minutes=N
     if len(parts) > 2:
         full_parts = [p for p in caminho.split("\\") if p]
         folder_parts = full_parts[:-1] if len(full_parts) > 1 else full_parts
-        skip_list = ["ROUTER", "ISOPOR", "ARQUIVO", "CNC", "ARQUIVOS", "2024", "2026", "TOMAS", "MACH3"]
-        
+        def is_generic_folder(folder_name):
+            f_upper = folder_name.upper().strip()
+            if f_upper in ("ROUTER", "ISOPOR", "ARQUIVO", "ARQUIVOS", "CNC", "TOMAS", "MACH3", "2024", "2025", "2026", "2027"):
+                return True
+            if re.match(r'^(ARQUIVOS?|ROUTER|CNC|ISOPOR|MACH3|TOMAS)\s*\d{0,4}$', f_upper):
+                return True
+            if re.match(r'^[A-Z]:$', f_upper):
+                return True
+            return False
+
         valid_folders = []
         for p in reversed(folder_parts):
-            if p and p.upper() not in skip_list and not p.startswith("{"):
+            if p and not is_generic_folder(p) and not p.startswith("{"):
                 valid_folders.append(p)
                 if len(valid_folders) == 2:
                     break
@@ -1068,12 +1076,15 @@ class LaserMonitorThread(threading.Thread):
     def find_file_on_disk_by_name(self, target_name):
         if not target_name or target_name.lower().startswith('doc') or target_name.lower() == 'untitled':
             return None
-        clean_target = target_name.lower().replace('.cdr','').replace('.pw5','').replace('.dxf','').strip()
+        clean_target = target_name.lower().replace('.cdr','').replace('.pw5','').replace('.dxf','').replace('.txt','').replace('.tap','').strip()
         if len(clean_target) < 3:
             return None
             
         home = os.path.expanduser("~")
         search_dirs = [
+            r"E:\arquivos 2024\ARQUIVOS 2026\router\2652c - parede A",
+            r"E:\arquivos 2024\ARQUIVOS 2026\router",
+            r"E:\arquivos 2024\ARQUIVOS 2026",
             r"E:\arquivos 2024",
             r"E:\arquivos 2026",
             r"D:\arquivos 2026",
@@ -1090,7 +1101,7 @@ class LaserMonitorThread(threading.Thread):
                 try:
                     for root, _, files in os.walk(d):
                         for f in files:
-                            if clean_target in f.lower() and f.lower().endswith(('.cdr', '.pw5', '.dxf', '.ai')):
+                            if clean_target in f.lower() and f.lower().endswith(('.cdr', '.pw5', '.dxf', '.ai', '.txt', '.tap', '.nc', '.cnc', '.gcode')):
                                 fp = os.path.join(root, f)
                                 try:
                                     matches.append((fp, os.path.getmtime(fp)))
@@ -1107,6 +1118,9 @@ class LaserMonitorThread(threading.Thread):
     def find_most_recent_cdr_file(self, max_age_seconds=14400):
         home = os.path.expanduser("~")
         search_dirs = [
+            r"E:\arquivos 2024\ARQUIVOS 2026\router\2652c - parede A",
+            r"E:\arquivos 2024\ARQUIVOS 2026\router",
+            r"E:\arquivos 2024\ARQUIVOS 2026",
             r"E:\arquivos 2024",
             r"E:\arquivos 2026",
             r"D:\arquivos 2026",
@@ -1126,7 +1140,7 @@ class LaserMonitorThread(threading.Thread):
                 try:
                     for root, _, files in os.walk(d):
                         for f in files:
-                            if f.lower().endswith(('.cdr', '.pw5', '.dxf', '.ai')):
+                            if f.lower().endswith(('.cdr', '.pw5', '.dxf', '.ai', '.txt', '.tap', '.nc', '.cnc', '.gcode')):
                                 fp = os.path.join(root, f)
                                 try:
                                     mtime = os.path.getmtime(fp)
