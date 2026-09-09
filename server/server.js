@@ -38,8 +38,13 @@ app.use(cors({
     credentials: true
 }));
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public'), {
+const publicDir = fs.existsSync(path.join(__dirname, 'public', 'index.html'))
+    ? path.join(__dirname, 'public')
+    : (fs.existsSync(path.join(__dirname, '../dashboard-v2/dist', 'index.html'))
+        ? path.join(__dirname, '../dashboard-v2/dist')
+        : path.join(__dirname, 'public'));
+
+app.use(express.static(publicDir, {
     etag: false,
     maxAge: 0,
     setHeaders: (res) => {
@@ -2443,7 +2448,10 @@ app.delete('/api/occurrences/:id', authenticateToken, async (req, res) => {
 
 // Catch-all: Route all other non-API requests to the React SPA
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    const indexPath = fs.existsSync(path.join(__dirname, 'public', 'index.html'))
+        ? path.join(__dirname, 'public', 'index.html')
+        : path.join(__dirname, '../dashboard-v2/dist', 'index.html');
+    res.sendFile(indexPath);
 });
 
 app.listen(port, '0.0.0.0', () => {

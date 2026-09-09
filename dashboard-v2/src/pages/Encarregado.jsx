@@ -2,10 +2,11 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   LayoutGrid, Calendar, Columns3, CheckSquare2, Package, TrendingUp,
   AlertCircle, CheckCircle2, Clock, Star, ChevronRight, Zap, Target,
-  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2, Edit2, CalendarClock, User
+  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2, Edit2, CalendarClock, User, FileCode
 } from 'lucide-react';
 import { api } from '../services/api';
 import { LinkProjectModal } from '../components/LinkProjectModal';
+import { ConversorGcodeDxf } from '../components/ConversorGcodeDxf';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -2379,6 +2380,7 @@ const NAV_SECTIONS = [
   { id: 'checklists', label: 'Checklists Diários', icon: CheckSquare2, group: 'Operação' },
   { id: 'estoque', label: 'Controle de Estoque', icon: Package, group: 'Operação' },
   { id: 'kaizen', label: 'Ciclo POP / Kaizen', icon: TrendingUp, group: 'Melhoria' },
+  { id: 'gcode_dxf', label: 'Conversor G-Code ➔ DXF', icon: FileCode, group: 'Ferramentas' },
 ];
 
 export function Encarregado({ jobs = [] }) {
@@ -2396,6 +2398,7 @@ export function Encarregado({ jobs = [] }) {
       case 'checklists': return <ChecklistsDiarios />;
       case 'estoque':    return <ControleEstoque />;
       case 'kaizen':     return <CicloPOP />;
+      case 'gcode_dxf':  return <ConversorGcodeDxf />;
       default:           return <DashboardSemanal jobs={jobs} />;
     }
   };
