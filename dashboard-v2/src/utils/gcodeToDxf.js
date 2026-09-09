@@ -1,10 +1,12 @@
 /**
  * Conversor G-Code para DXF (100% Client-Side em Memória do Navegador)
- * Converte movimentos G00/G01/G02/G03 em contornos 2D e exporta formato DXF (R2000 / AC1015).
+ * Converte movimentos G00/G01/G02/G03 em contornos 2D e exporta formato DXF R2000 (AC1015) 100% compatível com CorelDRAW e AutoCAD.
  */
 
 export function parseGCode(text) {
   const lines = text.split(/\r?\n/);
+  const hasZ = /Z\s*-?\d+/i.test(text);
+
   let currX = 0.0, currY = 0.0, currZ = 20.0;
   let currG = null;
 
@@ -45,29 +47,35 @@ export function parseGCode(text) {
     const newY = params.Y !== undefined ? params.Y : currY;
     const newZ = params.Z !== undefined ? params.Z : currZ;
 
-    if (currG === 0) { // Rapid move (G00)
+    // Smart Cutting Determination
+    let cuttingNow = false;
+    if (!hasZ) {
+      // Pure 2D G-Code (no Z coordinates)
+      cuttingNow = [1, 2, 3].includes(currG);
+    } else {
+      // 3D / Depth-based G-Code
+      if (currG === 0 || newZ > 0.5) {
+        cuttingNow = false;
+      } else {
+        cuttingNow = [1, 2, 3].includes(currG);
+      }
+    }
+
+    if (cuttingNow) {
+      if (!isCutting) {
+        isCutting = true;
+        currentPath = [[currX, currY]];
+      }
+      const last = currentPath[currentPath.length - 1];
+      if (!last || last[0] !== newX || last[1] !== newY) {
+        currentPath.push([newX, newY]);
+      }
+    } else {
       if (isCutting && currentPath.length > 1) {
         rawPaths.push([...currentPath]);
       }
       currentPath = [];
       isCutting = false;
-    } else if ([1, 2, 3].includes(currG)) { // Cut move (G01 / G02 / G03)
-      if (newZ <= 0.5) { // Cutting below or at surface level
-        if (!isCutting) {
-          isCutting = true;
-          currentPath = [[currX, currY]];
-        }
-        const last = currentPath[currentPath.length - 1];
-        if (!last || last[0] !== newX || last[1] !== newY) {
-          currentPath.push([newX, newY]);
-        }
-      } else { // Retract above surface
-        if (isCutting && currentPath.length > 1) {
-          rawPaths.push([...currentPath]);
-        }
-        currentPath = [];
-        isCutting = false;
-      }
     }
 
     currX = newX;
@@ -127,61 +135,51 @@ export function generateDxfContent(uniquePaths, rawPaths) {
   let handleIndex = 100;
   const getHandle = () => (handleIndex++).toString(16).toUpperCase();
 
-  let dxf = `0
-SECTION
-2
-HEADER
-9
-$ACADVER
-1
-AC1015
-0
-ENDSEC
-0
-SECTION
-2
-TABLES
-0
-TABLE
-2
-LAYER
-70
-2
-0
-LAYER
-2
-PECAS_2D
-70
-0
-62
-3
-6
-CONTINUOUS
-0
-LAYER
-2
-PASSADAS_COMPLETAS
-70
-0
-62
-1
-6
-CONTINUOUS
-0
-ENDTAB
-0
-ENDSEC
-0
-SECTION
-2
-BLOCKS
-0
-ENDSEC
-0
-SECTION
-2
-ENTITIES
-`;
+  // Compute bounding box for extents & limits header
+  let minX = Infinity, minY = Infinity;
+  let maxX = -Infinity, maxY = -Infinity;
+
+  const allPaths = uniquePaths.concat(rawPaths);
+  for (const path of allPaths) {
+    for (const [x, y] of path) {
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+  }
+
+  if (!isFinite(minX) || !isFinite(maxX)) {
+    minX = 0; maxX = 100;
+    minY = 0; maxY = 100;
+  }
+
+  // Build DXF Header with strict group code compliance for CorelDRAW
+  const lines = [
+    '0', 'SECTION',
+    '2', 'HEADER',
+    '9', '$ACADVER', '1', 'AC1015',
+    '9', '$INSUNITS', '70', '6', // 6 = Millimeters
+    '9', '$EXTMIN', '10', minX.toFixed(4), '20', minY.toFixed(4), '30', '0.0',
+    '9', '$EXTMAX', '10', maxX.toFixed(4), '20', maxY.toFixed(4), '30', '0.0',
+    '9', '$LIMMIN', '10', minX.toFixed(4), '20', minY.toFixed(4),
+    '9', '$LIMMAX', '10', maxX.toFixed(4), '20', maxY.toFixed(4),
+    '0', 'ENDSEC',
+    '0', 'SECTION',
+    '2', 'TABLES',
+    '0', 'TABLE',
+    '2', 'LAYER',
+    '70', '2',
+    '0', 'LAYER', '2', 'PECAS_2D', '70', '0', '62', '3', '6', 'CONTINUOUS', // Color 3 = Green
+    '0', 'LAYER', '2', 'PASSADAS_COMPLETAS', '70', '0', '62', '1', '6', 'CONTINUOUS', // Color 1 = Red
+    '0', 'ENDTAB',
+    '0', 'ENDSEC',
+    '0', 'SECTION',
+    '2', 'BLOCKS',
+    '0', 'ENDSEC',
+    '0', 'SECTION',
+    '2', 'ENTITIES'
+  ];
 
   // Layer: PECAS_2D (Green - Color 3)
   for (const path of uniquePaths) {
@@ -191,72 +189,62 @@ ENTITIES
     const dist = Math.hypot(startP[0] - endP[0], startP[1] - endP[1]);
     const isClosed = dist < 2.0 ? 1 : 0;
 
-    dxf += `0
-LWPOLYLINE
-5
-${getHandle()}
-8
-PECAS_2D
-90
-${path.length}
-70
-${isClosed}
-`;
+    lines.push(
+      '0', 'LWPOLYLINE',
+      '5', getHandle(),
+      '100', 'AcDbEntity',
+      '8', 'PECAS_2D',
+      '100', 'AcDbPolyline',
+      '90', path.length.toString(),
+      '70', isClosed.toString()
+    );
+
     for (const [x, y] of path) {
-      dxf += `10
-${x.toFixed(4)}
-20
-${y.toFixed(4)}
-`;
+      lines.push('10', x.toFixed(4), '20', y.toFixed(4));
     }
   }
 
   // Layer: PASSADAS_COMPLETAS (Red - Color 1)
   for (const path of rawPaths) {
     if (path.length < 2) continue;
-    dxf += `0
-LWPOLYLINE
-5
-${getHandle()}
-8
-PASSADAS_COMPLETAS
-90
-${path.length}
-70
-0
-`;
+    lines.push(
+      '0', 'LWPOLYLINE',
+      '5', getHandle(),
+      '100', 'AcDbEntity',
+      '8', 'PASSADAS_COMPLETAS',
+      '100', 'AcDbPolyline',
+      '90', path.length.toString(),
+      '70', '0'
+    );
+
     for (const [x, y] of path) {
-      dxf += `10
-${x.toFixed(4)}
-20
-${y.toFixed(4)}
-`;
+      lines.push('10', x.toFixed(4), '20', y.toFixed(4));
     }
   }
 
-  dxf += `0
-ENDSEC
-0
-EOF
-`;
+  lines.push('0', 'ENDSEC', '0', 'EOF');
 
-  return dxf;
+  return lines.join('\n');
 }
 
 export function processGCodeToDxf(gcodeText, fileName = 'desenho.txt') {
   const rawPaths = parseGCode(gcodeText);
   const uniquePaths = deduplicatePaths(rawPaths);
-  const dxfContent = generateDxfContent(uniquePaths, rawPaths);
+
+  // If no paths were extracted with standard 0.5 threshold, fallback to raw cut lines
+  const pathsToExport = uniquePaths.length > 0 ? uniquePaths : rawPaths;
+
+  const dxfContent = generateDxfContent(pathsToExport, rawPaths);
 
   // Compute bounding box and stats
   let globalMinX = Infinity, globalMaxX = -Infinity;
   let globalMinY = Infinity, globalMaxY = -Infinity;
 
-  const pieceDetails = uniquePaths.map((p, idx) => {
+  const pieceDetails = pathsToExport.map((p, idx) => {
     const xs = p.map(pt => pt[0]);
     const ys = p.map(pt => pt[1]);
     const minX = Math.min(...xs), maxX = Math.max(...xs);
-    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const minY = Math.min(...ys), maxY = Math.max(...maxY);
     const width = Math.round(maxX - minX);
     const height = Math.round(maxY - minY);
 
@@ -292,7 +280,7 @@ export function processGCodeToDxf(gcodeText, fileName = 'desenho.txt') {
     downloadUrl,
     stats: {
       rawPassesCount: rawPaths.length,
-      uniquePiecesCount: uniquePaths.length,
+      uniquePiecesCount: pathsToExport.length,
       totalWidth,
       totalHeight
     },
