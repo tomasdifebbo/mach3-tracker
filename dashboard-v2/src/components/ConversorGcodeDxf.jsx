@@ -31,7 +31,7 @@ export function ConversorGcodeDxf() {
         setResult(res);
       } catch (err) {
         console.error('Erro ao converter G-code para DXF:', err);
-        setError('Erro ao processar arquivo G-code. Verifique o formato do arquivo.');
+        setError(err.message || 'Erro ao processar arquivo G-code. Verifique o formato do arquivo.');
       } finally {
         setIsProcessing(false);
       }

@@ -229,6 +229,10 @@ export function generateDxfContent(uniquePaths, rawPaths) {
 
 export function processGCodeToDxf(gcodeText, fileName = 'desenho.txt') {
   const rawPaths = parseGCode(gcodeText);
+  if (!rawPaths || rawPaths.length === 0) {
+    throw new Error('Nenhum movimento de corte (G1/G2/G3) foi identificado no arquivo.');
+  }
+
   const uniquePaths = deduplicatePaths(rawPaths);
 
   // If no paths were extracted with standard 0.5 threshold, fallback to raw cut lines
@@ -244,7 +248,7 @@ export function processGCodeToDxf(gcodeText, fileName = 'desenho.txt') {
     const xs = p.map(pt => pt[0]);
     const ys = p.map(pt => pt[1]);
     const minX = Math.min(...xs), maxX = Math.max(...xs);
-    const minY = Math.min(...ys), maxY = Math.max(...maxY);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
     const width = Math.round(maxX - minX);
     const height = Math.round(maxY - minY);
 
