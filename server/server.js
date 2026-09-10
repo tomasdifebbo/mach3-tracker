@@ -694,7 +694,8 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const body = req.body || {};
+        const { email, password } = body;
         if (!email || !password) return res.status(400).json({ error: "E-mail e senha são obrigatórios" });
 
         const cleanEmail = String(email).trim().toLowerCase();
@@ -1105,7 +1106,8 @@ async function autoSyncKanban(userId, jobFileName, jobFolder, routerName, target
 }
 
 app.post('/api/jobs', authenticateToken, async (req, res) => {
-    const { file_name, folder, file_path, start_time, router_name, estimated_minutes } = req.body;
+    const body = req.body || {};
+    const { file_name, folder, file_path, start_time, router_name, estimated_minutes } = body;
     const userId = req.user.id;
     let dt = start_time ? new Date(start_time) : new Date();
     let cleanFolder = folder || 'Desconhecido';
@@ -1245,7 +1247,8 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
 });
 
 app.patch('/api/jobs/latest', authenticateToken, async (req, res) => {
-    const { end_time, router_name } = req.body;
+    const body = req.body || {};
+    const { end_time, router_name } = body;
     const userId = req.user.id;
     const dt = end_time ? new Date(end_time) : new Date();
 
