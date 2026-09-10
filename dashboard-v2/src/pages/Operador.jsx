@@ -284,6 +284,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
             file_name: r.current_job || 'Corte em Andamento',
             folder: r.operator_name ? `Operador: ${r.operator_name}` : 'Produção ativa na máquina',
             router_name: r.name,
+            operator_name: r.operator_name || null,
             start_time: r.start_time,
             estimated_minutes: r.estimated_minutes
           });
@@ -575,8 +576,30 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
 
           <div className="space-y-4 divide-y divide-white/5">
             {operatorsList.map(op => {
-              const opLogs = timeLogs.filter(l => l.operator_id === op.id);
-              const activeLog = opLogs.find(l => !l.end_time);
+              const opLogs = [...timeLogs.filter(l => l.operator_id === op.id)];
+              let activeLog = opLogs.find(l => !l.end_time);
+
+              // Fallback imediato: se o operador estiver cortando na máquina, exibe o card ativo mesmo antes do recarregamento da API
+              if (!activeLog) {
+                const cuttingJob = activeCuttingJobs.find(j => 
+                  (j.operator_name && j.operator_name.toLowerCase() === op.name.toLowerCase()) ||
+                  (routers.some(r => r.name && j.router_name && r.name.toLowerCase() === j.router_name.toLowerCase() && r.operator_name && r.operator_name.toLowerCase() === op.name.toLowerCase()))
+                );
+                if (cuttingJob) {
+                  const synthLog = {
+                    id: `active-cut-${cuttingJob.id || op.id}`,
+                    operator_id: op.id,
+                    operator_name: op.name,
+                    status: 'disponivel',
+                    location: `⚙️ ${cuttingJob.router_name || 'Na Máquina'}`,
+                    kanban_title: cuttingJob.file_name,
+                    start_time: cuttingJob.start_time || new Date().toISOString(),
+                    end_time: null
+                  };
+                  activeLog = synthLog;
+                  opLogs.unshift(synthLog);
+                }
+              }
 
               const currentActivityLabel = activeLog
                 ? (activeLog.kanban_title
