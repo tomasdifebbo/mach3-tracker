@@ -156,6 +156,14 @@ export function generateDxfContent(uniquePaths, rawPaths) {
     '  2', 'HEADER',
     '  9', '$ACADVER',
     '  1', 'AC1009',
+    '  9', '$MEASUREMENT',
+    ' 70', '1', // 1 = Metric
+    '  9', '$LUNITS',
+    ' 70', '2', // 2 = Decimal
+    '  9', '$LUPREC',
+    ' 70', '4', // 4 decimal places
+    '  9', '$INSUNITS',
+    ' 70', '4', // 4 = Millimeters
     '  9', '$EXTMIN',
     ' 10', minX.toFixed(4),
     ' 20', minY.toFixed(4),
