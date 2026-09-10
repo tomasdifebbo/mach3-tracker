@@ -32,7 +32,7 @@ const allowedOrigins = [
 app.use(cors({
     origin: function (origin, callback) {
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin) || origin.endsWith('.koyeb.app') || origin.includes('koyeb.app')) return callback(null, true);
+        if (allowedOrigins.includes(origin) || origin.includes('railway.app') || origin.includes('koyeb.app') || origin.includes('onrender.com')) return callback(null, true);
         callback(new Error('CORS não permitido'));
     },
     credentials: true
