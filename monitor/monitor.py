@@ -105,26 +105,39 @@ def save_config(config):
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f, indent=4)
 
-def get_token():
+_cached_token = None
+_last_token_check = 0
+_next_queue_retry = 0
+
+def get_token(force_refresh=False):
+    global _cached_token, _last_token_check
+    now = time.time()
     config = load_config()
-    if config.get("token"):
-        # Validate token before using (JWT expires after 7 days)
+    token = config.get("token")
+
+    if token and not force_refresh:
+        # If checked recently (within 30 min), use without network roundtrip
+        if _cached_token == token and (now - _last_token_check) < 1800:
+            return token
         try:
             resp = requests.get(f"{BASE_URL}/api/user/me",
-                                headers={"Authorization": f"Bearer {config['token']}",
-                                         "Content-Type": "application/json"},
+                                headers={"Authorization": f"Bearer {token}",
+                                         "Content-Type": "application/json",
+                                         "User-Agent": "Mach3TrackerMonitor/2.0"},
                                 timeout=3)
             if resp.status_code == 200:
-                return config["token"]
+                _cached_token = token
+                _last_token_check = now
+                return token
             elif resp.status_code in (401, 403):
                 print("[!] Token expirado, renovando...")
                 config["token"] = ""
                 save_config(config)
             else:
-                return config["token"]  # Server issue, use existing
+                return token
         except Exception:
-            return config["token"]  # Offline, use what we have
-    
+            return token
+
     print("[!] Autenticando com a nuvem...")
     email = config.get("email")
     password = config.get("password")
@@ -134,10 +147,12 @@ def get_token():
         return None
         
     try:
-        resp = requests.post(URL_LOGIN, json={"email": email, "password": password})
+        resp = requests.post(URL_LOGIN, json={"email": email, "password": password}, headers={"User-Agent": "Mach3TrackerMonitor/2.0"}, timeout=5)
         if resp.status_code == 200:
             data = resp.json()
             config["token"] = data["token"]
+            _cached_token = data["token"]
+            _last_token_check = now
             save_config(config)
             print("[[v]] Autenticação realizada!")
             return data["token"]
@@ -152,7 +167,8 @@ def get_headers():
     if not tk: return None
     return {
         "Authorization": f"Bearer {tk}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "User-Agent": "Mach3TrackerMonitor/2.0"
     }
 
 def load_queue():
@@ -180,16 +196,18 @@ def enqueue_request(method, url, payload):
     print(f"[!] Armazenado em fila offline.")
 
 def process_queue():
+    global _next_queue_retry
+    now = time.time()
+    if now < _next_queue_retry:
+        return
+
     queue = load_queue()
     if not queue: return
 
-    try:
-        requests.get(URL_HEALTH, timeout=2)
-    except:
-        return 
-
     headers = get_headers()
-    if not headers: return
+    if not headers:
+        _next_queue_retry = now + 15
+        return
 
     sucessos = 0
     for req in queue:
@@ -201,9 +219,19 @@ def process_queue():
             
             if resp.status_code in (200, 201, 204, 404, 400):
                 sucessos += 1
+            elif resp.status_code == 429:
+                print("[!] Rate limit (429) do Render/Cloudflare. Pausando sincronização por 60s...")
+                _next_queue_retry = now + 60
+                break
+            elif resp.status_code in (401, 403):
+                get_token(force_refresh=True)
+                _next_queue_retry = now + 10
+                break
             else:
+                _next_queue_retry = now + 30
                 break 
         except Exception:
+            _next_queue_retry = now + 30
             break
 
     if sucessos > 0:
@@ -995,17 +1023,20 @@ class LaserMonitorThread(threading.Thread):
                         self.current_estimated_sec = None
                         self.last_filename = None
 
-                # 4. Ping check para conexao de rede com a maquina
-                is_alive = os.system(f"ping -n 1 -w 1500 {self.laser_ip} > nul") == 0
+                # 4. Ping check para conexao de rede com a maquina (a cada 15s)
+                now_ts_ping = time.time()
+                if not hasattr(self, '_last_ping_time') or (now_ts_ping - self._last_ping_time) > 15:
+                    self._last_ping_time = now_ts_ping
+                    is_alive = os.system(f"ping -n 1 -w 1000 {self.laser_ip} > nul") == 0
 
-                if is_alive:
-                    if self.status == "offline":
-                        print(f"[+] Laser ({self.laser_ip}) ficou ONLINE!")
-                        self.status = "idle"
-                else:
-                    if self.status != "offline" and self.status != "working":
-                        print(f"[!] Laser ({self.laser_ip}) desconectada / offline.")
-                        self.status = "offline"
+                    if is_alive:
+                        if self.status == "offline":
+                            print(f"[+] Laser ({self.laser_ip}) ficou ONLINE!")
+                            self.status = "idle"
+                    else:
+                        if self.status != "offline" and self.status != "working":
+                            print(f"[!] Laser ({self.laser_ip}) desconectada / offline.")
+                            self.status = "offline"
             except Exception as e:
                 pass
 
