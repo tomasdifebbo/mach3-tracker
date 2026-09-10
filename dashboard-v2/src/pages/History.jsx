@@ -358,10 +358,10 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   };
 
   return (
-    <div className="p-4 md:p-8 space-y-4 md:space-y-6">
+    <div className="p-3 md:p-5 space-y-3 md:space-y-4 max-w-full">
       {/* Filters Bar */}
-      <div className="space-y-3">
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 glass p-4 rounded-2xl relative z-10">
+      <div className="space-y-2.5">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 glass p-3 rounded-xl relative z-10">
           <div className="flex items-center gap-2 md:gap-4 flex-1 w-full md:min-w-[300px]">
             <div className="flex items-center gap-2 bg-white/5 border border-border px-4 py-2 rounded-xl focus-within:border-accent-cyan/50 flex-1">
               <Search size={18} className="text-text-muted" />
@@ -490,23 +490,23 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       </div>
 
       {/* Table Container */}
-      <div className="glass rounded-[40px] overflow-hidden border border-border/40 backdrop-blur-xl">
+      <div className="glass rounded-2xl overflow-hidden border border-border/40 backdrop-blur-xl shadow-xl">
         <div className="overflow-x-auto overflow-y-visible">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-white/5 text-text-muted text-[10px] font-black uppercase tracking-[0.2em] border-b border-border">
-                <th className="px-6 py-5">Arquivo</th>
-                <th className="px-6 py-5">Projeto</th>
-                <th className="px-6 py-5">Router</th>
-                <th className="px-6 py-5">Operador</th>
-                <th className="px-4 py-5 text-center">Qtd</th>
-                <th className="px-6 py-5">Cronograma</th>
-                <th className="px-6 py-5">Duração</th>
-                <th className="px-6 py-5 text-center">Insumo</th>
-                <th className="px-6 py-5 text-center">m²</th>
-                <th className="px-6 py-5">Custo Estimado</th>
-                <th className="px-6 py-5">Data</th>
-                <th className="px-6 py-5 text-right">Ações</th>
+              <tr className="bg-white/5 text-text-muted text-[9px] font-black uppercase tracking-wider border-b border-border">
+                <th className="px-3 py-2.5">Arquivo</th>
+                <th className="px-2 py-2.5">Projeto</th>
+                <th className="px-2 py-2.5">Router</th>
+                <th className="px-2 py-2.5">Operador</th>
+                <th className="px-1.5 py-2.5 text-center">Qtd</th>
+                <th className="px-2 py-2.5">Cronograma</th>
+                <th className="px-2 py-2.5 text-center">Duração</th>
+                <th className="px-2 py-2.5 text-center">Insumo</th>
+                <th className="px-2 py-2.5 text-center">m²</th>
+                <th className="px-2 py-2.5 text-right">Custo Estimado</th>
+                <th className="px-2 py-2.5 text-center">Data</th>
+                <th className="px-2.5 py-2.5 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
@@ -532,113 +532,113 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                 }
 
                 return (
-                <tr key={job.id} className="border-b border-border/40 hover:bg-white/5 transition-colors group">
-                  <td className="px-6 py-5 min-w-[250px] max-w-[400px]">
+                <tr key={job.id} className="border-b border-border/30 hover:bg-white/5 transition-colors group">
+                  <td className="px-3 py-2 min-w-[140px] max-w-[210px]">
                     <div className="flex flex-col">
-                      <div className="flex items-start gap-2 justify-between">
-                        <span className="font-bold text-white text-sm break-all" title={job.file_name}>
+                      <div className="flex items-start gap-1 justify-between">
+                        <span className="font-bold text-white text-xs truncate block" title={job.file_name}>
                           {job.file_name}
                         </span>
                         {job.count > 1 && (
-                          <span className="text-[10px] bg-accent-blue/20 text-accent-blue px-1.5 py-0.5 rounded-lg font-black tracking-tighter shrink-0 mt-0.5">
+                          <span className="text-[8px] bg-accent-blue/20 text-accent-blue px-1 py-0.2 rounded font-black tracking-tighter shrink-0">
                             {job.count}X
                           </span>
                         )}
                       </div>
-                      <div className="text-[9px] text-text-muted opacity-50 font-black tracking-widest mt-1">
+                      <div className="text-[8px] text-text-muted opacity-40 font-mono tracking-wider">
                         ID: #{job.id}
                       </div>
                     </div>
                   </td>
-                    <td className="px-6 py-4">
-                      {(() => {
-                        let projectName = '';
-                        if (job.folder && !job.folder.includes('\\') && !job.folder.includes('/')) {
-                          projectName = job.folder;
+                  <td className="px-2 py-2 max-w-[130px]">
+                    {(() => {
+                      let projectName = '';
+                      if (job.folder && !job.folder.includes('\\') && !job.folder.includes('/')) {
+                        projectName = job.folder;
+                      } else {
+                        const pathParts = (job.folder || 'Geral').replace(/^Router \d+ \| /, '').split('\\');
+                        const routerIdx = pathParts.findIndex(p => p.toUpperCase() === 'ROUTER');
+                        
+                        if (routerIdx !== -1 && routerIdx < pathParts.length - 1) {
+                          projectName = pathParts[routerIdx + 1];
                         } else {
-                          const pathParts = (job.folder || 'Geral').replace(/^Router \d+ \| /, '').split('\\');
-                          const routerIdx = pathParts.findIndex(p => p.toUpperCase() === 'ROUTER');
-                          
-                          if (routerIdx !== -1 && routerIdx < pathParts.length - 1) {
-                            projectName = pathParts[routerIdx + 1];
-                          } else {
-                            const folderOnlyParts = pathParts.filter(p => !p.toUpperCase().includes('.TXT') && !p.toUpperCase().includes('.TAP') && !p.toUpperCase().includes('.NC'));
-                            const cleanPath = folderOnlyParts.join('\\').replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
-                            const parts = cleanPath.split('\\').filter(p => {
-                              const up = p.toUpperCase();
-                              const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
-                                                up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
-                                                up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
-                              return p && !isGeneric;
-                            });
-                            projectName = parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || 'Produção Geral');
-                          }
+                          const folderOnlyParts = pathParts.filter(p => !p.toUpperCase().includes('.TXT') && !p.toUpperCase().includes('.TAP') && !p.toUpperCase().includes('.NC'));
+                          const cleanPath = folderOnlyParts.join('\\').replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
+                          const parts = cleanPath.split('\\').filter(p => {
+                            const up = p.toUpperCase();
+                            const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
+                                              up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
+                                              up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
+                            return p && !isGeneric;
+                          });
+                          projectName = parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || 'Produção Geral');
                         }
-                        
-                        const isEditing = editingJobId === job.id;
-                        
-                        if (isEditing) {
-                          return (
-                            <div className="flex items-center gap-1.5 min-w-[150px]">
-                              <input
-                                type="text"
-                                value={editingValue}
-                                onChange={(e) => setEditingValue(e.target.value)}
-                                className="bg-black/50 border border-orange-500/40 rounded-xl px-2 py-1 text-xs text-white focus:outline-none focus:border-orange-500 w-full"
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    handleUpdateProjectName(job, editingValue);
-                                  } else if (e.key === 'Escape') {
-                                    setEditingJobId(null);
-                                  }
-                                }}
-                              />
-                              <button 
-                                onClick={() => handleUpdateProjectName(job, editingValue)}
-                                className="p-1 hover:bg-white/10 rounded-lg text-accent-success transition-all cursor-pointer"
-                                title="Salvar"
-                              >
-                                <Check size={14} />
-                              </button>
-                              <button 
-                                onClick={() => setEditingJobId(null)}
-                                className="p-1 hover:bg-white/10 rounded-lg text-accent-danger transition-all cursor-pointer"
-                                title="Cancelar"
-                              >
-                                <X size={14} />
-                              </button>
-                            </div>
-                          );
-                        }
-
+                      }
+                      
+                      const isEditing = editingJobId === job.id;
+                      
+                      if (isEditing) {
                         return (
-                          <div className="flex items-center gap-2 group/proj min-w-[120px]">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20 block whitespace-normal" title={projectName}>
-                              {projectName}
-                            </span>
-                            <button
-                              onClick={() => {
-                                setEditingJobId(job.id);
-                                setEditingValue(projectName);
+                          <div className="flex items-center gap-1 min-w-[120px]">
+                            <input
+                              type="text"
+                              value={editingValue}
+                              onChange={(e) => setEditingValue(e.target.value)}
+                              className="bg-black/50 border border-orange-500/40 rounded-lg px-1.5 py-0.5 text-xs text-white focus:outline-none focus:border-orange-500 w-full"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleUpdateProjectName(job, editingValue);
+                                } else if (e.key === 'Escape') {
+                                  setEditingJobId(null);
+                                }
                               }}
-                              className="p-1 text-[10px] text-text-muted hover:text-white hover:bg-white/5 rounded-lg opacity-0 group-hover/proj:opacity-100 transition-all cursor-pointer animate-in fade-in duration-100"
-                              title="Editar Projeto"
+                            />
+                            <button 
+                              onClick={() => handleUpdateProjectName(job, editingValue)}
+                              className="p-0.5 hover:bg-white/10 rounded text-accent-success transition-all cursor-pointer"
+                              title="Salvar"
                             >
-                              ✏️
+                              <Check size={12} />
+                            </button>
+                            <button 
+                              onClick={() => setEditingJobId(null)}
+                              className="p-0.5 hover:bg-white/10 rounded text-accent-danger transition-all cursor-pointer"
+                              title="Cancelar"
+                            >
+                              <X size={12} />
                             </button>
                           </div>
                         );
-                      })()}
-                    </td>
-                  <td className="px-6 py-5">
-                    <span className={`text-[10px] font-black px-2 py-1 rounded-md border ${job.router_name?.includes('2') ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-orange-500/10 text-orange-400 border-orange-500/20'}`}>
+                      }
+
+                      return (
+                        <div className="flex items-center gap-1 group/proj">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-accent-cyan bg-accent-cyan/10 px-1.5 py-0.5 rounded border border-accent-cyan/20 truncate block" title={projectName}>
+                            {projectName}
+                          </span>
+                          <button
+                            onClick={() => {
+                              setEditingJobId(job.id);
+                              setEditingValue(projectName);
+                            }}
+                            className="p-0.5 text-[9px] text-text-muted hover:text-white hover:bg-white/5 rounded opacity-0 group-hover/proj:opacity-100 transition-all cursor-pointer shrink-0"
+                            title="Editar Projeto"
+                          >
+                            ✏️
+                          </button>
+                        </div>
+                      );
+                    })()}
+                  </td>
+                  <td className="px-2 py-2 whitespace-nowrap">
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${job.router_name?.includes('2') ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-orange-500/10 text-orange-400 border-orange-500/20'}`}>
                       {job.router_name || 'Central'}
                     </span>
                   </td>
-                  <td className="px-6 py-5">
+                  <td className="px-2 py-2 whitespace-nowrap">
                     {canEditOperator && editingOperatorJobId === job.id ? (
-                      <div className="flex items-center gap-1.5 min-w-[170px] relative z-20">
+                      <div className="flex items-center gap-1 min-w-[140px] relative z-20">
                         {!isCustomOperatorInput ? (
                           <select
                             value={job.operator_name || ''}
@@ -650,10 +650,10 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                                 handleUpdateOperatorName(job, e.target.value);
                               }
                             }}
-                            className="bg-slate-900 border border-accent-cyan/60 rounded-xl px-2 py-1 text-xs text-white focus:outline-none focus:border-accent-cyan w-full cursor-pointer shadow-lg shadow-black/50"
+                            className="bg-slate-900 border border-accent-cyan/60 rounded-lg px-1.5 py-0.5 text-xs text-white focus:outline-none focus:border-accent-cyan w-full cursor-pointer shadow-lg shadow-black/50"
                             autoFocus
                           >
-                            <option value="" disabled>Selecionar Operador...</option>
+                            <option value="" disabled>Operador...</option>
                             {operatorsList.map(op => (
                               <option key={op.id || op.name} value={op.name}>
                                 {op.name} {op.shift ? `(${op.shift})` : ''}
@@ -662,7 +662,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                             {job.operator_name && !operatorsList.some(o => o.name === job.operator_name) && (
                               <option value={job.operator_name}>{job.operator_name}</option>
                             )}
-                            <option value="__custom__">✏️ Outro (Digitar Nome)...</option>
+                            <option value="__custom__">✏️ Outro...</option>
                           </select>
                         ) : (
                           <div className="flex items-center gap-1 w-full">
@@ -670,8 +670,8 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                               type="text"
                               value={customOperatorValue}
                               onChange={(e) => setCustomOperatorValue(e.target.value)}
-                              placeholder="Nome do Operador"
-                              className="bg-black/70 border border-accent-cyan rounded-xl px-2 py-1 text-xs text-white focus:outline-none w-full"
+                              placeholder="Nome"
+                              className="bg-black/70 border border-accent-cyan rounded-lg px-1.5 py-0.5 text-xs text-white focus:outline-none w-full"
                               autoFocus
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
@@ -684,10 +684,10 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                             />
                             <button
                               onClick={() => handleUpdateOperatorName(job, customOperatorValue)}
-                              className="p-1 hover:bg-white/10 rounded-lg text-accent-success transition-all cursor-pointer shrink-0"
-                              title="Salvar Operador"
+                              className="p-0.5 hover:bg-white/10 rounded text-accent-success transition-all cursor-pointer shrink-0"
+                              title="Salvar"
                             >
-                              <Check size={14} />
+                              <Check size={12} />
                             </button>
                           </div>
                         )}
@@ -696,14 +696,14 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                             setEditingOperatorJobId(null);
                             setIsCustomOperatorInput(false);
                           }}
-                          className="p-1 hover:bg-white/10 rounded-lg text-text-muted hover:text-white transition-all cursor-pointer shrink-0"
+                          className="p-0.5 hover:bg-white/10 rounded text-text-muted hover:text-white transition-all cursor-pointer shrink-0"
                           title="Cancelar"
                         >
-                          <X size={14} />
+                          <X size={12} />
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-1.5 group/op min-w-[130px]">
+                      <div className="flex items-center gap-1 group/op">
                         <span 
                           onClick={() => {
                             if (canEditOperator) {
@@ -712,7 +712,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                             }
                           }}
                           className={clsx(
-                            "text-[10px] font-bold text-accent-cyan bg-accent-cyan/10 px-2.5 py-1 rounded-full border border-accent-cyan/20 flex items-center gap-1.5 w-fit whitespace-nowrap transition-all",
+                            "text-[9px] font-bold text-accent-cyan bg-accent-cyan/10 px-2 py-0.5 rounded-full border border-accent-cyan/20 flex items-center gap-1 w-fit whitespace-nowrap transition-all",
                             canEditOperator && "cursor-pointer hover:bg-accent-cyan/20 hover:border-accent-cyan/40"
                           )}
                           title={canEditOperator ? "Clique para alterar o operador" : undefined}
@@ -725,7 +725,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                               setEditingOperatorJobId(job.id);
                               setIsCustomOperatorInput(false);
                             }}
-                            className="p-1 text-[10px] text-text-muted hover:text-white hover:bg-white/5 rounded-lg opacity-0 group-hover/op:opacity-100 transition-all cursor-pointer"
+                            className="p-0.5 text-[9px] text-text-muted hover:text-white hover:bg-white/5 rounded opacity-0 group-hover/op:opacity-100 transition-all cursor-pointer"
                             title="Alterar Operador"
                           >
                             ✏️
@@ -734,15 +734,15 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-5 text-center">
+                  <td className="px-1.5 py-2 text-center whitespace-nowrap">
                     {editingQtyJobId === job.id ? (
-                      <div className="flex items-center justify-center gap-1 min-w-[90px]">
+                      <div className="flex items-center justify-center gap-0.5 min-w-[75px]">
                         <input
                           type="number"
                           min="1"
                           value={editingQtyValue}
                           onChange={(e) => setEditingQtyValue(e.target.value)}
-                          className="w-16 bg-slate-900 border border-orange-500 rounded-lg px-2 py-1 text-xs font-bold text-white text-center outline-none"
+                          className="w-10 bg-slate-900 border border-orange-500 rounded px-1 py-0.5 text-[11px] font-bold text-white text-center outline-none"
                           autoFocus
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
@@ -754,14 +754,14 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                         />
                         <button
                           onClick={() => handleUpdateQuantity(job, editingQtyValue)}
-                          className="p-1 hover:bg-white/10 rounded text-accent-success cursor-pointer"
-                          title="Salvar Quantidade"
+                          className="p-0.5 hover:bg-white/10 rounded text-accent-success cursor-pointer"
+                          title="Salvar"
                         >
-                          <Check size={14} />
+                          <Check size={12} />
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center gap-1">
+                      <div className="flex items-center justify-center gap-0.5">
                         <span 
                           onClick={() => {
                             if (canEditOperator || job.router_name?.toLowerCase().includes('vacuo') || job.router_name?.toLowerCase().includes('vácuo')) {
@@ -770,12 +770,12 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                             }
                           }}
                           className={clsx(
-                            "text-xs font-black px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 cursor-pointer",
+                            "text-[9px] font-black px-1.5 py-0.5 rounded border transition-all flex items-center gap-0.5 cursor-pointer",
                             (job.router_name?.toLowerCase().includes('vacuo') || job.router_name?.toLowerCase().includes('vácuo'))
                               ? "bg-purple-500/20 text-purple-300 border-purple-500/40 hover:bg-purple-500/30"
                               : "bg-white/5 text-white border-white/10 hover:border-white/20"
                           )}
-                          title="Clique para ajustar quantidade (Alimentação Manual/Encarregado)"
+                          title="Clique para ajustar quantidade"
                         >
                           {(job.router_name?.toLowerCase().includes('vacuo') || job.router_name?.toLowerCase().includes('vácuo')) && '📦 '}
                           {job.quantity || 1} UN
@@ -785,7 +785,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                             setEditingQtyJobId(job.id);
                             setEditingQtyValue(String(job.quantity || 1));
                           }}
-                          className="p-1 text-[10px] text-text-muted hover:text-white rounded hover:bg-white/5 cursor-pointer"
+                          className="p-0.5 text-[8px] text-text-muted hover:text-white rounded hover:bg-white/5 cursor-pointer"
                           title="Ajustar Quantidade"
                         >
                           ✏️
@@ -793,28 +793,28 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                       </div>
                     )}
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="flex flex-col gap-0.5 min-w-[100px]">
-                      <span className="text-xs font-bold text-white/80">{formatTime(job.start_time)} {job.end_time && `→ ${formatTime(job.end_time)}`}</span>
-                      {job.isSomeActive && <span className="text-[9px] text-accent-success font-black animate-pulse">EM ANDAMENTO</span>}
+                  <td className="px-2 py-2 whitespace-nowrap">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-semibold text-white/80">{formatTime(job.start_time)} {job.end_time && `→ ${formatTime(job.end_time)}`}</span>
+                      {job.isSomeActive && <span className="text-[8px] text-accent-success font-black animate-pulse">EM ANDAMENTO</span>}
                     </div>
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="text-xs font-mono font-black text-white bg-white/5 py-1 px-3 rounded-lg w-fit border border-white/5 shadow-inner">
+                  <td className="px-2 py-2 text-center whitespace-nowrap">
+                    <div className="text-[9px] font-mono font-black text-white bg-white/5 py-0.5 px-1.5 rounded w-fit mx-auto border border-white/5 shadow-inner">
                       {Math.floor(job.duration_minutes)} MIN
                     </div>
                   </td>
-                  <td className="px-6 py-5 text-center relative overflow-visible">
-                    <div className="flex flex-col items-center gap-1">
+                  <td className="px-2 py-2 text-center relative overflow-visible whitespace-nowrap">
+                    <div className="flex flex-col items-center gap-0.5">
                       <button 
                         onClick={() => setActiveDropdown(activeDropdown === job.id ? null : job.id)}
-                        className="text-[10px] font-black uppercase tracking-widest py-1.5 px-3 rounded-xl border border-border bg-white/5 hover:border-accent-cyan transition-all text-text-muted hover:text-white flex items-center gap-2 mx-auto shadow-sm whitespace-nowrap"
+                        className="text-[9px] font-black uppercase tracking-wider py-0.5 px-1.5 rounded border border-border bg-white/5 hover:border-accent-cyan transition-all text-text-muted hover:text-white flex items-center gap-1 mx-auto shadow-sm whitespace-nowrap"
                       >
-                        {job.material_name || 'Vincular'} <ChevronDown size={12} className={activeDropdown === job.id ? "rotate-180 transition-transform" : "transition-transform"} />
+                        {job.material_name || 'Vincular'} <ChevronDown size={10} className={activeDropdown === job.id ? "rotate-180 transition-transform" : "transition-transform"} />
                       </button>
                       {job.material_name && (
-                        <span className="text-[9px] font-mono text-accent-cyan/80 font-bold bg-accent-cyan/10 px-2 py-0.5 rounded-md">
-                          Insumo: {formatCurrency(effectiveMaterialCost)}
+                        <span className="text-[8px] font-mono text-accent-cyan/80 font-bold bg-accent-cyan/10 px-1 py-0.2 rounded">
+                          {formatCurrency(effectiveMaterialCost)}
                         </span>
                       )}
                     </div>
@@ -861,58 +861,58 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                       )}
                     </AnimatePresence>
                   </td>
-                  <td className="px-6 py-5 text-center whitespace-nowrap">
+                  <td className="px-2 py-2 text-center whitespace-nowrap">
                     {effectiveAreaM2 > 0 ? (
-                      <span className="text-sm font-bold text-accent-cyan">
-                        {effectiveAreaM2.toFixed(4)} <span className="text-[10px] text-text-muted">m²</span>
+                      <span className="text-[11px] font-bold text-accent-cyan">
+                        {effectiveAreaM2.toFixed(3)} <span className="text-[9px] text-text-muted">m²</span>
                       </span>
                     ) : (
-                      <span className="text-text-muted text-xs">-</span>
+                      <span className="text-text-muted text-[10px]">-</span>
                     )}
                   </td>
-                  <td className="px-6 py-5 font-black text-white text-sm tracking-tighter whitespace-nowrap">
+                  <td className="px-2 py-2 text-right font-black text-white text-[11px] tracking-tight whitespace-nowrap">
                     {formatCurrency(((job.duration_minutes || 0) / 60 * costPerHour) + effectiveMaterialCost)}
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="text-[10px] text-text-muted font-black tracking-widest uppercase text-accent-cyan whitespace-nowrap">
+                  <td className="px-2 py-2 text-center whitespace-nowrap">
+                    <div className="text-[9px] text-text-muted font-bold tracking-wider uppercase text-accent-cyan">
                        {formatDate(job.start_time)}
                     </div>
                   </td>
-                  <td className="px-6 py-5 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="px-2.5 py-2 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1">
                        {confirmDeleteId === job.id ? (
-                        <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-right-2">
+                        <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2">
                           <button 
                             onClick={() => handleDelete(job)}
                             disabled={deletingId === job.id}
-                            className="p-2 bg-accent-danger text-white rounded-xl hover:bg-accent-danger/80 transition-all shadow-lg shadow-accent-danger/20"
+                            className="p-1 bg-accent-danger text-white rounded hover:bg-accent-danger/80 transition-all"
                             title="Confirmar exclusão (Todos repetidos)"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={12} />
                           </button>
                           <button 
                             onClick={() => setConfirmDeleteId(null)}
-                            className="p-2 bg-white/5 text-text-muted rounded-xl hover:text-white transition-all underline text-[10px] font-bold"
+                            className="px-1 py-0.5 bg-white/5 text-text-muted rounded hover:text-white transition-all underline text-[8px] font-bold"
                           >
                             Cancelar
                           </button>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => handleCreateKanbanFromJob(job)}
-                            className="px-2.5 py-1.5 bg-accent-cyan/10 hover:bg-accent-cyan/20 border border-accent-cyan/30 text-accent-cyan rounded-xl text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                            className="px-1.5 py-0.5 bg-accent-cyan/10 hover:bg-accent-cyan/20 border border-accent-cyan/30 text-accent-cyan rounded text-[9px] font-bold transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap"
                             title="Adicionar este serviço do log como Ordem de Serviço no Kanban"
                           >
-                            <PlusCircle size={13} />
-                            <span>Gerar O.S.</span>
+                            <PlusCircle size={10} />
+                            <span>O.S.</span>
                           </button>
                           <button 
                             onClick={() => setConfirmDeleteId(job.id)}
-                            className="p-2.5 bg-white/5 border border-border text-text-muted hover:text-white hover:bg-accent-danger/20 hover:border-accent-danger/40 transition-all rounded-xl shadow-lg"
+                            className="p-1 bg-white/5 border border-border text-text-muted hover:text-white hover:bg-accent-danger/20 hover:border-accent-danger/40 transition-all rounded"
                             title="Excluir do histórico"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={12} />
                           </button>
                         </div>
                       )}
