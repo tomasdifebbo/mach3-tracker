@@ -38,6 +38,9 @@ app.use(cors({
     credentials: true
 }));
 
+// Fast healthcheck endpoint
+app.get('/health', (req, res) => res.status(200).send('OK'));
+
 const publicDir = fs.existsSync(path.join(__dirname, 'public', 'index.html'))
     ? path.join(__dirname, 'public')
     : (fs.existsSync(path.join(__dirname, '../dashboard-v2/dist', 'index.html'))
