@@ -14,7 +14,7 @@ import traceback
 # ==========================================
 # BASE_URL = "http://localhost:3000"
 # BASE_URL = "https://mach3-tracker-production.up.railway.app"  # Railway (expired)
-BASE_URL = "https://mach3-tracker-oa0j.onrender.com"
+BASE_URL = "https://mach3tracker.up.railway.app"
 URL_JOBS = f"{BASE_URL}/api/jobs"
 URL_HEALTH = f"{BASE_URL}/health"
 URL_LOGIN = f"{BASE_URL}/api/auth/login"
@@ -464,7 +464,7 @@ def main():
 
     while True:
         try:
-            # Heartbeat & Render Keep-Alive - a cada 5 minutos para manter o Render acordado
+            # Heartbeat - log a cada 5 minutos para saber que o monitor está vivo
             now = time.time()
             if now - last_heartbeat > HEARTBEAT_INTERVAL:
                 hb_msg = f"[HEARTBEAT] {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Monitor ativo"
@@ -472,16 +472,6 @@ def main():
                 with open(os.path.join(os.path.dirname(__file__), "monitor.log"), "a", encoding="utf-8") as lf:
                     lf.write(hb_msg + "\n")
                 last_heartbeat = now
-
-                # Ping Keep-Alive no Render (impede hibernação do plano gratuito)
-                try:
-                    h_auth = get_headers()
-                    if h_auth:
-                        r_keep = requests.get(URL_HEALTH, headers=h_auth, timeout=10)
-                        if r_keep.status_code == 200:
-                            print("[*] Render Keep-Alive OK: Nuvem mantida ativa (24/7 sem hibernação).")
-                except Exception as e:
-                    print(f"[!] Aviso Render Keep-Alive: {e}")
 
             try:
                 process_queue()

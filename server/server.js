@@ -38,6 +38,9 @@ app.use(cors({
     credentials: true
 }));
 
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
 // Fast healthcheck endpoint
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
