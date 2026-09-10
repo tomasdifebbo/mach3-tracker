@@ -83,7 +83,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
   const fetchOperators = async () => {
     try {
       const data = await api.getOperators();
-      if (Array.isArray(data)) setOperatorsList(data);
+      if (Array.isArray(data) && data.length > 0) setOperatorsList(data);
     } catch (err) {
       console.error('Failed to load operators:', err);
     }
@@ -124,7 +124,9 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
     try {
       const todayStr = new Date().toISOString().split('T')[0];
       const data = await api.getOperatorTimeLogs(todayStr);
-      if (Array.isArray(data)) setTimeLogs(data);
+      if (Array.isArray(data)) {
+        setTimeLogs(prev => data.length > 0 ? data : (prev.length > 0 ? prev : data));
+      }
     } catch (err) {
       console.error('Failed to load time logs:', err);
     }
@@ -565,17 +567,22 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
       )}
 
       {/* Linha do Tempo da Equipe Hoje (Timesheet) */}
-      {isManagerOrEncarregado && operatorsList.length > 0 && (
+      {(operatorsList.length > 0 || timeLogs.length > 0) && (
         <div className="glass p-5 md:p-6 rounded-3xl border border-white/10 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-black uppercase tracking-wider text-accent-cyan flex items-center gap-2">
-              <Clock size={16} /> Linha do Tempo da Equipe Hoje (Rastreamento do Dia)
+              <Clock size={16} /> {isManagerOrEncarregado ? 'Linha do Tempo da Equipe Hoje (Rastreamento do Dia)' : 'Minha Linha do Tempo Hoje (Rastreamento do Dia)'}
             </h3>
             <span className="text-[10px] font-bold text-text-muted">Apontamento automático por período</span>
           </div>
 
           <div className="space-y-4 divide-y divide-white/5">
-            {operatorsList.map(op => {
+            {(isManagerOrEncarregado
+              ? operatorsList
+              : (operatorsList.filter(o => o.name.toLowerCase() === operatorName.toLowerCase()).length > 0
+                  ? operatorsList.filter(o => o.name.toLowerCase() === operatorName.toLowerCase())
+                  : operatorsList)
+            ).map(op => {
               const opLogs = [...timeLogs.filter(l => l.operator_id === op.id)];
               let activeLog = opLogs.find(l => !l.end_time);
 
@@ -661,7 +668,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
       )}
 
       {/* Histórico da Linha do Tempo — Filtro por Semana/Mês + Resumo por Operador */}
-      {isManagerOrEncarregado && operatorsList.length > 0 && (
+      {(operatorsList.length > 0 || timeLogs.length > 0) && (
         <div className="glass p-5 md:p-6 rounded-3xl border border-white/10 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h3 className="text-sm font-black uppercase tracking-wider text-purple-300 flex items-center gap-2">
