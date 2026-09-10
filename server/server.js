@@ -32,7 +32,7 @@ const allowedOrigins = [
 app.use(cors({
     origin: function (origin, callback) {
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) return callback(null, true);
+        if (allowedOrigins.includes(origin) || origin.endsWith('.koyeb.app') || origin.includes('koyeb.app')) return callback(null, true);
         callback(new Error('CORS não permitido'));
     },
     credentials: true
@@ -2100,57 +2100,58 @@ app.get('/api/operators/time-logs', authenticateToken, async (req, res) => {
         const userId = req.user.id;
         const { date } = req.query;
 
-        // Auto-reconcile: For all operators, ensure currently cutting jobs appear as active timeline cards
-        const allOps = (await pool.query('SELECT * FROM operators WHERE "userId" = $1', [userId])).rows;
-        for (const op of allOps) {
+        // Auto-reconcile: If an operator has an active cutting job, but their open log is 'Na Fábrica' or started before the job, split into a new card!
+        const openLogs = (await pool.query(
+            'SELECT * FROM operator_time_logs WHERE "userId" = $1 AND end_time IS NULL AND status = \'disponivel\'',
+            [userId]
+        )).rows;
+
+        for (const log of openLogs) {
+            const opName = log.operator_name;
+            if (!opName) continue;
+
             const activeJob = (await pool.query(
-                `SELECT j.* FROM jobs j
-                 WHERE j."userId" = $1
-                   AND j.end_time IS NULL
-                   AND (
-                     LOWER(j.operator_name) = LOWER($2)
-                     OR (j.operator_name IS NULL AND EXISTS (
-                         SELECT 1 FROM routers r
-                         WHERE r."userId" = $1
-                           AND LOWER(r.operator_name) = LOWER($2)
-                           AND (j.router_name ILIKE '%' || r.name || '%' OR r.name ILIKE '%' || j.router_name || '%')
-                     ))
-                   )
-                 ORDER BY j.id DESC LIMIT 1`,
-                [userId, op.name]
+                `SELECT * FROM jobs 
+                 WHERE "userId" = $1 
+                 AND LOWER(operator_name) = LOWER($2) 
+                 AND end_time IS NULL 
+                 ORDER BY id DESC LIMIT 1`,
+                [userId, opName]
             )).rows[0];
 
             if (activeJob) {
-                const machineLoc = activeJob.router_name ? `⚙️ ${activeJob.router_name}` : 'Na Máquina';
                 const jobStart = new Date(activeJob.start_time);
-                
-                const openLogs = (await pool.query(
-                    'SELECT * FROM operator_time_logs WHERE "userId" = $1 AND operator_id = $2 AND end_time IS NULL',
-                    [userId, op.id]
-                )).rows;
+                const logStart = new Date(log.start_time);
 
-                let alreadyHasCard = false;
-                for (const ol of openLogs) {
-                    if (ol.kanban_title === activeJob.file_name) {
-                        alreadyHasCard = true;
-                    } else {
-                        const startDt = new Date(ol.start_time);
-                        const dur = Math.max(0.1, (jobStart - startDt) / 60000);
-                        await pool.query(
-                            'UPDATE operator_time_logs SET end_time = $1, duration_minutes = $2 WHERE id = $3',
-                            [jobStart.toISOString(), parseFloat(dur.toFixed(2)), ol.id]
-                        );
-                    }
-                }
+                // If the open log started BEFORE the job started (or has different file name):
+                if (log.kanban_title !== activeJob.file_name && jobStart > logStart) {
+                    // Close open log at jobStart time
+                    const durMin = Math.max(0.1, (jobStart - logStart) / 60000);
+                    await pool.query(
+                        'UPDATE operator_time_logs SET end_time = $1, duration_minutes = $2 WHERE id = $3',
+                        [jobStart.toISOString(), parseFloat(durMin.toFixed(2)), log.id]
+                    );
 
-                if (!alreadyHasCard) {
+                    // Insert NEW log card starting at jobStart time
+                    const machineLoc = activeJob.router_name ? `⚙️ ${activeJob.router_name}` : 'Na Máquina';
                     await pool.query(
                         `INSERT INTO operator_time_logs (
                             "userId", operator_id, operator_name, status, location, kanban_title, start_time
                         ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                        [userId, op.id, op.name, 'disponivel', machineLoc, activeJob.file_name, jobStart.toISOString()]
+                        [userId, log.operator_id, opName, 'disponivel', machineLoc, activeJob.file_name, jobStart.toISOString()]
                     );
-                    await pool.query('UPDATE operators SET location = $1 WHERE id = $2 AND "userId" = $3', [machineLoc, op.id, userId]);
+
+                    await pool.query(
+                        `UPDATE operators SET location = $1 WHERE id = $2 AND "userId" = $3`,
+                        [machineLoc, log.operator_id, userId]
+                    );
+                } else if (!log.kanban_title || log.location === 'Na Fábrica') {
+                    // Just update location and title if timestamps match
+                    const machineLoc = activeJob.router_name ? `⚙️ ${activeJob.router_name}` : 'Na Máquina';
+                    await pool.query(
+                        `UPDATE operator_time_logs SET location = $1, kanban_title = $2 WHERE id = $3`,
+                        [machineLoc, activeJob.file_name, log.id]
+                    );
                 }
             }
         }
@@ -2162,14 +2163,13 @@ app.get('/api/operators/time-logs', authenticateToken, async (req, res) => {
         const params = [userId];
 
         if (date) {
-            // Keep all logs for the requested day (BR timezone & UTC) PLUS any currently open logs so active cards never vanish on refresh!
-            query += ' AND (DATE(start_time AT TIME ZONE \'America/Sao_Paulo\') = DATE($' + (params.length + 1) + ') OR DATE(start_time) = DATE($' + (params.length + 1) + ') OR end_time IS NULL)';
+            query += ' AND DATE(start_time) = DATE($' + (params.length + 1) + ')';
             params.push(date);
         } else if (req.query.date_from && req.query.date_to) {
-            query += ' AND (DATE(start_time) >= DATE($' + (params.length + 1) + ') AND DATE(start_time) <= DATE($' + (params.length + 2) + ') OR end_time IS NULL)';
+            query += ' AND DATE(start_time) >= DATE($' + (params.length + 1) + ') AND DATE(start_time) <= DATE($' + (params.length + 2) + ')';
             params.push(req.query.date_from, req.query.date_to);
         } else if (req.query.date_from) {
-            query += ' AND (DATE(start_time) >= DATE($' + (params.length + 1) + ') OR end_time IS NULL)';
+            query += ' AND DATE(start_time) >= DATE($' + (params.length + 1) + ')';
             params.push(req.query.date_from);
         }
         query += ' ORDER BY start_time DESC';
