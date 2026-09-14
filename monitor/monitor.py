@@ -378,6 +378,14 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem, estimated_minutes=N
     }
     
     headers = get_headers()
+    if "Laser" in origem:
+        try:
+            log_msg = f"[{iso_time}] {origem} | INICIO | {nome_arquivo}"
+            with open(os.path.join(os.path.dirname(__file__), "monitor.log"), "a", encoding="utf-8") as lf:
+                lf.write(log_msg + "\n")
+        except Exception:
+            pass
+
     if headers and len(load_queue()) == 0:
         try:
             resp = requests.post(URL_JOBS, json=payload, headers=headers, timeout=5)
@@ -394,6 +402,14 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem, estimated_minutes=N
     enqueue_request("POST", URL_JOBS, payload)
 
 def processa_fim(iso_time, origem):
+    if "Laser" in origem:
+        try:
+            log_msg = f"[{iso_time}] {origem} | FIM"
+            with open(os.path.join(os.path.dirname(__file__), "monitor.log"), "a", encoding="utf-8") as lf:
+                lf.write(log_msg + "\n")
+        except Exception:
+            pass
+
     payload = { "end_time": iso_time, "router_name": origem }
     PATCH_URL = f"{BASE_URL}/api/jobs/latest"
     
@@ -597,6 +613,18 @@ try:
     WM_GETTEXT = 0x000D
     WM_GETTEXTLENGTH = 0x000E
 
+    class RECT(ctypes.Structure):
+        _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long),
+                    ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
+
+    def get_wrect(hwnd):
+        try:
+            rect = RECT()
+            user32.GetWindowRect(hwnd, ctypes.byref(rect))
+            return rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top
+        except Exception:
+            return 0, 0, 0, 0
+
     def get_wtitle(hwnd):
         try:
             length = user32.GetWindowTextLengthW(hwnd)
@@ -627,12 +655,49 @@ try:
         except Exception:
             pass
         return ""
+
+    def enum_desktop_windows(callback):
+        try:
+            hdesk = user32.OpenDesktopW("Default", 0, False, 0x0100)
+            if hdesk:
+                user32.EnumDesktopWindows(hdesk, WNDENUMPROC(callback), 0)
+                user32.CloseDesktop(hdesk)
+                return True
+        except Exception:
+            pass
+        try:
+            user32.EnumWindows(WNDENUMPROC(callback), 0)
+            return True
+        except Exception:
+            pass
+        return False
 except Exception:
     user32 = None
     WNDENUMPROC = None
     def get_wtitle(hwnd): return ""
     def get_wtxt(hwnd): return ""
     def get_cls(hwnd): return ""
+    def get_wrect(hwnd): return 0, 0, 0, 0
+    def enum_desktop_windows(callback): return False
+
+def get_historical_estimated_minutes(filename):
+    if not filename:
+        return None
+    try:
+        headers = get_headers()
+        if not headers:
+            return None
+        resp = requests.get(f"{BASE_URL}/api/jobs", headers=headers, timeout=4)
+        if resp.status_code == 200:
+            clean_f = filename.lower().strip()
+            for j in resp.json():
+                if (j.get('file_name') or '').lower().strip() == clean_f:
+                    est = j.get('estimated_minutes')
+                    if est and float(est) > 0:
+                        return float(est)
+    except Exception:
+        pass
+    return None
 
 class LaserMonitorThread(threading.Thread):
     # Tempo (em segundos) de segurança para considerar um corte esquecido em aberto (4 horas)
@@ -664,22 +729,12 @@ class LaserMonitorThread(threading.Thread):
     def get_lasercad_estimated_minutes(self):
         """Captura o tempo estimado de corte do LaserCAD (botão/janela Estimate Work Time) via Win32 API."""
         try:
-            import ctypes, re
-            user32 = ctypes.windll.user32
-            WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_int, ctypes.c_int)
+            import re
             found_times = []
-
-            def get_wtxt(hwnd):
-                length = user32.GetWindowTextLengthW(hwnd)
-                if length > 0:
-                    buff = ctypes.create_unicode_buffer(length + 1)
-                    user32.GetWindowTextW(hwnd, buff, length + 1)
-                    return buff.value
-                return ""
 
             def enum_windows_cb(hwnd, lparam):
                 if user32.IsWindowVisible(hwnd):
-                    title = get_wtxt(hwnd)
+                    title = get_wtitle(hwnd)
                     t_low = title.lower()
                     if "lasercad" in t_low or "laser" in t_low or "work time" in t_low or "estimate" in t_low:
                         def enum_child_cb(chwnd, lparam):
@@ -700,7 +755,7 @@ class LaserMonitorThread(threading.Thread):
                         user32.EnumChildWindows(hwnd, WNDENUMPROC(enum_child_cb), 0)
                 return True
 
-            user32.EnumWindows(WNDENUMPROC(enum_windows_cb), 0)
+            enum_desktop_windows(enum_windows_cb)
             if found_times:
                 return round(max(found_times), 2)
         except Exception:
@@ -710,45 +765,6 @@ class LaserMonitorThread(threading.Thread):
     def get_lasercad_bounding_box(self):
         """Captura as dimensões exatas de largura (X) e altura (Y) do vetor/desenho no LaserCAD via Win32 API."""
         try:
-            import ctypes
-            user32 = ctypes.windll.user32
-            WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_int, ctypes.c_int)
-            WM_GETTEXT = 0x000D
-            WM_GETTEXTLENGTH = 0x000E
-
-            class RECT(ctypes.Structure):
-                _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long),
-                            ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
-
-            def get_wtxt(hwnd):
-                try:
-                    length = user32.SendMessageW(hwnd, WM_GETTEXTLENGTH, 0, 0)
-                    if length > 0:
-                        buff = ctypes.create_unicode_buffer(length + 1)
-                        user32.SendMessageW(hwnd, WM_GETTEXT, length + 1, ctypes.byref(buff))
-                        return buff.value
-                except Exception:
-                    pass
-                return ""
-
-            def get_cls(hwnd):
-                cbuff = ctypes.create_unicode_buffer(256)
-                user32.GetClassNameW(hwnd, cbuff, 256)
-                return cbuff.value
-
-            def get_wtitle(hwnd):
-                length = user32.GetWindowTextLengthW(hwnd)
-                if length > 0:
-                    buff = ctypes.create_unicode_buffer(length + 1)
-                    user32.GetWindowTextW(hwnd, buff, length + 1)
-                    return buff.value
-                return ""
-
-            def get_wrect(hwnd):
-                rect = RECT()
-                user32.GetWindowRect(hwnd, ctypes.byref(rect))
-                return rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top
-
             found_boxes = []
 
             def enum_win_cb(hwnd, lparam):
@@ -809,7 +825,7 @@ class LaserMonitorThread(threading.Thread):
                             found_boxes.append((round(width_val, 2), round(height_val, 2), area_m2))
                 return True
 
-            user32.EnumWindows(WNDENUMPROC(enum_win_cb), 0)
+            enum_desktop_windows(enum_win_cb)
 
             if found_boxes:
                 # Prefer non-full-bed boxes if available
@@ -821,64 +837,10 @@ class LaserMonitorThread(threading.Thread):
             pass
         return None, None, None
 
-    def _start_network_sniffer(self):
-        """Inicia thread que escuta tráfego UDP na porta 50200 (AWC controller)."""
-        if self._sniffer_running:
-            return
-        self._sniffer_running = True
-
-        def sniffer():
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                # Escutar na porta 50200 para captar respostas da controladora
-                sock.bind(("0.0.0.0", 50200))
-                sock.settimeout(2)
-                print(f"[*] Sniffer de rede Laser ativo na porta 50200")
-                while self.running:
-                    try:
-                        data, addr = sock.recvfrom(4096)
-                        if data:
-                            self.last_network_activity = time.time()
-                    except socket.timeout:
-                        continue
-                    except Exception:
-                        continue
-            except OSError as e:
-                # Porta pode estar em uso pelo LaserCAD — usar abordagem alternativa
-                print(f"[!] Porta 50200 em uso, usando monitor de conexões TCP/UDP ativo")
-                self._sniffer_via_netstat()
-            except Exception as e:
-                print(f"[!] Erro no sniffer de rede: {e}")
-            finally:
-                self._sniffer_running = False
-
-        t = threading.Thread(target=sniffer, daemon=True)
-        t.start()
-
-    def _sniffer_via_netstat(self):
-        """Fallback: checa conexões ativas com o IP da laser via netstat em alta frequência."""
-        while self.running:
-            try:
-                import subprocess
-                result = subprocess.run(
-                    ["netstat", "-an"],
-                    capture_output=True, text=True, timeout=3
-                )
-                stdout = result.stdout or ""
-                if self.laser_ip in stdout or "50200" in stdout:
-                    self.last_network_activity = time.time()
-            except Exception:
-                pass
-            time.sleep(0.5)
-
     def run(self):
         print(f"[*] Monitor de Laser (LaserCAD/AWC) iniciado no IP {self.laser_ip}...")
         
         soft_cfg_path = r"C:\LaserCAD\AWCCfg\SoftCfg.ini"
-        
-        # Iniciar sniffer de rede
-        self._start_network_sniffer()
         
         # Inicializar DocName
         if os.path.exists(soft_cfg_path):
@@ -900,7 +862,6 @@ class LaserMonitorThread(threading.Thread):
                     self.last_bbox = (bx, by, barea)
 
                 now_ts = time.time()
-                net_active = (self.last_network_activity > 0 and (now_ts - self.last_network_activity) < 5)
 
                 # 1. Detectar janela "Download Document" do LaserCAD via Win32 API
                 download_visible = self.is_download_dialog_open()
@@ -924,9 +885,13 @@ class LaserMonitorThread(threading.Thread):
                     print(f"[+] LASER DOWNLOAD ENVIADO — ABRINDO JOB: {file_to_report} (Caminho: {path_to_report})")
 
                     est_to_report = self.last_estimated_minutes or self.get_lasercad_estimated_minutes()
+                    if not est_to_report:
+                        est_to_report = get_historical_estimated_minutes(file_to_report)
+
                     res_x, res_y, res_area = self.last_bbox if self.last_bbox[0] else self.get_lasercad_bounding_box()
 
                     if self.status == "working":
+                        print(f"[~] Encerrando job anterior para abrir novo download: {file_to_report}")
                         processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
 
                     processa_inicio(
@@ -942,18 +907,15 @@ class LaserMonitorThread(threading.Thread):
                     self.status = "working"
                     self.job_start_time = now_ts
                     self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
-                    self.last_network_activity = now_ts
                     self.pending_filename = None
                     self.pending_filepath = None
-                    self.last_filename = None
+                    self.last_filename = file_to_report
                     self.last_estimated_minutes = None
                     self.last_bbox = (None, None, None)
 
-                # 1.5. Trigger por transmissão de rede ou novo arquivo enviado
-                elif net_active or (os.path.exists(soft_cfg_path) and os.path.getmtime(soft_cfg_path) > self.last_cfg_mtime):
-                    if os.path.exists(soft_cfg_path):
-                        self.last_cfg_mtime = os.path.getmtime(soft_cfg_path)
-                        
+                # 1.5. Trigger por alteração no arquivo SoftCfg.ini (novo projeto salvo/exportado)
+                elif (os.path.exists(soft_cfg_path) and os.path.getmtime(soft_cfg_path) > self.last_cfg_mtime):
+                    self.last_cfg_mtime = os.path.getmtime(soft_cfg_path)
                     doc, fpath = self.read_doc_info(soft_cfg_path)
                     file_to_report = doc or self.last_filename or f"Corte Laser {datetime.datetime.now().strftime('%H:%M')}"
                     path_to_report = fpath or f"LaserCAD\\{file_to_report}"
@@ -961,7 +923,7 @@ class LaserMonitorThread(threading.Thread):
                     should_open = False
                     if self.status != "working":
                         should_open = True
-                    elif (now_ts - self.job_start_time) > 30: # Job anterior já tem mais de 30s
+                    elif (now_ts - self.job_start_time) > 30 and (doc and doc != self.last_filename):
                         print(f"[~] Encerrando job anterior para abrir novo envio: {file_to_report}")
                         processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
                         should_open = True
@@ -970,6 +932,9 @@ class LaserMonitorThread(threading.Thread):
                         print(f"[+] LASER EVENTO DETECTADO — ABRINDO JOB: {file_to_report} (Caminho: {path_to_report})")
 
                         est_to_report = self.last_estimated_minutes or self.get_lasercad_estimated_minutes()
+                        if not est_to_report:
+                            est_to_report = get_historical_estimated_minutes(file_to_report)
+
                         res_x, res_y, res_area = self.last_bbox if self.last_bbox[0] else self.get_lasercad_bounding_box()
 
                         processa_inicio(
@@ -985,10 +950,9 @@ class LaserMonitorThread(threading.Thread):
                         self.status = "working"
                         self.job_start_time = now_ts
                         self.current_estimated_sec = (est_to_report * 60.0) if est_to_report else None
-                        self.last_network_activity = now_ts
                         self.pending_filename = None
                         self.pending_filepath = None
-                        self.last_filename = None
+                        self.last_filename = file_to_report
                         self.last_estimated_minutes = None
                         self.last_bbox = (None, None, None)
 
@@ -1000,25 +964,23 @@ class LaserMonitorThread(threading.Thread):
                     is_finished = False
                     reason = ""
 
-                    # Regra A: Se temos o tempo estimado do LaserCAD, encerra quando atinge o tempo de corte físico (105% como margem de segurança)
+                    # Regra 1: Se temos o tempo estimado do LaserCAD ou histórico da API,
+                    # encerra quando atinge o tempo de corte físico com margem de 5% (mínimo +15s)
                     if self.current_estimated_sec and self.current_estimated_sec > 0:
-                        if job_dur >= self.current_estimated_sec * 1.05:
+                        target_sec = max(self.current_estimated_sec * 1.05, self.current_estimated_sec + 15)
+                        if job_dur >= target_sec:
                             is_finished = True
                             reason = f"tempo estimado de corte concluído ({job_dur:.1f}s / {self.current_estimated_sec:.0f}s)"
 
-                    # Regra B: Se NÃO temos o tempo estimado, encerra se inativo por 90s (após 3min de job) ou após 5min máximo
-                    elif job_dur >= 180 and (self.last_network_activity == 0 or (now_ts - self.last_network_activity) > 60):
+                    # Regra 2: Se NÃO temos o tempo estimado, timeout preventivo de segurança (30 minutos)
+                    elif job_dur >= 1800:
                         is_finished = True
-                        reason = f"inatividade de rede pós-corte ({int(job_dur)}s)"
-                    elif job_dur >= 300:
-                        is_finished = True
-                        reason = f"timeout máximo de corte ({int(job_dur)}s)"
+                        reason = f"timeout preventivo de segurança ({int(job_dur)}s)"
 
                     if is_finished:
                         print(f"[+] LASER CORTE FINALIZADO AUTOMATICAMENTE: {reason}")
                         processa_fim(datetime.datetime.now().astimezone().isoformat(), "Laser Ruida")
                         self.status = "idle"
-                        self.last_network_activity = 0
                         self.job_start_time = 0
                         self.current_estimated_sec = None
                         self.last_filename = None
@@ -1044,19 +1006,23 @@ class LaserMonitorThread(threading.Thread):
 
     def is_download_dialog_open(self):
         """Detectar se a janela de Download / Transmissão do LaserCAD está aberta via Win32 API"""
+        found = False
+        target_titles = ["download document", "download", "baixar", "enviar", "transfer", "download file"]
         try:
-            import ctypes
-            user32 = ctypes.windll.user32
-            
-            # Check multiple common window titles for download/transfer in LaserCAD
-            titles = ["Download Document", "Download", "Baixar", "Enviar", "Transfer", "Download File"]
-            for t in titles:
-                hwnd = user32.FindWindowW(None, t)
-                if hwnd and user32.IsWindowVisible(hwnd):
-                    return True
-            return False
+            def enum_cb(hwnd, lparam):
+                nonlocal found
+                if user32.IsWindowVisible(hwnd):
+                    title = get_wtitle(hwnd).strip().lower()
+                    cls = get_cls(hwnd)
+                    for t in target_titles:
+                        if t == title or (cls == "#32770" and t in title):
+                            found = True
+                            return False
+                return True
+            enum_desktop_windows(enum_cb)
         except Exception:
-            return False
+            pass
+        return found
 
     def extract_path_from_window_title(self, title):
         if not title:
@@ -1222,11 +1188,7 @@ class LaserMonitorThread(threading.Thread):
                             corel_doc_name = extracted
                 return True
 
-            hdesk = user32.OpenDesktopW("Default", 0, False, 0x0100)
-            if hdesk:
-                user32.EnumDesktopWindows(hdesk, WNDENUMPROC(enum_corel_cb), 0)
-            else:
-                user32.EnumWindows(WNDENUMPROC(enum_corel_cb), 0)
+            enum_desktop_windows(enum_corel_cb)
         except Exception:
             pass
 
@@ -1256,11 +1218,7 @@ class LaserMonitorThread(threading.Thread):
                                 doc_from_title = extracted
                 return True
 
-            hdesk = user32.OpenDesktopW("Default", 0, False, 0x0100)
-            if hdesk:
-                user32.EnumDesktopWindows(hdesk, WNDENUMPROC(enum_win_cb), 0)
-            else:
-                user32.EnumWindows(WNDENUMPROC(enum_win_cb), 0)
+            enum_desktop_windows(enum_win_cb)
         except Exception:
             pass
 
