@@ -241,8 +241,7 @@ export function GeradorLetraCaixa3D() {
             renderUrl: bRes.renderUrl
           });
           setSuccessInfo('Modelo gerado com sucesso via Motor Blender 5.1 Local!');
-          setIsProcessing(false);
-          return;
+          // DO NOT return here, so the Client-Side engine can build the 3D preview!
         } catch (blenderErr) {
           console.warn("Blender falhou ou indisponível, gerando via motor do navegador:", blenderErr);
         }
@@ -287,18 +286,23 @@ export function GeradorLetraCaixa3D() {
       const faceSvgBlob = generateCuttingSvg(res.shapesFace, res.scale, 0.5, "Face Acrílico");
       const faceDxfBlob = generateCuttingDxf(res.shapesFace, res.scale, "CORTE_EXTERNO");
       const fundoSvgBlob = generateCuttingSvg(res.shapesFundo, res.scale, 0.5, "Fundo PVC");
-      const fundoDxfBlob = generateCuttingDxf(res.shapesFundo, res.scale, "CORTE_FUNDO");
+      const fundoDxfBlob = generateCuttingDxf(res.shapesFundo, res.scale, "CORTE_INTERNO");
 
-      setDownloads({
-        stlUrl: URL.createObjectURL(stlBlob),
-        faceSvgUrl: URL.createObjectURL(faceSvgBlob),
-        faceDxfUrl: URL.createObjectURL(faceDxfBlob),
-        fundoSvgUrl: URL.createObjectURL(fundoSvgBlob),
-        fundoDxfUrl: URL.createObjectURL(fundoDxfBlob),
-        renderUrl: null
+      setDownloads(prev => {
+        if (!prev.stlUrl) {
+           setSuccessInfo('Modelo 3D gerado com sucesso no navegador!');
+        }
+        return {
+          ...prev,
+          stlUrl: prev.stlUrl || URL.createObjectURL(new Blob([stlBlob], { type: 'model/stl' })),
+          faceSvgUrl: prev.faceSvgUrl || URL.createObjectURL(new Blob([faceSvgBlob], { type: 'image/svg+xml' })),
+          faceDxfUrl: prev.faceDxfUrl || URL.createObjectURL(new Blob([faceDxfBlob], { type: 'application/dxf' })),
+          fundoSvgUrl: prev.fundoSvgUrl || URL.createObjectURL(new Blob([fundoSvgBlob], { type: 'image/svg+xml' })),
+          fundoDxfUrl: prev.fundoDxfUrl || URL.createObjectURL(new Blob([fundoDxfBlob], { type: 'application/dxf' }))
+        };
       });
 
-      setSuccessInfo('Modelo 3D e vetores gerados instantaneamente com precisão milimétrica!');
+      setIsProcessing(false);
     } catch (err) {
       console.error(err);
       setError(err.message || 'Erro ao processar letra caixa.');
