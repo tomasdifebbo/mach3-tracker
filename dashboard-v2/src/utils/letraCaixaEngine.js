@@ -3,8 +3,9 @@
  * Permite geração instantânea em memória no navegador ou conexão direta com Blender 5.1 local.
  */
 import * as THREE from 'three';
-import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
-import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
+import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
+import { STLExporter } from 'three/addons/exporters/STLExporter.js';
+import ClipperLib from 'clipper-lib';
 
 export const LOCAL_BLENDER_API = 'http://127.0.0.1:8080';
 
@@ -87,7 +88,7 @@ export function buildClientSideChannelLetter(svgString, params) {
 
   // Extrai todas as formas e caminhos vetoriais preservando furos/miolos
   svgData.paths.forEach((path) => {
-    const shapes = SVGLoader.createShapes(path);
+    const shapes = path.toShapes(); // Removido o 'true' para não forçar orientação e perder furos
     shapes.forEach((s) => allShapes.push(s));
   });
 
@@ -149,15 +150,87 @@ export function buildClientSideChannelLetter(svgString, params) {
     side: THREE.DoubleSide
   });
 
-  // 1. CORPO PRINCIPAL (Extrusão sólida oca)
+  // 1. CORPO PRINCIPAL (Parede oca gerada por ClipperLib)
   const extrudeCorpo = {
     steps: 1,
     depth: profundidade,
     bevelEnabled: false
   };
 
-  const meshCorpo = new THREE.Group();
+  const scaleFactor = 1000;
+  const hollowShapes = [];
+
   allShapes.forEach((shape) => {
+    const subjPaths = [];
+    
+    function addThreePath(path, isHole) {
+        const pts = path.getPoints();
+        if (pts.length < 3) return;
+        const cPath = pts.map(p => ({X: Math.round(p.x * scaleFactor), Y: Math.round(p.y * scaleFactor)}));
+        if (ClipperLib.Clipper.Orientation(cPath) === isHole) {
+            cPath.reverse();
+        }
+        subjPaths.push(cPath);
+    }
+    
+    addThreePath(shape, false);
+    shape.holes.forEach(h => addThreePath(h, true));
+    
+    // Offset inward to create Air paths (o "miolo" vazio da canaleta)
+    // O valor do offset no SVG original precisa ser ajustado pela escala final
+    // A variável `parede` está em milímetros nominais. Precisamos converter para a escala do SVG original:
+    const paredeNoSVG = parede / scale;
+
+    const co = new ClipperLib.ClipperOffset();
+    co.AddPaths(subjPaths, ClipperLib.JoinType.jtMiter, ClipperLib.EndType.etClosedPolygon);
+    const airPaths = new ClipperLib.Paths();
+    co.Execute(airPaths, -paredeNoSVG * scaleFactor);
+    
+    // Subtrair Air do Subject para obter a Parede oca
+    const c = new ClipperLib.Clipper();
+    c.AddPaths(subjPaths, ClipperLib.PolyType.ptSubject, true);
+    c.AddPaths(airPaths, ClipperLib.PolyType.ptClip, true);
+    
+    const solutionTree = new ClipperLib.PolyTree();
+    c.Execute(ClipperLib.ClipType.ctDifference, solutionTree, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
+    
+    function parseNode(node) {
+        if (!node.IsHole() && node.Contour().length > 0) {
+            const newShape = new THREE.Shape();
+            node.Contour().forEach((p, i) => {
+                const x = p.X / scaleFactor;
+                const y = p.Y / scaleFactor;
+                if (i === 0) newShape.moveTo(x, y);
+                else newShape.lineTo(x, y);
+            });
+            node.Childs().forEach(child => {
+                if (child.Contour().length > 0) {
+                    const hole = new THREE.Path();
+                    child.Contour().forEach((p, i) => {
+                        const x = p.X / scaleFactor;
+                        const y = p.Y / scaleFactor;
+                        if (i === 0) hole.moveTo(x, y);
+                        else hole.lineTo(x, y);
+                    });
+                    newShape.holes.push(hole);
+                }
+            });
+            hollowShapes.push(newShape);
+        }
+        node.Childs().forEach(child => {
+            if (child.IsHole()) {
+                child.Childs().forEach(grandchild => parseNode(grandchild));
+            } else {
+                parseNode(child);
+            }
+        });
+    }
+    
+    solutionTree.Childs().forEach(child => parseNode(child));
+  });
+
+  const meshCorpo = new THREE.Group();
+  hollowShapes.forEach((shape) => {
     const geom = new THREE.ExtrudeGeometry(shape, extrudeCorpo);
     const mesh = new THREE.Mesh(geom, matCorpo);
     meshCorpo.add(mesh);
