@@ -1,75 +1,17 @@
-/**
- * Motor de Geração de Letra Caixa 3D (Arquitetura Híbrida: Local Blender + Client-Side Three.js)
- * Permite geração instantânea em memória no navegador ou conexão direta com Blender 5.1 local.
- */
-import * as THREE from 'three';
-import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
-import { STLExporter } from 'three/addons/exporters/STLExporter.js';
-import clipperLibModule from 'clipper-lib';
-const ClipperLib = clipperLibModule.default || clipperLibModule || window.ClipperLib;
+import re
+import sys
 
-export const LOCAL_BLENDER_API = 'http://127.0.0.1:8080';
+with open(r'c:\DASHBOARD\dashboard-v2\src\utils\letraCaixaEngine.js', 'r', encoding='utf-8') as f:
+    text = f.read()
 
-/**
- * Tenta conectar ao motor Blender 5.1 local
- */
-export async function checkBlenderEngineStatus() {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
-    const res = await fetch(`${LOCAL_BLENDER_API}/health`, { 
-      signal: controller.signal,
-      headers: { 'Accept': 'application/json' }
-    }).catch(() => null);
-    clearTimeout(timeoutId);
-    return res && (res.ok || res.status === 200 || res.status === 404);
-  } catch {
-    return false;
-  }
-}
+start_idx = text.find('export function buildClientSideChannelLetter')
+end_idx = text.find('export function exportModelToStlBlob')
 
-/**
- * Envia pedido CAD para o servidor Blender local
- */
-export async function generateViaBlender(prompt, params, svgBase64) {
-  const payload = {
-    prompt,
-    params,
-    image_base64: svgBase64
-  };
+if start_idx == -1 or end_idx == -1:
+    print("Could not find function bounds!")
+    sys.exit(1)
 
-  const response = await fetch(`${LOCAL_BLENDER_API}/api/cad_chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-
-  if (!response.ok) {
-    throw new Error(`Erro no servidor Blender: ${response.statusText}`);
-  }
-
-  const data = await response.json();
-  if (!data.success) {
-    throw new Error(data.error || 'Falha ao processar comando CAD no Blender.');
-  }
-
-  return {
-    stlUrl: data.stl_url ? `${LOCAL_BLENDER_API}${data.stl_url}` : null,
-    glbUrl: data.glb_url ? `${LOCAL_BLENDER_API}${data.glb_url}` : (data.stl_url ? `${LOCAL_BLENDER_API}${data.stl_url.replace('.stl', '.glb')}` : null),
-    renderUrl: data.render_url ? `${LOCAL_BLENDER_API}${data.render_url}` : null,
-    faceSvgUrl: data.face_svg_url ? `${LOCAL_BLENDER_API}${data.face_svg_url}` : null,
-    faceDxfUrl: data.face_dxf_url ? `${LOCAL_BLENDER_API}${data.face_dxf_url}` : null,
-    fundoSvgUrl: data.fundo_svg_url ? `${LOCAL_BLENDER_API}${data.fundo_svg_url}` : null,
-    fundoDxfUrl: data.fundo_dxf_url ? `${LOCAL_BLENDER_API}${data.fundo_dxf_url}` : null,
-    parameters: data.parameters || {},
-    engine: 'blender'
-  };
-}
-
-/**
- * Cria malha 3D completa de letra caixa cliente-side a partir de texto SVG
- */
-export function buildClientSideChannelLetter(svgText, params) {
+new_func = """export function buildClientSideChannelLetter(svgText, params) {
   const loader = new SVGLoader();
   const svgData = loader.parse(svgText);
   const group = new THREE.Group();
@@ -336,101 +278,11 @@ export function buildClientSideChannelLetter(svgText, params) {
   };
 }
 
-export function exportModelToStlBlob(threeObject) {
-  const exporter = new STLExporter();
-  const stlData = exporter.parse(threeObject, { binary: true });
-  return new Blob([stlData], { type: 'application/octet-stream' });
-}
+"""
 
-/**
- * Gera arquivo vetorial SVG 1:1 com compensação de offset em mm
- */
-export function generateCuttingSvg(shapes, scale, toleranceMm = 0.5, name = "Face Acrílico") {
-  let pathsD = [];
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+new_text = text[:start_idx] + new_func + text[end_idx:]
 
-  shapes.forEach((shape) => {
-    const pts = shape.getPoints();
-    if (pts.length < 3) return;
+with open(r'c:\DASHBOARD\dashboard-v2\src\utils\letraCaixaEngine.js', 'w', encoding='utf-8') as f:
+    f.write(new_text)
 
-    let d = `M ${(pts[0].x * scale).toFixed(3)},${(pts[0].y * scale).toFixed(3)}`;
-    pts.forEach((p, idx) => {
-      const sx = p.x * scale;
-      const sy = p.y * scale;
-      if (sx < minX) minX = sx;
-      if (sy < minY) minY = sy;
-      if (sx > maxX) maxX = sx;
-      if (sy > maxY) maxY = sy;
-      if (idx > 0) d += ` L ${sx.toFixed(3)},${sy.toFixed(3)}`;
-    });
-    d += " Z";
-    pathsD.push(d);
-
-    // Furos / Miolos (Counters)
-    if (shape.holes && shape.holes.length > 0) {
-      shape.holes.forEach((hole) => {
-        const hpts = hole.getPoints();
-        if (hpts.length < 3) return;
-        let hd = `M ${(hpts[0].x * scale).toFixed(3)},${(hpts[0].y * scale).toFixed(3)}`;
-        hpts.forEach((hp, hidx) => {
-          const hsx = hp.x * scale;
-          const hsy = hp.y * scale;
-          if (hidx > 0) hd += ` L ${hsx.toFixed(3)},${hsy.toFixed(3)}`;
-        });
-        hd += " Z";
-        pathsD.push(hd);
-      });
-    }
-  });
-
-  const w = (maxX - minX + 10).toFixed(2);
-  const h = (maxY - minY + 10).toFixed(2);
-  const vx = (minX - 5).toFixed(2);
-  const vy = (minY - 5).toFixed(2);
-
-  const svgContent = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${w}mm" height="${h}mm" viewBox="${vx} ${vy} ${w} ${h}">
-  <title>${name} - Corte 1:1 (mm)</title>
-  <!-- Folga de corte aplicada: ${toleranceMm}mm -->
-  <path d="${pathsD.join(' ')}" fill="none" stroke="#FF0000" stroke-width="0.2" fill-rule="evenodd" />
-</svg>`;
-
-  return new Blob([svgContent], { type: 'image/svg+xml' });
-}
-
-/**
- * Gera arquivo vetorial DXF R2000 (AC1015) 1:1 compatível com CorelDRAW e AutoCAD
- */
-export function generateCuttingDxf(shapes, scale, layerName = "CORTE_EXTERNO") {
-  let entities = [];
-
-  shapes.forEach((shape) => {
-    const pts = shape.getPoints();
-    if (pts.length < 3) return;
-
-    // Contorno externo
-    entities.push(formatDxfPolyline(pts, scale, layerName, 1)); // Cor 1: Vermelho
-
-    // Contornos internos (Miolos)
-    if (shape.holes && shape.holes.length > 0) {
-      shape.holes.forEach((hole) => {
-        const hpts = hole.getPoints();
-        if (hpts.length >= 3) {
-          entities.push(formatDxfPolyline(hpts, scale, "CORTE_MIOLO", 3)); // Cor 3: Verde
-        }
-      });
-    }
-  });
-
-  const dxfContent = `0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1015\n9\n$INSUNITS\n70\n4\n0\nENDSEC\n0\nSECTION\n2\nTABLES\n0\nTABLE\n2\nLAYER\n70\n2\n0\nLAYER\n2\n${layerName}\n70\n0\n62\n1\n6\nCONTINUOUS\n0\nLAYER\n2\nCORTE_MIOLO\n70\n0\n62\n3\n6\nCONTINUOUS\n0\nENDTAB\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n${entities.join('')}0\nENDSEC\n0\nEOF\n`;
-
-  return new Blob([dxfContent], { type: 'application/dxf' });
-}
-
-function formatDxfPolyline(points, scale, layer, color) {
-  let out = `0\nLWPOLYLINE\n5\n${Math.floor(Math.random() * 0xFFFF).toString(16)}\n100\nAcDbEntity\n8\n${layer}\n62\n${color}\n100\nAcDbPolyline\n90\n${points.length}\n70\n1\n`;
-  points.forEach((p) => {
-    out += `10\n${(p.x * scale).toFixed(4)}\n20\n${(p.y * scale).toFixed(4)}\n`;
-  });
-  return out;
-}
+print("letraCaixaEngine.js patched!")

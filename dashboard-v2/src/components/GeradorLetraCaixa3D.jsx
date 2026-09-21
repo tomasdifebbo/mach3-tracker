@@ -279,10 +279,10 @@ export function GeradorLetraCaixa3D() {
 
       // Gera arquivos para download imediato em memória
       const stlBlob = exportModelToStlBlob(res.group);
-      const faceSvgBlob = generateCuttingSvg(res.allShapes, res.scale, 0.5, "Face Acrílico");
-      const faceDxfBlob = generateCuttingDxf(res.allShapes, res.scale, "CORTE_EXTERNO");
-      const fundoSvgBlob = generateCuttingSvg(res.allShapes, res.scale, 0.5, "Fundo PVC");
-      const fundoDxfBlob = generateCuttingDxf(res.allShapes, res.scale, "CORTE_FUNDO");
+      const faceSvgBlob = generateCuttingSvg(res.shapesFace, res.scale, 0.5, "Face Acrílico");
+      const faceDxfBlob = generateCuttingDxf(res.shapesFace, res.scale, "CORTE_EXTERNO");
+      const fundoSvgBlob = generateCuttingSvg(res.shapesFundo, res.scale, 0.5, "Fundo PVC");
+      const fundoDxfBlob = generateCuttingDxf(res.shapesFundo, res.scale, "CORTE_FUNDO");
 
       setDownloads({
         stlUrl: URL.createObjectURL(stlBlob),
