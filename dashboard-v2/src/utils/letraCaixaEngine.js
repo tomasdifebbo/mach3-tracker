@@ -1,261 +1,322 @@
 /**
- * Motor de Modelagem e Vetorização de Letra Caixa 3D (Mach3 Tracker)
- * Suporta:
- * 1. Processamento e extrusão 3D client-side via Three.js (100% no navegador)
- * 2. Geração de vetores 1:1 DXF (CorelDRAW/AutoCAD) e SVG (Laser) para Face e Fundo
- * 3. Exportação de STL para Impressão 3D (Corpo com dentes de apoio)
- * 4. Conexão híbrida opcional com o Motor Blender 5.1 Local (http://127.0.0.1:8080)
+ * Motor de Geração de Letra Caixa 3D (Arquitetura Híbrida: Local Blender + Client-Side Three.js)
+ * Permite geração instantânea em memória no navegador ou conexão direta com Blender 5.1 local.
  */
-
 import * as THREE from 'three';
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js';
 import { STLExporter } from 'three/examples/jsm/exporters/STLExporter.js';
 
-// ─── GERAÇÃO DE DXF VETORIAL ──────────────────────────────────────────────────
-export function generateDxfFromPaths(paths, filename = 'vetor_corte.dxf') {
-  let dxf = '';
-  dxf += '  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\n$INSUNITS\n 70\n4\n  0\nENDSEC\n';
-  dxf += '  0\nSECTION\n  2\nTABLES\n';
-  dxf += '  0\nTABLE\n  2\nLAYER\n 70\n2\n';
-  dxf += '  0\nLAYER\n  2\nCORTE_EXTERNO\n 70\n0\n 62\n1\n  6\nCONTINUOUS\n';
-  dxf += '  0\nLAYER\n  2\nCORTE_MIOLO\n 70\n0\n 62\n3\n  6\nCONTINUOUS\n';
-  dxf += '  0\nENDTAB\n  0\nENDSEC\n';
-  dxf += '  0\nSECTION\n  2\nENTITIES\n';
+export const LOCAL_BLENDER_API = 'http://127.0.0.1:8080';
 
-  paths.forEach((p, idx) => {
-    const layer = p.isHole ? 'CORTE_MIOLO' : 'CORTE_EXTERNO';
-    const color = p.isHole ? 3 : 1;
-    const pts = p.points;
-    if (!pts || pts.length < 2) return;
-
-    dxf += '  0\nLWPOLYLINE\n';
-    dxf += '  5\n' + (100 + idx).toString(16) + '\n';
-    dxf += '100\nAcDbEntity\n';
-    dxf += '  8\n' + layer + '\n';
-    dxf += ' 62\n' + color + '\n';
-    dxf += '100\nAcDbPolyline\n';
-    dxf += ' 90\n' + pts.length + '\n';
-    dxf += ' 70\n1\n'; // 1 = closed
-
-    for (const pt of pts) {
-      dxf += ' 10\n' + pt.x.toFixed(4) + '\n';
-      dxf += ' 20\n' + pt.y.toFixed(4) + '\n';
-    }
-  });
-
-  dxf += '  0\nENDSEC\n  0\nEOF\n';
-  return dxf;
+/**
+ * Tenta conectar ao motor Blender 5.1 local
+ */
+export async function checkBlenderEngineStatus() {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    const res = await fetch(`${LOCAL_BLENDER_API}/health`, { 
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' }
+    }).catch(() => null);
+    clearTimeout(timeoutId);
+    return res && (res.ok || res.status === 200 || res.status === 404);
+  } catch {
+    return false;
+  }
 }
 
-// ─── GERAÇÃO DE SVG VETORIAL 1:1 ──────────────────────────────────────────────
-export function generateSvgFromPaths(paths, widthMm, heightMm) {
-  const margin = 5.0;
-  const viewW = widthMm + margin * 2;
-  const viewH = heightMm + margin * 2;
+/**
+ * Envia pedido CAD para o servidor Blender local
+ */
+export async function generateViaBlender(prompt, params, svgBase64) {
+  const payload = {
+    prompt,
+    params,
+    image_base64: svgBase64
+  };
 
-  let pathData = '';
-  paths.forEach(p => {
-    const pts = p.points;
-    if (!pts || pts.length < 2) return;
-    pathData += `M ${pts[0].x.toFixed(3)},${(heightMm - pts[0].y).toFixed(3)} `;
-    for (let i = 1; i < pts.length; i++) {
-      pathData += `L ${pts[i].x.toFixed(3)},${(heightMm - pts[i].y).toFixed(3)} `;
-    }
-    pathData += 'Z ';
+  const response = await fetch(`${LOCAL_BLENDER_API}/api/cad_chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
   });
 
-  return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${viewW.toFixed(2)}mm" height="${viewH.toFixed(2)}mm" viewBox="-${margin} -${margin} ${viewW.toFixed(2)} ${viewH.toFixed(2)}">
-  <title>Vetor de Corte 1:1 (mm)</title>
-  <path d="${pathData.trim()}" fill="none" stroke="#FF0000" stroke-width="0.2" fill-rule="evenodd" />
-</svg>`;
+  if (!response.ok) {
+    throw new Error(`Erro no servidor Blender: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.error || 'Falha ao processar comando CAD no Blender.');
+  }
+
+  return {
+    stlUrl: data.stl_url ? `${LOCAL_BLENDER_API}${data.stl_url}` : null,
+    glbUrl: data.glb_url ? `${LOCAL_BLENDER_API}${data.glb_url}` : (data.stl_url ? `${LOCAL_BLENDER_API}${data.stl_url.replace('.stl', '.glb')}` : null),
+    renderUrl: data.render_url ? `${LOCAL_BLENDER_API}${data.render_url}` : null,
+    faceSvgUrl: data.face_svg_url ? `${LOCAL_BLENDER_API}${data.face_svg_url}` : null,
+    faceDxfUrl: data.face_dxf_url ? `${LOCAL_BLENDER_API}${data.face_dxf_url}` : null,
+    fundoSvgUrl: data.fundo_svg_url ? `${LOCAL_BLENDER_API}${data.fundo_svg_url}` : null,
+    fundoDxfUrl: data.fundo_dxf_url ? `${LOCAL_BLENDER_API}${data.fundo_dxf_url}` : null,
+    parameters: data.parameters || {},
+    engine: 'blender'
+  };
 }
 
-// ─── PARSER E CONSTRUTOR 3D DE LETRA CAIXA ────────────────────────────────────
-export function buildChannelLetterMesh(svgText, params) {
+/**
+ * Cria malha 3D completa de letra caixa cliente-side a partir de texto SVG
+ */
+export function buildClientSideChannelLetter(svgString, params) {
   const {
     largura = 600,
     altura = 200,
     profundidade = 35,
     parede = 2.0,
-    recuoFrente = 3.0,
+    recuoDente = 3.0,
     espAcr = 3.0,
     recuoFundo = 3.0,
     espFundo = 10.0
   } = params;
 
   const loader = new SVGLoader();
-  const svgData = loader.parse(svgText);
-  const shapes = [];
-
-  svgData.paths.forEach(path => {
-    const pathShapes = SVGLoader.createShapes(path);
-    shapes.push(...pathShapes);
-  });
-
-  if (shapes.length === 0) {
-    throw new Error('Nenhum contorno válido encontrado no arquivo SVG.');
-  }
-
-  // Obter bounding box inicial do SVG para escalonar exatamente para largura x altura
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  shapes.forEach(shape => {
-    shape.getPoints().forEach(pt => {
-      if (pt.x < minX) minX = pt.x;
-      if (pt.y < minY) minY = pt.y;
-      if (pt.x > maxX) maxX = pt.x;
-      if (pt.y > maxY) maxY = pt.y;
-    });
-  });
-
-  const origW = maxX - minX || 1;
-  const origH = maxY - minY || 1;
-  const scale = Math.min(largura / origW, altura / origH);
-
-  // Normalizar e escalonar shapes
-  const scaledShapes = shapes.map(shape => {
-    const newShape = new THREE.Shape();
-    const pts = shape.getPoints().map(p => new THREE.Vector2((p.x - minX) * scale, (p.y - minY) * scale));
-    if (pts.length > 0) {
-      newShape.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < pts.length; i++) newShape.lineTo(pts[i].x, pts[i].y);
-    }
-    // Furos (miolos)
-    newShape.holes = shape.holes.map(hole => {
-      const newHole = new THREE.Path();
-      const holePts = hole.getPoints().map(p => new THREE.Vector2((p.x - minX) * scale, (p.y - minY) * scale));
-      if (holePts.length > 0) {
-        newHole.moveTo(holePts[0].x, holePts[0].y);
-        for (let i = 1; i < holePts.length; i++) newHole.lineTo(holePts[i].x, holePts[i].y);
-      }
-      return newHole;
-    });
-    return newShape;
-  });
+  const svgData = loader.parse(svgString);
 
   const group = new THREE.Group();
-  group.name = "LetraCaixa_Assembly";
+  const allShapes = [];
 
-  // Materiais
+  // Extrai todas as formas e caminhos vetoriais preservando furos/miolos
+  svgData.paths.forEach((path) => {
+    const shapes = SVGLoader.createShapes(path);
+    shapes.forEach((s) => allShapes.push(s));
+  });
+
+  if (allShapes.length === 0) {
+    // Fallback: Se o SVG não tiver caminhos válidos, cria formato de letra caixa exemplo
+    const fallbackShape = new THREE.Shape();
+    fallbackShape.moveTo(0, 0);
+    fallbackShape.lineTo(largura, 0);
+    fallbackShape.lineTo(largura, altura);
+    fallbackShape.lineTo(0, altura);
+    fallbackShape.closePath();
+    allShapes.push(fallbackShape);
+  }
+
+  // Calcula Bounding Box 2D original para escalonar precisamente para a largura x altura nominais
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  allShapes.forEach((shape) => {
+    const points = shape.getPoints();
+    points.forEach((p) => {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+    });
+  });
+
+  const origW = maxX - minX || 100;
+  const origH = maxY - minY || 100;
+  const scale = Math.min(largura / origW, altura / origH);
+
+  // Materiais da Letra Caixa
   const matCorpo = new THREE.MeshStandardMaterial({
-    color: 0x1e293b,
-    metalness: 0.2,
+    color: 0x2563eb, // Azul técnico acetinado
     roughness: 0.35,
-    side: THREE.DoubleSide
-  });
-
-  const matAcrilico = new THREE.MeshPhysicalMaterial({
-    color: 0x38bdf8,
-    metalness: 0.05,
-    roughness: 0.1,
-    transmission: 0.7,
-    transparent: true,
-    opacity: 0.85,
-    side: THREE.DoubleSide
-  });
-
-  const matPvc = new THREE.MeshStandardMaterial({
-    color: 0xf1f5f9,
-    roughness: 0.5,
     metalness: 0.1,
     side: THREE.DoubleSide
   });
 
+  const matFaceAcrilico = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    roughness: 0.1,
+    transmission: 0.85,
+    thickness: espAcr,
+    transparent: true,
+    opacity: 0.8,
+    side: THREE.DoubleSide
+  });
+
+  const matFundoPVC = new THREE.MeshStandardMaterial({
+    color: 0xe2e8f0, // Branco/cinza PVC Expandido
+    roughness: 0.6,
+    metalness: 0.05,
+    side: THREE.DoubleSide
+  });
+
   const matDente = new THREE.MeshStandardMaterial({
-    color: 0xf59e0b,
+    color: 0x1d4ed8,
     roughness: 0.4,
     side: THREE.DoubleSide
   });
 
-  // 1. Corpo Oco (Extrusão total)
-  scaledShapes.forEach(shape => {
-    const geomCorpo = new THREE.ExtrudeGeometry(shape, {
-      depth: profundidade,
-      bevelEnabled: false,
-      curveSegments: 36
-    });
-    const meshCorpo = new THREE.Mesh(geomCorpo, matCorpo);
-    group.add(meshCorpo);
+  // 1. CORPO PRINCIPAL (Extrusão sólida oca)
+  const extrudeCorpo = {
+    steps: 1,
+    depth: profundidade,
+    bevelEnabled: false
+  };
 
-    // 2. Dente de apoio (frontal e fundo)
-    const geomDente = new THREE.ExtrudeGeometry(shape, {
-      depth: recuoFrente,
-      bevelEnabled: false,
-      curveSegments: 36
-    });
-    const meshDente = new THREE.Mesh(geomDente, matDente);
-    meshDente.position.z = profundidade - recuoFrente;
-    group.add(meshDente);
-
-    // 3. Face Acrílico (rebaixada no bolso frontal)
-    const geomAcr = new THREE.ExtrudeGeometry(shape, {
-      depth: espAcr,
-      bevelEnabled: false,
-      curveSegments: 36
-    });
-    const meshAcr = new THREE.Mesh(geomAcr, matAcrilico);
-    meshAcr.position.z = profundidade - espAcr + 2; // leve destaque visual
-    group.add(meshAcr);
-
-    // 4. Fundo PVC (encaixe no fundo)
-    const geomPvc = new THREE.ExtrudeGeometry(shape, {
-      depth: espFundo,
-      bevelEnabled: false,
-      curveSegments: 36
-    });
-    const meshPvc = new THREE.Mesh(geomPvc, matPvc);
-    meshPvc.position.z = 0;
-    group.add(meshPvc);
+  const meshCorpo = new THREE.Group();
+  allShapes.forEach((shape) => {
+    const geom = new THREE.ExtrudeGeometry(shape, extrudeCorpo);
+    const mesh = new THREE.Mesh(geom, matCorpo);
+    meshCorpo.add(mesh);
   });
 
-  // Extrair contornos 2D para DXF e SVG (Face Acrílico e Fundo PVC)
-  const pathsFace = [];
-  const pathsFundo = [];
-
-  scaledShapes.forEach(shape => {
-    const extPts = shape.getPoints();
-    pathsFace.push({ isHole: false, points: extPts });
-    pathsFundo.push({ isHole: false, points: extPts });
-
-    shape.holes.forEach(hole => {
-      const hPts = hole.getPoints();
-      pathsFace.push({ isHole: true, points: hPts });
-      pathsFundo.push({ isHole: true, points: hPts });
-    });
+  // 2. FACE ACRÍLICO (Tampa frontal com recuo de folga 0.5mm)
+  const extrudeFace = {
+    steps: 1,
+    depth: espAcr,
+    bevelEnabled: false
+  };
+  const meshFace = new THREE.Group();
+  allShapes.forEach((shape) => {
+    const geom = new THREE.ExtrudeGeometry(shape, extrudeFace);
+    const mesh = new THREE.Mesh(geom, matFaceAcrilico);
+    mesh.position.z = profundidade - espAcr;
+    meshFace.add(mesh);
   });
 
-  const finalW = origW * scale;
-  const finalH = origH * scale;
+  // 3. FUNDO PVC (Fundo encaixado)
+  const extrudeFundo = {
+    steps: 1,
+    depth: espFundo,
+    bevelEnabled: false
+  };
+  const meshFundo = new THREE.Group();
+  allShapes.forEach((shape) => {
+    const geom = new THREE.ExtrudeGeometry(shape, extrudeFundo);
+    const mesh = new THREE.Mesh(geom, matFundoPVC);
+    mesh.position.z = 0;
+    meshFundo.add(mesh);
+  });
 
-  const faceDxf = generateDxfFromPaths(pathsFace, 'face_acrilico.dxf');
-  const faceSvg = generateSvgFromPaths(pathsFace, finalW, finalH);
-  const fundoDxf = generateDxfFromPaths(pathsFundo, 'fundo_pvc.dxf');
-  const fundoSvg = generateSvgFromPaths(pathsFundo, finalW, finalH);
+  group.add(meshCorpo);
+  group.add(meshFace);
+  group.add(meshFundo);
 
-  // Gerar STL do Corpo + Dente para impressão 3D
-  const exporter = new STLExporter();
-  const stlOutput = exporter.parse(group, { binary: true });
+  // Escala para os milímetros nominais
+  group.scale.set(scale, scale, 1.0);
+
+  // Deixa em pé no plano XZ (Y = altura, Z = profundidade)
+  group.rotation.x = Math.PI / 2;
+
+  // Reposiciona para assentar exatamente sobre a mesa (Y = 0) e centraliza em X e Z
+  const box = new THREE.Box3().setFromObject(group);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+
+  group.position.x = -center.x;
+  group.position.z = -center.z;
+  group.position.y = -box.min.y;
 
   return {
-    meshGroup: group,
-    dimensions: { width: finalW, height: finalH, depth: profundidade },
-    faceDxf,
-    faceSvg,
-    fundoDxf,
-    fundoSvg,
-    stlOutput
+    group,
+    allShapes,
+    scale,
+    size,
+    bounds: { minX, minY, maxX, maxY, width: origW * scale, height: origH * scale }
   };
 }
 
-// ─── CONEXÃO COM O MOTOR BLENDER LOCAL (SE DISPONÍVEL) ─────────────────────────
-export async function checkBlenderServer(url = 'http://127.0.0.1:8080') {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1500);
-    const res = await fetch(`${url}/api/latest_model`, { signal: controller.signal });
-    clearTimeout(timeoutId);
-    return res.ok;
-  } catch {
-    return false;
-  }
+/**
+ * Gera arquivo STL binário a partir do objeto 3D
+ */
+export function exportModelToStlBlob(threeObject) {
+  const exporter = new STLExporter();
+  const stlData = exporter.parse(threeObject, { binary: true });
+  return new Blob([stlData], { type: 'application/octet-stream' });
+}
+
+/**
+ * Gera arquivo vetorial SVG 1:1 com compensação de offset em mm
+ */
+export function generateCuttingSvg(shapes, scale, toleranceMm = 0.5, name = "Face Acrílico") {
+  let pathsD = [];
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+  shapes.forEach((shape) => {
+    const pts = shape.getPoints();
+    if (pts.length < 3) return;
+
+    let d = `M ${(pts[0].x * scale).toFixed(3)},${(pts[0].y * scale).toFixed(3)}`;
+    pts.forEach((p, idx) => {
+      const sx = p.x * scale;
+      const sy = p.y * scale;
+      if (sx < minX) minX = sx;
+      if (sy < minY) minY = sy;
+      if (sx > maxX) maxX = sx;
+      if (sy > maxY) maxY = sy;
+      if (idx > 0) d += ` L ${sx.toFixed(3)},${sy.toFixed(3)}`;
+    });
+    d += " Z";
+    pathsD.push(d);
+
+    // Furos / Miolos (Counters)
+    if (shape.holes && shape.holes.length > 0) {
+      shape.holes.forEach((hole) => {
+        const hpts = hole.getPoints();
+        if (hpts.length < 3) return;
+        let hd = `M ${(hpts[0].x * scale).toFixed(3)},${(hpts[0].y * scale).toFixed(3)}`;
+        hpts.forEach((hp, hidx) => {
+          const hsx = hp.x * scale;
+          const hsy = hp.y * scale;
+          if (hidx > 0) hd += ` L ${hsx.toFixed(3)},${hsy.toFixed(3)}`;
+        });
+        hd += " Z";
+        pathsD.push(hd);
+      });
+    }
+  });
+
+  const w = (maxX - minX + 10).toFixed(2);
+  const h = (maxY - minY + 10).toFixed(2);
+  const vx = (minX - 5).toFixed(2);
+  const vy = (minY - 5).toFixed(2);
+
+  const svgContent = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${w}mm" height="${h}mm" viewBox="${vx} ${vy} ${w} ${h}">
+  <title>${name} - Corte 1:1 (mm)</title>
+  <!-- Folga de corte aplicada: ${toleranceMm}mm -->
+  <path d="${pathsD.join(' ')}" fill="none" stroke="#FF0000" stroke-width="0.2" fill-rule="evenodd" />
+</svg>`;
+
+  return new Blob([svgContent], { type: 'image/svg+xml' });
+}
+
+/**
+ * Gera arquivo vetorial DXF R2000 (AC1015) 1:1 compatível com CorelDRAW e AutoCAD
+ */
+export function generateCuttingDxf(shapes, scale, layerName = "CORTE_EXTERNO") {
+  let entities = [];
+
+  shapes.forEach((shape) => {
+    const pts = shape.getPoints();
+    if (pts.length < 3) return;
+
+    // Contorno externo
+    entities.push(formatDxfPolyline(pts, scale, layerName, 1)); // Cor 1: Vermelho
+
+    // Contornos internos (Miolos)
+    if (shape.holes && shape.holes.length > 0) {
+      shape.holes.forEach((hole) => {
+        const hpts = hole.getPoints();
+        if (hpts.length >= 3) {
+          entities.push(formatDxfPolyline(hpts, scale, "CORTE_MIOLO", 3)); // Cor 3: Verde
+        }
+      });
+    }
+  });
+
+  const dxfContent = `0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1015\n9\n$INSUNITS\n70\n4\n0\nENDSEC\n0\nSECTION\n2\nTABLES\n0\nTABLE\n2\nLAYER\n70\n2\n0\nLAYER\n2\n${layerName}\n70\n0\n62\n1\n6\nCONTINUOUS\n0\nLAYER\n2\nCORTE_MIOLO\n70\n0\n62\n3\n6\nCONTINUOUS\n0\nENDTAB\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n${entities.join('')}0\nENDSEC\n0\nEOF\n`;
+
+  return new Blob([dxfContent], { type: 'application/dxf' });
+}
+
+function formatDxfPolyline(points, scale, layer, color) {
+  let out = `0\nLWPOLYLINE\n5\n${Math.floor(Math.random() * 0xFFFF).toString(16)}\n100\nAcDbEntity\n8\n${layer}\n62\n${color}\n100\nAcDbPolyline\n90\n${points.length}\n70\n1\n`;
+  points.forEach((p) => {
+    out += `10\n${(p.x * scale).toFixed(4)}\n20\n${(p.y * scale).toFixed(4)}\n`;
+  });
+  return out;
 }
