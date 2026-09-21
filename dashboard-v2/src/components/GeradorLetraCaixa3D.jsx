@@ -278,7 +278,12 @@ export function GeradorLetraCaixa3D() {
       }
 
       // Gera arquivos para download imediato em memória
+      if (res.meshFace) res.meshFace.visible = false;
+      if (res.meshFundo) res.meshFundo.visible = false;
       const stlBlob = exportModelToStlBlob(res.group);
+      if (res.meshFace) res.meshFace.visible = true;
+      if (res.meshFundo) res.meshFundo.visible = true;
+
       const faceSvgBlob = generateCuttingSvg(res.shapesFace, res.scale, 0.5, "Face Acrílico");
       const faceDxfBlob = generateCuttingDxf(res.shapesFace, res.scale, "CORTE_EXTERNO");
       const fundoSvgBlob = generateCuttingSvg(res.shapesFundo, res.scale, 0.5, "Fundo PVC");

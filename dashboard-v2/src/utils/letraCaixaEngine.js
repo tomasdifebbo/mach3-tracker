@@ -287,23 +287,25 @@ export function buildClientSideChannelLetter(svgText, params) {
       });
   }
 
-  // 2. FACE ACRILICO (Recuo interno da parede para encaixar)
+  // 2. FACE ACRILICO (Recuo interno da parede para encaixar - VISTA EXPLODIDA)
   const shapesFace = generateOffsetShapes(allShapes, parede);
   const meshFace = new THREE.Group();
   shapesFace.forEach(s => {
       const g = new THREE.ExtrudeGeometry(s, { depth: espAcr, bevelEnabled: false, steps: 1 });
       const m = new THREE.Mesh(g, matFaceAcrilico);
-      m.position.z = zFaceBottom;
+      // Vista Explodida: Desloca o acrilico 40mm para frente para facilitar visualização
+      m.position.z = zFaceBottom + 40;
       meshFace.add(m);
   });
 
-  // 3. FUNDO PVC
+  // 3. FUNDO PVC (VISTA EXPLODIDA)
   const shapesFundo = generateOffsetShapes(allShapes, parede);
   const meshFundo = new THREE.Group();
   shapesFundo.forEach(s => {
       const g = new THREE.ExtrudeGeometry(s, { depth: espFundo, bevelEnabled: false, steps: 1 });
       const m = new THREE.Mesh(g, matFundoPVC);
-      m.position.z = recuoFundo;
+      // Vista Explodida: Desloca o fundo 20mm para trás
+      m.position.z = recuoFundo - 20;
       meshFundo.add(m);
   });
 
@@ -327,6 +329,9 @@ export function buildClientSideChannelLetter(svgText, params) {
 
   return {
     group,
+    meshCorpo,
+    meshFace,
+    meshFundo,
     allShapes,
     shapesFace,
     shapesFundo,
