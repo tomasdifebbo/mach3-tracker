@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "node server/server.js",
-    "build": "echo 'Building...'"
+    "build": "cd dashboard-v2 && npm install && npm run build && cp -r dist/* ../server/public/"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
