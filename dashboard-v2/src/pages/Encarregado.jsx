@@ -2,11 +2,12 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   LayoutGrid, Calendar, Columns3, CheckSquare2, Package, TrendingUp,
   AlertCircle, CheckCircle2, Clock, Star, ChevronRight, Zap, Target,
-  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2, Edit2, CalendarClock, User, FileCode
+  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2, Edit2, CalendarClock, User, FileCode, Box
 } from 'lucide-react';
 import { api } from '../services/api';
 import { LinkProjectModal } from '../components/LinkProjectModal';
 import { ConversorGcodeDxf } from '../components/ConversorGcodeDxf';
+import { GeradorLetraCaixa3D } from '../components/GeradorLetraCaixa3D';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -2380,6 +2381,7 @@ const NAV_SECTIONS = [
   { id: 'checklists', label: 'Checklists Diários', icon: CheckSquare2, group: 'Operação' },
   { id: 'estoque', label: 'Controle de Estoque', icon: Package, group: 'Operação' },
   { id: 'kaizen', label: 'Ciclo POP / Kaizen', icon: TrendingUp, group: 'Melhoria' },
+  { id: 'letra_caixa', label: 'Gerador Letra Caixa 3D', icon: Box, group: 'Ferramentas' },
   { id: 'gcode_dxf', label: 'Conversor G-Code ➔ DXF', icon: FileCode, group: 'Ferramentas' },
 ];
 
@@ -2392,14 +2394,15 @@ export function Encarregado({ jobs = [] }) {
 
   const renderSection = () => {
     switch (activeTab) {
-      case 'dashboard':  return <DashboardSemanal jobs={jobs} />;
-      case 'rotina':     return <RotinaSemanal />;
-      case 'kanban':     return <PainelKanban jobs={jobs} />;
-      case 'checklists': return <ChecklistsDiarios />;
-      case 'estoque':    return <ControleEstoque />;
-      case 'kaizen':     return <CicloPOP />;
-      case 'gcode_dxf':  return <ConversorGcodeDxf />;
-      default:           return <DashboardSemanal jobs={jobs} />;
+      case 'dashboard':   return <DashboardSemanal jobs={jobs} />;
+      case 'rotina':      return <RotinaSemanal />;
+      case 'kanban':      return <PainelKanban jobs={jobs} />;
+      case 'checklists':  return <ChecklistsDiarios />;
+      case 'estoque':     return <ControleEstoque />;
+      case 'kaizen':      return <CicloPOP />;
+      case 'letra_caixa': return <GeradorLetraCaixa3D />;
+      case 'gcode_dxf':   return <ConversorGcodeDxf />;
+      default:            return <DashboardSemanal jobs={jobs} />;
     }
   };
 
