@@ -108,8 +108,8 @@ export function buildClientSideChannelLetter(svgText, params) {
   const scale = Math.min(largura / origW, altura / origH);
 
   const matCorpo = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8, metalness: 0.1 });
-  const matFaceAcrilico = new THREE.MeshPhysicalMaterial({ color: 0x00aaff, transmission: 0.5, opacity: 0.8, transparent: true, roughness: 0.2 });
-  const matFundoPVC = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
+  const matFaceAcrilico = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 0.5, opacity: 0.8, transparent: true, roughness: 0.2 });
+  const matFundoPVC = new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.9 });
 
   const scaleFactor = 1000;
 
