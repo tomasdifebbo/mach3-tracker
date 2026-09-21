@@ -107,9 +107,9 @@ export function buildClientSideChannelLetter(svgText, params) {
   const origH = maxY - minY || 100;
   const scale = Math.min(largura / origW, altura / origH);
 
-  const matCorpo = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.8, metalness: 0.1 });
-  const matFaceAcrilico = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 0.5, opacity: 0.8, transparent: true, roughness: 0.2 });
-  const matFundoPVC = new THREE.MeshStandardMaterial({ color: 0x00aaff, roughness: 0.9 });
+  const matCorpo = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8, metalness: 0.1 });
+  const matFaceAcrilico = new THREE.MeshPhysicalMaterial({ color: 0x00aaff, transmission: 0.5, opacity: 0.8, transparent: true, roughness: 0.2 });
+  const matFundoPVC = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
 
   const scaleFactor = 1000;
 
@@ -287,25 +287,25 @@ export function buildClientSideChannelLetter(svgText, params) {
       });
   }
 
-  // 2. FACE ACRILICO (Recuo interno da parede para encaixar - VISTA EXPLODIDA)
+  // 2. FACE ACRILICO (Recuo interno da parede para encaixar - MONTADO)
   const shapesFace = generateOffsetShapes(allShapes, parede);
   const meshFace = new THREE.Group();
   shapesFace.forEach(s => {
       const g = new THREE.ExtrudeGeometry(s, { depth: espAcr, bevelEnabled: false, steps: 1 });
       const m = new THREE.Mesh(g, matFaceAcrilico);
-      // Vista Explodida: Desloca o acrilico bem para a frente
-      m.position.z = zFaceBottom + 80;
+      // Encaixa perfeitamente no dente (altura = zFaceBottom)
+      m.position.z = zFaceBottom;
       meshFace.add(m);
   });
 
-  // 3. FUNDO PVC (VISTA EXPLODIDA)
+  // 3. FUNDO PVC (MONTADO)
   const shapesFundo = generateOffsetShapes(allShapes, parede);
   const meshFundo = new THREE.Group();
   shapesFundo.forEach(s => {
       const g = new THREE.ExtrudeGeometry(s, { depth: espFundo, bevelEnabled: false, steps: 1 });
       const m = new THREE.Mesh(g, matFundoPVC);
-      // Vista Explodida: Desloca o fundo bem para trás
-      m.position.z = recuoFundo - 60;
+      // Encaixa perfeitamente no fundo
+      m.position.z = recuoFundo;
       meshFundo.add(m);
   });
 
