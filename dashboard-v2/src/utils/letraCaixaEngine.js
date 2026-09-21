@@ -293,8 +293,8 @@ export function buildClientSideChannelLetter(svgText, params) {
   shapesFace.forEach(s => {
       const g = new THREE.ExtrudeGeometry(s, { depth: espAcr, bevelEnabled: false, steps: 1 });
       const m = new THREE.Mesh(g, matFaceAcrilico);
-      // Vista Explodida: Desloca o acrilico 40mm para frente para facilitar visualização
-      m.position.z = zFaceBottom + 40;
+      // Vista Explodida: Desloca o acrilico bem para a frente
+      m.position.z = zFaceBottom + 80;
       meshFace.add(m);
   });
 
@@ -304,8 +304,8 @@ export function buildClientSideChannelLetter(svgText, params) {
   shapesFundo.forEach(s => {
       const g = new THREE.ExtrudeGeometry(s, { depth: espFundo, bevelEnabled: false, steps: 1 });
       const m = new THREE.Mesh(g, matFundoPVC);
-      // Vista Explodida: Desloca o fundo 20mm para trás
-      m.position.z = recuoFundo - 20;
+      // Vista Explodida: Desloca o fundo bem para trás
+      m.position.z = recuoFundo - 60;
       meshFundo.add(m);
   });
 
