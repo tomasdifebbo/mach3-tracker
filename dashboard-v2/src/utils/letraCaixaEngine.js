@@ -5,7 +5,8 @@
 import * as THREE from 'three';
 import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
 import { STLExporter } from 'three/addons/exporters/STLExporter.js';
-import ClipperLib from 'clipper-lib';
+import clipperLibModule from 'clipper-lib';
+const ClipperLib = clipperLibModule.default || clipperLibModule || window.ClipperLib;
 
 export const LOCAL_BLENDER_API = 'http://127.0.0.1:8080';
 
@@ -203,6 +204,8 @@ export function buildClientSideChannelLetter(svgString, params) {
                 if (i === 0) newShape.moveTo(x, y);
                 else newShape.lineTo(x, y);
             });
+            newShape.closePath();
+            
             node.Childs().forEach(child => {
                 if (child.Contour().length > 0) {
                     const hole = new THREE.Path();
@@ -212,6 +215,7 @@ export function buildClientSideChannelLetter(svgString, params) {
                         if (i === 0) hole.moveTo(x, y);
                         else hole.lineTo(x, y);
                     });
+                    hole.closePath();
                     newShape.holes.push(hole);
                 }
             });
