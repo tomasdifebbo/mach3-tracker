@@ -97,7 +97,9 @@ export function buildClientSideChannelLetter(svgText, params) {
   const profundidade = parseFloat(params.profundidade) || 10;
   
   const parede = parseFloat(params.parede) || 2;
-  const denteWidth = 3; // Dente fixo de 3mm inward
+  // O dente não pode ser maior que a metade da espessura da letra. Como não sabemos a espessura exata,
+  // usamos um valor proporcional à parede, ou 1.5mm fixo.
+  const denteWidth = 1.5; 
   const recuoFrente = parseFloat(params.recuoDente) || 0; // recuoDente na vdd eh recuoFrente
   const espAcr = parseFloat(params.espAcr) || 2;
   const recuoFundo = parseFloat(params.recuoFundo) || 0;
