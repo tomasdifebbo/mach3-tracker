@@ -131,8 +131,15 @@ export function buildClientSideChannelLetter(svgText, params) {
           shape.holes.forEach(h => addThreePath(h, true));
       });
 
+      // Passo 1: Union de todas as letras (para fontes cursivas que se sobrepoem)
+      const cUnion = new ClipperLib.Clipper();
+      cUnion.AddPaths(subjPaths, ClipperLib.PolyType.ptSubject, true);
+      const unifiedPaths = new ClipperLib.Paths();
+      cUnion.Execute(ClipperLib.ClipType.ctUnion, unifiedPaths, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
+
+      // Passo 2: Gerar o recuo interno (buraco / ar) a partir do shape unificado
       const co = new ClipperLib.ClipperOffset();
-      co.AddPaths(subjPaths, ClipperLib.JoinType.jtMiter, ClipperLib.EndType.etClosedPolygon);
+      co.AddPaths(unifiedPaths, ClipperLib.JoinType.jtMiter, ClipperLib.EndType.etClosedPolygon);
       const solutionPaths = new ClipperLib.Paths();
       co.Execute(solutionPaths, Math.round(-offsetInClipper * scaleFactor));
 
@@ -195,13 +202,20 @@ export function buildClientSideChannelLetter(svgText, params) {
           shape.holes.forEach(h => addThreePath(h, true));
       });
 
+      // Passo 1: Union de todas as letras (para fontes cursivas que se sobrepoem)
+      const cUnion = new ClipperLib.Clipper();
+      cUnion.AddPaths(subjPaths, ClipperLib.PolyType.ptSubject, true);
+      const unifiedPaths = new ClipperLib.Paths();
+      cUnion.Execute(ClipperLib.ClipType.ctUnion, unifiedPaths, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
+
+      // Passo 2: Gerar o recuo interno (buraco / ar) a partir do shape unificado
       const co = new ClipperLib.ClipperOffset();
-      co.AddPaths(subjPaths, ClipperLib.JoinType.jtMiter, ClipperLib.EndType.etClosedPolygon);
+      co.AddPaths(unifiedPaths, ClipperLib.JoinType.jtMiter, ClipperLib.EndType.etClosedPolygon);
       const airPaths = new ClipperLib.Paths();
       co.Execute(airPaths, Math.round(-offsetInClipper * scaleFactor));
 
       const c = new ClipperLib.Clipper();
-      c.AddPaths(subjPaths, ClipperLib.PolyType.ptSubject, true);
+      c.AddPaths(unifiedPaths, ClipperLib.PolyType.ptSubject, true);
       c.AddPaths(airPaths, ClipperLib.PolyType.ptClip, true);
       const solutionTree = new ClipperLib.PolyTree();
       c.Execute(ClipperLib.ClipType.ctDifference, solutionTree, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
@@ -268,11 +282,11 @@ export function buildClientSideChannelLetter(svgText, params) {
   }
   
   // Dente Central (onde apoiam face e fundo)
-  if (hasMiddle) {
+  if (zFaceBottom > 0) {
       shapesParedeGrossa.forEach(s => {
-         const g = new THREE.ExtrudeGeometry(s, { depth: Math.max(0.1, zFaceBottom - zFundoTop), bevelEnabled: false, steps: 1 });
+         const g = new THREE.ExtrudeGeometry(s, { depth: zFaceBottom, bevelEnabled: false, steps: 1 });
          const m = new THREE.Mesh(g, matCorpo);
-         m.position.z = zFundoTop;
+         m.position.z = 0;
          meshCorpo.add(m);
       });
   }
