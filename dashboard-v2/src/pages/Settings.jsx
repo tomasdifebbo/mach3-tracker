@@ -186,8 +186,13 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
   };
 
   // Section 2 Data Processing
+  const formatName = (str) => {
+    if (!str || !str.trim()) return 'Desconhecido';
+    return str.trim().toLowerCase().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  };
+
   const operatorStats = jobsData.reduce((acc, job) => {
-    const op = job.operator_name || 'Desconhecido';
+    const op = formatName(job.operator_name);
     acc[op] = (acc[op] || 0) + (Number(job.duration_minutes) || 0);
     return acc;
   }, {});
@@ -197,8 +202,9 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
   const maxOpMinutes = operatorRanking.length > 0 ? operatorRanking[0][1] : 1;
 
   const materialStats = jobsData.reduce((acc, job) => {
-    if (job.material_name) {
-      acc[job.material_name] = (acc[job.material_name] || 0) + 1;
+    if (job.material_name && job.material_name.trim()) {
+      const mat = job.material_name.trim().toUpperCase();
+      acc[mat] = (acc[mat] || 0) + 1;
     }
     return acc;
   }, {});
