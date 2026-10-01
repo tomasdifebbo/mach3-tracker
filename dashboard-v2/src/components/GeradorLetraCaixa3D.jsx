@@ -276,29 +276,57 @@ export function GeradorLetraCaixa3D() {
         }
       }
 
-      // Gera arquivos para download imediato em memória
-      if (res.meshFace) res.meshFace.visible = false;
-      if (res.meshFundo) res.meshFundo.visible = false;
+      // Gera arquivos para download imediato em memória (apenas o corpo 3D oco da letra caixa para impressão 3D)
+      if (res.meshFace) {
+        res.meshFace.visible = false;
+        res.group.remove(res.meshFace);
+      }
+      if (res.meshFundo) {
+        res.meshFundo.visible = false;
+        res.group.remove(res.meshFundo);
+      }
+      res.group.updateMatrixWorld(true);
+
       const stlBlob = exportModelToStlBlob(res.group);
-      if (res.meshFace) res.meshFace.visible = true;
-      if (res.meshFundo) res.meshFundo.visible = true;
+
+      // Recoloca a face e o fundo no grupo para manter a visualização 3D montada na tela
+      if (res.meshFace) {
+        res.group.add(res.meshFace);
+        res.meshFace.visible = true;
+      }
+      if (res.meshFundo) {
+        res.group.add(res.meshFundo);
+        res.meshFundo.visible = true;
+      }
+      res.group.updateMatrixWorld(true);
 
       const faceSvgBlob = generateCuttingSvg(res.shapesFace, res.scale, 0.5, "Face Acrílico");
       const faceDxfBlob = generateCuttingDxf(res.shapesFace, res.scale, "CORTE_EXTERNO");
       const fundoSvgBlob = generateCuttingSvg(res.shapesFundo, res.scale, 0.5, "Fundo PVC");
       const fundoDxfBlob = generateCuttingDxf(res.shapesFundo, res.scale, "CORTE_INTERNO");
 
+      const newStlUrl = URL.createObjectURL(new Blob([stlBlob], { type: 'model/stl' }));
+      const newFaceSvgUrl = URL.createObjectURL(new Blob([faceSvgBlob], { type: 'image/svg+xml' }));
+      const newFaceDxfUrl = URL.createObjectURL(new Blob([faceDxfBlob], { type: 'application/dxf' }));
+      const newFundoSvgUrl = URL.createObjectURL(new Blob([fundoSvgBlob], { type: 'image/svg+xml' }));
+      const newFundoDxfUrl = URL.createObjectURL(new Blob([fundoDxfBlob], { type: 'application/dxf' }));
+
       setDownloads(prev => {
-        if (!prev.stlUrl) {
-           setSuccessInfo('Modelo 3D gerado com sucesso no navegador!');
-        }
+        if (prev.stlUrl && prev.stlUrl.startsWith('blob:')) URL.revokeObjectURL(prev.stlUrl);
+        if (prev.faceSvgUrl && prev.faceSvgUrl.startsWith('blob:')) URL.revokeObjectURL(prev.faceSvgUrl);
+        if (prev.faceDxfUrl && prev.faceDxfUrl.startsWith('blob:')) URL.revokeObjectURL(prev.faceDxfUrl);
+        if (prev.fundoSvgUrl && prev.fundoSvgUrl.startsWith('blob:')) URL.revokeObjectURL(prev.fundoSvgUrl);
+        if (prev.fundoDxfUrl && prev.fundoDxfUrl.startsWith('blob:')) URL.revokeObjectURL(prev.fundoDxfUrl);
+
+        setSuccessInfo('Modelo 3D gerado com sucesso no navegador!');
+
         return {
           ...prev,
-          stlUrl: prev.stlUrl || URL.createObjectURL(new Blob([stlBlob], { type: 'model/stl' })),
-          faceSvgUrl: prev.faceSvgUrl || URL.createObjectURL(new Blob([faceSvgBlob], { type: 'image/svg+xml' })),
-          faceDxfUrl: prev.faceDxfUrl || URL.createObjectURL(new Blob([faceDxfBlob], { type: 'application/dxf' })),
-          fundoSvgUrl: prev.fundoSvgUrl || URL.createObjectURL(new Blob([fundoSvgBlob], { type: 'image/svg+xml' })),
-          fundoDxfUrl: prev.fundoDxfUrl || URL.createObjectURL(new Blob([fundoDxfBlob], { type: 'application/dxf' }))
+          stlUrl: (prev.stlUrl && !prev.stlUrl.startsWith('blob:')) ? prev.stlUrl : newStlUrl,
+          faceSvgUrl: (prev.faceSvgUrl && !prev.faceSvgUrl.startsWith('blob:')) ? prev.faceSvgUrl : newFaceSvgUrl,
+          faceDxfUrl: (prev.faceDxfUrl && !prev.faceDxfUrl.startsWith('blob:')) ? prev.faceDxfUrl : newFaceDxfUrl,
+          fundoSvgUrl: (prev.fundoSvgUrl && !prev.fundoSvgUrl.startsWith('blob:')) ? prev.fundoSvgUrl : newFundoSvgUrl,
+          fundoDxfUrl: (prev.fundoDxfUrl && !prev.fundoDxfUrl.startsWith('blob:')) ? prev.fundoDxfUrl : newFundoDxfUrl
         };
       });
 

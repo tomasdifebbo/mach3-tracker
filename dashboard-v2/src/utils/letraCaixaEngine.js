@@ -359,7 +359,40 @@ export function buildClientSideChannelLetter(svgText, params) {
 
 export function exportModelToStlBlob(threeObject) {
   const exporter = new STLExporter();
-  const stlData = exporter.parse(threeObject, { binary: true });
+  
+  // Cria um grupo filtrando apenas objetos que estão visíveis e não ocultos
+  const exportGroup = new THREE.Group();
+  threeObject.updateMatrixWorld(true);
+
+  threeObject.traverse((child) => {
+    if (child.isMesh) {
+      let isVisible = child.visible;
+      let curr = child.parent;
+      while (curr && curr !== threeObject) {
+        if (!curr.visible) {
+          isVisible = false;
+          break;
+        }
+        curr = curr.parent;
+      }
+
+      if (isVisible) {
+        const clonedGeom = child.geometry.clone();
+        clonedGeom.applyMatrix4(child.matrixWorld);
+        const clonedMesh = new THREE.Mesh(clonedGeom);
+        exportGroup.add(clonedMesh);
+      }
+    }
+  });
+
+  const target = exportGroup.children.length > 0 ? exportGroup : threeObject;
+  const stlData = exporter.parse(target, { binary: true });
+
+  // Limpa geometrias clonadas temporárias da memória
+  exportGroup.traverse((child) => {
+    if (child.geometry) child.geometry.dispose();
+  });
+
   return new Blob([stlData], { type: 'application/octet-stream' });
 }
 
