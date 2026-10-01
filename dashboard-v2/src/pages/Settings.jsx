@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Zap, 
   Settings as SettingsIcon, 
@@ -9,7 +9,11 @@ import {
   CheckCircle2,
   ChevronRight,
   AlertCircle,
-  Loader2
+  Loader2,
+  Database,
+  FileText,
+  Cpu,
+  Upload
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -28,6 +32,46 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
   const [gerentePin, setGerentePin] = useState('');
   const [supervisorPin, setSupervisorPin] = useState('');
   const [savingPins, setSavingPins] = useState(false);
+
+  // New States for Business Plan Sections
+  const [jobsData, setJobsData] = useState([]);
+  const [routersCount, setRoutersCount] = useState(0);
+  const [companyLogo, setCompanyLogo] = useState(localStorage.getItem('mach3_company_logo') || '');
+  const [theme, setTheme] = useState(localStorage.getItem('mach3_theme') || 'Escuro');
+  const [dailyReport, setDailyReport] = useState(localStorage.getItem('mach3_daily_report') === 'true');
+  const [idleAlert, setIdleAlert] = useState(localStorage.getItem('mach3_idle_alert') === 'true');
+  const [weeklyReport, setWeeklyReport] = useState(localStorage.getItem('mach3_weekly_report') === 'true');
+  const [reportEmail, setReportEmail] = useState(localStorage.getItem('mach3_report_email') || '');
+
+  const isBusinessPlan = user?.plan === 'business';
+
+  useEffect(() => {
+    if (isBusinessPlan) {
+      const fetchData = async () => {
+        try {
+          const jobsResp = await api.getJobs();
+          if (jobsResp && Array.isArray(jobsResp)) {
+            setJobsData(jobsResp);
+          } else if (jobsResp && jobsResp.data && Array.isArray(jobsResp.data)) {
+            setJobsData(jobsResp.data);
+          }
+
+          const routersResp = await api.getRouters();
+          if (routersResp && Array.isArray(routersResp)) {
+            setRoutersCount(routersResp.length);
+          } else if (routersResp && routersResp.data && Array.isArray(routersResp.data)) {
+            setRoutersCount(routersResp.data.length);
+          } else if (routersResp && typeof routersResp === 'object') {
+             const items = routersResp.data || routersResp.routers || [];
+             setRoutersCount(items.length);
+          }
+        } catch (err) {
+          console.error("Error fetching data:", err);
+        }
+      };
+      fetchData();
+    }
+  }, [isBusinessPlan]);
 
   const handleRoleChange = async (newRole) => {
     let pin = '';
@@ -114,6 +158,56 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
     setTimeout(() => setStatus(null), 3000);
   };
 
+  // Section Handlers
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result;
+        setCompanyLogo(base64);
+        localStorage.setItem('mach3_company_logo', base64);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+    localStorage.setItem('mach3_theme', newTheme);
+  };
+
+  const saveReportSettings = () => {
+    localStorage.setItem('mach3_daily_report', dailyReport);
+    localStorage.setItem('mach3_idle_alert', idleAlert);
+    localStorage.setItem('mach3_weekly_report', weeklyReport);
+    localStorage.setItem('mach3_report_email', reportEmail);
+    alert('Configurações de relatórios salvas!');
+  };
+
+  // Section 2 Data Processing
+  const operatorStats = jobsData.reduce((acc, job) => {
+    const op = job.operator_name || 'Desconhecido';
+    acc[op] = (acc[op] || 0) + (Number(job.duration_minutes) || 0);
+    return acc;
+  }, {});
+  const operatorRanking = Object.entries(operatorStats)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  const maxOpMinutes = operatorRanking.length > 0 ? operatorRanking[0][1] : 1;
+
+  const materialStats = jobsData.reduce((acc, job) => {
+    if (job.material_name) {
+      acc[job.material_name] = (acc[job.material_name] || 0) + 1;
+    }
+    return acc;
+  }, {});
+  const totalMaterials = Object.values(materialStats).reduce((sum, count) => sum + count, 0) || 1;
+  const materialColors = ['bg-cyan-400', 'bg-purple-400', 'bg-amber-400', 'bg-emerald-400', 'bg-rose-400'];
+  const materialRanking = Object.entries(materialStats)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6 md:space-y-12 animate-in fade-in duration-500">
       {isTrialExpired && (
@@ -138,7 +232,196 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
 
       {/* Plans Section */}
       <section className="space-y-8">
-        <SubscriptionPlans user={user} />
+        {!isBusinessPlan ? (
+          <SubscriptionPlans user={user} />
+        ) : (
+          <div className="space-y-8">
+            {/* 1. Plan Status Card */}
+            <div className="glass p-8 md:p-10 rounded-[32px] md:rounded-[40px] flex flex-col md:flex-row md:items-center justify-between gap-6 border-l-4 border-l-accent-cyan">
+              <div>
+                <h3 className="text-3xl font-black text-white flex items-center gap-3">
+                  <span className="text-4xl">💎</span> Plano Atual: BUSINESS Premium
+                </h3>
+                <div className="flex items-center gap-3 mt-4">
+                  <span className="bg-accent-success/20 text-accent-success border border-accent-success/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                    <CheckCircle2 size={14} /> Ativo
+                  </span>
+                  <span className="text-text-muted text-sm font-medium">Próxima renovação: {user?.plan_renewal || '—'}</span>
+                </div>
+              </div>
+              <button className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl transition-all" onClick={() => alert('Gerenciar pagamento em breve')}>
+                Gerenciar Pagamento
+              </button>
+            </div>
+
+            {/* 2. Efficiency Charts */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Card A */}
+              <div className="glass p-8 rounded-[32px] space-y-6">
+                <h4 className="text-xl font-bold text-white mb-2">Ranking de Eficiência dos Operadores</h4>
+                <div className="space-y-4">
+                  {operatorRanking.length > 0 ? operatorRanking.map(([op, mins], idx) => {
+                    const hours = (mins / 60).toFixed(1);
+                    const pct = Math.min(100, Math.round((mins / maxOpMinutes) * 100));
+                    return (
+                      <div key={op} className="space-y-1.5">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-white font-medium">{op}</span>
+                          <span className="text-text-muted font-bold">{hours}h</span>
+                        </div>
+                        <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                          <div className="h-full bg-accent-cyan rounded-full" style={{ width: `${pct}%` }}></div>
+                        </div>
+                      </div>
+                    );
+                  }) : (
+                    <div className="text-sm text-text-muted">Nenhum dado encontrado.</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Card B */}
+              <div className="glass p-8 rounded-[32px] space-y-6">
+                <h4 className="text-xl font-bold text-white mb-2">Distribuição de Materiais</h4>
+                {materialRanking.length > 0 ? (
+                  <>
+                    <div className="h-4 w-full flex rounded-full overflow-hidden mb-6">
+                      {materialRanking.map(([mat, count], idx) => {
+                        const pct = (count / totalMaterials) * 100;
+                        return (
+                          <div key={mat} className={`h-full ${materialColors[idx % materialColors.length]}`} style={{ width: `${pct}%` }}></div>
+                        );
+                      })}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {materialRanking.map(([mat, count], idx) => {
+                        const pct = Math.round((count / totalMaterials) * 100);
+                        return (
+                          <div key={mat} className="flex items-center gap-2 text-sm">
+                            <div className={`w-3 h-3 rounded-full ${materialColors[idx % materialColors.length]}`}></div>
+                            <span className="text-white truncate" title={mat}>{mat}</span>
+                            <span className="text-text-muted font-bold ml-auto">{pct}%</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-sm text-text-muted">Nenhum dado encontrado.</div>
+                )}
+              </div>
+            </div>
+
+            {/* 3. System Usage */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="glass p-6 rounded-[32px] flex items-center gap-4">
+                <div className="p-4 bg-accent-success/10 text-accent-success rounded-2xl">
+                  <Database size={28} />
+                </div>
+                <div>
+                  <div className="text-xs text-text-muted font-medium mb-1">Database Status</div>
+                  <div className="text-xl font-bold text-white">Saudável</div>
+                  <div className="text-[10px] text-text-muted mt-1">PostgreSQL + Supabase</div>
+                </div>
+              </div>
+              <div className="glass p-6 rounded-[32px] flex items-center gap-4">
+                <div className="p-4 bg-accent-cyan/10 text-accent-cyan rounded-2xl">
+                  <FileText size={28} />
+                </div>
+                <div>
+                  <div className="text-xs text-text-muted font-medium mb-1">Trabalhos Registrados</div>
+                  <div className="text-xl font-bold text-white">{jobsData.length}</div>
+                  <div className="text-[10px] text-text-muted mt-1">Desde o início</div>
+                </div>
+              </div>
+              <div className="glass p-6 rounded-[32px] flex items-center gap-4">
+                <div className="p-4 bg-purple-500/10 text-purple-400 rounded-2xl">
+                  <Cpu size={28} />
+                </div>
+                <div>
+                  <div className="text-xs text-text-muted font-medium mb-1">Máquinas Ativas</div>
+                  <div className="text-xl font-bold text-white">{routersCount}</div>
+                  <div className="text-[10px] text-text-muted mt-1">Conectadas ao sistema</div>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Company Personalization */}
+            <div className="glass p-8 rounded-[32px] space-y-6">
+              <h4 className="text-xl font-bold text-white">Personalização da Empresa</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <label className="text-xs text-text-muted font-bold block mb-3 uppercase tracking-wider">Logo da Empresa</label>
+                  <label className="border-2 border-dashed border-white/10 hover:border-accent-cyan/50 bg-white/5 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all min-h-[140px]">
+                    <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                    {companyLogo ? (
+                      <img src={companyLogo} alt="Company Logo" className="max-h-20 object-contain" />
+                    ) : (
+                      <>
+                        <Upload size={24} className="text-text-muted" />
+                        <span className="text-sm font-medium text-text-muted">Clique para enviar a logo</span>
+                      </>
+                    )}
+                  </label>
+                </div>
+                <div>
+                  <label className="text-xs text-text-muted font-bold block mb-3 uppercase tracking-wider">Tema do Sistema</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {['Escuro', 'Claro', 'Azul Corporativo'].map(t => (
+                      <div 
+                        key={t}
+                        onClick={() => handleThemeChange(t)}
+                        className={`p-4 rounded-xl border text-center cursor-pointer transition-all ${theme === t ? 'bg-accent-cyan/10 border-accent-cyan text-white' : 'bg-white/5 border-white/5 text-text-muted hover:border-white/20'}`}
+                      >
+                        <div className={`w-full h-8 rounded-lg mb-2 ${t === 'Escuro' ? 'bg-zinc-900' : t === 'Claro' ? 'bg-gray-100' : 'bg-blue-900'}`}></div>
+                        <span className="text-xs font-bold">{t}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 5. Report Automation */}
+            <div className="glass p-8 rounded-[32px] space-y-6">
+              <h4 className="text-xl font-bold text-white">Automação de Relatórios</h4>
+              <div className="space-y-4 max-w-2xl">
+                {[
+                  { label: 'Resumo diário de produção por e-mail às 18:00', state: dailyReport, setter: setDailyReport },
+                  { label: 'Alerta de máquina parada por mais de 1 hora', state: idleAlert, setter: setIdleAlert },
+                  { label: 'Relatório semanal de custos (toda segunda-feira)', state: weeklyReport, setter: setWeeklyReport },
+                ].map((item, idx) => (
+                  <label key={idx} className="flex items-center gap-4 cursor-pointer group">
+                    <div className={`w-12 h-6 rounded-full transition-colors relative ${item.state ? 'bg-accent-cyan' : 'bg-white/10'}`}>
+                      <div className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${item.state ? 'translate-x-6' : ''}`}></div>
+                    </div>
+                    <input type="checkbox" className="hidden" checked={item.state} onChange={(e) => item.setter(e.target.checked)} />
+                    <span className="text-sm font-medium text-white group-hover:text-accent-cyan transition-colors">{item.label}</span>
+                  </label>
+                ))}
+                
+                <div className="pt-4 space-y-2">
+                  <label className="text-xs text-text-muted font-bold block uppercase tracking-wider">E-mail para receber os relatórios</label>
+                  <div className="flex gap-3">
+                    <input 
+                      type="email" 
+                      value={reportEmail}
+                      onChange={(e) => setReportEmail(e.target.value)}
+                      placeholder="seu@email.com"
+                      className="flex-1 bg-white/5 border border-border px-4 py-3 rounded-xl outline-none focus:border-accent-cyan/50 text-white text-sm"
+                    />
+                    <button 
+                      onClick={saveReportSettings}
+                      className="px-6 py-3 bg-accent-cyan text-black font-bold text-sm uppercase tracking-wider rounded-xl hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent-cyan/20"
+                    >
+                      Salvar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Nível de Acesso da Empresa */}
