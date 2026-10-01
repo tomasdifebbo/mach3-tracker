@@ -16,7 +16,8 @@ export function parseGCode(text) {
 
   const paramRe = /([GXYZFSTHM])\s*(-?\d+(?:\.\d+)?)/gi;
 
-  for (let rawLine of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i];
     // Strip comments (parentheses)
     const line = rawLine.replace(/\(.*?\)/g, '').trim();
     if (!line || line.startsWith('%')) continue;
@@ -27,7 +28,8 @@ export function parseGCode(text) {
     const params = {};
     const gCodesInLine = [];
 
-    for (const match of matches) {
+    for (let m = 0; m < matches.length; m++) {
+      const match = matches[m];
       const letter = match[1].toUpperCase();
       const val = parseFloat(match[2]);
       if (letter === 'G') {
@@ -37,8 +39,9 @@ export function parseGCode(text) {
       }
     }
 
-    for (const gc of gCodesInLine) {
-      if ([0, 1, 2, 3].includes(gc)) {
+    for (let g = 0; g < gCodesInLine.length; g++) {
+      const gc = gCodesInLine[g];
+      if (gc === 0 || gc === 1 || gc === 2 || gc === 3) {
         currG = gc;
       }
     }
@@ -51,13 +54,13 @@ export function parseGCode(text) {
     let cuttingNow = false;
     if (!hasZ) {
       // Pure 2D G-Code (no Z coordinates)
-      cuttingNow = [1, 2, 3].includes(currG);
+      cuttingNow = (currG === 1 || currG === 2 || currG === 3);
     } else {
       // 3D / Depth-based G-Code
       if (currG === 0 || newZ > 0.5) {
         cuttingNow = false;
       } else {
-        cuttingNow = [1, 2, 3].includes(currG);
+        cuttingNow = (currG === 1 || currG === 2 || currG === 3);
       }
     }
 
@@ -72,7 +75,7 @@ export function parseGCode(text) {
       }
     } else {
       if (isCutting && currentPath.length > 1) {
-        rawPaths.push([...currentPath]);
+        rawPaths.push(currentPath);
       }
       currentPath = [];
       isCutting = false;
@@ -84,7 +87,7 @@ export function parseGCode(text) {
   }
 
   if (isCutting && currentPath.length > 1) {
-    rawPaths.push([...currentPath]);
+    rawPaths.push(currentPath);
   }
 
   return rawPaths;
@@ -93,20 +96,32 @@ export function parseGCode(text) {
 export function deduplicatePaths(rawPaths, bboxTol = 2.0) {
   const unique = [];
 
-  for (const path of rawPaths) {
-    if (path.length < 3) continue;
+  for (let i = 0; i < rawPaths.length; i++) {
+    const path = rawPaths[i];
+    if (!path || path.length < 3) continue;
 
-    const xs = path.map(p => p[0]);
-    const ys = path.map(p => p[1]);
+    let minX = Infinity, maxX = -Infinity;
+    let minY = Infinity, maxY = -Infinity;
+
+    for (let j = 0; j < path.length; j++) {
+      const pt = path[j];
+      const x = pt[0], y = pt[1];
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+
     const bbox = [
-      Math.round(Math.min(...xs)),
-      Math.round(Math.min(...ys)),
-      Math.round(Math.max(...xs)),
-      Math.round(Math.max(...ys))
+      Math.round(minX),
+      Math.round(minY),
+      Math.round(maxX),
+      Math.round(maxY)
     ];
 
     let isDup = false;
-    for (const u of unique) {
+    for (let k = 0; k < unique.length; k++) {
+      const u = unique[k];
       const ub = u.bbox;
       if (
         Math.abs(bbox[0] - ub[0]) < bboxTol &&
@@ -132,123 +147,67 @@ export function deduplicatePaths(rawPaths, bboxTol = 2.0) {
 }
 
 export function generateDxfContent(uniquePaths, rawPaths) {
-  // Compute global bounding box for $EXTMIN / $EXTMAX / $LIMMIN / $LIMMAX
+  // Compute global bounding box for $EXTMIN / $EXTMAX / $LIMMIN / $LIMMAX safely
   let minX = Infinity, minY = Infinity;
   let maxX = -Infinity, maxY = -Infinity;
 
-  const allPaths = uniquePaths.concat(rawPaths);
-  for (const path of allPaths) {
-    for (const [x, y] of path) {
-      if (x < minX) minX = x;
-      if (x > maxX) maxX = x;
-      if (y < minY) minY = y;
-      if (y > maxY) maxY = y;
+  const updateBounds = (paths) => {
+    for (let i = 0; i < paths.length; i++) {
+      const path = paths[i];
+      for (let j = 0; j < path.length; j++) {
+        const pt = path[j];
+        if (pt[0] < minX) minX = pt[0];
+        if (pt[0] > maxX) maxX = pt[0];
+        if (pt[1] < minY) minY = pt[1];
+        if (pt[1] > maxY) maxY = pt[1];
+      }
     }
-  }
+  };
+
+  updateBounds(uniquePaths);
+  updateBounds(rawPaths);
 
   if (!isFinite(minX) || !isFinite(maxX)) {
     minX = 0; maxX = 100;
     minY = 0; maxY = 100;
   }
 
-  const lines = [
-    '  0', 'SECTION',
-    '  2', 'HEADER',
-    '  9', '$ACADVER',
-    '  1', 'AC1009',
-    '  9', '$MEASUREMENT',
-    ' 70', '1', // 1 = Metric
-    '  9', '$LUNITS',
-    ' 70', '2', // 2 = Decimal
-    '  9', '$LUPREC',
-    ' 70', '4', // 4 decimal places
-    '  9', '$INSUNITS',
-    ' 70', '4', // 4 = Millimeters
-    '  9', '$EXTMIN',
-    ' 10', minX.toFixed(4),
-    ' 20', minY.toFixed(4),
-    ' 30', '0.0',
-    '  9', '$EXTMAX',
-    ' 10', maxX.toFixed(4),
-    ' 20', maxY.toFixed(4),
-    ' 30', '0.0',
-    '  9', '$LIMMIN',
-    ' 10', minX.toFixed(4),
-    ' 20', minY.toFixed(4),
-    '  9', '$LIMMAX',
-    ' 10', maxX.toFixed(4),
-    ' 20', maxY.toFixed(4),
-    '  0', 'ENDSEC',
-    '  0', 'SECTION',
-    '  2', 'TABLES',
-    '  0', 'TABLE',
-    '  2', 'LAYER',
-    ' 70', '2',
-    '  0', 'LAYER',
-    '  2', 'PECAS_2D',
-    ' 70', '0',
-    ' 62', '3', // Color 3 = Green
-    '  6', 'CONTINUOUS',
-    '  0', 'LAYER',
-    '  2', 'PASSADAS_COMPLETAS',
-    ' 70', '0',
-    ' 62', '1', // Color 1 = Red
-    '  6', 'CONTINUOUS',
-    '  0', 'ENDTAB',
-    '  0', 'ENDSEC',
-    '  0', 'SECTION',
-    '  2', 'BLOCKS',
-    '  0', 'ENDSEC',
-    '  0', 'SECTION',
-    '  2', 'ENTITIES'
+  const chunks = [
+`  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1009\n  9\n$MEASUREMENT\n 70\n1\n  9\n$LUNITS\n 70\n2\n  9\n$LUPREC\n 70\n4\n  9\n$INSUNITS\n 70\n4\n  9\n$EXTMIN\n 10\n${minX.toFixed(4)}\n 20\n${minY.toFixed(4)}\n 30\n0.0\n  9\n$EXTMAX\n 10\n${maxX.toFixed(4)}\n 20\n${maxY.toFixed(4)}\n 30\n0.0\n  9\n$LIMMIN\n 10\n${minX.toFixed(4)}\n 20\n${minY.toFixed(4)}\n  9\n$LIMMAX\n 10\n${maxX.toFixed(4)}\n 20\n${maxY.toFixed(4)}\n  0\nENDSEC`,
+`  0\nSECTION\n  2\nTABLES\n  0\nTABLE\n  2\nLAYER\n 70\n2\n  0\nLAYER\n  2\nPECAS_2D\n 70\n0\n 62\n3\n  6\nCONTINUOUS\n  0\nLAYER\n  2\nPASSADAS_COMPLETAS\n 70\n0\n 62\n1\n  6\nCONTINUOUS\n  0\nENDTAB\n  0\nENDSEC`,
+`  0\nSECTION\n  2\nBLOCKS\n  0\nENDSEC`,
+`  0\nSECTION\n  2\nENTITIES`
   ];
 
   function addPolyline(path, layerName) {
-    if (path.length < 2) return;
+    if (!path || path.length < 2) return;
     const startP = path[0];
     const endP = path[path.length - 1];
     const dist = Math.hypot(startP[0] - endP[0], startP[1] - endP[1]);
     const isClosed = dist < 2.0 ? 1 : 0;
 
-    lines.push(
-      '  0', 'POLYLINE',
-      '  8', layerName,
-      ' 66', '1',
-      ' 10', '0.0',
-      ' 20', '0.0',
-      ' 30', '0.0',
-      ' 70', isClosed.toString()
-    );
+    chunks.push(`  0\nPOLYLINE\n  8\n${layerName}\n 66\n1\n 10\n0.0\n 20\n0.0\n 30\n0.0\n 70\n${isClosed}`);
 
-    for (const [x, y] of path) {
-      lines.push(
-        '  0', 'VERTEX',
-        '  8', layerName,
-        ' 10', x.toFixed(4),
-        ' 20', y.toFixed(4),
-        ' 30', '0.0',
-        ' 70', '0'
-      );
+    for (let i = 0; i < path.length; i++) {
+      const pt = path[i];
+      chunks.push(`  0\nVERTEX\n  8\n${layerName}\n 10\n${pt[0].toFixed(4)}\n 20\n${pt[1].toFixed(4)}\n 30\n0.0\n 70\n0`);
     }
 
-    lines.push(
-      '  0', 'SEQEND',
-      '  8', layerName
-    );
+    chunks.push(`  0\nSEQEND\n  8\n${layerName}`);
   }
 
   // Unique extracted 2D pieces (Green)
-  for (const path of uniquePaths) {
-    addPolyline(path, 'PECAS_2D');
+  for (let i = 0; i < uniquePaths.length; i++) {
+    addPolyline(uniquePaths[i], 'PECAS_2D');
   }
 
   // Full raw toolpaths (Red)
-  for (const path of rawPaths) {
-    addPolyline(path, 'PASSADAS_COMPLETAS');
+  for (let i = 0; i < rawPaths.length; i++) {
+    addPolyline(rawPaths[i], 'PASSADAS_COMPLETAS');
   }
 
-  lines.push('  0', 'ENDSEC', '  0', 'EOF');
-  return lines.join('\n');
+  chunks.push('  0\nENDSEC\n  0\nEOF\n');
+  return chunks.join('\n');
 }
 
 export function processGCodeToDxf(gcodeText, fileName = 'desenho.txt') {
@@ -264,31 +223,41 @@ export function processGCodeToDxf(gcodeText, fileName = 'desenho.txt') {
 
   const dxfContent = generateDxfContent(pathsToExport, rawPaths);
 
-  // Compute bounding box and stats
+  // Compute bounding box and stats safely without stack overflow
   let globalMinX = Infinity, globalMaxX = -Infinity;
   let globalMinY = Infinity, globalMaxY = -Infinity;
 
   const pieceDetails = pathsToExport.map((p, idx) => {
-    const xs = p.map(pt => pt[0]);
-    const ys = p.map(pt => pt[1]);
-    const minX = Math.min(...xs), maxX = Math.max(...xs);
-    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    let minX = Infinity, maxX = -Infinity;
+    let minY = Infinity, maxY = -Infinity;
+
+    for (let i = 0; i < p.length; i++) {
+      const pt = p[i];
+      const x = pt[0], y = pt[1];
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+
     const width = Math.round(maxX - minX);
     const height = Math.round(maxY - minY);
 
-    globalMinX = Math.min(globalMinX, minX);
-    globalMaxX = Math.max(globalMaxX, maxX);
-    globalMinY = Math.min(globalMinY, minY);
-    globalMaxY = Math.max(globalMaxY, maxY);
+    if (minX < globalMinX) globalMinX = minX;
+    if (maxX > globalMaxX) globalMaxX = maxX;
+    if (minY < globalMinY) globalMinY = minY;
+    if (maxY > globalMaxY) globalMaxY = maxY;
 
-    const dist = Math.hypot(p[0][0] - p[p.length - 1][0], p[0][1] - p[p.length - 1][1]);
+    const startPt = p[0];
+    const endPt = p[p.length - 1];
+    const dist = Math.hypot(startPt[0] - endPt[0], startPt[1] - endPt[1]);
     const isClosed = dist < 2.0;
 
     return {
       index: idx + 1,
       points: p.length,
-      width,
-      height,
+      width: isFinite(width) ? width : 0,
+      height: isFinite(height) ? height : 0,
       isClosed
     };
   });
