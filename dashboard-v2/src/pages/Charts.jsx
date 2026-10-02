@@ -96,11 +96,19 @@ export function Charts({ jobs = [] }) {
       return jDate.getMonth() === month && jDate.getFullYear() === year;
     });
     
-    const totalMinutes = monthJobs.reduce((acc, j) => acc + (j.duration_minutes || 0), 0);
+    const totalMinutes = monthJobs.reduce((acc, j) => acc + (parseFloat(j.duration_minutes) || 0), 0);
     const totalHours = totalMinutes / 60;
-    // Assuming ~8h/day, ~22 days/month = 176h max -> percentage
-    const efficiency = Math.min(100, Math.round((totalHours / 176) * 100));
-    monthlyData.push({ effective: efficiency, idle: 100 - efficiency });
+    // Base de capacidade mensal por máquina ativa (~176h/mês por máquina: 22 dias úteis x 8h)
+    const activeMachines = Math.max(1, new Set(monthJobs.map(j => j.router_name).filter(Boolean)).size);
+    const capacityHours = activeMachines * 176;
+    const efficiency = Math.min(100, Math.round((totalHours / capacityHours) * 100));
+    monthlyData.push({ 
+      effective: efficiency, 
+      idle: Math.max(0, 100 - efficiency),
+      totalHours: Number(totalHours.toFixed(1)),
+      totalJobs: monthJobs.length,
+      capacityHours
+    });
   }
 
   // ─── Machine/Origin Distribution (Doughnut) ───
@@ -222,6 +230,20 @@ export function Charts({ jobs = [] }) {
                     ...chartOptions.scales,
                     x: { ...chartOptions.scales.x, stacked: true },
                     y: { ...chartOptions.scales.y, stacked: true, max: 100, ticks: { ...chartOptions.scales.y.ticks, callback: v => v + '%' } }
+                  },
+                  plugins: {
+                    tooltip: {
+                      callbacks: {
+                        label: (ctx) => {
+                          const idx = ctx.dataIndex;
+                          const d = monthlyData[idx];
+                          if (ctx.datasetIndex === 0) {
+                            return `Efetivo: ${d.effective}% (${d.totalHours}h em ${d.totalJobs} jobs)`;
+                          }
+                          return `Ocioso: ${d.idle}%`;
+                        }
+                      }
+                    }
                   }
                 }}
               />

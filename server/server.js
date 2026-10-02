@@ -90,7 +90,8 @@ async function closeStaleJobs(userId) {
 // Maintenance: Keep only X days of history
 async function runMaintenance() {
     try {
-        const RETENTION_DAYS = 60; 
+        // Retenção: desativado (0) para manter o histórico de produção e relatórios de 6 meses e anuais intactos
+        const RETENTION_DAYS = 0; 
         if (RETENTION_DAYS > 0) {
             const cutoffDate = new Date();
             cutoffDate.setDate(cutoffDate.getDate() - RETENTION_DAYS);
