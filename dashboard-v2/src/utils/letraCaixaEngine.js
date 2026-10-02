@@ -94,16 +94,22 @@ export function buildClientSideChannelLetter(svgText, params) {
 
   const largura = parseFloat(params.largura) || 100;
   const altura = parseFloat(params.altura) || 100;
-  const profundidade = parseFloat(params.profundidade) || 10;
-  
+  const profundidade = parseFloat(params.profundidade) || 35;
   const parede = parseFloat(params.parede) || 2;
-  // O dente não pode ser maior que a metade da espessura da letra. Como não sabemos a espessura exata,
-  // usamos um valor proporcional à parede, ou 1.5mm fixo.
-  const denteWidth = 1.5; 
-  const recuoFrente = parseFloat(params.recuoDente) || 0; // recuoDente na vdd eh recuoFrente
-  const espAcr = parseFloat(params.espAcr) || 2;
-  const recuoFundo = parseFloat(params.recuoFundo) || 0;
-  const espFundo = parseFloat(params.espFundo) || 2;
+  
+  // Largura horizontal do dente/aba de apoio interno (onde apoiam o acrílico frontal e o PVC traseiro)
+  const denteWidth = Math.max(0.5, parseFloat(params.larguraDente ?? params.denteWidth ?? params.recuoDente) || 3.0);
+  
+  // Recuo frontal da face (0 = acrílico rente com a borda frontal)
+  const recuoFrente = Math.max(0, parseFloat(params.recuoFrente ?? 0));
+  const espAcr = Math.max(0.5, parseFloat(params.espAcr) || 3.0);
+  
+  // Recuo traseiro do fundo (0 = PVC rente com a base inferior)
+  const recuoFundo = Math.max(0, parseFloat(params.recuoFundo ?? 0));
+  const espFundo = Math.max(1.0, parseFloat(params.espFundo) || 10.0);
+
+  // Folga de corte para as peças 2D (Laser/CNC)
+  const folgaCorte = Math.max(0, parseFloat(params.folgaCorte ?? 0.3));
 
   const origW = maxX - minX || 100;
   const origH = maxY - minY || 100;
@@ -292,21 +298,35 @@ export function buildClientSideChannelLetter(svgText, params) {
   }
 
   // Z heights (no espaço local de extrusão: Z=0 é o fundo/base, Z=profundidade é a frente/topo)
-  const zFundoBottom = 0;
-  const zFundoTop = Math.min(profundidade * 0.45, recuoFundo + espFundo);
-  const zFaceBottom = Math.max(zFundoTop + 1.0, profundidade - recuoFrente - espAcr);
+  // Profundidade exata dos canais de encaixe configurados
+  const canalDepth = espAcr + recuoFrente;
+  const fundoDepth = espFundo + recuoFundo;
+  const minDenteHeight = 1.5; // Altura mínima garantida para resistência mecânica da aba
+
+  let zFundoTop = fundoDepth;
+  let zFaceBottom = profundidade - canalDepth;
+
+  // Se a soma dos encaixes exceder a profundidade total, ajusta proporcionalmente sem colidir
+  if (zFaceBottom - zFundoTop < minDenteHeight) {
+    const available = Math.max(0.5, profundidade - minDenteHeight);
+    const sum = fundoDepth + canalDepth || 1;
+    zFundoTop = (available * fundoDepth) / sum;
+    zFaceBottom = zFundoTop + minDenteHeight;
+  }
   const zFaceTop = profundidade;
 
   // Gerar as formas 2D das seções
-  // Para corte 2D (Laser Acrílico e Router PVC) - em coordenadas nativas de vetor SVG
-  const shapesFace = generateOffsetShapes(allShapes, parede);
-  const shapesFundo = generateOffsetShapes(allShapes, parede);
+  // Para corte 2D (Laser Acrílico e Router PVC) - aplicando folga de corte real para encaixe perfeito
+  const shapesFace = generateOffsetShapes(allShapes, parede + folgaCorte);
+  const shapesFundo = generateOffsetShapes(allShapes, parede + folgaCorte);
 
   // Formas para extrusão 3D (com Y invertido para manter o texto legível e a face voltada para cima)
+  const shapesFaceNominal = generateOffsetShapes(allShapes, parede);
+  const shapesFundoNominal = generateOffsetShapes(allShapes, parede);
   const shapes3DParedeFina = generateHollowWall(allShapes, parede).map(invertThreeShape);
   const shapes3DParedeGrossa = generateHollowWall(allShapes, parede + denteWidth).map(invertThreeShape);
-  const shapes3DFace = shapesFace.map(invertThreeShape);
-  const shapes3DFundo = shapesFundo.map(invertThreeShape);
+  const shapes3DFace = shapesFaceNominal.map(invertThreeShape);
+  const shapes3DFundo = shapesFundoNominal.map(invertThreeShape);
   
   // 1. CORPO (Canaleta com Dente de apoio contínuo, sem sobreposição de malhas)
   const meshCorpo = new THREE.Group();
@@ -441,7 +461,7 @@ export function exportModelToStlBlob(threeObject) {
 /**
  * Gera arquivo vetorial SVG 1:1 com compensação de offset em mm
  */
-export function generateCuttingSvg(shapes, scale, toleranceMm = 0.5, name = "Face Acrílico") {
+export function generateCuttingSvg(shapes, scale, toleranceMm = 0.3, name = "Face Acrílico") {
   let pathsD = [];
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 

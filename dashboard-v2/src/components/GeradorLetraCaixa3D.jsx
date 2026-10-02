@@ -35,10 +35,12 @@ export function GeradorLetraCaixa3D() {
   const [altura, setAltura] = useState(200);
   const [profundidade, setProfundidade] = useState(35);
   const [parede, setParede] = useState(2.0);
-  const [recuoFrente, setRecuoFrente] = useState(3.0);
+  const [larguraDente, setLarguraDente] = useState(3.0);
+  const [recuoFrente, setRecuoFrente] = useState(0.0);
   const [espAcr, setEspAcr] = useState(3.0);
-  const [recuoFundo, setRecuoFundo] = useState(3.0);
+  const [recuoFundo, setRecuoFundo] = useState(0.0);
   const [espFundo, setEspFundo] = useState(10.0);
+  const [folgaCorte, setFolgaCorte] = useState(0.3);
 
   // Arquivo SVG
   const [svgFile, setSvgFile] = useState(null);
@@ -159,10 +161,11 @@ export function GeradorLetraCaixa3D() {
   }, []);
 
   // Presets Rápidos
-  const applyPreset = (pProf, pParede, pRecuo) => {
+  const applyPreset = (pProf, pParede, pDente, pRecuoFrente = 0.0) => {
     setProfundidade(pProf);
     setParede(pParede);
-    setRecuoFrente(pRecuo);
+    setLarguraDente(pDente);
+    setRecuoFrente(pRecuoFrente);
   };
 
   // Upload do SVG
@@ -218,10 +221,14 @@ export function GeradorLetraCaixa3D() {
       altura: parseFloat(altura),
       profundidade: parseFloat(profundidade),
       parede: parseFloat(parede),
-      recuoDente: parseFloat(recuoFrente),
+      larguraDente: parseFloat(larguraDente),
+      denteWidth: parseFloat(larguraDente),
+      recuoDente: parseFloat(larguraDente),
+      recuoFrente: parseFloat(recuoFrente),
       espAcr: parseFloat(espAcr),
       recuoFundo: parseFloat(recuoFundo),
-      espFundo: parseFloat(espFundo)
+      espFundo: parseFloat(espFundo),
+      folgaCorte: parseFloat(folgaCorte)
     };
 
     try {
@@ -300,9 +307,9 @@ export function GeradorLetraCaixa3D() {
       }
       res.group.updateMatrixWorld(true);
 
-      const faceSvgBlob = generateCuttingSvg(res.shapesFace, res.scale, 0.5, "Face Acrílico");
+      const faceSvgBlob = generateCuttingSvg(res.shapesFace, res.scale, parseFloat(folgaCorte) || 0.3, "Face Acrílico");
       const faceDxfBlob = generateCuttingDxf(res.shapesFace, res.scale, "CORTE_EXTERNO");
-      const fundoSvgBlob = generateCuttingSvg(res.shapesFundo, res.scale, 0.5, "Fundo PVC");
+      const fundoSvgBlob = generateCuttingSvg(res.shapesFundo, res.scale, parseFloat(folgaCorte) || 0.3, "Fundo PVC");
       const fundoDxfBlob = generateCuttingDxf(res.shapesFundo, res.scale, "CORTE_INTERNO");
 
       const newStlUrl = URL.createObjectURL(new Blob([stlBlob], { type: 'model/stl' }));
@@ -447,31 +454,31 @@ export function GeradorLetraCaixa3D() {
             <div className="grid grid-cols-2 gap-2">
               <button 
                 type="button"
-                onClick={() => applyPreset(35, 2.0, 3.0)}
+                onClick={() => applyPreset(35, 2.0, 3.0, 0.0)}
                 className="px-3 py-2 bg-white/5 hover:bg-orange-500/15 border border-white/10 hover:border-orange-500/30 rounded-xl text-xs font-bold text-white transition-all text-left"
               >
-                ✨ Padrão (35mm / 2mm)
+                ✨ Padrão (35mm / Dente 3mm)
               </button>
               <button 
                 type="button"
-                onClick={() => applyPreset(20, 2.0, 3.0)}
+                onClick={() => applyPreset(20, 2.0, 2.0, 0.0)}
                 className="px-3 py-2 bg-white/5 hover:bg-orange-500/15 border border-white/10 hover:border-orange-500/30 rounded-xl text-xs font-bold text-white transition-all text-left"
               >
-                📏 SLIM (20mm / 2mm)
+                📏 SLIM (20mm / Dente 2mm)
               </button>
               <button 
                 type="button"
-                onClick={() => applyPreset(35, 3.0, 5.0)}
+                onClick={() => applyPreset(35, 3.0, 5.0, 0.0)}
                 className="px-3 py-2 bg-white/5 hover:bg-orange-500/15 border border-white/10 hover:border-orange-500/30 rounded-xl text-xs font-bold text-white transition-all text-left"
               >
-                🧱 Reforçada (Parede 3mm)
+                🧱 Reforçada (Dente 5mm)
               </button>
               <button 
                 type="button"
-                onClick={() => applyPreset(50, 2.0, 3.0)}
+                onClick={() => applyPreset(50, 2.5, 4.0, 0.0)}
                 className="px-3 py-2 bg-white/5 hover:bg-orange-500/15 border border-white/10 hover:border-orange-500/30 rounded-xl text-xs font-bold text-white transition-all text-left"
               >
-                💡 Extra Profunda (50mm)
+                💡 Extra Profunda (50mm / Dente 4mm)
               </button>
             </div>
           </div>
@@ -533,54 +540,80 @@ export function GeradorLetraCaixa3D() {
                 />
               </div>
 
-              {/* Recuo Frente (Acrílico) */}
+              {/* Largura Dente (Aba de Apoio) */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-accent-cyan">Recuo Frente [mm]:</label>
+                <label className="text-xs font-semibold text-orange-400">Largura Dente/Aba [mm]:</label>
                 <input 
                   type="number" 
                   step="0.5"
-                  value={recuoFrente} 
-                  onChange={(e) => setRecuoFrente(e.target.value)}
-                  min="1.0"
-                  className="w-full bg-black/40 border border-accent-cyan/30 rounded-xl px-3 py-2 font-mono text-sm text-white focus:outline-none focus:border-accent-cyan"
+                  value={larguraDente} 
+                  onChange={(e) => setLarguraDente(e.target.value)}
+                  min="0.5"
+                  className="w-full bg-black/40 border border-orange-500/30 rounded-xl px-3 py-2 font-mono text-sm text-white focus:outline-none focus:border-orange-400"
+                />
+              </div>
+
+              {/* Folga de Encaixe 2D */}
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-orange-400">Folga Corte 2D [mm]:</label>
+                <input 
+                  type="number" 
+                  step="0.1"
+                  value={folgaCorte} 
+                  onChange={(e) => setFolgaCorte(e.target.value)}
+                  min="0.0"
+                  className="w-full bg-black/40 border border-orange-500/30 rounded-xl px-3 py-2 font-mono text-sm text-white focus:outline-none focus:border-orange-400"
                 />
               </div>
 
               {/* Espessura Face (Acrílico) */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-accent-cyan">Esp. Face [mm]:</label>
+                <label className="text-xs font-semibold text-accent-cyan">Esp. Face Acrílico [mm]:</label>
                 <input 
                   type="number" 
                   step="0.5"
                   value={espAcr} 
                   onChange={(e) => setEspAcr(e.target.value)}
-                  min="1.0"
+                  min="0.5"
                   className="w-full bg-black/40 border border-accent-cyan/30 rounded-xl px-3 py-2 font-mono text-sm text-white focus:outline-none focus:border-accent-cyan"
                 />
               </div>
 
-              {/* Recuo Fundo (PVC) */}
+              {/* Recuo Frente (Acrílico) */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-emerald-400">Recuo Fundo [mm]:</label>
+                <label className="text-xs font-semibold text-accent-cyan" title="0 = face rente com a borda">Recuo Face (0=rente) [mm]:</label>
                 <input 
                   type="number" 
                   step="0.5"
-                  value={recuoFundo} 
-                  onChange={(e) => setRecuoFundo(e.target.value)}
-                  min="1.0"
-                  className="w-full bg-black/40 border border-emerald-500/30 rounded-xl px-3 py-2 font-mono text-sm text-white focus:outline-none focus:border-emerald-400"
+                  value={recuoFrente} 
+                  onChange={(e) => setRecuoFrente(e.target.value)}
+                  min="0.0"
+                  className="w-full bg-black/40 border border-accent-cyan/30 rounded-xl px-3 py-2 font-mono text-sm text-white focus:outline-none focus:border-accent-cyan"
                 />
               </div>
 
               {/* Espessura Fundo (PVC) */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-emerald-400">Esp. Fundo [mm]:</label>
+                <label className="text-xs font-semibold text-emerald-400">Esp. Fundo PVC [mm]:</label>
                 <input 
                   type="number" 
                   step="1.0"
                   value={espFundo} 
                   onChange={(e) => setEspFundo(e.target.value)}
                   min="1.0"
+                  className="w-full bg-black/40 border border-emerald-500/30 rounded-xl px-3 py-2 font-mono text-sm text-white focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+
+              {/* Recuo Fundo (PVC) */}
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-emerald-400" title="0 = PVC rente com a base">Recuo Fundo (0=rente) [mm]:</label>
+                <input 
+                  type="number" 
+                  step="0.5"
+                  value={recuoFundo} 
+                  onChange={(e) => setRecuoFundo(e.target.value)}
+                  min="0.0"
                   className="w-full bg-black/40 border border-emerald-500/30 rounded-xl px-3 py-2 font-mono text-sm text-white focus:outline-none focus:border-emerald-400"
                 />
               </div>
