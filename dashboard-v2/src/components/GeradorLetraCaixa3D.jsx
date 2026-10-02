@@ -322,11 +322,11 @@ export function GeradorLetraCaixa3D() {
 
         return {
           ...prev,
-          stlUrl: (prev.stlUrl && !prev.stlUrl.startsWith('blob:')) ? prev.stlUrl : newStlUrl,
-          faceSvgUrl: (prev.faceSvgUrl && !prev.faceSvgUrl.startsWith('blob:')) ? prev.faceSvgUrl : newFaceSvgUrl,
-          faceDxfUrl: (prev.faceDxfUrl && !prev.faceDxfUrl.startsWith('blob:')) ? prev.faceDxfUrl : newFaceDxfUrl,
-          fundoSvgUrl: (prev.fundoSvgUrl && !prev.fundoSvgUrl.startsWith('blob:')) ? prev.fundoSvgUrl : newFundoSvgUrl,
-          fundoDxfUrl: (prev.fundoDxfUrl && !prev.fundoDxfUrl.startsWith('blob:')) ? prev.fundoDxfUrl : newFundoDxfUrl
+          stlUrl: newStlUrl,
+          faceSvgUrl: newFaceSvgUrl,
+          faceDxfUrl: newFaceDxfUrl,
+          fundoSvgUrl: newFundoSvgUrl,
+          fundoDxfUrl: newFundoDxfUrl
         };
       });
 

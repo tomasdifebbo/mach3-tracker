@@ -142,8 +142,16 @@ export function buildClientSideChannelLetter(svgText, params) {
       // Passo 2: Gerar o recuo interno (buraco / ar) a partir do shape unificado
       const co = new ClipperLib.ClipperOffset();
       co.AddPaths(unifiedPaths, ClipperLib.JoinType.jtMiter, ClipperLib.EndType.etClosedPolygon);
-      const solutionPaths = new ClipperLib.Paths();
+      let solutionPaths = new ClipperLib.Paths();
       co.Execute(solutionPaths, Math.round(-offsetInClipper * scaleFactor));
+
+      if (solutionPaths.length === 0) {
+          // Fallback se o vetor original já for um contorno fino ou o recuo exceder o tamanho
+          co.Execute(solutionPaths, Math.round(-Math.min(offsetInClipper * 0.5, 0.5) * scaleFactor));
+          if (solutionPaths.length === 0) {
+              return shapesArray;
+          }
+      }
 
       // Build hierarchy
       const c = new ClipperLib.Clipper();
@@ -258,24 +266,54 @@ export function buildClientSideChannelLetter(svgText, params) {
       return outShapes;
   }
 
-  // Z heights
+  // Função para espelhar shape no eixo Y preservando o sentido anti-horário (winding CCW) para normais 3D para fora
+  function invertThreeShape(shape) {
+      const pts = shape.getPoints().slice().reverse();
+      const newShape = new THREE.Shape();
+      pts.forEach((p, i) => {
+          if (i === 0) newShape.moveTo(p.x, -p.y);
+          else newShape.lineTo(p.x, -p.y);
+      });
+      newShape.closePath();
+
+      if (shape.holes && shape.holes.length > 0) {
+          shape.holes.forEach(hole => {
+              const hPts = hole.getPoints().slice().reverse();
+              const newHole = new THREE.Path();
+              hPts.forEach((p, i) => {
+                  if (i === 0) newHole.moveTo(p.x, -p.y);
+                  else newHole.lineTo(p.x, -p.y);
+              });
+              newHole.closePath();
+              newShape.holes.push(newHole);
+          });
+      }
+      return newShape;
+  }
+
+  // Z heights (no espaço local de extrusão: Z=0 é o fundo/base, Z=profundidade é a frente/topo)
   const zFundoBottom = 0;
-  const zFundoTop = recuoFundo + espFundo;
-  const zFaceBottom = profundidade - recuoFrente - espAcr;
+  const zFundoTop = Math.min(profundidade * 0.45, recuoFundo + espFundo);
+  const zFaceBottom = Math.max(zFundoTop + 1.0, profundidade - recuoFrente - espAcr);
   const zFaceTop = profundidade;
 
-  const hasMiddle = zFaceBottom > zFundoTop;
+  // Gerar as formas 2D das seções
+  // Para corte 2D (Laser Acrílico e Router PVC) - em coordenadas nativas de vetor SVG
+  const shapesFace = generateOffsetShapes(allShapes, parede);
+  const shapesFundo = generateOffsetShapes(allShapes, parede);
 
-  // Gerar as formas 2D das secoes
-  const shapesParedeFina = generateHollowWall(allShapes, parede);
-  const shapesParedeGrossa = generateHollowWall(allShapes, parede + denteWidth);
+  // Formas para extrusão 3D (com Y invertido para manter o texto legível e a face voltada para cima)
+  const shapes3DParedeFina = generateHollowWall(allShapes, parede).map(invertThreeShape);
+  const shapes3DParedeGrossa = generateHollowWall(allShapes, parede + denteWidth).map(invertThreeShape);
+  const shapes3DFace = shapesFace.map(invertThreeShape);
+  const shapes3DFundo = shapesFundo.map(invertThreeShape);
   
-  // 1. CORPO (Canaleta com Dente de apoio tipo 'H')
+  // 1. CORPO (Canaleta com Dente de apoio contínuo, sem sobreposição de malhas)
   const meshCorpo = new THREE.Group();
   
-  // Base (apoio do PVC)
+  // Base (rebaixo de encaixe do PVC) - Z = 0 até zFundoTop
   if (zFundoTop > 0) {
-      shapesParedeFina.forEach(s => {
+      shapes3DParedeFina.forEach(s => {
          const g = new THREE.ExtrudeGeometry(s, { depth: zFundoTop, bevelEnabled: false, steps: 1 });
          const m = new THREE.Mesh(g, matCorpo);
          m.position.z = 0;
@@ -283,19 +321,19 @@ export function buildClientSideChannelLetter(svgText, params) {
       });
   }
   
-  // Dente Central (onde apoiam face e fundo)
-  if (zFaceBottom > 0) {
-      shapesParedeGrossa.forEach(s => {
-         const g = new THREE.ExtrudeGeometry(s, { depth: zFaceBottom, bevelEnabled: false, steps: 1 });
+  // Dente Central (degrau onde apoiam face e fundo) - Z = zFundoTop até zFaceBottom
+  if (zFaceBottom > zFundoTop) {
+      shapes3DParedeGrossa.forEach(s => {
+         const g = new THREE.ExtrudeGeometry(s, { depth: zFaceBottom - zFundoTop, bevelEnabled: false, steps: 1 });
          const m = new THREE.Mesh(g, matCorpo);
-         m.position.z = 0;
+         m.position.z = zFundoTop;
          meshCorpo.add(m);
       });
   }
   
-  // Topo (apoio do Acrilico)
+  // Topo (Canal / rebaixo frontal onde o Acrílico apoia no dente) - Z = zFaceBottom até zFaceTop
   if (zFaceTop > zFaceBottom) {
-      shapesParedeFina.forEach(s => {
+      shapes3DParedeFina.forEach(s => {
          const g = new THREE.ExtrudeGeometry(s, { depth: zFaceTop - zFaceBottom, bevelEnabled: false, steps: 1 });
          const m = new THREE.Mesh(g, matCorpo);
          m.position.z = zFaceBottom;
@@ -303,10 +341,9 @@ export function buildClientSideChannelLetter(svgText, params) {
       });
   }
 
-  // 2. FACE ACRILICO (Recuo interno da parede para encaixar - MONTADO)
-  const shapesFace = generateOffsetShapes(allShapes, parede);
+  // 2. FACE ACRILICO (Recuo interno da parede para encaixar no canal frontal - MONTADO)
   const meshFace = new THREE.Group();
-  shapesFace.forEach(s => {
+  shapes3DFace.forEach(s => {
       const g = new THREE.ExtrudeGeometry(s, { depth: espAcr, bevelEnabled: false, steps: 1 });
       const m = new THREE.Mesh(g, matFaceAcrilico);
       // Encaixa perfeitamente no dente (altura = zFaceBottom)
@@ -314,10 +351,9 @@ export function buildClientSideChannelLetter(svgText, params) {
       meshFace.add(m);
   });
 
-  // 3. FUNDO PVC (MONTADO)
-  const shapesFundo = generateOffsetShapes(allShapes, parede);
+  // 3. FUNDO PVC (MONTADO NO REBAIXO TRASEIRO)
   const meshFundo = new THREE.Group();
-  shapesFundo.forEach(s => {
+  shapes3DFundo.forEach(s => {
       const g = new THREE.ExtrudeGeometry(s, { depth: espFundo, bevelEnabled: false, steps: 1 });
       const m = new THREE.Mesh(g, matFundoPVC);
       // Encaixa perfeitamente no fundo
@@ -329,11 +365,17 @@ export function buildClientSideChannelLetter(svgText, params) {
   group.add(meshFace);
   group.add(meshFundo);
 
-  // Escala para os milimetros nominais
+  // Escala para os milímetros nominais (escala positiva)
   group.scale.set(scale, scale, 1.0);
 
-  // Deixa em pe no plano XZ (Y = altura, Z = profundidade)
-  group.rotation.x = Math.PI / 2;
+  // Rotaciona em X (-90 graus):
+  // O eixo Z (profundidade de 0 a 35mm) passa a apontar verticalmente para CIMA (+Y).
+  // Assim:
+  // - A base/fundo (Z=0) assenta perfeitamente sobre a mesa (Y=0).
+  // - A face/frente com o CANAL DE ACRÍLICO (Z=profundidade) fica no TOPO (+Y), voltada para cima!
+  // - O texto é lido da esquerda para a direita normalmente (não espelhado).
+  // - O canal e o dente de apoio ficam proeminentes e visíveis na frente da letra!
+  group.rotation.x = -Math.PI / 2;
 
   const box = new THREE.Box3().setFromObject(group);
   const center = box.getCenter(new THREE.Vector3());
