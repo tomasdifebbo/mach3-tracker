@@ -1064,15 +1064,26 @@ async function executeReportCycle(userId, options = {}) {
     }
 
     // 2. Query Operator Time Logs (External services, other sectors, etc.)
-    const intervalStr = isWeekly ? "INTERVAL '7 days'" : "INTERVAL '24 hours'";
-    const logsRes = await pool.query(
-        `SELECT * FROM operator_time_logs 
-         WHERE ("userId" = $1) 
-           AND (start_time >= NOW() - ${intervalStr} OR end_time >= NOW() - ${intervalStr})
-         ORDER BY start_time ASC`,
-        [userId]
-    );
-    const logsList = logsRes.rows;
+    let logsList = [];
+    if (isWeekly) {
+        const logsRes = await pool.query(
+            `SELECT * FROM operator_time_logs 
+             WHERE ("userId" = $1) 
+               AND ((start_time AT TIME ZONE 'America/Sao_Paulo') >= (NOW() AT TIME ZONE 'America/Sao_Paulo' - INTERVAL '7 days'))
+             ORDER BY start_time ASC`,
+            [userId]
+        );
+        logsList = logsRes.rows;
+    } else {
+        const logsRes = await pool.query(
+            `SELECT * FROM operator_time_logs 
+             WHERE ("userId" = $1) 
+               AND ((start_time AT TIME ZONE 'America/Sao_Paulo')::date = MAKE_DATE($2, $3, $4))
+             ORDER BY start_time ASC`,
+            [userId, todayYear, todayMonth, todayDay]
+        );
+        logsList = logsRes.rows;
+    }
 
     // Categorize logs into external, other sector, and maintenance
     const externalServices = [];
