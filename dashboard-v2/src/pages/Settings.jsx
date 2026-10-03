@@ -14,7 +14,9 @@ import {
   FileText,
   Cpu,
   Upload,
-  CreditCard
+  CreditCard,
+  Calendar,
+  Eye
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -238,8 +240,8 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
     }
   };
 
-  const handleTriggerCycle = async () => {
-    setCycleLoading(true);
+  const handleTriggerCycle = async (period = 'day') => {
+    setCycleLoading(period);
     setCycleResult(null);
     setReportFeedback(null);
     try {
@@ -256,22 +258,24 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
         report_email: reportEmail,
         daily_report: dailyReport,
         idle_alert: idleAlert,
-        company_logo: companyLogo
+        company_logo: companyLogo,
+        period: period,
+        days: period === 'week' ? 7 : 1
       });
 
       setCycleResult(res);
       setReportFeedback({
         type: 'success',
-        message: `Ciclo executado com sucesso! Relatório gerado e enviado para ${res.recipient}.`
+        message: `${res.isWeekly ? 'Relatório Semanal (7 dias)' : 'Resumo Diário'} gerado com sucesso! Dados consolidados e enviados para ${res.recipient}.`
       });
       if (onRefresh) onRefresh();
     } catch (err) {
       setReportFeedback({
         type: 'error',
-        message: 'Falha ao executar ciclo: ' + (err.message || 'tente novamente')
+        message: 'Falha ao executar relatório: ' + (err.message || 'tente novamente')
       });
     } finally {
-      setCycleLoading(false);
+      setCycleLoading(null);
     }
   };
 
@@ -492,24 +496,47 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
                   <p className="text-xs text-text-muted mt-1">Disparo programado de resumos de produção e alertas de ociosidade por e-mail</p>
                 </div>
                 
-                <button
-                  onClick={handleTriggerCycle}
-                  disabled={cycleLoading}
-                  className="px-5 py-2.5 bg-gradient-to-r from-accent-cyan to-accent-blue text-black font-black text-xs uppercase tracking-wider rounded-xl hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent-cyan/20 flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                  title="Executa imediatamente o ciclo de análise, detecção de máquinas paradas e disparo de e-mail"
-                >
-                  {cycleLoading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
-                      <span>Executando Ciclo...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Zap size={14} className="fill-black" />
-                      <span>Executar Ciclo Agora</span>
-                    </>
-                  )}
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <a
+                    href={`https://mach3tracker.up.railway.app/api/user/report-preview?period=week&token=${localStorage.getItem('mach3_token') || ''}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2.5 bg-white/10 hover:bg-white/15 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center gap-1.5"
+                    title="Ver a prévia do relatório semanal no navegador"
+                  >
+                    <Eye size={14} className="text-accent-cyan" />
+                    <span>Visualizar</span>
+                  </a>
+
+                  <button
+                    onClick={() => handleTriggerCycle('day')}
+                    disabled={Boolean(cycleLoading)}
+                    className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    title="Executa e envia o resumo diário de hoje por e-mail"
+                  >
+                    {cycleLoading === 'day' ? <Loader2 size={14} className="animate-spin text-accent-cyan" /> : <Zap size={14} className="text-accent-cyan" />}
+                    <span>Ciclo de Hoje</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleTriggerCycle('week')}
+                    disabled={Boolean(cycleLoading)}
+                    className="px-5 py-2.5 bg-gradient-to-r from-accent-cyan to-accent-blue text-black font-black text-xs uppercase tracking-wider rounded-xl hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent-cyan/20 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    title="Puxa os dados dos últimos 7 dias integrando usinagem, serviços externos e outros setores"
+                  >
+                    {cycleLoading === 'week' ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin text-black" />
+                        <span>Puxando 7 Dias...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Calendar size={14} className="text-black" />
+                        <span>Relatório Semanal (7 Dias)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Feedback Alert */}
@@ -530,7 +557,9 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
                   <div className="flex items-center justify-between border-b border-white/10 pb-3">
                     <div className="flex items-center gap-2">
                       <span className="text-xl">📊</span>
-                      <span className="font-bold text-white text-sm uppercase tracking-wider">Resultado do Ciclo Executado</span>
+                      <span className="font-bold text-white text-sm uppercase tracking-wider">
+                        {cycleResult.isWeekly ? 'Resultado Semanal (7 Dias)' : 'Resultado do Ciclo Executado'}
+                      </span>
                     </div>
                     <span className="text-xs bg-accent-cyan/20 text-accent-cyan font-bold px-3 py-1 rounded-full border border-accent-cyan/30 flex items-center gap-1">
                       <CheckCircle2 size={12} /> Concluído
@@ -539,24 +568,26 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
 
                   <p className="text-xs text-text-muted">{cycleResult.summary}</p>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
                     <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                      <div className="text-[10px] text-text-muted uppercase font-bold">Trabalhos Hoje</div>
-                      <div className="text-lg font-black text-white mt-1">{cycleResult.totalJobs}</div>
+                      <div className="text-[10px] text-text-muted uppercase font-bold">Cortes Máquina</div>
+                      <div className="text-lg font-black text-white mt-1">{cycleResult.totalJobs} peças</div>
                     </div>
                     <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                      <div className="text-[10px] text-text-muted uppercase font-bold">Horas Usinagem</div>
-                      <div className="text-lg font-black text-accent-cyan mt-1">{cycleResult.totalHours}h</div>
+                      <div className="text-[10px] text-text-muted uppercase font-bold">Horas Máquina</div>
+                      <div className="text-lg font-black text-accent-cyan mt-1">{cycleResult.totalMachineHours || cycleResult.totalHours}h</div>
                     </div>
                     <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                      <div className="text-[10px] text-text-muted uppercase font-bold">Custo Estimado</div>
+                      <div className="text-[10px] text-text-muted uppercase font-bold">Serviços Externos</div>
+                      <div className="text-lg font-black text-amber-400 mt-1">{cycleResult.totalExternalHours || '0.0'}h</div>
+                    </div>
+                    <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                      <div className="text-[10px] text-text-muted uppercase font-bold">Outros Setores</div>
+                      <div className="text-lg font-black text-blue-400 mt-1">{cycleResult.totalOtherSectorHours || '0.0'}h</div>
+                    </div>
+                    <div className="bg-white/5 p-3 rounded-xl border border-white/5 col-span-2 sm:col-span-1">
+                      <div className="text-[10px] text-text-muted uppercase font-bold">Custo Máquina</div>
                       <div className="text-lg font-black text-accent-success mt-1">{cycleResult.totalCost}</div>
-                    </div>
-                    <div className="bg-white/5 p-3 rounded-xl border border-white/5">
-                      <div className="text-[10px] text-text-muted uppercase font-bold">Máquinas Paradas</div>
-                      <div className={`text-lg font-black mt-1 ${cycleResult.idleMachines?.length > 0 ? 'text-accent-danger' : 'text-accent-success'}`}>
-                        {cycleResult.idleMachines?.length || 0}
-                      </div>
                     </div>
                   </div>
 
