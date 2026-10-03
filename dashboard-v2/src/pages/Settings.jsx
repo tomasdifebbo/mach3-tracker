@@ -13,11 +13,13 @@ import {
   Database,
   FileText,
   Cpu,
-  Upload
+  Upload,
+  CreditCard
 } from 'lucide-react';
 import { api } from '../services/api';
 
 import { SubscriptionPlans } from '../components/SubscriptionPlans';
+import { ManagePaymentModal } from '../components/ManagePaymentModal';
 
 export function Settings({ user, onRefresh, isTrialExpired }) {
   const [costPerHour, setCostPerHour] = useState(user?.settings?.costPerHour || 50.0);
@@ -46,6 +48,7 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
   const [cycleLoading, setCycleLoading] = useState(false);
   const [cycleResult, setCycleResult] = useState(null);
   const [reportFeedback, setReportFeedback] = useState(null);
+  const [isManagePaymentOpen, setIsManagePaymentOpen] = useState(false);
 
   const isBusinessPlan = user?.plan === 'business' || user?.role === 'admin';
 
@@ -339,8 +342,12 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
                   <span className="text-text-muted text-sm font-medium">Próxima renovação: {user?.plan_renewal || '—'}</span>
                 </div>
               </div>
-              <button className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl transition-all" onClick={() => alert('Gerenciar pagamento em breve')}>
-                Gerenciar Pagamento
+              <button 
+                onClick={() => setIsManagePaymentOpen(true)}
+                className="px-6 py-3.5 bg-gradient-to-r from-accent-cyan to-accent-blue text-black font-black text-xs uppercase tracking-wider rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent-cyan/25 flex items-center gap-2 cursor-pointer shrink-0"
+              >
+                <CreditCard size={16} className="text-black" />
+                <span>Gerenciar Pagamento</span>
               </button>
             </div>
 
@@ -803,6 +810,14 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
           </div>
         </div>
       </section>
+
+      {/* Subscription & Payment Management Modal */}
+      <ManagePaymentModal 
+        isOpen={isManagePaymentOpen} 
+        onClose={() => setIsManagePaymentOpen(false)} 
+        user={user} 
+        onRefresh={onRefresh} 
+      />
     </div>
   );
 }

@@ -242,6 +242,9 @@ async function initDb() {
             ALTER TABLE users ADD COLUMN IF NOT EXISTS last_idle_alert_at TIMESTAMP;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS last_daily_report_at TIMESTAMP;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_renewal TEXT DEFAULT '2026-11-01';
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS company_legal_name TEXT;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS cnpj_cpf TEXT;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS billing_email TEXT;
 
             CREATE TABLE IF NOT EXISTS report_history (
                 id SERIAL PRIMARY KEY,
@@ -869,7 +872,7 @@ function getEffectiveFeatures(userPlan, overrideJsonStr) {
 
 app.get('/api/user/me', authenticateToken, async (req, res) => {
     await closeStaleJobs(req.user.id);
-    let user = (await pool.query('SELECT id, email, plan, trial_expiry, payment_status, "costPerHour", "plannedHours", role, company_role, gerente_pin, supervisor_pin, webhook_url, features_override, company_logo, theme, report_email, daily_report, idle_alert, weekly_report, plan_renewal FROM users WHERE id = $1', [req.user.id])).rows[0];
+    let user = (await pool.query('SELECT id, email, plan, trial_expiry, payment_status, "costPerHour", "plannedHours", role, company_role, gerente_pin, supervisor_pin, webhook_url, features_override, company_logo, theme, report_email, daily_report, idle_alert, weekly_report, plan_renewal, company_legal_name, cnpj_cpf, billing_email FROM users WHERE id = $1', [req.user.id])).rows[0];
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
 
     const masterEmails = ['tomasdifebbo.tdf@gmail.com', 'admin@mach3.com', 'casadotrem@gmail.com', 'demo@mach3tracker.com'];
@@ -2049,6 +2052,46 @@ app.get('/api/payments/status', authenticateToken, async (req, res) => {
             trial_expiry: user.trial_expiry,
             last_payment: lastPayment || null
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/payments/history
+app.get('/api/payments/history', authenticateToken, async (req, res) => {
+    try {
+        const rows = (await pool.query(
+            'SELECT * FROM payments WHERE "userId" = $1 ORDER BY created_at DESC LIMIT 20',
+            [req.user.id]
+        )).rows;
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/payments/billing-info
+app.post('/api/payments/billing-info', authenticateToken, async (req, res) => {
+    try {
+        const { company_legal_name, cnpj_cpf, billing_email } = req.body;
+        await pool.query(
+            'UPDATE users SET company_legal_name = $1, cnpj_cpf = $2, billing_email = $3 WHERE id = $4',
+            [company_legal_name || null, cnpj_cpf || null, billing_email || null, req.user.id]
+        );
+        res.json({ success: true, message: "Dados de faturamento salvos com sucesso!" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/payments/cancel-auto-renew
+app.post('/api/payments/cancel-auto-renew', authenticateToken, async (req, res) => {
+    try {
+        await pool.query(
+            'UPDATE users SET payment_status = \'canceled_at_period_end\' WHERE id = $1',
+            [req.user.id]
+        );
+        res.json({ success: true, message: "Renovação automática cancelada. Seu plano continuará ativo até o término do ciclo atual." });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

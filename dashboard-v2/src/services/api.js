@@ -210,6 +210,31 @@ export const api = {
     return safeJson(resp);
   },
 
+  getPaymentHistory: async () => {
+    const resp = await fetch(`${API_URL}/api/payments/history`, {
+      headers: getAuthHeaders(),
+      cache: 'no-store'
+    });
+    return safeJson(resp);
+  },
+
+  saveBillingInfo: async (payload) => {
+    const resp = await fetch(`${API_URL}/api/payments/billing-info`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload)
+    });
+    return safeJson(resp);
+  },
+
+  cancelAutoRenew: async () => {
+    const resp = await fetch(`${API_URL}/api/payments/cancel-auto-renew`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    return safeJson(resp);
+  },
+
   // Routers
   getRouters: async () => {
     const resp = await fetch(`${API_URL}/api/routers`, { 
