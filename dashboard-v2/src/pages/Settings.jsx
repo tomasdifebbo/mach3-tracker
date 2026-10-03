@@ -36,14 +36,29 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
   // New States for Business Plan Sections
   const [jobsData, setJobsData] = useState([]);
   const [routersCount, setRoutersCount] = useState(0);
-  const [companyLogo, setCompanyLogo] = useState(localStorage.getItem('mach3_company_logo') || '');
-  const [theme, setTheme] = useState(localStorage.getItem('mach3_theme') || 'Escuro');
-  const [dailyReport, setDailyReport] = useState(localStorage.getItem('mach3_daily_report') === 'true');
-  const [idleAlert, setIdleAlert] = useState(localStorage.getItem('mach3_idle_alert') === 'true');
-  const [weeklyReport, setWeeklyReport] = useState(localStorage.getItem('mach3_weekly_report') === 'true');
-  const [reportEmail, setReportEmail] = useState(localStorage.getItem('mach3_report_email') || '');
+  const [companyLogo, setCompanyLogo] = useState(user?.company_logo || localStorage.getItem('mach3_company_logo') || '');
+  const [theme, setTheme] = useState(user?.theme || localStorage.getItem('mach3_theme') || 'Escuro');
+  const [dailyReport, setDailyReport] = useState(user?.daily_report !== undefined ? user.daily_report : (localStorage.getItem('mach3_daily_report') !== 'false'));
+  const [idleAlert, setIdleAlert] = useState(user?.idle_alert !== undefined ? user.idle_alert : (localStorage.getItem('mach3_idle_alert') !== 'false'));
+  const [weeklyReport, setWeeklyReport] = useState(user?.weekly_report !== undefined ? user.weekly_report : (localStorage.getItem('mach3_weekly_report') === 'true'));
+  const [reportEmail, setReportEmail] = useState(user?.report_email || localStorage.getItem('mach3_report_email') || user?.email || 'tomasdifebbo.tdf@gmail.com');
+  const [savingReports, setSavingReports] = useState(false);
+  const [cycleLoading, setCycleLoading] = useState(false);
+  const [cycleResult, setCycleResult] = useState(null);
+  const [reportFeedback, setReportFeedback] = useState(null);
 
-  const isBusinessPlan = user?.plan === 'business';
+  const isBusinessPlan = user?.plan === 'business' || user?.role === 'admin';
+
+  useEffect(() => {
+    if (user) {
+      if (user.company_logo) setCompanyLogo(user.company_logo);
+      if (user.theme) setTheme(user.theme);
+      if (user.report_email) setReportEmail(user.report_email);
+      if (user.daily_report !== undefined) setDailyReport(user.daily_report);
+      if (user.idle_alert !== undefined) setIdleAlert(user.idle_alert);
+      if (user.weekly_report !== undefined) setWeeklyReport(user.weekly_report);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (isBusinessPlan) {
@@ -163,26 +178,95 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const base64 = reader.result;
         setCompanyLogo(base64);
         localStorage.setItem('mach3_company_logo', base64);
+        try {
+          await api.saveReportSettings({ company_logo: base64 });
+          if (onRefresh) onRefresh();
+          setReportFeedback({ type: 'success', message: 'Logo da empresa atualizada e salva com sucesso!' });
+        } catch (err) {
+          console.error("Erro ao salvar logo:", err);
+        }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleThemeChange = (newTheme) => {
+  const handleThemeChange = async (newTheme) => {
     setTheme(newTheme);
     localStorage.setItem('mach3_theme', newTheme);
+    const themeKey = newTheme.toLowerCase().includes('claro') 
+      ? 'claro' 
+      : (newTheme.toLowerCase().includes('azul') ? 'azul' : 'escuro');
+    document.documentElement.setAttribute('data-theme', themeKey);
+    try {
+      await api.saveReportSettings({ theme: newTheme });
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error("Erro ao salvar tema:", err);
+    }
   };
 
-  const saveReportSettings = () => {
-    localStorage.setItem('mach3_daily_report', dailyReport);
-    localStorage.setItem('mach3_idle_alert', idleAlert);
-    localStorage.setItem('mach3_weekly_report', weeklyReport);
-    localStorage.setItem('mach3_report_email', reportEmail);
-    alert('Configurações de relatórios salvas!');
+  const saveReportSettings = async () => {
+    setSavingReports(true);
+    setReportFeedback(null);
+    try {
+      localStorage.setItem('mach3_daily_report', dailyReport);
+      localStorage.setItem('mach3_idle_alert', idleAlert);
+      localStorage.setItem('mach3_weekly_report', weeklyReport);
+      localStorage.setItem('mach3_report_email', reportEmail);
+      
+      await api.saveReportSettings({
+        daily_report: dailyReport,
+        idle_alert: idleAlert,
+        weekly_report: weeklyReport,
+        report_email: reportEmail
+      });
+      if (onRefresh) onRefresh();
+      setReportFeedback({ type: 'success', message: 'Configurações de automação salvas com sucesso no banco de dados!' });
+    } catch (err) {
+      setReportFeedback({ type: 'error', message: 'Erro ao salvar configurações: ' + (err.message || 'tente novamente') });
+    } finally {
+      setSavingReports(false);
+      setTimeout(() => setReportFeedback(null), 5000);
+    }
+  };
+
+  const handleTriggerCycle = async () => {
+    setCycleLoading(true);
+    setCycleResult(null);
+    setReportFeedback(null);
+    try {
+      // First persist current settings
+      await api.saveReportSettings({
+        daily_report: dailyReport,
+        idle_alert: idleAlert,
+        weekly_report: weeklyReport,
+        report_email: reportEmail
+      });
+
+      const res = await api.triggerReportCycle({
+        report_email: reportEmail,
+        daily_report: dailyReport,
+        idle_alert: idleAlert
+      });
+
+      setCycleResult(res);
+      setReportFeedback({
+        type: 'success',
+        message: `Ciclo executado com sucesso! Relatório gerado e enviado para ${res.recipient}.`
+      });
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      setReportFeedback({
+        type: 'error',
+        message: 'Falha ao executar ciclo: ' + (err.message || 'tente novamente')
+      });
+    } finally {
+      setCycleLoading(false);
+    }
   };
 
   // Section 2 Data Processing
@@ -390,7 +474,101 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
 
             {/* 5. Report Automation */}
             <div className="glass p-8 rounded-[32px] space-y-6">
-              <h4 className="text-xl font-bold text-white">Automação de Relatórios</h4>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h4 className="text-xl font-bold text-white flex items-center gap-2">
+                    <span className="text-accent-cyan">⚡</span> Automação de Relatórios & Monitoramento
+                  </h4>
+                  <p className="text-xs text-text-muted mt-1">Disparo programado de resumos de produção e alertas de ociosidade por e-mail</p>
+                </div>
+                
+                <button
+                  onClick={handleTriggerCycle}
+                  disabled={cycleLoading}
+                  className="px-5 py-2.5 bg-gradient-to-r from-accent-cyan to-accent-blue text-black font-black text-xs uppercase tracking-wider rounded-xl hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent-cyan/20 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  title="Executa imediatamente o ciclo de análise, detecção de máquinas paradas e disparo de e-mail"
+                >
+                  {cycleLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
+                      <span>Executando Ciclo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap size={14} className="fill-black" />
+                      <span>Executar Ciclo Agora</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Feedback Alert */}
+              {reportFeedback && (
+                <div className={`p-4 rounded-xl border text-sm font-medium flex items-center gap-3 animate-in fade-in duration-300 ${
+                  reportFeedback.type === 'success' 
+                    ? 'bg-accent-success/10 border-accent-success/30 text-accent-success' 
+                    : 'bg-accent-danger/10 border-accent-danger/30 text-accent-danger'
+                }`}>
+                  {reportFeedback.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+                  <span>{reportFeedback.message}</span>
+                </div>
+              )}
+
+              {/* Cycle Execution Result Card */}
+              {cycleResult && (
+                <div className="p-6 bg-accent-cyan/5 border border-accent-cyan/30 rounded-2xl space-y-4 animate-in zoom-in-95 duration-300">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">📊</span>
+                      <span className="font-bold text-white text-sm uppercase tracking-wider">Resultado do Ciclo Executado</span>
+                    </div>
+                    <span className="text-xs bg-accent-cyan/20 text-accent-cyan font-bold px-3 py-1 rounded-full border border-accent-cyan/30 flex items-center gap-1">
+                      <CheckCircle2 size={12} /> Concluído
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-text-muted">{cycleResult.summary}</p>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                    <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                      <div className="text-[10px] text-text-muted uppercase font-bold">Trabalhos Hoje</div>
+                      <div className="text-lg font-black text-white mt-1">{cycleResult.totalJobs}</div>
+                    </div>
+                    <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                      <div className="text-[10px] text-text-muted uppercase font-bold">Horas Usinagem</div>
+                      <div className="text-lg font-black text-accent-cyan mt-1">{cycleResult.totalHours}h</div>
+                    </div>
+                    <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                      <div className="text-[10px] text-text-muted uppercase font-bold">Custo Estimado</div>
+                      <div className="text-lg font-black text-accent-success mt-1">{cycleResult.totalCost}</div>
+                    </div>
+                    <div className="bg-white/5 p-3 rounded-xl border border-white/5">
+                      <div className="text-[10px] text-text-muted uppercase font-bold">Máquinas Paradas</div>
+                      <div className={`text-lg font-black mt-1 ${cycleResult.idleMachines?.length > 0 ? 'text-accent-danger' : 'text-accent-success'}`}>
+                        {cycleResult.idleMachines?.length || 0}
+                      </div>
+                    </div>
+                  </div>
+
+                  {cycleResult.idleMachines?.length > 0 && (
+                    <div className="space-y-2 pt-2 border-t border-white/10">
+                      <div className="text-xs font-bold text-accent-danger flex items-center gap-1.5">
+                        <AlertCircle size={14} />
+                        <span>Máquinas em alerta de ociosidade (&gt; 1 hora sem corte):</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {cycleResult.idleMachines.map((m, i) => (
+                          <div key={i} className="text-xs bg-red-500/10 border border-red-500/20 p-2.5 rounded-xl flex items-center justify-between">
+                            <span className="font-semibold text-white truncate mr-2">{m.name}</span>
+                            <span className="text-red-400 font-bold shrink-0">{m.idleFormatted}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-4 max-w-2xl">
                 {[
                   { label: 'Resumo diário de produção por e-mail às 18:00', state: dailyReport, setter: setDailyReport },
@@ -418,9 +596,10 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
                     />
                     <button 
                       onClick={saveReportSettings}
-                      className="px-6 py-3 bg-accent-cyan text-black font-bold text-sm uppercase tracking-wider rounded-xl hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent-cyan/20"
+                      disabled={savingReports}
+                      className="px-6 py-3 bg-accent-cyan text-black font-bold text-sm uppercase tracking-wider rounded-xl hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-accent-cyan/20 cursor-pointer disabled:opacity-50"
                     >
-                      Salvar
+                      {savingReports ? 'Salvando...' : 'Salvar'}
                     </button>
                   </div>
                 </div>

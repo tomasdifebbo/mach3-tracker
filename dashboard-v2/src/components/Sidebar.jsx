@@ -62,6 +62,8 @@ export function Sidebar({ activeSection, onSectionChange, user, maintenance = []
     { id: 'settings', label: 'Configurações', icon: Settings },
   ];
 
+  const companyLogo = user?.company_logo || localStorage.getItem('mach3_company_logo');
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -79,16 +81,35 @@ export function Sidebar({ activeSection, onSectionChange, user, maintenance = []
         // Mobile visibility
         isMobileOpen ? "translate-x-0 w-[260px]" : "-translate-x-full md:translate-x-0"
       )}>
-      <div className="p-6 border-b border-border flex items-center justify-between">
+      <div className="p-4 md:p-6 border-b border-border flex items-center justify-between">
         <div className={cn("flex items-center gap-3 overflow-hidden transition-all", (isOpen || isMobileOpen) ? "opacity-100" : "opacity-0 w-0")}>
-          <div className="w-8 h-8 bg-gradient-to-br from-accent-cyan to-accent-blue rounded-lg flex items-center justify-center text-xl shadow-lg shadow-accent-cyan/20 shrink-0">
-            🔩
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 overflow-hidden bg-white/5 border border-white/10 shadow-lg shadow-accent-cyan/10">
+            {companyLogo ? (
+              <img src={companyLogo} alt="Logo" className="w-full h-full object-contain p-0.5" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-accent-cyan to-accent-blue rounded-lg flex items-center justify-center text-lg">
+                🔩
+              </div>
+            )}
           </div>
           <div className="truncate">
-            <h1 className="text-lg font-bold tracking-tight text-white leading-tight truncate">MACH3 TRACKER</h1>
+            <h1 className="text-sm md:text-base font-bold tracking-tight text-white leading-tight truncate">MACH3 TRACKER</h1>
             <span className="text-[10px] text-accent-cyan font-bold tracking-[0.2em]">PRODUCTION V2.0</span>
           </div>
         </div>
+
+        {!isOpen && !isMobileOpen && (
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 overflow-hidden bg-white/5 border border-white/10 mx-auto">
+            {companyLogo ? (
+              <img src={companyLogo} alt="Logo" className="w-full h-full object-contain p-0.5" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-accent-cyan to-accent-blue rounded-lg flex items-center justify-center text-lg">
+                🔩
+              </div>
+            )}
+          </div>
+        )}
+
         <button 
           onClick={() => {
             if (isMobileOpen && setIsMobileOpen) {
@@ -97,7 +118,7 @@ export function Sidebar({ activeSection, onSectionChange, user, maintenance = []
               setIsOpen(!isOpen);
             }
           }}
-          className="p-1.5 hover:bg-white/5 rounded-md text-text-muted hover:text-white transition-colors"
+          className="p-1.5 hover:bg-white/5 rounded-md text-text-muted hover:text-white transition-colors ml-auto"
           title={isMobileOpen ? "Fechar menu" : "Alternar menu"}
         >
           {isOpen || isMobileOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}

@@ -205,8 +205,14 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
               </div>
               
               <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr border flex items-center justify-center overflow-hidden shrink-0 ${user.plan === 'starter' && daysLeft <= 0 ? 'from-accent-danger/20 to-red-900/20 border-accent-danger/30 text-accent-danger' : 'from-accent-cyan/20 to-accent-blue/20 border-accent-cyan/30 text-accent-cyan'}`}>
-                 <User size={16} className="sm:hidden" />
-                 <User size={18} className="hidden sm:block" />
+                 {(user?.company_logo || localStorage.getItem('mach3_company_logo')) ? (
+                   <img src={user?.company_logo || localStorage.getItem('mach3_company_logo')} alt="Logo" className="w-full h-full object-contain p-0.5" />
+                 ) : (
+                   <>
+                     <User size={16} className="sm:hidden" />
+                     <User size={18} className="hidden sm:block" />
+                   </>
+                 )}
               </div>
             </button>
 

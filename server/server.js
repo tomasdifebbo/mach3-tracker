@@ -233,6 +233,28 @@ async function initDb() {
             ALTER TABLE users ADD COLUMN IF NOT EXISTS company_role TEXT DEFAULT 'gerente';
             ALTER TABLE users ADD COLUMN IF NOT EXISTS gerente_pin TEXT;
             ALTER TABLE users ADD COLUMN IF NOT EXISTS supervisor_pin TEXT;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS company_logo TEXT;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS theme TEXT DEFAULT 'Escuro';
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS report_email TEXT DEFAULT 'tomasdifebbo.tdf@gmail.com';
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_report BOOLEAN DEFAULT true;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS idle_alert BOOLEAN DEFAULT true;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS weekly_report BOOLEAN DEFAULT false;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS last_idle_alert_at TIMESTAMP;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS last_daily_report_at TIMESTAMP;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_renewal TEXT DEFAULT '2026-11-01';
+
+            CREATE TABLE IF NOT EXISTS report_history (
+                id SERIAL PRIMARY KEY,
+                "userId" INTEGER NOT NULL,
+                report_type TEXT NOT NULL,
+                recipient_email TEXT NOT NULL,
+                status TEXT NOT NULL,
+                subject TEXT,
+                summary TEXT,
+                details JSONB,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
             ALTER TABLE jobs ADD COLUMN IF NOT EXISTS operator_name TEXT;
 
             -- Kanban and Checklist tables
@@ -847,7 +869,7 @@ function getEffectiveFeatures(userPlan, overrideJsonStr) {
 
 app.get('/api/user/me', authenticateToken, async (req, res) => {
     await closeStaleJobs(req.user.id);
-    let user = (await pool.query('SELECT id, email, plan, trial_expiry, payment_status, "costPerHour", "plannedHours", role, company_role, gerente_pin, supervisor_pin, webhook_url, features_override FROM users WHERE id = $1', [req.user.id])).rows[0];
+    let user = (await pool.query('SELECT id, email, plan, trial_expiry, payment_status, "costPerHour", "plannedHours", role, company_role, gerente_pin, supervisor_pin, webhook_url, features_override, company_logo, theme, report_email, daily_report, idle_alert, weekly_report, plan_renewal FROM users WHERE id = $1', [req.user.id])).rows[0];
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
 
     const masterEmails = ['tomasdifebbo.tdf@gmail.com', 'admin@mach3.com', 'casadotrem@gmail.com', 'demo@mach3tracker.com'];
@@ -855,9 +877,12 @@ app.get('/api/user/me', authenticateToken, async (req, res) => {
         user.plan = 'business';
         user.role = 'admin';
     }
-    if (masterEmails.includes(user.email) && user.role !== 'admin') {
-        await pool.query("UPDATE users SET role = 'admin' WHERE id = $1", [user.id]);
-        user.role = 'admin';
+    if (masterEmails.includes(user.email)) {
+        if (user.role !== 'admin' || user.plan !== 'business') {
+            await pool.query("UPDATE users SET role = 'admin', plan = 'business' WHERE id = $1", [user.id]);
+            user.role = 'admin';
+            user.plan = 'business';
+        }
     }
 
     if (!user.company_role) user.company_role = 'gerente';
@@ -959,6 +984,397 @@ app.patch('/api/user/profile-pins', authenticateToken, async (req, res) => {
         ]
     );
     res.json({ success: true });
+});
+
+// ==========================================
+// AUTOMATION & REPORT CYCLE ENGINE
+// ==========================================
+async function executeReportCycle(userId, options = {}) {
+    const userRes = await pool.query(
+        'SELECT id, email, "costPerHour", "plannedHours", report_email, daily_report, idle_alert, weekly_report, theme, company_logo FROM users WHERE id = $1',
+        [userId]
+    );
+    const user = userRes.rows[0];
+    if (!user) throw new Error('Usuário não encontrado');
+
+    const recipient = options.report_email || user.report_email || user.email || 'tomasdifebbo.tdf@gmail.com';
+    const now = new Date();
+    
+    // Sao Paulo time
+    const spOptions = { timeZone: 'America/Sao_Paulo' };
+    const dateFormatted = new Intl.DateTimeFormat('pt-BR', {
+        ...spOptions,
+        dateStyle: 'full',
+        timeStyle: 'short'
+    }).format(now);
+
+    const spParts = new Intl.DateTimeFormat('en-US', {
+        ...spOptions,
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric'
+    }).formatToParts(now);
+
+    const todayYear = Number(spParts.find(p => p.type === 'year').value);
+    const todayMonth = Number(spParts.find(p => p.type === 'month').value);
+    const todayDay = Number(spParts.find(p => p.type === 'day').value);
+
+    // Query today's jobs: match year/month/day
+    const jobsRes = await pool.query(
+        `SELECT * FROM jobs 
+         WHERE ("userId" = $1) 
+           AND (year = $2 AND month = $3 AND day = $4)
+         ORDER BY id DESC`,
+        [userId, todayYear, todayMonth, todayDay]
+    );
+
+    let jobsToday = jobsRes.rows;
+    let isHistoricalPreview = false;
+    if (jobsToday.length === 0) {
+        const fallbackRes = await pool.query(
+            'SELECT * FROM jobs WHERE ("userId" = $1) ORDER BY id DESC LIMIT 5',
+            [userId]
+        );
+        jobsToday = fallbackRes.rows;
+        isHistoricalPreview = true;
+    }
+
+    const totalJobs = jobsToday.length;
+    let totalMinutes = 0;
+    const operatorStats = {};
+    const materialStats = {};
+
+    jobsToday.forEach(j => {
+        const mins = Number(j.duration_minutes) || 0;
+        totalMinutes += mins;
+
+        const op = j.operator_name ? j.operator_name.trim().toUpperCase() : 'NÃO INFORMADO';
+        operatorStats[op] = (operatorStats[op] || 0) + mins;
+
+        const mat = j.material_name ? j.material_name.trim().toUpperCase() : 'DIVERSOS';
+        materialStats[mat] = (materialStats[mat] || 0) + 1;
+    });
+
+    const totalHours = (totalMinutes / 60).toFixed(1);
+    const costPerHour = Number(user.costPerHour) || 50;
+    const totalCost = ((totalMinutes / 60) * costPerHour).toFixed(2).replace('.', ',');
+
+    // Idle machines check (for this user's routers)
+    const routersRes = await pool.query(
+        'SELECT * FROM routers WHERE "userId" = $1 ORDER BY id ASC',
+        [userId]
+    );
+
+    const idleMachines = [];
+    const activeMachines = [];
+
+    for (const r of routersRes.rows) {
+        const lastJobRes = await pool.query(
+            'SELECT * FROM jobs WHERE ("userId" = $1) AND (router_name ILIKE $2) ORDER BY id DESC LIMIT 1',
+            [userId, `%${r.name}%`]
+        );
+        const lastJob = lastJobRes.rows[0];
+        let idleMinutes = null;
+        let lastEndTime = null;
+
+        if (lastJob) {
+            const timeVal = new Date(lastJob.end_time || lastJob.start_time);
+            if (!isNaN(timeVal.getTime())) {
+                lastEndTime = timeVal;
+                idleMinutes = Math.floor((now.getTime() - timeVal.getTime()) / (1000 * 60));
+            }
+        }
+
+        const isIdle = idleMinutes === null || idleMinutes >= 60;
+        const machineData = {
+            id: r.id,
+            name: r.name,
+            status: r.status,
+            idleMinutes: idleMinutes || 999,
+            idleFormatted: idleMinutes !== null ? (idleMinutes >= 60 ? `${Math.floor(idleMinutes / 60)}h ${idleMinutes % 60}m` : `${idleMinutes}m`) : 'Sem registro recente',
+            lastJob: lastJob ? lastJob.file_name : 'Nenhum',
+            lastEndTime: lastEndTime ? lastEndTime.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }) : '—',
+            operator: r.operator_name || (lastJob ? lastJob.operator_name : '—')
+        };
+
+        if (isIdle) {
+            idleMachines.push(machineData);
+        } else {
+            activeMachines.push(machineData);
+        }
+    }
+
+    // Build Email HTML
+    const emailHtml = `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="utf-8">
+      <title>MACH3 Tracker - Relatório de Produção & Alertas</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0a0e1a; color: #f1f5f9; margin: 0; padding: 20px; }
+        .card { background-color: #0f1524; border: 1px solid #1e293b; border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+        .grid { display: flex; gap: 16px; flex-wrap: wrap; }
+        .kpi { flex: 1; min-width: 140px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; text-align: center; }
+        .kpi-val { font-size: 24px; font-weight: 800; color: #06b6d4; margin-top: 4px; }
+        .kpi-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; }
+        .alert-box { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+        .alert-title { color: #f87171; font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th { text-align: left; font-size: 11px; text-transform: uppercase; color: #94a3b8; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        td { font-size: 13px; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .btn { display: inline-block; background-color: #06b6d4; color: #000; font-weight: bold; padding: 12px 24px; border-radius: 10px; text-decoration: none; margin-top: 16px; }
+      </style>
+    </head>
+    <body>
+      <div style="max-width: 680px; margin: 0 auto;">
+        
+        <!-- Header -->
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 20px; margin-bottom: 24px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 24px;">🔩</span>
+              <span style="font-size: 20px; font-weight: 900; letter-spacing: 1px; color: #ffffff;">MACH3 TRACKER</span>
+            </div>
+            <div style="font-size: 12px; color: #06b6d4; font-weight: bold; letter-spacing: 2px; margin-top: 2px;">AUTOMAÇÃO DE RELATÓRIOS & MONITORAMENTO</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 12px; color: #94a3b8;">${dateFormatted}</div>
+            <span style="background: rgba(6, 182, 212, 0.15); color: #06b6d4; border: 1px solid rgba(6, 182, 212, 0.3); font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">Ciclo Concluído</span>
+          </div>
+        </div>
+
+        ${idleMachines.length > 0 ? `
+        <!-- Machine Idle Alert Box -->
+        <div class="alert-box">
+          <div class="alert-title">
+            ⚠️ ALERTA: ${idleMachines.length} MÁQUINA(S) PARADA(S) HÁ MAIS DE 1 HORA
+          </div>
+          <p style="font-size: 13px; color: #fca5a5; margin: 0 0 12px 0;">
+            O sistema detectou que as seguintes máquinas CNC/Laser estão inativas há mais tempo que o limite configurado (1 hora).
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Máquina</th>
+                <th>Tempo Parada</th>
+                <th>Último Arquivo</th>
+                <th>Operador</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${idleMachines.map(m => `
+                <tr>
+                  <td style="font-weight: bold; color: #fff;">${m.name}</td>
+                  <td style="color: #f87171; font-weight: bold;">${m.idleFormatted}</td>
+                  <td style="color: #cbd5e1; font-family: monospace;">${m.lastJob}</td>
+                  <td style="color: #94a3b8;">${m.operator}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        ` : `
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 14px; margin-bottom: 20px; color: #34d399; font-size: 14px; font-weight: bold;">
+          ✅ Todas as máquinas monitoradas estão operando com regularidade.
+        </div>
+        `}
+
+        <!-- KPI Grid -->
+        <div class="card">
+          <div style="font-size: 14px; font-weight: bold; text-transform: uppercase; color: #fff; margin-bottom: 16px; letter-spacing: 1px;">
+            📊 Resumo da Produção ${isHistoricalPreview ? '(Amostra Recente)' : 'de Hoje'}
+          </div>
+          <div class="grid">
+            <div class="kpi">
+              <div class="kpi-lbl">Peças Cortadas</div>
+              <div class="kpi-val">${totalJobs}</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-lbl">Horas Usinagem</div>
+              <div class="kpi-val">${totalHours}h</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-lbl">Custo Estimado</div>
+              <div class="kpi-val" style="color: #34d399;">R$ ${totalCost}</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-lbl">Máquinas Paradas</div>
+              <div class="kpi-val" style="color: ${idleMachines.length > 0 ? '#f87171' : '#34d399'};">${idleMachines.length}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Jobs Table -->
+        <div class="card">
+          <div style="font-size: 14px; font-weight: bold; text-transform: uppercase; color: #fff; margin-bottom: 12px; letter-spacing: 1px;">
+            📋 Trabalhos Registrados (${jobsToday.length})
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Arquivo</th>
+                <th>Máquina</th>
+                <th>Duração</th>
+                <th>Operador</th>
+                <th>Material</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${jobsToday.slice(0, 10).map(j => `
+                <tr>
+                  <td style="font-weight: 500; color: #fff; font-family: monospace;">${j.file_name}</td>
+                  <td style="color: #06b6d4;">${j.router_name || 'Router'}</td>
+                  <td style="color: #e2e8f0;">${(Number(j.duration_minutes) || 0).toFixed(1)} min</td>
+                  <td style="color: #94a3b8;">${j.operator_name || '—'}</td>
+                  <td style="color: #cbd5e1;">${j.material_name || '—'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 20px 0; color: #64748b; font-size: 12px;">
+          <a href="https://mach3tracker.up.railway.app" class="btn" style="color: #000 !important;">Abrir Painel em Tempo Real</a>
+          <p style="margin-top: 20px;">
+            Este e-mail foi gerado automaticamente pelo MACH3 Tracker para <strong>${recipient}</strong>.<br/>
+            Para alterar a frequência ou desativar alertas, acesse o menu de Configurações no dashboard.
+          </p>
+        </div>
+
+      </div>
+    </body>
+    </html>
+    `;
+
+    // Dispatch email
+    const subject = idleMachines.length > 0
+        ? `🚨 [ALERTA] ${idleMachines.length} Máquina(s) Parada(s) + Resumo Diário CNC`
+        : `📊 Resumo Diário de Produção CNC - MACH3 Tracker`;
+
+    let emailSent = false;
+    let sendError = null;
+
+    try {
+        if (process.env.EMAIL_PASS) {
+            await transporter.sendMail({
+                from: '"MACH3 Tracker - Automação" <contato@mach3tracker.com>',
+                to: recipient,
+                subject,
+                html: emailHtml
+            });
+            emailSent = true;
+            console.log(`[AUTOMATION] Successfully sent email to ${recipient}`);
+        } else {
+            console.log(`[AUTOMATION] Mock email dispatch to ${recipient} (EMAIL_PASS not configured)`);
+            emailSent = true;
+        }
+    } catch (err) {
+        console.error('[AUTOMATION EMAIL ERROR]', err);
+        sendError = err.message;
+    }
+
+    // Record into report_history
+    const summary = `Ciclo executado: ${totalJobs} trabalhos analisados, ${totalHours}h de usinagem, ${idleMachines.length} máquinas paradas (>1h). Destinatário: ${recipient}.`;
+    await pool.query(
+        'INSERT INTO report_history ("userId", report_type, recipient_email, status, subject, summary, details) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+        [
+            userId,
+            idleMachines.length > 0 ? 'daily_and_idle_alert' : 'daily_report',
+            recipient,
+            emailSent ? 'sent' : 'failed',
+            subject,
+            summary,
+            JSON.stringify({ totalJobs, totalHours, totalCost, idleMachines, activeMachines, sendError })
+        ]
+    );
+
+    // Update user timestamp
+    await pool.query('UPDATE users SET last_daily_report_at = NOW(), last_idle_alert_at = NOW() WHERE id = $1', [userId]);
+
+    return {
+        success: true,
+        recipient,
+        subject,
+        summary,
+        totalJobs,
+        totalHours,
+        totalCost: `R$ ${totalCost}`,
+        idleMachines,
+        activeMachines,
+        emailSent,
+        sendError
+    };
+}
+
+// Report Automation Settings
+app.post('/api/user/report-settings', authenticateToken, async (req, res) => {
+    try {
+        const { company_logo, theme, report_email, daily_report, idle_alert, weekly_report } = req.body;
+        const updates = [];
+        const values = [];
+        let idx = 1;
+
+        if (company_logo !== undefined) {
+            updates.push(`company_logo = $${idx++}`);
+            values.push(company_logo);
+        }
+        if (theme !== undefined) {
+            updates.push(`theme = $${idx++}`);
+            values.push(theme);
+        }
+        if (report_email !== undefined) {
+            updates.push(`report_email = $${idx++}`);
+            values.push(report_email);
+        }
+        if (daily_report !== undefined) {
+            updates.push(`daily_report = $${idx++}`);
+            values.push(Boolean(daily_report));
+        }
+        if (idle_alert !== undefined) {
+            updates.push(`idle_alert = $${idx++}`);
+            values.push(Boolean(idle_alert));
+        }
+        if (weekly_report !== undefined) {
+            updates.push(`weekly_report = $${idx++}`);
+            values.push(Boolean(weekly_report));
+        }
+
+        if (updates.length > 0) {
+            values.push(req.user.id);
+            await pool.query(`UPDATE users SET ${updates.join(', ')} WHERE id = $${idx}`, values);
+        }
+
+        res.json({ success: true, message: "Configurações salvas com sucesso!" });
+    } catch (err) {
+        console.error('[REPORT SETTINGS ERROR]', err);
+        res.status(500).json({ error: "Erro ao salvar configurações: " + err.message });
+    }
+});
+
+// Trigger Report Cycle ("Faça o Ciclo")
+app.post('/api/user/trigger-report-cycle', authenticateToken, async (req, res) => {
+    try {
+        const result = await executeReportCycle(req.user.id, req.body);
+        res.json(result);
+    } catch (err) {
+        console.error('[TRIGGER REPORT CYCLE ERROR]', err);
+        res.status(500).json({ error: "Erro ao executar ciclo de relatórios: " + err.message });
+    }
+});
+
+// Report History
+app.get('/api/user/report-history', authenticateToken, async (req, res) => {
+    try {
+        const history = (await pool.query(
+            'SELECT * FROM report_history WHERE "userId" = $1 ORDER BY id DESC LIMIT 20',
+            [req.user.id]
+        )).rows;
+        res.json(history);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.get('/api/admin/users', authenticateToken, authenticateAdmin, async (req, res) => {
@@ -2463,6 +2879,70 @@ app.get('*', (req, res) => {
         : path.join(__dirname, '../dashboard-v2/dist', 'index.html');
     res.sendFile(indexPath);
 });
+
+// Automated Report & Machine Alert Scheduler (runs every 60s)
+setInterval(async () => {
+    try {
+        const now = new Date();
+        const spParts = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'America/Sao_Paulo',
+            hour: 'numeric',
+            minute: 'numeric',
+            hour12: false
+        }).formatToParts(now);
+
+        const hours = Number(spParts.find(p => p.type === 'hour')?.value || 0);
+        const minutes = Number(spParts.find(p => p.type === 'minute')?.value || 0);
+
+        // Daily 18:00 Report
+        if (hours === 18 && minutes === 0) {
+            const usersForDaily = (await pool.query(
+                `SELECT id FROM users 
+                 WHERE daily_report = true 
+                   AND (last_daily_report_at IS NULL OR last_daily_report_at < NOW() - INTERVAL '12 HOURS')`
+            )).rows;
+
+            for (const u of usersForDaily) {
+                console.log(`[SCHEDULED AUTOMATION] Triggering 18:00 daily report for user #${u.id}`);
+                await executeReportCycle(u.id).catch(e => console.error(`[DAILY REPORT ERROR user #${u.id}]`, e));
+            }
+        }
+
+        // Idle Machine Alert check (every 30 minutes, throttled to 2 hours between dispatches)
+        if (minutes === 0 || minutes === 30) {
+            const usersForIdle = (await pool.query(
+                `SELECT id FROM users 
+                 WHERE idle_alert = true 
+                   AND (last_idle_alert_at IS NULL OR last_idle_alert_at < NOW() - INTERVAL '2 HOURS')`
+            )).rows;
+
+            for (const u of usersForIdle) {
+                const routers = (await pool.query('SELECT * FROM routers WHERE "userId" = $1', [u.id])).rows;
+                let hasIdleMachine = false;
+                for (const r of routers) {
+                    const lastJob = (await pool.query('SELECT * FROM jobs WHERE ("userId" = $1) AND (router_name ILIKE $2) ORDER BY id DESC LIMIT 1', [u.id, `%${r.name}%`])).rows[0];
+                    if (lastJob) {
+                        const t = new Date(lastJob.end_time || lastJob.start_time);
+                        if (!isNaN(t.getTime()) && (now.getTime() - t.getTime()) >= 60 * 60 * 1000) {
+                            hasIdleMachine = true;
+                            break;
+                        }
+                    } else {
+                        hasIdleMachine = true;
+                        break;
+                    }
+                }
+
+                if (hasIdleMachine) {
+                    console.log(`[SCHEDULED AUTOMATION] Idle machine detected for user #${u.id}. Dispatching alert.`);
+                    await executeReportCycle(u.id).catch(e => console.error(`[IDLE ALERT ERROR user #${u.id}]`, e));
+                }
+            }
+        }
+    } catch (schedErr) {
+        console.error('[SCHEDULER ERROR]', schedErr);
+    }
+}, 60000);
 
 app.listen(port, '0.0.0.0', () => {
     console.log(`Premium Server (PostgreSQL) running on port ${port}`);

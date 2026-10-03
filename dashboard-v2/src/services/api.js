@@ -373,6 +373,17 @@ export const api = {
     });
     return safeJson(resp);
   },
+  // Automation & Report Cycle
+  saveReportSettings: async (payload) => {
+    return api.post('/user/report-settings', payload);
+  },
+  triggerReportCycle: async (options = {}) => {
+    return api.post('/user/trigger-report-cycle', options);
+  },
+  getReportHistory: async () => {
+    return api.get('/user/report-history');
+  },
+
   deleteCustom: async (url) => {
     const resp = await fetch(`${API_URL}/api${url}`, { method: 'DELETE', headers: getAuthHeaders() });
     return safeJson(resp);

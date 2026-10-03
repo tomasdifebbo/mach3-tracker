@@ -104,6 +104,14 @@ function App() {
     }
   }, [isLoggedIn]);
 
+  // Sync System Theme
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('mach3_theme') || user?.theme || 'Escuro';
+    const t = savedTheme.toLowerCase();
+    const themeKey = t.includes('claro') ? 'claro' : (t.includes('azul') ? 'azul' : 'escuro');
+    document.documentElement.setAttribute('data-theme', themeKey);
+  }, [user?.theme]);
+
   // Handle Admin Portal Route (/admin)
   const pathParts = window.location.pathname.split('/');
   const isAdminRoute = pathParts[1] === 'admin';
