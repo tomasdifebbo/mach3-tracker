@@ -147,18 +147,38 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
     localStorage.setItem('dismissed_notifs', JSON.stringify(updated));
   };
 
+  const companyLogo = user?.company_logo || localStorage.getItem('mach3_company_logo');
+
+  useEffect(() => {
+    const localLogo = localStorage.getItem('mach3_company_logo');
+    if (localLogo && user && !user.company_logo) {
+      api.saveReportSettings({ company_logo: localLogo }).catch(() => {});
+    }
+  }, [user]);
+
   return (
     <header className="h-20 border-b border-border flex items-center justify-between px-4 md:px-8 bg-bg-main/50 backdrop-blur-sm sticky top-0 z-40">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 md:gap-4 min-w-0">
         <button 
           onClick={onMenuToggle}
-          className="md:hidden p-2 text-text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+          className="md:hidden p-2 text-text-muted hover:text-white hover:bg-white/5 rounded-lg transition-colors shrink-0"
         >
           <Menu size={24} />
         </button>
-        <div className="flex flex-col">
-          <h2 className="text-lg md:text-xl font-bold text-white tracking-tight">{title}</h2>
-          <p className="text-xs md:text-sm text-text-muted hidden sm:block">{subtitle}</p>
+
+        {companyLogo && (
+          <div className="h-10 sm:h-12 max-w-[120px] sm:max-w-[160px] px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-all hover:bg-white/10">
+            <img 
+              src={companyLogo} 
+              alt="Logo da Empresa" 
+              className="max-h-8 sm:max-h-10 w-auto object-contain" 
+            />
+          </div>
+        )}
+
+        <div className="flex flex-col min-w-0">
+          <h2 className="text-lg md:text-xl font-bold text-white tracking-tight truncate">{title}</h2>
+          <p className="text-xs md:text-sm text-text-muted hidden sm:block truncate">{subtitle}</p>
         </div>
       </div>
 

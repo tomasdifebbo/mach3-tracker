@@ -994,13 +994,21 @@ app.patch('/api/user/profile-pins', authenticateToken, async (req, res) => {
 // ==========================================
 async function executeReportCycle(userId, options = {}) {
     const userRes = await pool.query(
-        'SELECT id, email, "costPerHour", "plannedHours", report_email, daily_report, idle_alert, weekly_report, theme, company_logo FROM users WHERE id = $1',
+        'SELECT id, email, "costPerHour", "plannedHours", report_email, daily_report, idle_alert, weekly_report, theme, company_logo, company_legal_name FROM users WHERE id = $1',
         [userId]
     );
     const user = userRes.rows[0];
     if (!user) throw new Error('Usuário não encontrado');
 
+    // Sync company logo if provided in options and not yet stored
+    if (options.company_logo && !user.company_logo) {
+        await pool.query('UPDATE users SET company_logo = $1 WHERE id = $2', [options.company_logo, userId]).catch(() => {});
+        user.company_logo = options.company_logo;
+    }
+
     const recipient = options.report_email || user.report_email || user.email || 'tomasdifebbo.tdf@gmail.com';
+    const companyLogo = options.company_logo || user.company_logo || null;
+    const companyName = user.company_legal_name || 'Casa Do Trem';
     const now = new Date();
     
     // Sao Paulo time
@@ -1027,7 +1035,7 @@ async function executeReportCycle(userId, options = {}) {
         `SELECT * FROM jobs 
          WHERE ("userId" = $1) 
            AND (year = $2 AND month = $3 AND day = $4)
-         ORDER BY id DESC`,
+         ORDER BY id ASC`,
         [userId, todayYear, todayMonth, todayDay]
     );
 
@@ -1035,32 +1043,88 @@ async function executeReportCycle(userId, options = {}) {
     let isHistoricalPreview = false;
     if (jobsToday.length === 0) {
         const fallbackRes = await pool.query(
-            'SELECT * FROM jobs WHERE ("userId" = $1) ORDER BY id DESC LIMIT 5',
+            'SELECT * FROM jobs WHERE ("userId" = $1) ORDER BY id DESC LIMIT 10',
             [userId]
         );
-        jobsToday = fallbackRes.rows;
+        jobsToday = fallbackRes.rows.reverse();
         isHistoricalPreview = true;
     }
 
     const totalJobs = jobsToday.length;
     let totalMinutes = 0;
-    const operatorStats = {};
     const materialStats = {};
+    const operatorSummary = {};
 
     jobsToday.forEach(j => {
         const mins = Number(j.duration_minutes) || 0;
         totalMinutes += mins;
 
-        const op = j.operator_name ? j.operator_name.trim().toUpperCase() : 'NÃO INFORMADO';
-        operatorStats[op] = (operatorStats[op] || 0) + mins;
+        // Operator stats
+        const opRaw = j.operator_name ? j.operator_name.trim() : 'Não informado';
+        const opKey = opRaw.toUpperCase();
+        if (!operatorSummary[opKey]) {
+            operatorSummary[opKey] = {
+                name: opRaw,
+                totalMinutes: 0,
+                jobsCount: 0,
+                routers: new Set()
+            };
+        }
+        operatorSummary[opKey].totalMinutes += mins;
+        operatorSummary[opKey].jobsCount += 1;
+        if (j.router_name) operatorSummary[opKey].routers.add(j.router_name);
 
-        const mat = j.material_name ? j.material_name.trim().toUpperCase() : 'DIVERSOS';
+        // Materials
+        const mat = j.material_name ? j.material_name.trim() : 'Diversos';
         materialStats[mat] = (materialStats[mat] || 0) + 1;
     });
 
     const totalHours = (totalMinutes / 60).toFixed(1);
     const costPerHour = Number(user.costPerHour) || 50;
     const totalCost = ((totalMinutes / 60) * costPerHour).toFixed(2).replace('.', ',');
+
+    // Ranked Operators with metrics
+    const operatorRank = Object.values(operatorSummary)
+        .sort((a, b) => b.totalMinutes - a.totalMinutes)
+        .map(o => {
+            const hours = (o.totalMinutes / 60).toFixed(1);
+            const pct = totalMinutes > 0 ? ((o.totalMinutes / totalMinutes) * 100).toFixed(1) : '0';
+            const avgMins = o.jobsCount > 0 ? (o.totalMinutes / o.jobsCount).toFixed(1) : '0';
+            return {
+                name: o.name,
+                jobsCount: o.jobsCount,
+                hours,
+                pct,
+                avgMins,
+                minsFormatted: o.totalMinutes.toFixed(1),
+                machines: Array.from(o.routers).join(', ') || 'CNC'
+            };
+        });
+
+    // Chronological Timeline items
+    const chronologicalJobs = [...jobsToday].sort((a, b) => {
+        const timeA = a.start_time ? new Date(a.start_time).getTime() : a.id;
+        const timeB = b.start_time ? new Date(b.start_time).getTime() : b.id;
+        return timeA - timeB;
+    });
+
+    const timelineItems = chronologicalJobs.map((j, index) => {
+        const sTime = j.start_time ? new Date(j.start_time).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }) : '—';
+        const eTime = j.end_time ? new Date(j.end_time).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }) : '—';
+        const dur = (Number(j.duration_minutes) || 0).toFixed(1);
+        const op = j.operator_name || 'Não informado';
+        const mat = j.material_name || 'Diversos';
+        const router = j.router_name || 'Router';
+        return {
+            index: index + 1,
+            timeRange: `${sTime} às ${eTime}`,
+            dur: `${dur} min`,
+            router,
+            fileName: j.file_name,
+            operator: op,
+            material: mat
+        };
+    });
 
     // Idle machines check (for this user's routers)
     const routersRes = await pool.query(
@@ -1107,54 +1171,90 @@ async function executeReportCycle(userId, options = {}) {
         }
     }
 
+    // Process Logo and CID Attachment for Email Clients (Gmail/Outlook compatible)
+    const mailAttachments = [];
+    let logoImgSrc = companyLogo;
+
+    if (companyLogo && companyLogo.startsWith('data:image/')) {
+        const matches = companyLogo.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,(.+)$/);
+        if (matches) {
+            const contentType = matches[1];
+            const base64Data = matches[2];
+            const ext = contentType.split('/')[1] || 'png';
+            mailAttachments.push({
+                filename: `company_logo.${ext}`,
+                content: Buffer.from(base64Data, 'base64'),
+                cid: 'company_logo_img'
+            });
+            logoImgSrc = 'cid:company_logo_img';
+        }
+    }
+
     // Build Email HTML
     const emailHtml = `
     <!DOCTYPE html>
     <html lang="pt-BR">
     <head>
       <meta charset="utf-8">
-      <title>MACH3 Tracker - Relatório de Produção & Alertas</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>MACH3 Tracker - Relatório Diário de Produção & Timeline</title>
       <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0a0e1a; color: #f1f5f9; margin: 0; padding: 20px; }
-        .card { background-color: #0f1524; border: 1px solid #1e293b; border-radius: 16px; padding: 24px; margin-bottom: 20px; }
-        .grid { display: flex; gap: 16px; flex-wrap: wrap; }
-        .kpi { flex: 1; min-width: 140px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; text-align: center; }
-        .kpi-val { font-size: 24px; font-weight: 800; color: #06b6d4; margin-top: 4px; }
-        .kpi-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; }
-        .alert-box { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
-        .alert-title { color: #f87171; font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-        th { text-align: left; font-size: 11px; text-transform: uppercase; color: #94a3b8; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #080c16; color: #f1f5f9; margin: 0; padding: 24px 12px; }
+        .wrapper { max-width: 700px; margin: 0 auto; background-color: #0b1120; border: 1px solid #1e293b; border-radius: 20px; padding: 28px 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+        .card { background-color: #0f172a; border: 1px solid #1e293b; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .grid { display: flex; gap: 12px; flex-wrap: wrap; }
+        .kpi { flex: 1; min-width: 130px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; text-align: center; }
+        .kpi-val { font-size: 22px; font-weight: 800; color: #06b6d4; margin-top: 4px; }
+        .kpi-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: bold; }
+        .alert-box { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 14px; padding: 16px; margin-bottom: 20px; }
+        .alert-title { color: #f87171; font-weight: bold; font-size: 15px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th { text-align: left; font-size: 11px; text-transform: uppercase; color: #94a3b8; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
         td { font-size: 13px; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .btn { display: inline-block; background-color: #06b6d4; color: #000; font-weight: bold; padding: 12px 24px; border-radius: 10px; text-decoration: none; margin-top: 16px; }
+        .btn { display: inline-block; background-color: #06b6d4; color: #000000 !important; font-weight: 800; padding: 12px 28px; border-radius: 12px; text-decoration: none; margin-top: 16px; font-size: 13px; letter-spacing: 0.5px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
       </style>
     </head>
     <body>
-      <div style="max-width: 680px; margin: 0 auto;">
+      <div class="wrapper">
         
-        <!-- Header -->
-        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 20px; margin-bottom: 24px;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 24px;">🔩</span>
-              <span style="font-size: 20px; font-weight: 900; letter-spacing: 1px; color: #ffffff;">MACH3 TRACKER</span>
-            </div>
-            <div style="font-size: 12px; color: #06b6d4; font-weight: bold; letter-spacing: 2px; margin-top: 2px;">AUTOMAÇÃO DE RELATÓRIOS & MONITORAMENTO</div>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 12px; color: #94a3b8;">${dateFormatted}</div>
-            <span style="background: rgba(6, 182, 212, 0.15); color: #06b6d4; border: 1px solid rgba(6, 182, 212, 0.3); font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 12px; text-transform: uppercase;">Ciclo Concluído</span>
-          </div>
-        </div>
+        <!-- Header with Company Logo -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-bottom: 1px solid #1e293b; padding-bottom: 20px; margin-bottom: 24px;">
+          <tr>
+            <td valign="middle" align="left">
+              <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  ${companyLogo ? `
+                    <td valign="middle" style="padding-right: 14px;">
+                      <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 6px 12px; display: inline-block;">
+                        <img src="${logoImgSrc}" alt="Logo da Empresa" style="max-height: 48px; max-width: 140px; object-fit: contain; vertical-align: middle; display: block;" />
+                      </div>
+                    </td>
+                  ` : `
+                    <td valign="middle" style="padding-right: 12px; font-size: 32px;">🔩</td>
+                  `}
+                  <td valign="middle">
+                    <div style="font-size: 19px; font-weight: 900; letter-spacing: 0.5px; color: #ffffff;">${companyName.toUpperCase()}</div>
+                    <div style="font-size: 11px; color: #06b6d4; font-weight: 800; letter-spacing: 1.5px; margin-top: 3px;">RELATÓRIO DIÁRIO DE PRODUÇÃO CNC</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+            <td valign="middle" align="right">
+              <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">${dateFormatted}</div>
+              <span style="background: rgba(6, 182, 212, 0.15); color: #06b6d4; border: 1px solid rgba(6, 182, 212, 0.3); font-size: 10px; font-weight: bold; padding: 3px 10px; border-radius: 12px; text-transform: uppercase; display: inline-block;">Fechamento de Turno</span>
+            </td>
+          </tr>
+        </table>
 
+        <!-- Idle Alert Banner -->
         ${idleMachines.length > 0 ? `
-        <!-- Machine Idle Alert Box -->
         <div class="alert-box">
           <div class="alert-title">
-            ⚠️ ALERTA: ${idleMachines.length} MÁQUINA(S) PARADA(S) HÁ MAIS DE 1 HORA
+            ⚠️ ALERTA DE OCIOSIDADE: ${idleMachines.length} MÁQUINA(S) PARADA(S) HÁ MAIS DE 1 HORA
           </div>
-          <p style="font-size: 13px; color: #fca5a5; margin: 0 0 12px 0;">
-            O sistema detectou que as seguintes máquinas CNC/Laser estão inativas há mais tempo que o limite configurado (1 hora).
+          <p style="font-size: 12px; color: #fca5a5; margin: 0 0 12px 0;">
+            As seguintes máquinas CNC/Laser estão inativas há mais tempo que o limite de tolerância estabelecido.
           </p>
           <table>
             <thead>
@@ -1170,7 +1270,7 @@ async function executeReportCycle(userId, options = {}) {
                 <tr>
                   <td style="font-weight: bold; color: #fff;">${m.name}</td>
                   <td style="color: #f87171; font-weight: bold;">${m.idleFormatted}</td>
-                  <td style="color: #cbd5e1; font-family: monospace;">${m.lastJob}</td>
+                  <td style="color: #cbd5e1; font-family: monospace; font-size: 12px;">${m.lastJob}</td>
                   <td style="color: #94a3b8;">${m.operator}</td>
                 </tr>
               `).join('')}
@@ -1178,15 +1278,15 @@ async function executeReportCycle(userId, options = {}) {
           </table>
         </div>
         ` : `
-        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 14px; margin-bottom: 20px; color: #34d399; font-size: 14px; font-weight: bold;">
-          ✅ Todas as máquinas monitoradas estão operando com regularidade.
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; color: #34d399; font-size: 13px; font-weight: bold;">
+          ✅ Todas as máquinas operaram conforme o cronograma e com disponibilidade plena.
         </div>
         `}
 
         <!-- KPI Grid -->
         <div class="card">
-          <div style="font-size: 14px; font-weight: bold; text-transform: uppercase; color: #fff; margin-bottom: 16px; letter-spacing: 1px;">
-            📊 Resumo da Produção ${isHistoricalPreview ? '(Amostra Recente)' : 'de Hoje'}
+          <div style="font-size: 13px; font-weight: 800; text-transform: uppercase; color: #fff; margin-bottom: 14px; letter-spacing: 1px;">
+            📊 Indicadores Consolidados ${isHistoricalPreview ? '(Amostra Recente)' : 'de Hoje'}
           </div>
           <div class="grid">
             <div class="kpi">
@@ -1198,7 +1298,7 @@ async function executeReportCycle(userId, options = {}) {
               <div class="kpi-val">${totalHours}h</div>
             </div>
             <div class="kpi">
-              <div class="kpi-lbl">Custo Estimado</div>
+              <div class="kpi-lbl">Custo Operacional</div>
               <div class="kpi-val" style="color: #34d399;">R$ ${totalCost}</div>
             </div>
             <div class="kpi">
@@ -1208,41 +1308,107 @@ async function executeReportCycle(userId, options = {}) {
           </div>
         </div>
 
-        <!-- Jobs Table -->
+        <!-- Operator Quantification Section -->
         <div class="card">
-          <div style="font-size: 14px; font-weight: bold; text-transform: uppercase; color: #fff; margin-bottom: 12px; letter-spacing: 1px;">
-            📋 Trabalhos Registrados (${jobsToday.length})
+          <div style="font-size: 13px; font-weight: 800; text-transform: uppercase; color: #fff; margin-bottom: 14px; letter-spacing: 1px;">
+            👥 Desempenho & Tempo dos Operadores (${operatorRank.length} Colaboradores)
           </div>
           <table>
             <thead>
               <tr>
-                <th>Arquivo</th>
-                <th>Máquina</th>
-                <th>Duração</th>
                 <th>Operador</th>
-                <th>Material</th>
+                <th style="text-align: center;">Trabalhos</th>
+                <th style="text-align: right;">Tempo Total</th>
+                <th style="text-align: right;">Média / Peça</th>
+                <th style="text-align: left; width: 140px; padding-left: 16px;">Participação</th>
               </tr>
             </thead>
             <tbody>
-              ${jobsToday.slice(0, 10).map(j => `
+              ${operatorRank.map(op => `
                 <tr>
-                  <td style="font-weight: 500; color: #fff; font-family: monospace;">${j.file_name}</td>
-                  <td style="color: #06b6d4;">${j.router_name || 'Router'}</td>
-                  <td style="color: #e2e8f0;">${(Number(j.duration_minutes) || 0).toFixed(1)} min</td>
-                  <td style="color: #94a3b8;">${j.operator_name || '—'}</td>
-                  <td style="color: #cbd5e1;">${j.material_name || '—'}</td>
+                  <td style="font-weight: bold; color: #ffffff;">
+                    🧑‍🔧 ${op.name}
+                    <div style="font-size: 10px; color: #94a3b8; font-weight: normal;">${op.machines}</div>
+                  </td>
+                  <td style="text-align: center; color: #cbd5e1; font-weight: bold;">
+                    ${op.jobsCount}
+                  </td>
+                  <td style="text-align: right; color: #06b6d4; font-weight: bold;">
+                    ${op.hours}h <span style="font-size: 11px; color: #94a3b8; font-weight: normal;">(${op.minsFormatted}m)</span>
+                  </td>
+                  <td style="text-align: right; color: #cbd5e1;">
+                    ${op.avgMins} min
+                  </td>
+                  <td style="padding-left: 16px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: #34d399; font-weight: bold; margin-bottom: 3px;">
+                      <span>${op.pct}%</span>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.08); height: 6px; border-radius: 3px; overflow: hidden; width: 100%;">
+                      <div style="background: #06b6d4; height: 6px; width: ${op.pct}%; border-radius: 3px;"></div>
+                    </div>
+                  </td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
         </div>
 
+        <!-- Production Timeline -->
+        <div class="card">
+          <div style="font-size: 13px; font-weight: 800; text-transform: uppercase; color: #fff; margin-bottom: 16px; letter-spacing: 1px;">
+            ⏱️ Linha do Tempo da Produção (Timeline Cronológica)
+          </div>
+          <div style="padding-left: 10px; border-left: 2px solid #06b6d4; margin-left: 8px;">
+            ${timelineItems.map((item) => `
+              <div style="position: relative; margin-bottom: 18px; padding-left: 18px;">
+                <div style="position: absolute; left: -19px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #06b6d4; border: 2px solid #0f172a;"></div>
+                <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px;">
+                  <div>
+                    <span style="font-size: 11px; font-weight: 800; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 2px 7px; border-radius: 4px; font-family: monospace;">
+                      ${item.timeRange}
+                    </span>
+                    <span style="font-size: 12px; font-weight: bold; color: #c084fc; margin-left: 8px;">
+                      [${item.router}]
+                    </span>
+                  </div>
+                  <span style="font-size: 12px; font-weight: 800; color: #34d399; background: rgba(52,211,153,0.1); padding: 2px 8px; border-radius: 12px;">
+                    ⏱️ ${item.dur}
+                  </span>
+                </div>
+                <div style="font-size: 13px; font-weight: bold; color: #ffffff; margin-top: 5px; font-family: monospace;">
+                  📄 ${item.fileName}
+                </div>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px; display: flex; gap: 14px; flex-wrap: wrap;">
+                  <span>👤 Operador: <strong style="color: #cbd5e1;">${item.operator}</strong></span>
+                  <span>📦 Material: <strong style="color: #cbd5e1;">${item.material}</strong></span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Materials Distribution -->
+        <div class="card">
+          <div style="font-size: 13px; font-weight: 800; text-transform: uppercase; color: #fff; margin-bottom: 12px; letter-spacing: 1px;">
+            📦 Insumos & Materiais Usinados
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            ${Object.entries(materialStats).map(([mat, count]) => `
+              <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 8px 12px; border-radius: 10px; display: flex; align-items: center; gap: 8px;">
+                <span style="color: #06b6d4; font-size: 12px;">●</span>
+                <span style="font-size: 12px; color: #e2e8f0; font-weight: 600;">${mat}</span>
+                <span style="background: rgba(6,182,212,0.15); color: #06b6d4; font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 6px;">${count} peças</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
         <!-- Footer -->
-        <div style="text-align: center; padding: 20px 0; color: #64748b; font-size: 12px;">
-          <a href="https://mach3tracker.up.railway.app" class="btn" style="color: #000 !important;">Abrir Painel em Tempo Real</a>
-          <p style="margin-top: 20px;">
-            Este e-mail foi gerado automaticamente pelo MACH3 Tracker para <strong>${recipient}</strong>.<br/>
-            Para alterar a frequência ou desativar alertas, acesse o menu de Configurações no dashboard.
+        <div style="text-align: center; padding: 20px 0 10px 0; color: #64748b; font-size: 12px;">
+          <a href="https://mach3tracker.up.railway.app" class="btn">Acessar Painel em Tempo Real</a>
+          <p style="margin-top: 20px; line-height: 1.6;">
+            Este e-mail executivo foi gerado automaticamente pelo <strong>MACH3 Tracker</strong> para <strong>${recipient}</strong>.<br/>
+            Para alterar configurações de notificação, acesse o menu de Configurações no dashboard.
           </p>
         </div>
 
@@ -1251,10 +1417,27 @@ async function executeReportCycle(userId, options = {}) {
     </html>
     `;
 
+    // If only requesting preview HTML, return immediately without dispatching
+    if (options.previewOnly) {
+        return {
+            success: true,
+            recipient,
+            subject: idleMachines.length > 0 ? `🚨 [ALERTA] ${idleMachines.length} Máquina(s) Parada(s) + Resumo Diário CNC` : `📊 Resumo Diário de Produção CNC - ${companyName}`,
+            totalJobs,
+            totalHours,
+            totalCost: `R$ ${totalCost}`,
+            operatorRank,
+            timelineItems,
+            idleMachines,
+            activeMachines,
+            html: emailHtml
+        };
+    }
+
     // Dispatch email
     const subject = idleMachines.length > 0
-        ? `🚨 [ALERTA] ${idleMachines.length} Máquina(s) Parada(s) + Resumo Diário CNC`
-        : `📊 Resumo Diário de Produção CNC - MACH3 Tracker`;
+        ? `🚨 [ALERTA] ${idleMachines.length} Máquina(s) Parada(s) + Resumo Diário CNC - ${companyName}`
+        : `📊 Resumo Diário de Produção CNC - ${companyName}`;
 
     let emailSent = false;
     let sendError = null;
@@ -1262,10 +1445,11 @@ async function executeReportCycle(userId, options = {}) {
     try {
         if (process.env.EMAIL_PASS) {
             await transporter.sendMail({
-                from: '"MACH3 Tracker - Automação" <contato@mach3tracker.com>',
+                from: `"${companyName} - MACH3 Tracker" <${process.env.EMAIL_USER || 'contato@mach3tracker.com'}>`,
                 to: recipient,
                 subject,
-                html: emailHtml
+                html: emailHtml,
+                attachments: mailAttachments
             });
             emailSent = true;
             console.log(`[AUTOMATION] Successfully sent email to ${recipient}`);
@@ -1289,7 +1473,7 @@ async function executeReportCycle(userId, options = {}) {
             emailSent ? 'sent' : 'failed',
             subject,
             summary,
-            JSON.stringify({ totalJobs, totalHours, totalCost, idleMachines, activeMachines, sendError })
+            JSON.stringify({ totalJobs, totalHours, totalCost, operatorRank, idleMachines, activeMachines, sendError })
         ]
     );
 
@@ -1304,6 +1488,8 @@ async function executeReportCycle(userId, options = {}) {
         totalJobs,
         totalHours,
         totalCost: `R$ ${totalCost}`,
+        operatorRank,
+        timelineCount: timelineItems.length,
         idleMachines,
         activeMachines,
         emailSent,
@@ -1364,6 +1550,26 @@ app.post('/api/user/trigger-report-cycle', authenticateToken, async (req, res) =
     } catch (err) {
         console.error('[TRIGGER REPORT CYCLE ERROR]', err);
         res.status(500).json({ error: "Erro ao executar ciclo de relatórios: " + err.message });
+    }
+});
+
+// Report Preview (HTML direct view for manager simulation)
+app.get('/api/user/report-preview', async (req, res) => {
+    try {
+        let userId = 1;
+        const authHeader = req.headers['authorization'];
+        const token = (authHeader && authHeader.split(' ')[1]) || req.query.token;
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, JWT_SECRET);
+                userId = decoded.id;
+            } catch (e) {}
+        }
+        const result = await executeReportCycle(userId, { ...req.query, previewOnly: true });
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(result.html);
+    } catch (err) {
+        res.status(500).send("Erro ao gerar preview do relatório: " + err.message);
     }
 });
 

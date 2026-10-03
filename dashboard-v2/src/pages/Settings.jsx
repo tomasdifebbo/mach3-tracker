@@ -225,7 +225,8 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
         daily_report: dailyReport,
         idle_alert: idleAlert,
         weekly_report: weeklyReport,
-        report_email: reportEmail
+        report_email: reportEmail,
+        company_logo: companyLogo
       });
       if (onRefresh) onRefresh();
       setReportFeedback({ type: 'success', message: 'Configurações de automação salvas com sucesso no banco de dados!' });
@@ -247,13 +248,15 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
         daily_report: dailyReport,
         idle_alert: idleAlert,
         weekly_report: weeklyReport,
-        report_email: reportEmail
+        report_email: reportEmail,
+        company_logo: companyLogo
       });
 
       const res = await api.triggerReportCycle({
         report_email: reportEmail,
         daily_report: dailyReport,
-        idle_alert: idleAlert
+        idle_alert: idleAlert,
+        company_logo: companyLogo
       });
 
       setCycleResult(res);
