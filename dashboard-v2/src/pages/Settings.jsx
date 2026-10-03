@@ -16,9 +16,14 @@ import {
   Upload,
   CreditCard,
   Calendar,
-  Eye
+  Eye,
+  Smartphone,
+  Bell,
+  BellRing,
+  BellOff
 } from 'lucide-react';
 import { api } from '../services/api';
+import { pushService } from '../services/pushService';
 
 import { SubscriptionPlans } from '../components/SubscriptionPlans';
 import { ManagePaymentModal } from '../components/ManagePaymentModal';
@@ -51,6 +56,108 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
   const [cycleResult, setCycleResult] = useState(null);
   const [reportFeedback, setReportFeedback] = useState(null);
   const [isManagePaymentOpen, setIsManagePaymentOpen] = useState(false);
+
+  // Web Push Notification States
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushPermission, setPushPermission] = useState('default');
+  const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [pushDevicesCount, setPushDevicesCount] = useState(0);
+  const [pushLoading, setPushLoading] = useState(false);
+  const [pushTestLoading, setPushTestLoading] = useState(false);
+  const [pushMessage, setPushMessage] = useState(null);
+  const [installPromptEvent, setInstallPromptEvent] = useState(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    // Check if running as installed standalone PWA
+    const isApp = (typeof window !== 'undefined' && (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true));
+    setIsStandalone(isApp);
+
+    // Capture install prompt event for Android/Chrome
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setInstallPromptEvent(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Check Push Status
+    const checkPush = async () => {
+      const state = await pushService.getSubscriptionState();
+      setPushSupported(state.supported);
+      setPushPermission(state.permission);
+      setPushSubscribed(state.subscribed);
+
+      const token = localStorage.getItem('mach3_token');
+      if (token) {
+        try {
+          const res = await fetch('/api/push/status', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setPushDevicesCount(data.devicesCount || 0);
+          }
+        } catch (e) {}
+      }
+    };
+    checkPush();
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleTogglePush = async () => {
+    setPushLoading(true);
+    setPushMessage(null);
+    const token = localStorage.getItem('mach3_token');
+    try {
+      if (pushSubscribed) {
+        await pushService.unsubscribe(token);
+        setPushSubscribed(false);
+        setPushMessage({ type: 'success', text: 'Notificações push desativadas neste aparelho.' });
+        setPushDevicesCount(prev => Math.max(0, prev - 1));
+      } else {
+        await pushService.subscribe(token);
+        setPushSubscribed(true);
+        setPushPermission('granted');
+        setPushMessage({ type: 'success', text: '🔔 Notificações ativadas! Seu celular tocará ao terminar qualquer corte.' });
+        setPushDevicesCount(prev => prev + 1);
+      }
+    } catch (err) {
+      console.error(err);
+      setPushMessage({ type: 'error', text: err.message || 'Erro ao configurar notificações push.' });
+      const state = await pushService.getSubscriptionState();
+      setPushPermission(state.permission);
+      setPushSubscribed(state.subscribed);
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    setPushTestLoading(true);
+    setPushMessage(null);
+    const token = localStorage.getItem('mach3_token');
+    try {
+      await pushService.testNotification(token);
+      setPushMessage({ type: 'success', text: '✅ Notificação enviada! Verifique a barra de notificações do seu celular.' });
+    } catch (err) {
+      setPushMessage({ type: 'error', text: err.message || 'Erro ao enviar notificação de teste.' });
+    } finally {
+      setPushTestLoading(false);
+    }
+  };
+
+  const handleInstallApp = async () => {
+    if (installPromptEvent) {
+      installPromptEvent.prompt();
+      const choice = await installPromptEvent.userChoice;
+      if (choice.outcome === 'accepted') {
+        setInstallPromptEvent(null);
+      }
+    }
+  };
 
   const isBusinessPlan = user?.plan === 'business' || user?.role === 'admin';
 
@@ -742,6 +849,164 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
             </button>
           </div>
         </form>
+      </section>
+
+      {/* Notificações Push no Celular (PWA Oficial) */}
+      <section className="glass p-6 md:p-10 rounded-[32px] md:rounded-[40px] space-y-6 bg-gradient-to-br from-accent-cyan/10 via-white/5 to-transparent border border-accent-cyan/30 shadow-2xl shadow-accent-cyan/5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3.5 bg-accent-cyan/20 text-accent-cyan rounded-2xl shadow-lg shadow-accent-cyan/10 border border-accent-cyan/30">
+              <Smartphone size={28} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h3 className="text-xl font-black text-white tracking-wide">Notificações Push no Celular</h3>
+                <span className="text-[10px] font-black uppercase tracking-wider bg-accent-cyan/20 text-accent-cyan px-2.5 py-0.5 rounded-full border border-accent-cyan/30">
+                  PWA Nativo
+                </span>
+                {isStandalone && (
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-accent-success/20 text-accent-success px-2.5 py-0.5 rounded-full border border-accent-success/30 flex items-center gap-1">
+                    <CheckCircle2 size={10} /> App Instalado
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-text-muted mt-1 leading-relaxed max-w-xl">
+                Receba alertas sonoros e vibração direto no seu smartphone sempre que qualquer corte for finalizado na Router Central, Router 2, Laser ou Manual.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {pushSubscribed ? (
+              <span className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-accent-success/15 border border-accent-success/30 text-accent-success text-xs font-bold shadow-lg shadow-accent-success/10">
+                <span className="w-2.5 h-2.5 rounded-full bg-accent-success animate-pulse"></span>
+                Ativo neste Aparelho
+              </span>
+            ) : pushPermission === 'denied' ? (
+              <span className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold">
+                <AlertCircle size={14} />
+                Bloqueado no Navegador
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 border border-white/10 text-text-muted text-xs font-bold">
+                Inativo neste Aparelho
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Mensagem de Feedback */}
+        {pushMessage && (
+          <div className={`p-4 rounded-2xl text-xs font-semibold flex items-center gap-2.5 border ${
+            pushMessage.type === 'success' 
+              ? 'bg-accent-success/15 border-accent-success/30 text-accent-success' 
+              : 'bg-red-500/15 border-red-500/30 text-red-400'
+          }`}>
+            {pushMessage.type === 'success' ? <CheckCircle2 size={18} className="shrink-0" /> : <AlertCircle size={18} className="shrink-0" />}
+            <span>{pushMessage.text}</span>
+          </div>
+        )}
+
+        {/* Controles de Ação */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+          {/* Botão de Ativar / Desativar */}
+          <button
+            onClick={handleTogglePush}
+            disabled={pushLoading || !pushSupported || pushPermission === 'denied'}
+            className={`p-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all shadow-lg select-none cursor-pointer ${
+              pushSubscribed
+                ? 'bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30'
+                : 'bg-accent-cyan text-black hover:bg-cyan-300 shadow-accent-cyan/20 hover:scale-[1.02]'
+            } ${(!pushSupported || pushPermission === 'denied') ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {pushLoading ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                <span>Configurando...</span>
+              </>
+            ) : pushSubscribed ? (
+              <>
+                <BellOff size={16} />
+                <span>Desativar Notificações</span>
+              </>
+            ) : (
+              <>
+                <BellRing size={16} />
+                <span>Ativar Notificações no Celular</span>
+              </>
+            )}
+          </button>
+
+          {/* Botão de Testar Notificação */}
+          <button
+            onClick={handleSendTestPush}
+            disabled={pushTestLoading || !pushSubscribed}
+            className={`p-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all border select-none cursor-pointer ${
+              pushSubscribed
+                ? 'bg-white/10 hover:bg-white/15 text-white border-white/20 hover:border-accent-cyan/50 hover:scale-[1.02]'
+                : 'bg-white/5 text-text-muted border-white/5 opacity-50 cursor-not-allowed'
+            }`}
+          >
+            {pushTestLoading ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                <span>Disparando teste...</span>
+              </>
+            ) : (
+              <>
+                <Bell size={16} className="text-accent-cyan" />
+                <span>Testar Notificação Agora</span>
+              </>
+            )}
+          </button>
+
+          {/* Botão de Instalar App PWA (se disponível no Android/Chrome) */}
+          {installPromptEvent && !isStandalone && (
+            <button
+              onClick={handleInstallApp}
+              className="p-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2.5 bg-gradient-to-r from-purple-500/20 to-accent-cyan/20 hover:from-purple-500/30 hover:to-accent-cyan/30 text-white border border-purple-500/30 transition-all select-none cursor-pointer hover:scale-[1.02]"
+            >
+              <Smartphone size={16} className="text-purple-400" />
+              <span>Instalar Aplicativo no Celular</span>
+            </button>
+          )}
+        </div>
+
+        {pushDevicesCount > 0 && (
+          <div className="text-xs text-text-muted flex items-center gap-2 font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent-cyan"></span>
+            Total de aparelhos cadastrados para sua conta: <strong className="text-white">{pushDevicesCount}</strong> {pushDevicesCount === 1 ? 'dispositivo' : 'dispositivos'}
+          </div>
+        )}
+
+        {/* Guia Prático de Instalação no Celular */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-white/10">
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+            <div className="flex items-center gap-2 text-white font-bold text-xs">
+              <span className="text-base">🤖</span>
+              <span>Como Instalar no Android (Chrome):</span>
+            </div>
+            <ol className="text-xs text-text-muted space-y-1 list-decimal list-inside leading-relaxed">
+              <li>Abra o site no <strong>Google Chrome</strong> do seu celular.</li>
+              <li>Toque nos <strong>três pontinhos (⋮)</strong> no canto superior direito.</li>
+              <li>Selecione <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela inicial"</strong>.</li>
+              <li>Abra o app <strong>Mach3 Tracker</strong> criado e toque em <strong>"Ativar Notificações"</strong>.</li>
+            </ol>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+            <div className="flex items-center gap-2 text-white font-bold text-xs">
+              <span className="text-base">🍏</span>
+              <span>Como Instalar no iPhone (Safari / iOS 16.4+):</span>
+            </div>
+            <ol className="text-xs text-text-muted space-y-1 list-decimal list-inside leading-relaxed">
+              <li>Abra o site no <strong>Safari</strong> do seu iPhone.</li>
+              <li>Toque no botão de <strong>Compartilhar</strong> (ícone de quadrado com seta para cima).</li>
+              <li>Role para baixo e selecione <strong>"Adicionar à Tela de Início"</strong>.</li>
+              <li>Abra o app criado na tela inicial e toque em <strong>"Ativar Notificações"</strong>.</li>
+            </ol>
+          </div>
+        </div>
       </section>
 
       <hr className="border-border/50" />

@@ -9,6 +9,14 @@ const crypto = require('crypto');
 require('dotenv').config();
 const { Pool } = require('pg');
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
+const webpush = require('web-push');
+
+// Web Push (PWA Mobile Notifications)
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BN8bwwq0UAuYRpuqxnsQ1n2RTgUfZIK63XtNH_2zMdfJi5CseOo3ns9jHNctfGhTRZe-7rmB-rAglCjbkgikYZA';
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'DOmynAp8v4PE1jyvlLmqT_39ZNRGntFFobbB4c2c7Ck';
+const VAPID_EMAIL = process.env.VAPID_EMAIL || 'mailto:casadotrem@gmail.com';
+
+webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
 // Mercado Pago config
 const mpClient = new MercadoPagoConfig({ 
@@ -49,6 +57,19 @@ const publicDir = fs.existsSync(path.join(__dirname, 'public', 'index.html'))
     : (fs.existsSync(path.join(__dirname, '../dashboard-v2/dist', 'index.html'))
         ? path.join(__dirname, '../dashboard-v2/dist')
         : path.join(__dirname, 'public'));
+
+// Specific Service Worker route to ensure proper MIME type, scope and caching
+app.get('/sw.js', (req, res) => {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Service-Worker-Allowed', '/');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    const swPath = path.join(publicDir, 'sw.js');
+    if (fs.existsSync(swPath)) {
+        res.sendFile(swPath);
+    } else {
+        res.status(404).send('Service Worker not found');
+    }
+});
 
 app.use(express.static(publicDir, {
     etag: false,
@@ -366,6 +387,16 @@ async function initDb() {
                 observations TEXT,
                 archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 "userId" INTEGER REFERENCES users(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS push_subscriptions (
+                id SERIAL PRIMARY KEY,
+                "userId" INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                endpoint TEXT NOT NULL UNIQUE,
+                p256dh TEXT NOT NULL,
+                auth TEXT NOT NULL,
+                user_agent TEXT,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             );
         `);
 
@@ -911,6 +942,112 @@ app.patch('/api/user/settings', authenticateToken, async (req, res) => {
 
     await pool.query('UPDATE users SET "costPerHour" = $1, "plannedHours" = $2, webhook_url = $3 WHERE id = $4', [cost, planned, webhookUrl || null, req.user.id]);
     res.json({ success: true });
+});
+
+// ==================== WEB PUSH (PWA) DISPATCHER & ENDPOINTS ====================
+async function sendPushToUser(userId, payload) {
+    try {
+        const subs = (await pool.query('SELECT * FROM push_subscriptions WHERE "userId" = $1', [userId])).rows;
+        if (!subs || subs.length === 0) return;
+
+        const stringPayload = typeof payload === 'string' ? payload : JSON.stringify(payload);
+
+        for (const sub of subs) {
+            const pushConfig = {
+                endpoint: sub.endpoint,
+                keys: {
+                    p256dh: sub.p256dh,
+                    auth: sub.auth
+                }
+            };
+            try {
+                await webpush.sendNotification(pushConfig, stringPayload);
+            } catch (err) {
+                if (err.statusCode === 410 || err.statusCode === 404) {
+                    console.log(`[PUSH] Subscrição inativa removida (${sub.id}): ${err.statusCode}`);
+                    await pool.query('DELETE FROM push_subscriptions WHERE id = $1', [sub.id]);
+                } else {
+                    console.error('[PUSH SEND ERROR]:', err.message);
+                }
+            }
+        }
+    } catch (e) {
+        console.error('[PUSH DISPATCH ERROR]:', e.message);
+    }
+}
+
+app.get('/api/push/vapid-public-key', (req, res) => {
+    res.json({ publicKey: VAPID_PUBLIC_KEY });
+});
+
+app.get('/api/push/status', authenticateToken, async (req, res) => {
+    try {
+        const countRes = await pool.query('SELECT count(*) as count FROM push_subscriptions WHERE "userId" = $1', [req.user.id]);
+        const count = parseInt(countRes.rows[0].count, 10);
+        res.json({ subscribed: count > 0, devicesCount: count });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/push/subscribe', authenticateToken, async (req, res) => {
+    try {
+        const { subscription } = req.body;
+        if (!subscription || !subscription.endpoint || !subscription.keys) {
+            return res.status(400).json({ error: 'Assinatura push inválida' });
+        }
+        const { endpoint, keys } = subscription;
+        const userAgent = req.headers['user-agent'] || '';
+
+        await pool.query(`
+            INSERT INTO push_subscriptions ("userId", endpoint, p256dh, auth, user_agent)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (endpoint) 
+            DO UPDATE SET "userId" = $1, p256dh = $3, auth = $4, user_agent = $5, created_at = NOW()
+        `, [req.user.id, endpoint, keys.p256dh, keys.auth, userAgent]);
+
+        res.json({ success: true, message: 'Dispositivo cadastrado com sucesso!' });
+    } catch (err) {
+        console.error('[PUSH SUBSCRIBE ERROR]:', err);
+        res.status(500).json({ error: 'Erro ao registrar assinatura push' });
+    }
+});
+
+app.post('/api/push/unsubscribe', authenticateToken, async (req, res) => {
+    try {
+        const { endpoint } = req.body;
+        if (endpoint) {
+            await pool.query('DELETE FROM push_subscriptions WHERE "userId" = $1 AND endpoint = $2', [req.user.id, endpoint]);
+        } else {
+            await pool.query('DELETE FROM push_subscriptions WHERE "userId" = $1', [req.user.id]);
+        }
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/push/test', authenticateToken, async (req, res) => {
+    try {
+        const countRes = await pool.query('SELECT count(*) as count FROM push_subscriptions WHERE "userId" = $1', [req.user.id]);
+        const count = parseInt(countRes.rows[0].count, 10);
+        if (count === 0) {
+            return res.status(400).json({ error: 'Nenhum celular ou navegador cadastrado. Ative as notificações push neste aparelho primeiro!' });
+        }
+
+        await sendPushToUser(req.user.id, {
+            title: '🔔 Mach3 Tracker - Teste Push',
+            body: 'Seu celular está conectado! Você receberá um aviso sonoro assim que cada corte for concluído.',
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
+            url: '/history'
+        });
+
+        res.json({ success: true, devicesCount: count, message: 'Notificação de teste enviada com sucesso!' });
+    } catch (err) {
+        console.error('[PUSH TEST ERROR]:', err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 const handleRoleUpdate = async (req, res) => {
@@ -2277,6 +2414,26 @@ app.patch('/api/jobs/latest', authenticateToken, async (req, res) => {
         }
     } catch (e) {
         console.error("Webhook processing error:", e);
+    }
+
+    // Dispatch Web Push Notification to connected mobile phones/browsers
+    try {
+        const durMin = Math.round(durationMinutes);
+        const durFormatted = durMin >= 60 
+            ? `${Math.floor(durMin / 60)}h ${durMin % 60}m` 
+            : `${Math.max(1, durMin)} min`;
+        const machine = row.router_name || router_name || 'CNC Router';
+        const file = row.file_name || 'Corte';
+
+        sendPushToUser(userId, {
+            title: `🔔 Corte Concluído - ${machine}`,
+            body: `Arquivo: ${file}\n⏱️ Duração: ${durFormatted}`,
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
+            url: '/history'
+        });
+    } catch (pushErr) {
+        console.error('[PUSH TRIGGER ERROR]:', pushErr);
     }
 
     res.json({ id: row.id, duration_minutes: durationMinutes, success: true });
