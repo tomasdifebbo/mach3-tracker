@@ -240,12 +240,16 @@ def process_queue():
         print(f"[v] {sucessos} eventos sincronizados com a nuvem!")
 
 def simulate_gcode_time(filepath):
-    """Estimate machining time from a G-code file (in minutes) and extract X/Y bounding box dimensions."""
+    """Estimate machining time from a G-code file (in minutes) and extract X/Y bounding box dimensions.
+    Incorporates actual Mach3 CNC motor tuning limits (e.g. Z axis max velocity 5500 mm/min, XY 21000 mm/min).
+    """
     if filepath.lower().endswith(('.cdr', '.pw5', '.ud5', '.ai', '.pdf')):
         return None, None, None, None
     try:
         feed_rate = 1000.0
-        rapid_rate = 10000.0
+        rapid_rate = 15000.0
+        xy_max_vel = 21000.0  # Motor tuning X/Y max speed (~350 mm/s)
+        z_max_vel = 5500.0    # Motor tuning Z max speed (~90 mm/s)
         total_time = 0.0
         lx, ly, lz = 0.0, 0.0, 0.0
         min_x, max_x = float('inf'), float('-inf')
@@ -274,14 +278,28 @@ def simulate_gcode_time(filepath):
                     min_y = min(min_y, ny)
                     max_y = max(max_y, ny)
 
-                dist = math.sqrt((nx-lx)**2 + (ny-ly)**2 + (nz-lz)**2)
+                dx = nx - lx
+                dy = ny - ly
+                dz = nz - lz
+                dist = math.sqrt(dx*dx + dy*dy + dz*dz)
                 if dist > 0:
-                    rate = rapid_rate if ('G00' in line or ('G0 ' in line and 'G01' not in line)) else feed_rate
-                    if rate > 0: total_time += dist / rate
+                    is_g0 = ('G00' in line or ('G0 ' in line and 'G01' not in line))
+                    v_limit = rapid_rate if is_g0 else feed_rate
+                    # Vector interpolation axis constraints (Mach3 kinematics)
+                    if abs(dx) > 0.0001:
+                        v_limit = min(v_limit, xy_max_vel * (dist / abs(dx)))
+                    if abs(dy) > 0.0001:
+                        v_limit = min(v_limit, xy_max_vel * (dist / abs(dy)))
+                    if abs(dz) > 0.0001:
+                        v_limit = min(v_limit, z_max_vel * (dist / abs(dz)))
+                    
+                    if v_limit > 0:
+                        total_time += dist / v_limit
                 
                 lx, ly, lz = nx, ny, nz
         
-        est_min = round(total_time * 1.15, 2)
+        # 1.05 factor for corner acceleration/deceleration transitions
+        est_min = round(total_time * 1.05, 2)
         bound_x = round(abs(max_x - min_x), 2) if (max_x > float('-inf') and min_x < float('inf')) else None
         bound_y = round(abs(max_y - min_y), 2) if (max_y > float('-inf') and min_y < float('inf')) else None
         
