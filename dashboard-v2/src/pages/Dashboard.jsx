@@ -217,27 +217,43 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
           const elapsedMin = Math.max(0, (Date.now() - startDt) / 60000);
           const estMin = job.estimated_minutes;
           const hasEstimate = estMin && estMin > 0;
+          const isOverdue = hasEstimate && elapsedMin > estMin;
+          const overtimeMin = isOverdue ? (elapsedMin - estMin) : 0;
           const progress = hasEstimate ? Math.min(100, (elapsedMin / estMin) * 100) : null;
           const remaining = hasEstimate ? Math.max(0, estMin - elapsedMin) : null;
           const eta = hasEstimate ? new Date(startDt.getTime() + estMin * 60000) : null;
-          const isNearEnd = progress !== null && progress >= 85;
+          const isNearEnd = progress !== null && progress >= 85 && !isOverdue;
 
           return (
           <motion.div 
             key={job.id}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-accent-cyan/10 border border-accent-cyan/30 rounded-2xl p-4 md:p-6 shadow-[0_0_30px_rgba(6,182,212,0.1)]"
+            className={`border rounded-2xl p-4 md:p-6 transition-all ${
+              isOverdue
+                ? 'bg-amber-500/10 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.15)]'
+                : 'bg-accent-cyan/10 border border-accent-cyan/30 shadow-[0_0_30px_rgba(6,182,212,0.1)]'
+            }`}
           >
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4 md:gap-0">
               <div className="flex items-center gap-4 md:gap-6">
-                <div className={`w-10 h-10 md:w-12 md:h-12 shrink-0 rounded-xl flex items-center justify-center text-black ${isNearEnd ? 'bg-accent-success animate-pulse' : 'bg-accent-cyan animate-pulse'}`}>
+                <div className={`w-10 h-10 md:w-12 md:h-12 shrink-0 rounded-xl flex items-center justify-center text-black ${
+                  isOverdue
+                    ? 'bg-amber-400 animate-pulse shadow-lg shadow-amber-500/20'
+                    : isNearEnd 
+                      ? 'bg-accent-success animate-pulse' 
+                      : 'bg-accent-cyan animate-pulse'
+                }`}>
                   <Play size={20} className="md:w-6 md:h-6" fill="currentColor" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/20 px-2 py-0.5 rounded">
-                      {job.router_name || 'ROUTER'} - EM ANDAMENTO
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                      isOverdue 
+                        ? 'text-amber-400 bg-amber-400/20 border border-amber-400/30' 
+                        : 'text-accent-cyan bg-accent-cyan/20'
+                    }`}>
+                      {job.router_name || 'ROUTER'} - {isOverdue ? 'CORTANDO (TEMPO EXTRA)' : 'EM ANDAMENTO'}
                     </span>
                     <h3 className="text-lg font-bold text-white uppercase truncate max-w-xs">{job.file_name}</h3>
                   </div>
@@ -245,7 +261,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
                 </div>
               </div>
               <div className="text-left md:text-right">
-                <div className="text-2xl md:text-3xl font-mono font-bold text-accent-cyan tracking-tighter tabular-nums">
+                <div className={`text-2xl md:text-3xl font-mono font-bold tracking-tighter tabular-nums ${isOverdue ? 'text-amber-400' : 'text-accent-cyan'}`}>
                    {formatDuration(elapsedMin)}
                 </div>
                 {hasEstimate && (
@@ -260,13 +276,24 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
             {hasEstimate && (
               <div className="mt-2 md:mt-0">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-1 sm:gap-0">
-                  <span className={`text-xs font-bold ${isNearEnd ? 'text-accent-success' : 'text-accent-cyan'}`}>
-                    {progress.toFixed(1)}% concluído
+                  <span className={`text-xs font-bold ${
+                    isOverdue 
+                      ? 'text-amber-400' 
+                      : isNearEnd 
+                        ? 'text-accent-success' 
+                        : 'text-accent-cyan'
+                  }`}>
+                    {isOverdue 
+                      ? `+${Math.floor(overtimeMin)}min além do previsto` 
+                      : `${Math.round(progress)}% do tempo previsto`
+                    }
                   </span>
                   <span className="text-[10px] sm:text-xs font-bold text-text-muted">
-                    {remaining > 0 
-                      ? `Faltam ${Math.floor(remaining)}min · ETA ${eta.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}` 
-                      : '✅ Finalização prevista atingida!'
+                    {isOverdue 
+                      ? '⏳ Máquina cortando · Aguardando finalização física (M102)' 
+                      : remaining > 0 
+                        ? `Faltam ~${Math.ceil(remaining)}min · Previsão: ${eta.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}` 
+                        : '⏳ Finalizando passes...'
                     }
                   </span>
                 </div>
@@ -276,13 +303,15 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
                     animate={{ width: `${Math.min(progress, 100)}%` }}
                     transition={{ duration: 1, ease: 'easeOut' }}
                     className={`h-full rounded-full ${
-                      isNearEnd 
-                        ? 'bg-gradient-to-r from-accent-cyan to-accent-success shadow-[0_0_12px_rgba(16,185,129,0.5)]' 
-                        : 'bg-gradient-to-r from-accent-blue to-accent-cyan shadow-[0_0_12px_rgba(6,182,212,0.3)]'
+                      isOverdue 
+                        ? 'bg-gradient-to-r from-amber-500 to-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.5)]'
+                        : isNearEnd 
+                          ? 'bg-gradient-to-r from-accent-cyan to-accent-success shadow-[0_0_12px_rgba(16,185,129,0.5)]' 
+                          : 'bg-gradient-to-r from-accent-blue to-accent-cyan shadow-[0_0_12px_rgba(6,182,212,0.3)]'
                     }`}
                   />
-                  {progress >= 100 && (
-                    <div className="absolute inset-0 bg-accent-success/20 animate-pulse rounded-full" />
+                  {isOverdue && (
+                    <div className="absolute inset-0 bg-amber-400/20 animate-pulse rounded-full" />
                   )}
                 </div>
               </div>

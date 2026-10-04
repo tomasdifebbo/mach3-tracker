@@ -949,25 +949,41 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
               const elapsedMin = Math.max(0, (now - startDt.getTime()) / 60000);
               const estMin = job.estimated_minutes;
               const hasEstimate = estMin && estMin > 0;
+              const isOverdue = hasEstimate && elapsedMin > estMin;
+              const overtimeMin = isOverdue ? (elapsedMin - estMin) : 0;
               const progress = hasEstimate ? Math.min(100, (elapsedMin / estMin) * 100) : null;
               const remaining = hasEstimate ? Math.max(0, estMin - elapsedMin) : null;
               const eta = hasEstimate ? new Date(startDt.getTime() + estMin * 60000) : null;
-              const isNearEnd = progress !== null && progress >= 85;
+              const isNearEnd = progress !== null && progress >= 85 && !isOverdue;
 
               return (
                 <div 
                   key={job.id}
-                  className="bg-accent-cyan/10 border border-accent-cyan/30 rounded-2xl p-4 md:p-6 shadow-[0_0_30px_rgba(6,182,212,0.1)] transition-all"
+                  className={`border rounded-2xl p-4 md:p-6 transition-all ${
+                    isOverdue
+                      ? 'bg-amber-500/10 border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.15)]'
+                      : 'bg-accent-cyan/10 border border-accent-cyan/30 shadow-[0_0_30px_rgba(6,182,212,0.1)]'
+                  }`}
                 >
                   <div className="flex flex-col md:flex-row md:items-center justify-between mb-3 gap-4 md:gap-0">
                     <div className="flex items-center gap-4 md:gap-6">
-                      <div className={`w-10 h-10 md:w-12 md:h-12 shrink-0 rounded-xl flex items-center justify-center text-black ${isNearEnd ? 'bg-accent-success animate-pulse' : 'bg-accent-cyan animate-pulse'}`}>
+                      <div className={`w-10 h-10 md:w-12 md:h-12 shrink-0 rounded-xl flex items-center justify-center text-black ${
+                        isOverdue
+                          ? 'bg-amber-400 animate-pulse shadow-lg shadow-amber-500/20'
+                          : isNearEnd 
+                            ? 'bg-accent-success animate-pulse' 
+                            : 'bg-accent-cyan animate-pulse'
+                      }`}>
                         <Play size={20} className="md:w-6 md:h-6" fill="currentColor" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/20 px-2 py-0.5 rounded">
-                            {job.router_name || 'MÁQUINA'} - EM ANDAMENTO
+                          <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                            isOverdue 
+                              ? 'text-amber-400 bg-amber-400/20 border border-amber-400/30' 
+                              : 'text-accent-cyan bg-accent-cyan/20'
+                          }`}>
+                            {job.router_name || 'MÁQUINA'} - {isOverdue ? 'CORTANDO (TEMPO EXTRA)' : 'EM ANDAMENTO'}
                           </span>
                           <h3 className="text-lg font-bold text-white uppercase truncate max-w-xs md:max-w-md">{job.file_name}</h3>
                         </div>
@@ -1037,25 +1053,41 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                   {hasEstimate && (
                     <div className="mt-2">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1.5 gap-1 sm:gap-0">
-                        <span className={`text-xs font-bold ${isNearEnd ? 'text-accent-success' : 'text-accent-cyan'}`}>
-                          {progress.toFixed(1)}% concluído
+                        <span className={`text-xs font-bold ${
+                          isOverdue 
+                            ? 'text-amber-400' 
+                            : isNearEnd 
+                              ? 'text-accent-success' 
+                              : 'text-accent-cyan'
+                        }`}>
+                          {isOverdue 
+                            ? `+${Math.floor(overtimeMin)}min além do previsto` 
+                            : `${Math.round(progress)}% do tempo previsto`
+                          }
                         </span>
                         <span className="text-[10px] sm:text-xs font-bold text-text-muted">
-                          {remaining > 0 
-                            ? `Faltam ${Math.floor(remaining)}min ${Math.floor((remaining % 1) * 60)}s · ETA ${eta.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}` 
-                            : '✅ Finalização prevista atingida!'
+                          {isOverdue 
+                            ? '⏳ Máquina cortando · Aguardando término (M102)' 
+                            : remaining > 0 
+                              ? `Faltam ~${Math.ceil(remaining)}min · Previsão: ${eta.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}` 
+                              : '⏳ Finalizando passes...'
                           }
                         </span>
                       </div>
                       <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden relative">
                         <div 
                           className={`h-full rounded-full transition-all duration-500 ${
-                            isNearEnd 
-                              ? 'bg-gradient-to-r from-accent-cyan to-accent-success shadow-[0_0_12px_rgba(16,185,129,0.5)]' 
-                              : 'bg-accent-cyan shadow-[0_0_12px_rgba(6,182,212,0.5)]'
+                            isOverdue
+                              ? 'bg-gradient-to-r from-amber-500 to-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.5)]'
+                              : isNearEnd 
+                                ? 'bg-gradient-to-r from-accent-cyan to-accent-success shadow-[0_0_12px_rgba(16,185,129,0.5)]' 
+                                : 'bg-accent-cyan shadow-[0_0_12px_rgba(6,182,212,0.5)]'
                           }`}
                           style={{ width: `${Math.min(progress, 100)}%` }}
                         />
+                        {isOverdue && (
+                          <div className="absolute inset-0 bg-amber-400/20 animate-pulse rounded-full" />
+                        )}
                       </div>
                     </div>
                   )}
