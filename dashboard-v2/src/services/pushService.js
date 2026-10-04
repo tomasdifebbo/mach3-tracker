@@ -159,5 +159,88 @@ export const pushService = {
       throw new Error(data.error || 'Falha ao disparar notificação de teste.');
     }
     return data;
+  },
+
+  async autoSync(token) {
+    if (!this.isSupported() || !token) return;
+    if (Notification.permission !== 'granted') return;
+
+    try {
+      const reg = await this.registerServiceWorker();
+      if (!reg) return;
+
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        const keyRes = await fetch('/api/push/vapid-public-key', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!keyRes.ok) return;
+        const { publicKey } = await keyRes.json();
+        if (!publicKey) return;
+
+        const convertedKey = urlBase64ToUint8Array(publicKey);
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: convertedKey
+        });
+      }
+
+      if (sub) {
+        await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ subscription: sub })
+        });
+        console.log('[PUSH] Dispositivo sincronizado com sucesso no servidor.');
+      }
+    } catch (err) {
+      console.warn('[PUSH AutoSync Warning]:', err.message);
+    }
+  },
+
+  playChime() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      const now = ctx.currentTime;
+
+      // Primeiro tom: D5 (587.33 Hz)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(587.33, now);
+      gain1.gain.setValueAtTime(0.25, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.45);
+
+      // Segundo tom: A5 (880.00 Hz)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(880.00, now + 0.12);
+      gain2.gain.setValueAtTime(0.3, now + 0.12);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.12);
+      osc2.stop(now + 0.7);
+
+      // Vibração no celular se compatível
+      if (navigator.vibrate) {
+        navigator.vibrate([300, 100, 300, 100, 500]);
+      }
+    } catch (e) {
+      // Ignora silenciosamente se áudio bloqueado antes de gesto
+    }
   }
 };

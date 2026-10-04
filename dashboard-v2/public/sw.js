@@ -1,5 +1,5 @@
 // Service Worker para Notificações Push PWA do Mach3 Tracker
-const CACHE_NAME = 'mach3-tracker-v1';
+const CACHE_NAME = 'mach3-tracker-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -9,12 +9,13 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// Manipulador do evento de Push recebido do servidor
+// Manipulador do evento de Push recebido do servidor (Alta Prioridade)
 self.addEventListener('push', (event) => {
   let data = {
     title: '🔔 Corte Concluído - Mach3 Tracker',
     body: 'Um trabalho de corte acabou de ser finalizado.',
-    url: '/history'
+    url: '/history',
+    job_id: Date.now()
   };
 
   if (event.data) {
@@ -26,24 +27,43 @@ self.addEventListener('push', (event) => {
   }
 
   const title = data.title || '🔔 Corte Concluído - Mach3 Tracker';
+  const uniqueTag = data.tag || `mach3-job-${data.job_id || Date.now()}`;
+
   const options = {
     body: data.body || 'Corte finalizado na máquina.',
     icon: data.icon || '/icon-192.png',
     badge: data.badge || '/icon-192.png',
-    vibrate: [300, 100, 300, 100, 400],
+    // Padrão de vibração potente para ambiente industrial/oficina: 400ms vibra, 150ms pausa, 400ms vibra, etc.
+    vibrate: [400, 150, 400, 150, 600, 200, 800],
     data: {
-      url: data.url || '/history'
+      url: data.url || '/history',
+      job_id: data.job_id,
+      timestamp: data.timestamp || Date.now()
     },
-    tag: data.tag || 'mach3-job-completed',
+    tag: uniqueTag,
     renotify: true,
     requireInteraction: true,
+    silent: false,
     actions: [
       { action: 'open_dashboard', title: 'Ver Painel' }
     ]
   };
 
+  // Notifica também qualquer aba aberta para disparar alarme sonoro instantâneo e atualizar os dados
+  const notifyClientsPromise = clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+    for (const client of clientList) {
+      client.postMessage({
+        type: 'MACH3_JOB_COMPLETED',
+        payload: data
+      });
+    }
+  });
+
   event.waitUntil(
-    self.registration.showNotification(title, options)
+    Promise.all([
+      self.registration.showNotification(title, options),
+      notifyClientsPromise
+    ])
   );
 });
 
@@ -57,7 +77,7 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Se houver alguma aba aberta, foca nela
+      // Se houver alguma aba aberta, foca nela e navega
       for (const client of clientList) {
         if (client.url && client.url.includes(self.location.origin) && 'focus' in client) {
           if ('navigate' in client && targetUrl !== '/') {
@@ -66,10 +86,34 @@ self.addEventListener('notificationclick', (event) => {
           return client.focus();
         }
       }
-      // Se não houver aba aberta, abre uma nova janela/app
+      // Se não houver aba aberta, abre uma nova janela/PWA
       if (clients.openWindow) {
         return clients.openWindow(targetUrl);
       }
     })
+  );
+});
+
+// Auto-renovação de subscrição caso o navegador/Android altere o token em segundo plano
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    fetch('/api/push/vapid-public-key')
+      .then((res) => res.json())
+      .then((keyData) => {
+        if (!keyData || !keyData.publicKey) return null;
+        return self.registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: keyData.publicKey
+        });
+      })
+      .then((newSubscription) => {
+        if (!newSubscription) return null;
+        return fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscription: newSubscription })
+        });
+      })
+      .catch((err) => console.error('[SW] Erro ao renovar token push:', err))
   );
 });

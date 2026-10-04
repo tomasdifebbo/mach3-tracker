@@ -948,9 +948,17 @@ app.patch('/api/user/settings', authenticateToken, async (req, res) => {
 async function sendPushToUser(userId, payload) {
     try {
         const subs = (await pool.query('SELECT * FROM push_subscriptions WHERE "userId" = $1', [userId])).rows;
-        if (!subs || subs.length === 0) return;
+        if (!subs || subs.length === 0) {
+            console.log(`[PUSH] Nenhum dispositivo cadastrado para o usuário #${userId}`);
+            return;
+        }
 
         const stringPayload = typeof payload === 'string' ? payload : JSON.stringify(payload);
+        const pushOptions = {
+            TTL: 86400, // 24 horas de validade no gateway FCM/APNs
+            urgency: 'high', // CRÍTICO: Acorda o celular mesmo com a tela desligada (Android Doze Mode)
+            topic: 'mach3_job_done'
+        };
 
         for (const sub of subs) {
             const pushConfig = {
@@ -961,13 +969,14 @@ async function sendPushToUser(userId, payload) {
                 }
             };
             try {
-                await webpush.sendNotification(pushConfig, stringPayload);
+                await webpush.sendNotification(pushConfig, stringPayload, pushOptions);
+                console.log(`[PUSH OK] Enviado com sucesso para dispositivo #${sub.id} (${(sub.user_agent || 'App').substring(0, 40)}...)`);
             } catch (err) {
                 if (err.statusCode === 410 || err.statusCode === 404) {
-                    console.log(`[PUSH] Subscrição inativa removida (${sub.id}): ${err.statusCode}`);
+                    console.log(`[PUSH] Subscrição inativa/expirada removida (${sub.id}): ${err.statusCode}`);
                     await pool.query('DELETE FROM push_subscriptions WHERE id = $1', [sub.id]);
                 } else {
-                    console.error('[PUSH SEND ERROR]:', err.message);
+                    console.error(`[PUSH SEND ERROR #${sub.id}]:`, err.statusCode || '', err.message);
                 }
             }
         }
@@ -2324,11 +2333,13 @@ app.patch('/api/jobs/latest', authenticateToken, async (req, res) => {
            OR router_name ILIKE $3 
            OR ($4 = true AND router_name ILIKE '%laser%')
          ) 
-         AND start_time <= $5 
          ORDER BY start_time DESC LIMIT 1`,
-        [userId, router_name || null, `%${cleanName}%`, isLaser, dt.toISOString()]
+        [userId, router_name || null, `%${cleanName}%`, isLaser]
     )).rows[0];
-    if (!row) return res.status(404).json({ error: "No open jobs found" });
+    if (!row) {
+        console.warn(`[WARN] Tentativa de finalizar job mas nenhum job aberto foi encontrado para '${router_name}' (usuário #${userId})`);
+        return res.status(404).json({ error: "No open jobs found" });
+    }
 
     const startDt = new Date(row.start_time);
     const durationMinutes = (dt - startDt) / (1000 * 60);
@@ -2425,11 +2436,14 @@ app.patch('/api/jobs/latest', authenticateToken, async (req, res) => {
         const machine = row.router_name || router_name || 'CNC Router';
         const file = row.file_name || 'Corte';
 
-        sendPushToUser(userId, {
+        await sendPushToUser(userId, {
             title: `🔔 Corte Concluído - ${machine}`,
             body: `Arquivo: ${file}\n⏱️ Duração: ${durFormatted}`,
             icon: '/icon-192.png',
             badge: '/icon-192.png',
+            tag: `mach3-job-${row.id}`,
+            job_id: row.id,
+            timestamp: Date.now(),
             url: '/history'
         });
     } catch (pushErr) {

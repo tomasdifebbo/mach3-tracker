@@ -18,6 +18,7 @@ import { PaymentModal } from './components/PaymentModal';
 import { Encarregado } from './pages/Encarregado';
 import { Operador } from './pages/Operador';
 import { DemoTourModal } from './components/DemoTourModal';
+import { pushService } from './services/pushService';
 
 function App() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -94,11 +95,33 @@ function App() {
       const init = async () => {
         await loadUser();
         await fetchData();
+        const token = localStorage.getItem('mach3_token');
+        if (token) {
+          pushService.autoSync(token);
+        }
       };
       init();
+
+      // Listener para eventos do Service Worker (ex: corte concluído em segundo plano)
+      const onSwMessage = (event) => {
+        if (event.data && event.data.type === 'MACH3_JOB_COMPLETED') {
+          pushService.playChime();
+          fetchData();
+        }
+      };
+
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', onSwMessage);
+      }
+
       // Increase polling interval to 25 seconds to save bandwidth (was 4s)
       const interval = setInterval(fetchData, 25000);
-      return () => clearInterval(interval);
+      return () => {
+        clearInterval(interval);
+        if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+          navigator.serviceWorker.removeEventListener('message', onSwMessage);
+        }
+      };
     } else {
       setLoading(false);
     }
