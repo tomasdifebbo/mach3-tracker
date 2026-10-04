@@ -103,29 +103,46 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
   const [customDateFrom, setCustomDateFrom] = useState('');
   const [customDateTo, setCustomDateTo] = useState('');
 
+  const getLocalTodayStr = () => {
+    try {
+      return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    } catch (e) {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+  };
+
   const getDateRange = (period) => {
+    const todayStr = getLocalTodayStr();
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
     if (period === 'hoje') return { from: todayStr, to: todayStr };
     if (period === 'semana') {
       const dayOfWeek = today.getDay();
       const monday = new Date(today);
       monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-      return { from: monday.toISOString().split('T')[0], to: todayStr };
+      let mondayStr = todayStr;
+      try {
+        mondayStr = monday.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+      } catch (e) {}
+      return { from: mondayStr, to: todayStr };
     }
     if (period === 'mes') {
       const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-      return { from: firstDay.toISOString().split('T')[0], to: todayStr };
+      let firstDayStr = todayStr;
+      try {
+        firstDayStr = firstDay.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+      } catch (e) {}
+      return { from: firstDayStr, to: todayStr };
     }
     return { from: customDateFrom || todayStr, to: customDateTo || todayStr };
   };
 
   const fetchTimeLogs = async () => {
     try {
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = getLocalTodayStr();
       const data = await api.getOperatorTimeLogs(todayStr);
       if (Array.isArray(data)) {
-        setTimeLogs(prev => data.length > 0 ? data : (prev.length > 0 ? prev : data));
+        setTimeLogs(data);
       }
     } catch (err) {
       console.error('Failed to load time logs:', err);

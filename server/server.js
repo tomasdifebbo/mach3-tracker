@@ -3288,14 +3288,25 @@ app.get('/api/operators/time-logs', authenticateToken, async (req, res) => {
         let query = 'SELECT * FROM operator_time_logs WHERE "userId" = $1';
         const params = [userId];
 
+        const todaySP = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+        const todayUTC = new Date().toISOString().split('T')[0];
+
         if (date) {
-            query += ' AND DATE(start_time) = DATE($' + (params.length + 1) + ')';
-            params.push(date);
+            const isToday = (date === todaySP || date === todayUTC || date === 'today');
+            const targetDate = isToday ? todaySP : date;
+
+            if (isToday) {
+                query += ' AND ((start_time - INTERVAL \'3 hours\')::date = DATE($' + (params.length + 1) + ') OR (end_time IS NULL AND (start_time - INTERVAL \'3 hours\')::date >= (DATE($' + (params.length + 1) + ') - INTERVAL \'1 day\')))';
+                params.push(targetDate);
+            } else {
+                query += ' AND (start_time - INTERVAL \'3 hours\')::date = DATE($' + (params.length + 1) + ')';
+                params.push(targetDate);
+            }
         } else if (req.query.date_from && req.query.date_to) {
-            query += ' AND DATE(start_time) >= DATE($' + (params.length + 1) + ') AND DATE(start_time) <= DATE($' + (params.length + 2) + ')';
+            query += ' AND (start_time - INTERVAL \'3 hours\')::date >= DATE($' + (params.length + 1) + ') AND (start_time - INTERVAL \'3 hours\')::date <= DATE($' + (params.length + 2) + ')';
             params.push(req.query.date_from, req.query.date_to);
         } else if (req.query.date_from) {
-            query += ' AND DATE(start_time) >= DATE($' + (params.length + 1) + ')';
+            query += ' AND (start_time - INTERVAL \'3 hours\')::date >= DATE($' + (params.length + 1) + ')';
             params.push(req.query.date_from);
         }
         query += ' ORDER BY start_time DESC';
