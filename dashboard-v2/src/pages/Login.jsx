@@ -73,8 +73,13 @@ export function Login({ onLoginSuccess }) {
       >
         <div className="glass p-10 rounded-[48px] border-white/5 border shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)]">
            <div className="text-center mb-10 space-y-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-accent-cyan to-accent-blue rounded-[20px] text-3xl shadow-xl shadow-accent-cyan/20">
-                 💠
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-white/5 border border-white/10 rounded-[20px] shadow-xl shadow-accent-cyan/10 p-2.5 overflow-hidden">
+                <img 
+                  src={localStorage.getItem('mach3_company_logo') || '/favicon.svg'} 
+                  alt="Logo" 
+                  onError={(e) => { e.currentTarget.src = '/favicon.svg'; }}
+                  className="w-full h-full object-contain" 
+                />
               </div>
               <div>
                 <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">MACH3 TRACKER</h1>

@@ -84,13 +84,12 @@ export function Sidebar({ activeSection, onSectionChange, user, maintenance = []
       <div className="p-4 md:p-6 border-b border-border flex items-center justify-between">
         <div className={cn("flex items-center gap-3 overflow-hidden transition-all", (isOpen || isMobileOpen) ? "opacity-100" : "opacity-0 w-0")}>
           <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 overflow-hidden bg-white/5 border border-white/10 shadow-lg shadow-accent-cyan/10">
-            {companyLogo ? (
-              <img src={companyLogo} alt="Logo" className="w-full h-full object-contain p-0.5" />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-accent-cyan to-accent-blue rounded-lg flex items-center justify-center text-lg">
-                🔩
-              </div>
-            )}
+            <img 
+              src={companyLogo || '/favicon.svg'} 
+              alt="Logo" 
+              onError={(e) => { e.currentTarget.src = '/favicon.svg'; }}
+              className="w-full h-full object-contain p-0.5" 
+            />
           </div>
           <div className="truncate">
             <h1 className="text-sm md:text-base font-bold tracking-tight text-white leading-tight truncate">MACH3 TRACKER</h1>
@@ -99,14 +98,13 @@ export function Sidebar({ activeSection, onSectionChange, user, maintenance = []
         </div>
 
         {!isOpen && !isMobileOpen && (
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 overflow-hidden bg-white/5 border border-white/10 mx-auto">
-            {companyLogo ? (
-              <img src={companyLogo} alt="Logo" className="w-full h-full object-contain p-0.5" />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-accent-cyan to-accent-blue rounded-lg flex items-center justify-center text-lg">
-                🔩
-              </div>
-            )}
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 overflow-hidden bg-white/5 border border-white/10 mx-auto shadow-lg shadow-accent-cyan/10">
+            <img 
+              src={companyLogo || '/favicon.svg'} 
+              alt="Logo" 
+              onError={(e) => { e.currentTarget.src = '/favicon.svg'; }}
+              className="w-full h-full object-contain p-0.5" 
+            />
           </div>
         )}
 

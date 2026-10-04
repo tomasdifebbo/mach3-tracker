@@ -562,17 +562,36 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
               <h4 className="text-xl font-bold text-white">Personalização da Empresa</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <label className="text-xs text-text-muted font-bold block mb-3 uppercase tracking-wider">Logo da Empresa</label>
-                  <label className="border-2 border-dashed border-white/10 hover:border-accent-cyan/50 bg-white/5 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all min-h-[140px]">
-                    <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
-                    {companyLogo ? (
-                      <img src={companyLogo} alt="Company Logo" className="max-h-20 object-contain" />
-                    ) : (
-                      <>
-                        <Upload size={24} className="text-text-muted" />
-                        <span className="text-sm font-medium text-text-muted">Clique para enviar a logo</span>
-                      </>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-xs text-text-muted font-bold uppercase tracking-wider">Logo da Empresa</label>
+                    {companyLogo && (
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setCompanyLogo('');
+                          localStorage.removeItem('mach3_company_logo');
+                          await api.saveReportSettings({ company_logo: '' }).catch(() => {});
+                          if (onRefresh) onRefresh();
+                        }}
+                        className="text-[10px] font-bold text-red-400 hover:text-red-300 underline cursor-pointer"
+                      >
+                        Restaurar Logo Padrão
+                      </button>
                     )}
+                  </div>
+                  <label className="border-2 border-dashed border-white/10 hover:border-accent-cyan/50 bg-white/5 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all min-h-[140px] group relative">
+                    <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                    <img 
+                      src={companyLogo || '/favicon.svg'} 
+                      alt="Logo Ativa" 
+                      onError={(e) => { e.currentTarget.src = '/favicon.svg'; }}
+                      className="max-h-20 object-contain p-1 transition-transform group-hover:scale-105" 
+                    />
+                    <span className="text-[11px] font-semibold text-text-muted group-hover:text-accent-cyan transition-colors text-center">
+                      {companyLogo ? 'Logo do cliente ativa — Clique para alterar imagem' : 'Logo padrão ativa — Clique para enviar a logo da sua empresa'}
+                    </span>
                   </label>
                 </div>
                 <div>

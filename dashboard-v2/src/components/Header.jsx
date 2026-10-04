@@ -166,15 +166,18 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
           <Menu size={24} />
         </button>
 
-        {companyLogo && (
-          <div className="h-10 sm:h-12 max-w-[120px] sm:max-w-[160px] px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-all hover:bg-white/10">
-            <img 
-              src={companyLogo} 
-              alt="Logo da Empresa" 
-              className="max-h-8 sm:max-h-10 w-auto object-contain" 
-            />
-          </div>
-        )}
+        {/* Logo: Logo do Cliente (se carregado) ou Logo Oficial do Sistema */}
+        <div 
+          className="h-10 sm:h-12 max-w-[120px] sm:max-w-[160px] px-2.5 py-1 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-all hover:bg-white/10 group cursor-pointer"
+          title={companyLogo ? "Logo da Empresa / Cliente" : "Mach3 Tracker (Logo Oficial)"}
+        >
+          <img 
+            src={companyLogo || '/favicon.svg'} 
+            alt={companyLogo ? "Logo do Cliente" : "Logo Mach3 Tracker"} 
+            onError={(e) => { e.currentTarget.src = '/favicon.svg'; }}
+            className="max-h-8 sm:max-h-10 w-auto object-contain transition-transform group-hover:scale-105" 
+          />
+        </div>
 
         <div className="flex flex-col min-w-0">
           <h2 className="text-lg md:text-xl font-bold text-white tracking-tight truncate">{title}</h2>
@@ -225,14 +228,12 @@ export function Header({ title, subtitle, user, jobs = [], routers = [], mainten
               </div>
               
               <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr border flex items-center justify-center overflow-hidden shrink-0 ${user.plan === 'starter' && daysLeft <= 0 ? 'from-accent-danger/20 to-red-900/20 border-accent-danger/30 text-accent-danger' : 'from-accent-cyan/20 to-accent-blue/20 border-accent-cyan/30 text-accent-cyan'}`}>
-                 {(user?.company_logo || localStorage.getItem('mach3_company_logo')) ? (
-                   <img src={user?.company_logo || localStorage.getItem('mach3_company_logo')} alt="Logo" className="w-full h-full object-contain p-0.5" />
-                 ) : (
-                   <>
-                     <User size={16} className="sm:hidden" />
-                     <User size={18} className="hidden sm:block" />
-                   </>
-                 )}
+                 <img 
+                   src={companyLogo || '/favicon.svg'} 
+                   alt="Logo" 
+                   onError={(e) => { e.currentTarget.src = '/favicon.svg'; }}
+                   className="w-full h-full object-contain p-0.5" 
+                 />
               </div>
             </button>
 
