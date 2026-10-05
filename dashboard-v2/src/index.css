@@ -28,6 +28,8 @@
   --color-bg-sidebar: #ffffff;
   --color-bg-card: rgba(255, 255, 255, 0.95);
   --color-border: rgba(203, 213, 225, 0.8);
+  --color-text-main: #0f172a;
+  --color-text-muted: #64748b;
   color-scheme: light;
 }
 
@@ -36,16 +38,159 @@
   color: #0f172a !important;
 }
 
-[data-theme="claro"] .text-white {
+/* Force all text-white variants to dark slate in light theme */
+[data-theme="claro"] .text-white,
+[data-theme="claro"] .text-white\/95,
+[data-theme="claro"] .text-white\/90,
+[data-theme="claro"] .text-white\/85,
+[data-theme="claro"] .text-white\/80 {
   color: #0f172a !important;
 }
 
-[data-theme="claro"] .text-slate-200 {
+[data-theme="claro"] .text-white\/75,
+[data-theme="claro"] .text-white\/70,
+[data-theme="claro"] .text-white\/65,
+[data-theme="claro"] .text-white\/60,
+[data-theme="claro"] .text-white\/55,
+[data-theme="claro"] .text-white\/50 {
+  color: #334155 !important;
+}
+
+[data-theme="claro"] .text-white\/45,
+[data-theme="claro"] .text-white\/40,
+[data-theme="claro"] .text-white\/35,
+[data-theme="claro"] .text-white\/30,
+[data-theme="claro"] .text-white\/25,
+[data-theme="claro"] .text-white\/20,
+[data-theme="claro"] .text-white\/15,
+[data-theme="claro"] .text-white\/10 {
+  color: #64748b !important;
+}
+
+/* Wildcard fallback for any other text-white opacity */
+[data-theme="claro"] [class*="text-white\/"] {
+  color: #1e293b;
+}
+
+/* Light slate and zinc classes become dark in light theme */
+[data-theme="claro"] .text-slate-100,
+[data-theme="claro"] .text-slate-200,
+[data-theme="claro"] .text-slate-300 {
   color: #1e293b !important;
+}
+
+[data-theme="claro"] .text-slate-400 {
+  color: #475569 !important;
+}
+
+[data-theme="claro"] .text-zinc-100,
+[data-theme="claro"] .text-zinc-200,
+[data-theme="claro"] .text-zinc-300 {
+  color: #1e293b !important;
+}
+
+[data-theme="claro"] .text-zinc-400 {
+  color: #475569 !important;
+}
+
+[data-theme="claro"] .text-gray-100,
+[data-theme="claro"] .text-gray-200,
+[data-theme="claro"] .text-gray-300 {
+  color: #1e293b !important;
+}
+
+[data-theme="claro"] .text-gray-400 {
+  color: #475569 !important;
 }
 
 [data-theme="claro"] .text-text-muted {
   color: #64748b !important;
+}
+
+/* Hover text adjustments in light theme */
+[data-theme="claro"] .hover\:text-white:hover,
+[data-theme="claro"] .group:hover .group-hover\:text-white {
+  color: #0f172a !important;
+}
+
+/* Protect white text on solid colored/dark buttons and badges */
+[data-theme="claro"] .bg-orange-500,
+[data-theme="claro"] .bg-orange-600,
+[data-theme="claro"] .bg-blue-500,
+[data-theme="claro"] .bg-blue-600,
+[data-theme="claro"] .bg-indigo-600,
+[data-theme="claro"] .bg-red-500,
+[data-theme="claro"] .bg-red-600,
+[data-theme="claro"] .bg-emerald-500,
+[data-theme="claro"] .bg-emerald-600,
+[data-theme="claro"] .bg-green-600,
+[data-theme="claro"] .bg-slate-900,
+[data-theme="claro"] .bg-slate-800,
+[data-theme="claro"] .bg-black,
+[data-theme="claro"] .bg-accent-blue,
+[data-theme="claro"] .bg-accent-danger,
+[data-theme="claro"] .bg-accent-success,
+[data-theme="claro"] .btn-primary {
+  color: #ffffff !important;
+}
+
+[data-theme="claro"] .bg-orange-500 *,
+[data-theme="claro"] .bg-orange-600 *,
+[data-theme="claro"] .bg-blue-500 *,
+[data-theme="claro"] .bg-blue-600 *,
+[data-theme="claro"] .bg-indigo-600 *,
+[data-theme="claro"] .bg-red-500 *,
+[data-theme="claro"] .bg-red-600 *,
+[data-theme="claro"] .bg-emerald-500 *,
+[data-theme="claro"] .bg-emerald-600 *,
+[data-theme="claro"] .bg-green-600 *,
+[data-theme="claro"] .bg-slate-900 *,
+[data-theme="claro"] .bg-slate-800 *,
+[data-theme="claro"] .bg-accent-blue *,
+[data-theme="claro"] .bg-accent-danger *,
+[data-theme="claro"] .btn-primary * {
+  color: #ffffff !important;
+}
+
+/* Inputs, selects, and textareas in light theme */
+[data-theme="claro"] input,
+[data-theme="claro"] select,
+[data-theme="claro"] textarea {
+  color: #0f172a !important;
+}
+
+[data-theme="claro"] input::placeholder,
+[data-theme="claro"] textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+[data-theme="claro"] input[class*="bg-black"],
+[data-theme="claro"] select[class*="bg-black"],
+[data-theme="claro"] textarea[class*="bg-black"],
+[data-theme="claro"] input[class*="bg-white\/"],
+[data-theme="claro"] select[class*="bg-white\/"],
+[data-theme="claro"] textarea[class*="bg-white\/"] {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="claro"] select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Background panels and cards in light theme */
+[data-theme="claro"] .bg-black\/20,
+[data-theme="claro"] .bg-black\/30,
+[data-theme="claro"] .bg-black\/40 {
+  background-color: rgba(241, 245, 249, 0.9) !important;
+}
+
+/* Modal overlays/backdrops must stay dark to maintain contrast */
+[data-theme="claro"] .fixed.inset-0[class*="bg-black"],
+[data-theme="claro"] .absolute.inset-0[class*="bg-black"] {
+  background-color: rgba(0, 0, 0, 0.6) !important;
 }
 
 [data-theme="claro"] .bg-white\/5 {
@@ -56,21 +201,41 @@
   background-color: rgba(15, 23, 42, 0.07) !important;
 }
 
+[data-theme="claro"] .bg-white\/15,
+[data-theme="claro"] .bg-white\/20 {
+  background-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+[data-theme="claro"] .hover\:bg-white\/5:hover,
+[data-theme="claro"] .hover\:bg-white\/10:hover {
+  background-color: rgba(15, 23, 42, 0.06) !important;
+}
+
+/* Borders in light theme */
 [data-theme="claro"] .border-white\/5 {
-  border-color: rgba(203, 213, 225, 0.5) !important;
+  border-color: rgba(203, 213, 225, 0.6) !important;
 }
 
 [data-theme="claro"] .border-white\/10 {
-  border-color: rgba(203, 213, 225, 0.8) !important;
+  border-color: rgba(203, 213, 225, 0.9) !important;
 }
 
 [data-theme="claro"] .border-white\/20 {
   border-color: rgba(148, 163, 184, 0.6) !important;
 }
 
+[data-theme="claro"] .divide-white\/5 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(203, 213, 225, 0.6) !important;
+}
+
+[data-theme="claro"] .divide-white\/10 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(203, 213, 225, 0.9) !important;
+}
+
+/* Glass cards in light theme */
 [data-theme="claro"] .glass {
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  border-color: rgba(226, 232, 240, 0.9) !important;
+  background-color: rgba(255, 255, 255, 0.96) !important;
+  border-color: rgba(226, 232, 240, 0.95) !important;
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
 }
 

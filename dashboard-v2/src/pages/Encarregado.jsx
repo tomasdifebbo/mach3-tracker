@@ -1504,12 +1504,12 @@ function ChecklistMaquina({ data, machineKey }) {
   const operadorCount = allItems.filter(i => i.text.includes('[Operador]')).length;
 
   return (
-    <div className="glass rounded-2xl border border-white/5 overflow-hidden">
-      <div className="p-6 border-b border-white/5 space-y-4">
+    <div className="glass rounded-2xl border border-slate-200 dark:border-white/5 overflow-hidden">
+      <div className="p-6 border-b border-slate-200 dark:border-white/5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-black uppercase tracking-widest text-white">{data.title}</h3>
-            {data.supply && <p className="text-[11px] text-text-muted mt-0.5">Insumos/Ferramental: {data.supply}</p>}
+            <h3 className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white">{data.title}</h3>
+            {data.supply && <p className="text-[11px] text-slate-600 dark:text-text-muted mt-0.5">Insumos/Ferramental: {data.supply}</p>}
           </div>
           <div className="flex items-center gap-3">
             {allDone && (
@@ -1517,7 +1517,7 @@ function ChecklistMaquina({ data, machineKey }) {
             )}
             <button
               onClick={clearAll}
-              className="text-[10px] font-bold text-text-muted hover:text-accent-danger transition-colors cursor-pointer"
+              className="text-[10px] font-bold text-slate-500 dark:text-text-muted hover:text-accent-danger transition-colors cursor-pointer"
             >
               Limpar Checados
             </button>
@@ -1526,22 +1526,24 @@ function ChecklistMaquina({ data, machineKey }) {
 
         {/* Progress bar */}
         <div className="flex items-center gap-3">
-          <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+          <div className="flex-1 h-2 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${allDone ? 'bg-accent-success' : 'bg-orange-500'}`}
               style={{ width: `${progress}%` }}
             ></div>
           </div>
-          <span className="text-xs font-black text-text-muted min-w-[50px] text-right">{checked.length}/{allItems.length}</span>
+          <span className="text-xs font-black text-slate-600 dark:text-text-muted min-w-[50px] text-right">{checked.length}/{allItems.length}</span>
         </div>
 
         {/* Role Filter Selector */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
-          <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider mr-1">Filtrar por Responsabilidade:</span>
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200 dark:border-white/5">
+          <span className="text-[10px] font-bold text-slate-600 dark:text-text-muted uppercase tracking-wider mr-1">Filtrar por Responsabilidade:</span>
           <button
             onClick={() => setRoleFilter('all')}
             className={`px-3 py-1 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
-              roleFilter === 'all' ? 'bg-white/10 text-white border border-white/20' : 'text-text-muted hover:text-white'
+              roleFilter === 'all' 
+                ? 'bg-slate-900 text-white dark:bg-white/10 dark:text-white border border-slate-700 dark:border-white/20' 
+                : 'text-slate-600 dark:text-text-muted hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             📋 Todos os Itens ({allItems.length})
@@ -1550,8 +1552,8 @@ function ChecklistMaquina({ data, machineKey }) {
             onClick={() => setRoleFilter('encarregado')}
             className={`px-3 py-1 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
               roleFilter === 'encarregado' 
-                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm' 
-                : 'text-text-muted hover:text-purple-300'
+                ? 'bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/40 shadow-sm font-black' 
+                : 'text-slate-600 dark:text-text-muted hover:text-purple-600 dark:hover:text-purple-300'
             }`}
           >
             👔 Inspeções do Encarregado ({encarregadoCount})
@@ -1560,8 +1562,8 @@ function ChecklistMaquina({ data, machineKey }) {
             onClick={() => setRoleFilter('operador')}
             className={`px-3 py-1 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
               roleFilter === 'operador' 
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm' 
-                : 'text-text-muted hover:text-cyan-300'
+                ? 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/40 shadow-sm font-black' 
+                : 'text-slate-600 dark:text-text-muted hover:text-cyan-600 dark:hover:text-cyan-300'
             }`}
           >
             👷 Setup do Operador ({operadorCount})
@@ -1569,7 +1571,7 @@ function ChecklistMaquina({ data, machineKey }) {
         </div>
       </div>
 
-      <div className="divide-y divide-white/5">
+      <div className="divide-y divide-slate-200 dark:divide-white/5">
         {filteredDisplayItems.map((item) => {
           const done = checked.includes(item.index);
           const isEncarregado = item.text.includes('[Encarregado]') || item.text.includes('👔');
@@ -1579,35 +1581,35 @@ function ChecklistMaquina({ data, machineKey }) {
             .replace(/^\[Operador\]\s*/i, '');
 
           return (
-            <div key={`${item.id || 'def'}-${item.index}`} className={`flex items-center justify-between gap-4 p-4 hover:bg-white/[0.02] transition-colors group ${done ? 'opacity-60' : ''}`}>
+            <div key={`${item.id || 'def'}-${item.index}`} className={`flex items-center justify-between gap-4 p-4 hover:bg-slate-100/60 dark:hover:bg-white/[0.02] transition-colors group ${done ? 'opacity-60' : ''}`}>
               <label className="flex items-start gap-3 flex-1 cursor-pointer">
                 <input type="checkbox" className="mt-0.5 accent-orange-500 w-4 h-4 flex-shrink-0 cursor-pointer" checked={done} onChange={() => toggle(item.index)} />
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1">
                   {isEncarregado && (
-                    <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30 shrink-0 w-fit">
+                    <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 shrink-0 w-fit">
                       👔 VERIFICAÇÃO DO ENCARREGADO
                     </span>
                   )}
                   {isOperador && (
-                    <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shrink-0 w-fit">
+                    <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 shrink-0 w-fit">
                       👷 SETUP DO OPERADOR
                     </span>
                   )}
-                  <span className={`text-sm font-medium ${done ? 'line-through text-text-muted' : 'text-white/90'}`}>{cleanText}</span>
+                  <span className={`text-sm font-medium ${done ? 'line-through text-slate-400 dark:text-text-muted' : 'text-slate-900 dark:text-white/90'}`}>{cleanText}</span>
                 </div>
               </label>
               {item.id && (
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={(e) => handleEditCustomItem(e, item)}
-                    className="text-text-muted hover:text-accent-cyan p-1.5 rounded-lg hover:bg-white/5 transition-all cursor-pointer"
+                    className="text-slate-500 dark:text-text-muted hover:text-accent-cyan p-1.5 rounded-lg hover:bg-slate-200/50 dark:hover:bg-white/5 transition-all cursor-pointer"
                     title="Editar item do checklist"
                   >
                     <Edit2 size={15} />
                   </button>
                   <button
                     onClick={(e) => handleDeleteCustomItem(e, item.id)}
-                    className="text-text-muted hover:text-red-400 p-1.5 rounded-lg hover:bg-white/5 transition-all cursor-pointer"
+                    className="text-slate-500 dark:text-text-muted hover:text-red-500 dark:hover:text-red-400 p-1.5 rounded-lg hover:bg-slate-200/50 dark:hover:bg-white/5 transition-all cursor-pointer"
                     title="Excluir item do checklist"
                   >
                     <Trash2 size={15} />
@@ -1620,25 +1622,25 @@ function ChecklistMaquina({ data, machineKey }) {
       </div>
 
       {/* Form para Adicionar Novo Item Personalizado ao Checklist */}
-      <form onSubmit={handleAddCustomItem} className="flex flex-col sm:flex-row gap-2 p-4 border-t border-white/5 bg-white/[0.01]">
+      <form onSubmit={handleAddCustomItem} className="flex flex-col sm:flex-row gap-2 p-4 border-t border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01]">
         <input 
           type="text" 
           placeholder="+ Adicionar novo item ao checklist desta máquina..." 
           value={newItemText} 
           onChange={(e) => setNewItemText(e.target.value)}
-          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-orange-500 transition-colors"
+          className="flex-1 bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-orange-500 transition-colors shadow-sm"
         />
         <button 
           type="submit" 
           disabled={!newItemText.trim() || addingItem}
-          className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-black font-black uppercase text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+          className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white font-black uppercase text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-sm"
         >
           {addingItem ? 'Adicionando...' : '+ Adicionar Item'}
         </button>
       </form>
 
-      <div className="p-4 bg-white/[0.02] border-t border-white/5">
-        <p className="text-xs text-text-muted"><strong className="text-white">Insumos:</strong> {data.supply}</p>
+      <div className="p-4 bg-slate-50/50 dark:bg-white/[0.02] border-t border-slate-200 dark:border-white/5">
+        <p className="text-xs text-slate-600 dark:text-text-muted"><strong className="text-slate-900 dark:text-white">Insumos:</strong> {data.supply}</p>
       </div>
     </div>
   );
@@ -2409,15 +2411,15 @@ export function Encarregado({ jobs = [] }) {
   return (
     <div className="flex flex-col md:flex-row h-full overflow-hidden">
       {/* Mobile Header / Navigation Bar */}
-      <div className="md:hidden bg-black/40 border-b border-white/5 p-3 flex flex-col gap-2">
+      <div className="md:hidden bg-slate-100 dark:bg-black/40 border-b border-slate-200 dark:border-white/5 p-3 flex flex-col gap-2">
         <div className="flex items-center justify-between px-1">
           <div>
-            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-orange-400">Planner Operacional</p>
-            <h2 className="font-black text-white text-sm">Painel do <span className="text-orange-400">Encarregado</span></h2>
+            <p className="text-[8px] font-black uppercase tracking-[0.2em] text-orange-500 dark:text-orange-400">Planner Operacional</p>
+            <h2 className="font-black text-slate-900 dark:text-white text-sm">Painel do <span className="text-orange-500 dark:text-orange-400">Encarregado</span></h2>
           </div>
           <div className="px-2.5 py-1 bg-orange-500/10 border border-orange-500/20 rounded-lg flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></span>
-            <span className="text-[10px] font-bold text-orange-400">{dayName}-feira</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 dark:bg-orange-400 animate-pulse"></span>
+            <span className="text-[10px] font-bold text-orange-600 dark:text-orange-400">{dayName}-feira</span>
           </div>
         </div>
 
@@ -2432,8 +2434,8 @@ export function Encarregado({ jobs = [] }) {
                 onClick={() => setActiveTab(s.id)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all ${
                   active 
-                    ? 'bg-orange-500 text-black shadow-lg shadow-orange-500/20' 
-                    : 'bg-white/5 text-text-muted hover:text-white'
+                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' 
+                    : 'bg-white dark:bg-white/5 text-slate-600 dark:text-text-muted hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-transparent'
                 }`}
               >
                 <Icon size={14} className="shrink-0" />
@@ -2445,24 +2447,24 @@ export function Encarregado({ jobs = [] }) {
       </div>
 
       {/* Mini sidebar interna (Desktop Only) */}
-      <aside className="hidden md:flex w-60 flex-shrink-0 bg-black/30 border-r border-white/5 flex-col overflow-y-auto">
+      <aside className="hidden md:flex w-60 flex-shrink-0 bg-slate-100/90 dark:bg-black/30 border-r border-slate-200 dark:border-white/5 flex-col overflow-y-auto">
         {/* Header */}
-        <div className="p-5 border-b border-white/5">
-          <p className="text-[9px] font-black uppercase tracking-[0.25em] text-orange-400 mb-1">Planner Operacional</p>
-          <h2 className="font-black text-white text-lg leading-tight">Painel do <span className="text-orange-400">Encarregado</span></h2>
+        <div className="p-5 border-b border-slate-200 dark:border-white/5">
+          <p className="text-[9px] font-black uppercase tracking-[0.25em] text-orange-500 dark:text-orange-400 mb-1">Planner Operacional</p>
+          <h2 className="font-black text-slate-900 dark:text-white text-lg leading-tight">Painel do <span className="text-orange-500 dark:text-orange-400">Encarregado</span></h2>
         </div>
 
         {/* Dia atual */}
         <div className="mx-4 my-3 px-3 py-2 bg-orange-500/10 border border-orange-500/20 rounded-xl flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></span>
-          <span className="text-xs font-bold text-orange-400">{dayName}-feira</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 dark:bg-orange-400 animate-pulse"></span>
+          <span className="text-xs font-bold text-orange-600 dark:text-orange-400">{dayName}-feira</span>
         </div>
 
         {/* Nav */}
         <nav className="flex-1 px-2 pb-4">
           {groups.map(group => (
             <div key={group} className="mb-2">
-              <p className="text-[9px] font-black uppercase tracking-widest text-white/20 px-3 py-2">{group}</p>
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-white/20 px-3 py-2">{group}</p>
               {NAV_SECTIONS.filter(s => s.group === group).map(s => {
                 const Icon = s.icon;
                 const active = activeTab === s.id;
@@ -2470,7 +2472,11 @@ export function Encarregado({ jobs = [] }) {
                   <button
                     key={s.id}
                     onClick={() => setActiveTab(s.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold mb-0.5 transition-all ${active ? 'bg-orange-500/15 text-orange-400 border-l-2 border-orange-500' : 'text-text-muted hover:text-white hover:bg-white/5'}`}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold mb-0.5 transition-all cursor-pointer ${
+                      active 
+                        ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400 font-bold border-l-2 border-orange-500' 
+                        : 'text-slate-600 dark:text-text-muted hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5'
+                    }`}
                   >
                     <Icon size={16} className="flex-shrink-0" />
                     <span className="text-xs leading-tight">{s.label}</span>
@@ -2482,8 +2488,8 @@ export function Encarregado({ jobs = [] }) {
         </nav>
 
         {/* KPIs Sidebar */}
-        <div className="m-4 p-4 bg-white/[0.03] rounded-xl border border-white/5">
-          <p className="text-[9px] font-black uppercase tracking-widest text-text-muted mb-3">Progresso da Semana</p>
+        <div className="m-4 p-4 bg-white/80 dark:bg-white/[0.03] rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
+          <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 dark:text-text-muted mb-3">Progresso da Semana</p>
           {[
             { label: 'OS Entregues', val: 87 },
             { label: 'Qualidade', val: 96 },
@@ -2491,10 +2497,10 @@ export function Encarregado({ jobs = [] }) {
           ].map(k => (
             <div key={k.label} className="mb-3 last:mb-0">
               <div className="flex justify-between text-[10px] mb-1">
-                <span className="text-text-muted">{k.label}</span>
-                <span className="font-black text-white">{k.val}%</span>
+                <span className="text-slate-600 dark:text-text-muted">{k.label}</span>
+                <span className="font-black text-slate-900 dark:text-white">{k.val}%</span>
               </div>
-              <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-1 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
                 <div className="h-full bg-orange-500 rounded-full" style={{ width: `${k.val}%` }}></div>
               </div>
             </div>
