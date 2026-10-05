@@ -192,6 +192,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   };
   const [selectedRouter, setSelectedRouter] = useState('all');
   const [selectedDateRange, setSelectedDateRange] = useState('all');
+  const [selectedSpecificDate, setSelectedSpecificDate] = useState('');
   const [selectedOperator, setSelectedOperator] = useState('all');
   const [showFilterPanel, setShowFilterPanel] = useState(false);
 
@@ -200,6 +201,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
 
   const activeFilterCount = (selectedRouter !== 'all' ? 1 : 0) + 
                             (selectedDateRange !== 'all' ? 1 : 0) + 
+                            (selectedSpecificDate ? 1 : 0) + 
                             (selectedOperator !== 'all' ? 1 : 0) + 
                             (searchTerm.trim() ? 1 : 0);
 
@@ -207,6 +209,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
     setSearchTerm('');
     setSelectedRouter('all');
     setSelectedDateRange('all');
+    setSelectedSpecificDate('');
     setSelectedOperator('all');
   };
 
@@ -222,11 +225,22 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       (j.operator_name && j.operator_name.toLowerCase() === selectedOperator.toLowerCase());
 
     let matchesDate = true;
-    if (selectedDateRange !== 'all' && j.start_time) {
+    if (selectedSpecificDate && j.start_time) {
+      const d = new Date(j.start_time);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const jobDateStr = `${year}-${month}-${day}`;
+      matchesDate = jobDateStr === selectedSpecificDate;
+    } else if (selectedDateRange !== 'all' && j.start_time) {
       const jobDate = new Date(j.start_time);
       const now = new Date();
       if (selectedDateRange === 'today') {
         matchesDate = jobDate.toDateString() === now.toDateString();
+      } else if (selectedDateRange === 'yesterday') {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        matchesDate = jobDate.toDateString() === yesterday.toDateString();
       } else if (selectedDateRange === '7days') {
         const diffDays = (now - jobDate) / (1000 * 3600 * 24);
         matchesDate = diffDays <= 7;
@@ -379,6 +393,29 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
               )}
             </div>
 
+            <div className="hidden sm:flex items-center gap-2 bg-white/5 border border-border px-3 py-2 rounded-xl focus-within:border-accent-cyan/50">
+              <Calendar size={15} className="text-accent-cyan shrink-0" />
+              <input 
+                type="date" 
+                value={selectedSpecificDate}
+                onChange={(e) => {
+                  setSelectedSpecificDate(e.target.value);
+                  if (e.target.value) setSelectedDateRange('all');
+                }}
+                title="Filtrar por data/dia específico"
+                className="bg-transparent border-none outline-none text-xs text-white [color-scheme:dark] cursor-pointer"
+              />
+              {selectedSpecificDate && (
+                <button 
+                  onClick={() => setSelectedSpecificDate('')} 
+                  title="Limpar data"
+                  className="text-text-muted hover:text-white ml-0.5 cursor-pointer"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
             <button 
               onClick={() => setShowFilterPanel(!showFilterPanel)}
               className={clsx(
@@ -416,13 +453,24 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
           </div>
         </div>
 
+        {/* Active Specific Date Pill */}
+        {selectedSpecificDate && (
+          <div className="flex items-center gap-2 px-3.5 py-1.5 bg-accent-cyan/10 border border-accent-cyan/30 rounded-xl text-xs text-accent-cyan w-fit font-bold animate-in fade-in duration-200">
+            <Calendar size={14} />
+            <span>Filtrando dia: <strong className="text-white">{new Date(selectedSpecificDate + 'T12:00:00').toLocaleDateString('pt-BR')}</strong> ({filteredJobs.length} {filteredJobs.length === 1 ? 'corte' : 'cortes'})</span>
+            <button onClick={() => setSelectedSpecificDate('')} title="Remover filtro de dia" className="hover:text-white ml-1 cursor-pointer">
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
         {/* Collapsible Filter Panel */}
         {showFilterPanel && (
           <motion.div 
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="glass p-4 rounded-2xl border border-accent-cyan/30 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end animate-in fade-in duration-200"
+            className="glass p-4 rounded-2xl border border-accent-cyan/30 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 items-end animate-in fade-in duration-200"
           >
             {/* Filter 1: Machine / Router */}
             <div className="space-y-1.5">
@@ -441,24 +489,54 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
               </select>
             </div>
 
-            {/* Filter 2: Date Range */}
+            {/* Filter 2: Specific Day (Data / Dia) */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black uppercase tracking-widest text-accent-cyan flex items-center gap-1.5">
+                  <Calendar size={12} /> Dia Específico
+                </label>
+                {selectedSpecificDate && (
+                  <button 
+                    onClick={() => setSelectedSpecificDate('')}
+                    className="text-[10px] text-accent-cyan hover:underline cursor-pointer"
+                  >
+                    Limpar
+                  </button>
+                )}
+              </div>
+              <input
+                type="date"
+                value={selectedSpecificDate}
+                onChange={(e) => {
+                  setSelectedSpecificDate(e.target.value);
+                  if (e.target.value) setSelectedDateRange('all');
+                }}
+                className="w-full bg-slate-900 border border-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-accent-cyan cursor-pointer [color-scheme:dark]"
+              />
+            </div>
+
+            {/* Filter 3: Date Range */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-black uppercase tracking-widest text-accent-cyan flex items-center gap-1.5">
-                <Calendar size={12} /> Período de Data
+                <Calendar size={12} /> Período Rápido
               </label>
               <select
                 value={selectedDateRange}
-                onChange={(e) => setSelectedDateRange(e.target.value)}
+                onChange={(e) => {
+                  setSelectedDateRange(e.target.value);
+                  if (e.target.value !== 'all') setSelectedSpecificDate('');
+                }}
                 className="w-full bg-slate-900 border border-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-accent-cyan cursor-pointer"
               >
                 <option value="all">Todo o Histórico</option>
                 <option value="today">Somente Hoje</option>
+                <option value="yesterday">Ontem</option>
                 <option value="7days">Últimos 7 Dias</option>
                 <option value="30days">Últimos 30 Dias</option>
               </select>
             </div>
 
-            {/* Filter 3: Operator */}
+            {/* Filter 4: Operator */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-black uppercase tracking-widest text-accent-cyan flex items-center gap-1.5">
                 <FileText size={12} /> Operador
