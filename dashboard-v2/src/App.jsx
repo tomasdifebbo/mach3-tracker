@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { api } from './services/api';
@@ -18,6 +18,7 @@ import { PaymentModal } from './components/PaymentModal';
 import { Encarregado } from './pages/Encarregado';
 import { Operador } from './pages/Operador';
 import { DemoTourModal } from './components/DemoTourModal';
+import { HeadsUpNotification } from './components/HeadsUpNotification';
 import { pushService } from './services/pushService';
 
 function App() {
@@ -32,6 +33,8 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTrialExpired, setIsTrialExpired] = useState(false);
   const [isDemoTourOpen, setIsDemoTourOpen] = useState(false);
+  const [headsUpAlert, setHeadsUpAlert] = useState(null);
+  const activeJobsRef = useRef(new Set());
 
   // Auth Check & User Data
   const loadUser = async () => {
@@ -79,7 +82,29 @@ function App() {
         api.getRouters(),
         api.getMaintenance()
       ]);
-      if (Array.isArray(jobsData)) setJobs(jobsData);
+      if (Array.isArray(jobsData)) {
+        // Detecta cortes que acabaram de finalizar para disparar o banner heads-up WhatsApp
+        const currentActive = new Set(jobsData.filter(j => !j.end_time).map(j => j.id));
+        if (activeJobsRef.current.size > 0) {
+          for (const prevId of activeJobsRef.current) {
+            if (!currentActive.has(prevId)) {
+              const finishedJob = jobsData.find(j => j.id === prevId);
+              if (finishedJob && finishedJob.end_time) {
+                const durMin = Math.round(Number(finishedJob.duration_minutes) || 0);
+                const durStr = durMin >= 60 ? `${Math.floor(durMin / 60)}h ${durMin % 60}m` : `${Math.max(1, durMin)} min`;
+                setHeadsUpAlert({
+                  title: `🔔 Corte Concluído - ${finishedJob.router_name || 'CNC Router'}`,
+                  body: `Arquivo: ${finishedJob.file_name} · Duração: ${durStr}`,
+                  jobId: finishedJob.id
+                });
+                pushService.playChime();
+              }
+            }
+          }
+        }
+        activeJobsRef.current = currentActive;
+        setJobs(jobsData);
+      }
       if (Array.isArray(materialsData)) setMaterials(materialsData);
       if (Array.isArray(routersData)) setRouters(routersData);
       if (Array.isArray(maintenanceData)) setMaintenance(maintenanceData);
@@ -102,24 +127,47 @@ function App() {
       };
       init();
 
-      // Listener para eventos do Service Worker (ex: corte concluído em segundo plano)
+      // Listener para eventos do Service Worker (ex: push recebido com o app aberto)
       const onSwMessage = (event) => {
         if (event.data && event.data.type === 'MACH3_JOB_COMPLETED') {
+          const payload = event.data.payload || {};
+          setHeadsUpAlert({
+            title: payload.title || '🔔 Corte Concluído',
+            body: payload.body || 'Um trabalho foi concluído na máquina.',
+            jobId: payload.job_id
+          });
           pushService.playChime();
           fetchData();
         }
       };
 
-      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-        navigator.serviceWorker.addEventListener('message', onSwMessage);
+      // Listener para teste manual de notificação disparado em Configurações
+      const onTestAlert = (event) => {
+        if (event.detail) {
+          setHeadsUpAlert({
+            title: event.detail.title || '🔔 Teste - Mach3 Tracker',
+            body: event.detail.body || 'Banner flutuante estilo WhatsApp com auto-recolhimento.',
+            jobId: Date.now()
+          });
+        }
+      };
+
+      if (typeof window !== 'undefined') {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.addEventListener('message', onSwMessage);
+        }
+        window.addEventListener('mach3:test-alert', onTestAlert);
       }
 
-      // Increase polling interval to 25 seconds to save bandwidth (was 4s)
+      // Polling de 25 segundos
       const interval = setInterval(fetchData, 25000);
       return () => {
         clearInterval(interval);
-        if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-          navigator.serviceWorker.removeEventListener('message', onSwMessage);
+        if (typeof window !== 'undefined') {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.removeEventListener('message', onSwMessage);
+          }
+          window.removeEventListener('mach3:test-alert', onTestAlert);
         }
       };
     } else {
@@ -278,6 +326,13 @@ function App() {
           {renderContent()}
         </div>
       </main>
+
+      {/* Banner flutuante no estilo WhatsApp que desce do topo e retrai sozinho */}
+      <HeadsUpNotification 
+        notification={headsUpAlert} 
+        onDismiss={() => setHeadsUpAlert(null)} 
+        onOpen={() => setActiveSection('jobs')} 
+      />
     </div>
   );
 }

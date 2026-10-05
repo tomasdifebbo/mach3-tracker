@@ -33,8 +33,8 @@ self.addEventListener('push', (event) => {
     body: data.body || 'Corte finalizado na máquina.',
     icon: data.icon || '/icon-192.png',
     badge: data.badge || '/icon-192.png',
-    // Padrão de vibração potente para ambiente industrial/oficina: 400ms vibra, 150ms pausa, 400ms vibra, etc.
-    vibrate: [400, 150, 400, 150, 600, 200, 800],
+    // Padrão de vibração dinâmico no estilo WhatsApp / Mensageiro (dois toques rápidos)
+    vibrate: [200, 100, 200, 100, 350],
     data: {
       url: data.url || '/history',
       job_id: data.job_id,
@@ -42,7 +42,8 @@ self.addEventListener('push', (event) => {
     },
     tag: uniqueTag,
     renotify: true,
-    requireInteraction: true,
+    // requireInteraction false permite que o banner desça no topo do Android e retraia sozinho após 4 segundos (estilo WhatsApp)
+    requireInteraction: false,
     silent: false,
     actions: [
       { action: 'open_dashboard', title: 'Ver Painel' }

@@ -140,8 +140,19 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
     setPushMessage(null);
     const token = localStorage.getItem('mach3_token');
     try {
+      // Dispara banner flutuante estilo WhatsApp no topo da tela para pré-visualização instantânea
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('mach3:test-alert', {
+          detail: {
+            title: '🔔 Teste: Banner estilo WhatsApp',
+            body: 'Corte finalizado na máquina! O alerta desce do topo e retrai sozinho.',
+          }
+        }));
+        pushService.playChime();
+      }
+
       await pushService.testNotification(token);
-      setPushMessage({ type: 'success', text: '✅ Notificação enviada! Verifique a barra de notificações do seu celular.' });
+      setPushMessage({ type: 'success', text: '✅ Notificação enviada! Veja o banner flutuante descendo no topo da tela.' });
     } catch (err) {
       setPushMessage({ type: 'error', text: err.message || 'Erro ao enviar notificação de teste.' });
     } finally {
@@ -998,12 +1009,12 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
           </div>
         )}
 
-        {/* Guia Prático de Instalação no Celular */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-white/10">
+        {/* Guia Prático de Instalação e Banner Flutuante */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-white/10">
           <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
             <div className="flex items-center gap-2 text-white font-bold text-xs">
               <span className="text-base">🤖</span>
-              <span>Como Instalar no Android (Chrome):</span>
+              <span>1. Como Instalar no Android:</span>
             </div>
             <ol className="text-xs text-text-muted space-y-1 list-decimal list-inside leading-relaxed">
               <li>Abra o site no <strong>Google Chrome</strong> do seu celular.</li>
@@ -1013,14 +1024,29 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
             </ol>
           </div>
 
+          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-2">
+            <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+              <span className="text-base">💬</span>
+              <span>2. Pop-up Flutuante (Estilo WhatsApp):</span>
+            </div>
+            <p className="text-[11px] text-emerald-200/80 leading-relaxed">
+              Para o alerta <strong>descer do topo da tela e recolher sozinho</strong> sobre qualquer aplicativo:
+            </p>
+            <ol className="text-xs text-text-muted space-y-1 list-decimal list-inside leading-relaxed">
+              <li>Segure o ícone do <strong>Mach3 Tracker</strong> &gt; toque no <strong>(i)</strong>.</li>
+              <li>Vá em <strong>Notificações</strong>.</li>
+              <li>Marque <strong>"Permitir pop-up"</strong> (Samsung) ou <strong>"Notificações flutuantes"</strong> (Xiaomi/Motorola).</li>
+            </ol>
+          </div>
+
           <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
             <div className="flex items-center gap-2 text-white font-bold text-xs">
               <span className="text-base">🍏</span>
-              <span>Como Instalar no iPhone (Safari / iOS 16.4+):</span>
+              <span>3. Como Instalar no iPhone (iOS):</span>
             </div>
             <ol className="text-xs text-text-muted space-y-1 list-decimal list-inside leading-relaxed">
               <li>Abra o site no <strong>Safari</strong> do seu iPhone.</li>
-              <li>Toque no botão de <strong>Compartilhar</strong> (ícone de quadrado com seta para cima).</li>
+              <li>Toque no botão de <strong>Compartilhar</strong> (quadrado com seta).</li>
               <li>Role para baixo e selecione <strong>"Adicionar à Tela de Início"</strong>.</li>
               <li>Abra o app criado na tela inicial e toque em <strong>"Ativar Notificações"</strong>.</li>
             </ol>
