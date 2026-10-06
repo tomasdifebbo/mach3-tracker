@@ -574,7 +574,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
             <thead>
               <tr className="bg-white/5 text-text-muted text-[9px] font-black uppercase tracking-wider border-b border-border">
                 <th className="px-3 py-2.5">Arquivo</th>
-                <th className="px-2 py-2.5">Projeto</th>
+                <th className="px-2 py-2.5 min-w-[130px]">Projeto</th>
                 <th className="px-2 py-2.5">Router</th>
                 <th className="px-2 py-2.5">Operador</th>
                 <th className="px-1.5 py-2.5 text-center">Qtd</th>
@@ -628,7 +628,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                       </div>
                     </div>
                   </td>
-                  <td className="px-2 py-2 max-w-[130px]">
+                  <td className="px-2 py-2 min-w-[130px] max-w-[220px]">
                     {(() => {
                       let projectName = '';
                       if (job.folder && !job.folder.includes('\\') && !job.folder.includes('/')) {
@@ -657,7 +657,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                       
                       if (isEditing) {
                         return (
-                          <div className="flex items-center gap-1 min-w-[120px]">
+                          <div className="flex items-center gap-1 min-w-[140px]">
                             <input
                               type="text"
                               value={editingValue}
@@ -691,8 +691,8 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                       }
 
                       return (
-                        <div className="flex items-center gap-1 group/proj">
-                          <span className="text-[9px] font-black uppercase tracking-wider text-accent-cyan bg-accent-cyan/10 px-1.5 py-0.5 rounded border border-accent-cyan/20 truncate block" title={projectName}>
+                        <div className="flex items-start gap-1 group/proj">
+                          <span className="text-[9px] font-black uppercase tracking-wider text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20 whitespace-normal break-words leading-snug inline-block" title={projectName}>
                             {projectName}
                           </span>
                           <button
@@ -700,7 +700,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                               setEditingJobId(job.id);
                               setEditingValue(projectName);
                             }}
-                            className="p-0.5 text-[9px] text-text-muted hover:text-white hover:bg-white/5 rounded opacity-0 group-hover/proj:opacity-100 transition-all cursor-pointer shrink-0"
+                            className="p-0.5 text-[9px] text-text-muted hover:text-white hover:bg-white/5 rounded opacity-0 group-hover/proj:opacity-100 transition-all cursor-pointer shrink-0 mt-0.5"
                             title="Editar Projeto"
                           >
                             ✏️

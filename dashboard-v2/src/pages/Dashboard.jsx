@@ -603,8 +603,8 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
                           <span className="text-xs font-bold text-white truncate max-w-[180px]" title={item.name}>{item.name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20 block min-w-[100px]" title={item.projectName}>
+                      <td className="px-4 py-3 min-w-[130px] max-w-[220px]">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-accent-cyan bg-accent-cyan/10 px-2 py-1 rounded border border-accent-cyan/20 inline-block break-words whitespace-normal leading-snug" title={item.projectName}>
                           {item.projectName}
                         </span>
                       </td>
