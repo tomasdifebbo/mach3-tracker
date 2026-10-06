@@ -8,6 +8,23 @@ import math
 import re
 import threading
 import traceback
+import socket
+
+# ==========================================
+# SINGLE INSTANCE LOCK (PORT 47999)
+# ==========================================
+_single_instance_socket = None
+def ensure_single_instance(port=47999):
+    global _single_instance_socket
+    try:
+        _single_instance_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        _single_instance_socket.bind(('127.0.0.1', port))
+        _single_instance_socket.listen(1)
+    except Exception:
+        print(f"[!] Outra instancia do monitor.py ja esta em execucao (porta {port} ocupada). Encerrando para evitar duplicidade.")
+        sys.exit(0)
+
+ensure_single_instance()
 
 # ==========================================
 # CONFIGURAÇÕES SAAS (LOCAL/NUVEM)
@@ -312,12 +329,24 @@ def simulate_gcode_time(filepath):
         print(f"[!] Erro ao simular tempo e dimensoes: {e}")
         return None, None, None, None
 
+_last_started_jobs = {}  # {origem: (nome_arquivo, timestamp_monotonic)}
+
 def processa_inicio(caminho, nome_arquivo, iso_time, origem, estimated_minutes=None, max_x=None, max_y=None, area_m2=None):
     # Se o caminho for um arquivo real, use o nome original (com extensão) ao invés do nome truncado
     if "\\" in caminho or "/" in caminho:
         real_name = caminho.split("\\")[-1].split("/")[-1]
         if "." in real_name and len(real_name) > len(nome_arquivo):
             nome_arquivo = real_name
+
+    # Debounce de 5 segundos para a mesma maquina e arquivo (evita disparos duplos de cliques seguidos)
+    now_mono = time.monotonic()
+    last_event = _last_started_jobs.get(origem)
+    if last_event:
+        last_file, last_time = last_event
+        if last_file.lower().strip() == nome_arquivo.lower().strip() and (now_mono - last_time) < 5.0:
+            print(f"[!] Debounce ativo: ignorando inicio duplicado em {origem} para '{nome_arquivo}'")
+            return
+    _last_started_jobs[origem] = (nome_arquivo, now_mono)
 
     # Extract actual folder from full file path
     project_name = "LaserCAD"
@@ -523,9 +552,12 @@ def main():
                     
                     def check_path():
                         nonlocal path_exists, current_size
-                        if os.path.exists(path):
-                            path_exists = True
-                            current_size = os.path.getsize(path)
+                        try:
+                            if os.path.exists(path):
+                                path_exists = True
+                                current_size = os.path.getsize(path)
+                        except Exception:
+                            path_exists = False
                     
                     t = threading.Thread(target=check_path)
                     t.start()
@@ -541,9 +573,9 @@ def main():
                     print(f"[!] Erro ao verificar {name}: {e}")
                     continue
                     
-                if current_size < state["last_pos"]: # Arquivo foi resetado
-                    state["last_pos"] = 0
-                    changed = True
+                if current_size > 0 and current_size < state["last_pos"]: # Arquivo foi resetado ou truncado
+                    state["last_pos"] = max(0, current_size - 10000)
+                    save_state({n: {"last_pos": s["last_pos"]} for n, s in router_states.items()})
                 
                 if current_size > state["last_pos"]:
                     try:
@@ -551,7 +583,7 @@ def main():
                             f.seek(state["last_pos"])
                             lines = f.readlines()
                             state["last_pos"] = f.tell()
-                            changed = True
+                            save_state({n: {"last_pos": s["last_pos"]} for n, s in router_states.items()})
                     except Exception as e:
                         print(f"[!] Erro ao ler log de {name}: {e}")
                         continue

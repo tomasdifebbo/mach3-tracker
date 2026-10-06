@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, 
   Clock, 
@@ -57,7 +57,20 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
   const [togglingId, setTogglingId] = useState(null);
   const [selectedLinkJob, setSelectedLinkJob] = useState(null);
   const [selectedLinkRouter, setSelectedLinkRouter] = useState('');
-  const activeJobs = jobs.filter(j => !j.end_time);
+  // Deduplicate active jobs by router: A single physical machine can only have ONE job in progress at a time
+  const activeJobs = useMemo(() => {
+    const rawActive = jobs.filter(j => !j.end_time);
+    const byRouter = new Map();
+    // Sort from newest to oldest so newest job for a router takes precedence
+    const sorted = [...rawActive].sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0));
+    for (const job of sorted) {
+      const key = (job.router_name || 'Desconhecido').toLowerCase().trim();
+      if (!byRouter.has(key)) {
+        byRouter.set(key, job);
+      }
+    }
+    return Array.from(byRouter.values());
+  }, [jobs]);
   
   // Live Timer Effect for multiple jobs
   useEffect(() => {
@@ -69,7 +82,8 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
     const update = () => {
       // For simplicity, we track the elapsed time of the most recent active job for the main display
       // but in the UI we can show multiple trackers.
-      const newestJob = [...activeJobs].sort((a, b) => new Date(b.start_time) - new Date(a.start_time))[0];
+      const newestJob = activeJobs[0];
+      if (!newestJob) return;
       const startDt = new Date(newestJob.start_time);
       const diffSec = Math.floor((Date.now() - startDt) / 1000);
       setElapsed(diffSec > 0 ? diffSec / 60 : 0);
@@ -78,7 +92,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, [activeJobs.length]);
+  }, [activeJobs]);
 
   // Settings
   const costPerHour = user?.settings?.costPerHour || 50;

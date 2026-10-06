@@ -103,6 +103,29 @@ async function closeStaleJobs(userId) {
             await pool.query('UPDATE jobs SET end_time = $1, duration_minutes = $2 WHERE id = $3', [end, estMin, job.id]);
             console.log(`[CLEANUP] Locked stale job #${job.id}`);
         }
+
+        // Also cleanup duplicate active jobs for the same router (keep only the newest)
+        const activeRouters = (await pool.query(
+            `SELECT router_name, COUNT(*) as cnt 
+             FROM jobs 
+             WHERE "userId" = $1 AND end_time IS NULL 
+             GROUP BY router_name HAVING COUNT(*) > 1`,
+            [userId]
+        )).rows;
+
+        for (const r of activeRouters) {
+            const dupeJobs = (await pool.query(
+                `SELECT id, start_time FROM jobs 
+                 WHERE "userId" = $1 AND end_time IS NULL AND router_name = $2 
+                 ORDER BY id DESC`,
+                [userId, r.router_name]
+            )).rows;
+            // Keep the first (newest), close the rest
+            for (let i = 1; i < dupeJobs.length; i++) {
+                await pool.query('UPDATE jobs SET end_time = start_time, duration_minutes = 0.01 WHERE id = $1', [dupeJobs[i].id]);
+                console.log(`[CLEANUP] Closed duplicate active job #${dupeJobs[i].id} for router ${r.router_name}`);
+            }
+        }
     } catch (e) {
         console.error("Cleanup stale jobs error:", e);
     }
@@ -2203,6 +2226,24 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
         const diffSeconds = (dt - lastEventTime) / 1000;
         if (diffSeconds >= 0 && diffSeconds < DEBOUNCE_SECONDS) {
             return res.json({ id: null, success: true, debounced: true });
+        }
+    }
+
+    // Deduplication check: Is there already an active job on this machine?
+    const existingActive = (await pool.query(
+        `SELECT id, start_time, file_name FROM jobs 
+         WHERE "userId" = $1 AND end_time IS NULL 
+         AND (router_name = $2 OR router_name ILIKE $3) 
+         ORDER BY id DESC LIMIT 1`,
+        [userId, cleanRouterName || null, `%${cleanRouterName || ''}%`]
+    )).rows[0];
+
+    if (existingActive) {
+        const prevStart = new Date(existingActive.start_time);
+        const diffSec = Math.abs((dt - prevStart) / 1000);
+        // If it's the exact same file or started within 20s, it's a concurrent/duplicate request: reuse it!
+        if (existingActive.file_name.toLowerCase().trim() === cleanFileName.toLowerCase().trim() || diffSec < 20) {
+            return res.json({ id: existingActive.id, success: true, debounced: true });
         }
     }
 
