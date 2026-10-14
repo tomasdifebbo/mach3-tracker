@@ -7,8 +7,14 @@ import sys
 import math
 import re
 import threading
-import traceback
 import socket
+
+# Configura stdout com line buffering para evitar prints travados em background
+if hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except Exception:
+        pass
 
 # ==========================================
 # SINGLE INSTANCE LOCK (PORT 47999)
@@ -338,12 +344,12 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem, estimated_minutes=N
         if "." in real_name and len(real_name) > len(nome_arquivo):
             nome_arquivo = real_name
 
-    # Debounce de 5 segundos para a mesma maquina e arquivo (evita disparos duplos de cliques seguidos)
+    # Debounce de 2 segundos para a mesma maquina e arquivo (evita disparos duplos acidentais)
     now_mono = time.monotonic()
     last_event = _last_started_jobs.get(origem)
     if last_event:
         last_file, last_time = last_event
-        if last_file.lower().strip() == nome_arquivo.lower().strip() and (now_mono - last_time) < 5.0:
+        if last_file and last_file.lower().strip() == nome_arquivo.lower().strip() and (now_mono - last_time) < 2.0:
             print(f"[!] Debounce ativo: ignorando inicio duplicado em {origem} para '{nome_arquivo}'")
             return
     _last_started_jobs[origem] = (nome_arquivo, now_mono)
@@ -449,6 +455,9 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem, estimated_minutes=N
     enqueue_request("POST", URL_JOBS, payload)
 
 def processa_fim(iso_time, origem):
+    # Libera imediatamente o debounce para que um novo corte iniciado logo em seguida seja aceito
+    _last_started_jobs[origem] = None
+
     if "Laser" in origem:
         try:
             log_msg = f"[{iso_time}] {origem} | FIM"
