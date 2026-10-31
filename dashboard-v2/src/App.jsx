@@ -273,7 +273,7 @@ function App() {
       case 'materials': return <Materials materials={materials} onRefresh={fetchData} />;
       case 'maintenance': return <Maintenance maintenance={maintenance} routers={routers} onRefresh={fetchData} user={user} />;
       case 'settings': return <Settings user={user} onRefresh={loadUser} isTrialExpired={isTrialExpired} />;
-      case 'encarregado': return <Encarregado jobs={jobs} />;
+      case 'encarregado': return <Encarregado jobs={jobs} routers={routers} />;
       default: return <Dashboard jobs={jobs} user={user} routers={routers} onRefresh={fetchData} />;
     }
   };

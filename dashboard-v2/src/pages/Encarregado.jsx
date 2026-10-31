@@ -2,12 +2,13 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   LayoutGrid, Calendar, Columns3, CheckSquare2, Package, TrendingUp,
   AlertCircle, CheckCircle2, Clock, Star, ChevronRight, Zap, Target,
-  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2, Edit2, CalendarClock, User, FileCode, Box, Archive
+  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2, Edit2, CalendarClock, User, FileCode, Box, Archive, ClipboardList
 } from 'lucide-react';
 import { api } from '../services/api';
 import { LinkProjectModal } from '../components/LinkProjectModal';
 import { ConversorGcodeDxf } from '../components/ConversorGcodeDxf';
 import { GeradorLetraCaixa3D } from '../components/GeradorLetraCaixa3D';
+import { GeradorFichaTecnica } from '../components/GeradorFichaTecnica';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -2441,6 +2442,7 @@ const NAV_SECTIONS = [
   { id: 'dashboard', label: 'Dashboard Semanal', icon: LayoutGrid, group: 'Visão Geral' },
   { id: 'rotina', label: 'Rotina Semanal', icon: Calendar, group: 'Visão Geral' },
   { id: 'kanban', label: 'Painel Kanban', icon: Columns3, group: 'Produção' },
+  { id: 'ficha_tecnica', label: 'Ficha Técnica & Checklist', icon: ClipboardList, group: 'Produção' },
   { id: 'checklists', label: 'Checklists Diários', icon: CheckSquare2, group: 'Operação' },
   { id: 'estoque', label: 'Controle de Estoque', icon: Package, group: 'Operação' },
   { id: 'kaizen', label: 'Ciclo POP / Kaizen', icon: TrendingUp, group: 'Melhoria' },
@@ -2448,7 +2450,7 @@ const NAV_SECTIONS = [
   { id: 'gcode_dxf', label: 'Conversor G-Code ➔ DXF', icon: FileCode, group: 'Ferramentas' },
 ];
 
-export function Encarregado({ jobs = [] }) {
+export function Encarregado({ jobs = [], routers = [] }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const today = new Date();
   const dayName = DAYS[today.getDay()];
@@ -2457,10 +2459,11 @@ export function Encarregado({ jobs = [] }) {
 
   const renderSection = () => {
     switch (activeTab) {
-      case 'dashboard':   return <DashboardSemanal jobs={jobs} />;
-      case 'rotina':      return <RotinaSemanal />;
-      case 'kanban':      return <PainelKanban jobs={jobs} />;
-      case 'checklists':  return <ChecklistsDiarios />;
+      case 'dashboard':     return <DashboardSemanal jobs={jobs} />;
+      case 'rotina':        return <RotinaSemanal />;
+      case 'kanban':        return <PainelKanban jobs={jobs} />;
+      case 'ficha_tecnica': return <GeradorFichaTecnica jobs={jobs} routers={routers} />;
+      case 'checklists':    return <ChecklistsDiarios />;
       case 'estoque':     return <ControleEstoque />;
       case 'kaizen':      return <CicloPOP />;
       case 'letra_caixa': return <GeradorLetraCaixa3D />;
