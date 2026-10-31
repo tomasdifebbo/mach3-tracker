@@ -90,11 +90,12 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       if (isNaN(qtyNum) || qtyNum < 1) return;
       const targetIds = job.ids || [job.id];
 
-      let newMaterialPrice = job.material_price || 0;
-      const mat = materials.find(m => m.id === job.material_id);
+      const mat = materials.find(m => String(m.id) === String(job.material_id) || (job.material_name && m.name.toLowerCase() === job.material_name.toLowerCase()));
+      
+      let unitInsumoCost = 0;
       if (mat) {
         const insumo = calculateInsumo({
-          durationMinutes: job.duration_minutes || 0,
+          durationMinutes: (job.duration_minutes || 0) / (job.count || targetIds.length || 1),
           pricePerM2: mat.price || 0,
           maxXMm: job.max_x,
           maxYMm: job.max_y,
@@ -102,17 +103,26 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
           sheetWidthMm: mat.sheet_width_mm,
           sheetHeightMm: mat.sheet_height_mm
         });
-        newMaterialPrice = insumo.totalCost * qtyNum;
+        unitInsumoCost = insumo.totalCost;
       } else if (job.material_price && (job.quantity || 1) > 0) {
-        const unitPrice = job.material_price / (job.quantity || 1);
-        newMaterialPrice = unitPrice * qtyNum;
+        unitInsumoCost = job.material_price / (job.quantity || 1);
       }
 
-      for (const id of targetIds) {
-        await api.patch(`/jobs/${id}`, { 
+      if (targetIds.length === 1) {
+        await api.patch(`/jobs/${targetIds[0]}`, { 
           quantity: qtyNum,
-          material_price: newMaterialPrice 
+          material_price: unitInsumoCost * qtyNum 
         });
+      } else {
+        const baseQty = Math.floor(qtyNum / targetIds.length);
+        const remainder = qtyNum % targetIds.length;
+        for (let i = 0; i < targetIds.length; i++) {
+          const runQty = Math.max(1, baseQty + (i < remainder ? 1 : 0));
+          await api.patch(`/jobs/${targetIds[i]}`, { 
+            quantity: runQty,
+            material_price: unitInsumoCost * runQty 
+          });
+        }
       }
       setEditingQtyJobId(null);
       if (onRefresh) onRefresh();
@@ -156,18 +166,37 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
     setExportingPdf(false);
   };
   
-  // Helper to group jobs by File + Folder + Day
+  const [isConsolidated, setIsConsolidated] = useState(true);
+  const [expandedGroupIds, setExpandedGroupIds] = useState(new Set());
+
+  const toggleExpandGroup = (groupId) => {
+    setExpandedGroupIds(prev => {
+      const next = new Set(prev);
+      if (next.has(groupId)) next.delete(groupId);
+      else next.add(groupId);
+      return next;
+    });
+  };
+
+  // Helper to group jobs by File + Folder + Day (or return all individual cuts if not consolidated)
   const consolidateJobs = (jobList) => {
+    if (!isConsolidated) {
+      return [...jobList].sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+    }
     const groups = jobList.reduce((acc, j) => {
-      const dateKey = j.start_time ? new Date(j.start_time).toISOString().split('T')[0] : 'und';
+      const dateKey = j.start_time ? new Date(j.start_time).toLocaleDateString('en-CA') : 'und';
       const key = `${j.file_name}-${j.folder}-${dateKey}`;
       
       if (!acc[key]) {
         acc[key] = { 
           ...j, 
+          groupKey: key,
           duration_minutes: 0, 
           count: 0, 
+          quantity: 0,
           ids: [],
+          allRuns: [],
+          first_start_time: j.start_time,
           isSomeActive: false
         };
       }
@@ -175,8 +204,14 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       const dur = j.duration_minutes || (j.end_time ? (new Date(j.end_time) - new Date(j.start_time)) / 60000 : 0);
       acc[key].duration_minutes += Math.max(0, dur);
       acc[key].count += 1;
+      acc[key].quantity += (j.quantity || 1);
       acc[key].ids.push(j.id);
+      acc[key].allRuns.push(j);
       if (!j.end_time) acc[key].isSomeActive = true;
+
+      if (!acc[key].first_start_time || new Date(j.start_time) < new Date(acc[key].first_start_time)) {
+        acc[key].first_start_time = j.start_time;
+      }
       
       // Keep the most recent data for display
       if (new Date(j.start_time) > new Date(acc[key].start_time)) {
@@ -187,6 +222,12 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       
       return acc;
     }, {});
+
+    Object.values(groups).forEach(g => {
+      if (g.allRuns) {
+        g.allRuns.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+      }
+    });
     
     return Object.values(groups).sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
   };
@@ -433,6 +474,20 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                 </span>
               )}
             </button>
+
+            <button 
+              onClick={() => setIsConsolidated(!isConsolidated)}
+              className={clsx(
+                "flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer whitespace-nowrap",
+                isConsolidated
+                  ? "bg-purple-500/20 border-purple-500/50 text-purple-300 shadow-lg shadow-purple-500/10"
+                  : "bg-accent-cyan/20 border-accent-cyan text-accent-cyan shadow-lg shadow-accent-cyan/10"
+              )}
+              title={isConsolidated ? "Clique para ver corte a corte individual com início e término" : "Clique para consolidar cortes repetidos"}
+            >
+              <Layers size={16} />
+              <span className="hidden sm:inline">{isConsolidated ? "Repetidos Agrupados" : "Todos os Cortes (Detalhado)"}</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2 md:gap-3 justify-between w-full md:w-auto">
@@ -609,8 +664,11 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                   effectiveMaterialCost = job.material_price;
                 }
 
+                const isGroupExpanded = expandedGroupIds.has(job.groupKey || job.id);
+
                 return (
-                <tr key={job.id} className="border-b border-border/30 hover:bg-white/5 transition-colors group">
+                <React.Fragment key={job.groupKey || job.id}>
+                <tr className="border-b border-border/30 hover:bg-white/5 transition-colors group">
                   <td className="px-3 py-2 min-w-[140px] max-w-[210px]">
                     <div className="flex flex-col">
                       <div className="flex items-start gap-1 justify-between">
@@ -618,9 +676,15 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                           {job.file_name}
                         </span>
                         {job.count > 1 && (
-                          <span className="text-[8px] bg-accent-blue/20 text-accent-blue px-1 py-0.2 rounded font-black tracking-tighter shrink-0">
-                            {job.count}X
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() => toggleExpandGroup(job.groupKey || job.id)}
+                            className="text-[8px] bg-accent-blue/20 hover:bg-accent-blue/30 text-accent-blue border border-accent-blue/30 px-1 py-0.2 rounded font-black tracking-tighter shrink-0 cursor-pointer flex items-center gap-0.5 transition-all"
+                            title="Clique para ver cada início e término individual"
+                          >
+                            <span>{job.count}X</span>
+                            <ChevronDown size={10} className={clsx("transition-transform", isGroupExpanded && "rotate-180")} />
+                          </button>
                         )}
                       </div>
                       <div className="text-[8px] text-text-muted opacity-40 font-mono tracking-wider">
@@ -874,6 +938,11 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                   <td className="px-2 py-2 whitespace-nowrap">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-semibold text-white/80">{formatTime(job.start_time)} {job.end_time && `→ ${formatTime(job.end_time)}`}</span>
+                      {job.count > 1 && (
+                        <span className="text-[8px] text-text-muted opacity-70">
+                          1º corte: {formatTime(job.first_start_time)}
+                        </span>
+                      )}
                       {job.isSomeActive && <span className="text-[8px] text-accent-success font-black animate-pulse">EM ANDAMENTO</span>}
                     </div>
                   </td>
@@ -997,6 +1066,78 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                     </div>
                   </td>
                 </tr>
+                {isConsolidated && isGroupExpanded && job.allRuns?.length > 1 && (
+                  <tr className="bg-slate-900/80 border-b border-border/30">
+                    <td colSpan={10} className="p-3 pl-6">
+                      <div className="bg-black/40 border border-white/10 rounded-xl p-3 space-y-2">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-text-muted flex items-center justify-between">
+                          <span className="flex items-center gap-1.5 text-accent-cyan font-bold">
+                            <Layers size={12} /> Início e Término de Cada Corte ({job.allRuns.length} execuções registradas)
+                          </span>
+                          <span className="font-mono text-white/80 font-bold">Total: {Math.floor(job.duration_minutes)} MIN</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                          {job.allRuns.map((run, idx) => (
+                            <div key={run.id} className="bg-white/5 border border-white/10 rounded-lg p-2.5 flex flex-col gap-1 hover:border-accent-cyan/30 transition-all">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-accent-blue">Corte #{job.allRuns.length - idx} (ID: #{run.id})</span>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[9px] font-bold text-purple-300 bg-purple-500/20 px-1 py-0.5 rounded">
+                                    {run.quantity || 1} UN
+                                  </span>
+                                  <span className="text-[9px] font-mono font-bold text-white bg-white/10 px-1.5 py-0.5 rounded">
+                                    {Math.round(run.duration_minutes || (run.end_time ? (new Date(run.end_time) - new Date(run.start_time))/60000 : 0))} min
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-[11px] font-mono text-white font-bold">
+                                🕒 {formatTime(run.start_time)} → {run.end_time ? formatTime(run.end_time) : 'Ativo'}
+                              </div>
+                              <div className="text-[9px] text-text-muted flex items-center justify-between gap-2 pt-1 border-t border-white/5">
+                                <div className="flex items-center gap-1 min-w-0">
+                                  <span>👤</span>
+                                  <select
+                                    value={run.operator_name || ''}
+                                    onChange={(e) => {
+                                      if (e.target.value) {
+                                        handleUpdateOperatorName({ id: run.id, ids: [run.id] }, e.target.value);
+                                      }
+                                    }}
+                                    title="Alterar operador deste corte específico (sincroniza a Timeline)"
+                                    className="bg-black/60 border border-white/10 hover:border-accent-cyan/40 rounded px-1.5 py-0.5 text-[9px] font-bold text-accent-cyan outline-none cursor-pointer max-w-[110px]"
+                                  >
+                                    {run.operator_name && !operatorsList.some(op => op.name.toLowerCase() === run.operator_name.toLowerCase()) && (
+                                      <option value={run.operator_name}>{run.operator_name}</option>
+                                    )}
+                                    <option value="" disabled>Operador...</option>
+                                    {operatorsList.map(op => (
+                                      <option key={op.id} value={op.name}>{op.name}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <span>📅 {formatDate(run.start_time)}</span>
+                                  <button
+                                    onClick={() => {
+                                      if (window.confirm(`Excluir apenas o Corte #${job.allRuns.length - idx} (${formatTime(run.start_time)})?`)) {
+                                        handleDelete({ id: run.id, ids: [run.id] });
+                                      }
+                                    }}
+                                    title="Excluir apenas este corte"
+                                    className="p-0.5 text-text-muted hover:text-accent-red transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 size={10} />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </React.Fragment>
               );
             })}
             </tbody>

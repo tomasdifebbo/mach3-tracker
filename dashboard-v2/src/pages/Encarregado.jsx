@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   LayoutGrid, Calendar, Columns3, CheckSquare2, Package, TrendingUp,
   AlertCircle, CheckCircle2, Clock, Star, ChevronRight, Zap, Target,
-  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2, Edit2, CalendarClock, User, FileCode, Box
+  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2, Edit2, CalendarClock, User, FileCode, Box, Archive
 } from 'lucide-react';
 import { api } from '../services/api';
 import { LinkProjectModal } from '../components/LinkProjectModal';
@@ -682,6 +682,7 @@ function PainelKanban({ jobs = [] }) {
   const [showArchive, setShowArchive] = useState(false);
   const [archive, setArchive] = useState([]);
   const [archiveLoading, setArchiveLoading] = useState(false);
+  const [archivingAll, setArchivingAll] = useState(false);
   const [selectedLinkJob, setSelectedLinkJob] = useState(null);
   const [selectedLinkRouter, setSelectedLinkRouter] = useState('');
 
@@ -775,10 +776,17 @@ function PainelKanban({ jobs = [] }) {
     setLoading(true);
     try {
       let cards = await api.get('/kanban');
-      if (!Array.isArray(cards) || cards.length === 0) {
-        const initial = buildInitial();
-        cards = await api.post('/kanban/batch', initial);
+      if (Array.isArray(cards) && cards.length > 0) {
+        localStorage.setItem('mach3_kanban_initialized', '1');
+      } else if ((!Array.isArray(cards) || cards.length === 0) && !localStorage.getItem('mach3_kanban_initialized')) {
+        const existingArchive = await api.get('/kanban/archive').catch(() => []);
+        if (!Array.isArray(existingArchive) || existingArchive.length === 0) {
+          const initial = buildInitial();
+          cards = await api.post('/kanban/batch', initial);
+        }
+        localStorage.setItem('mach3_kanban_initialized', '1');
       }
+      if (!Array.isArray(cards)) cards = [];
       const cols = { todo: [], doing: [], done: [] };
       cards.forEach(c => {
         if (cols[c.column_id]) {
@@ -912,6 +920,45 @@ function PainelKanban({ jobs = [] }) {
     } catch (err) {
       console.error(err);
       loadKanban();
+    }
+  };
+
+  const handleArchiveAllDone = async () => {
+    const doneCards = columns.done || [];
+    if (doneCards.length === 0 || archivingAll) return;
+    if (!confirm(`Deseja arquivar todas as ${doneCards.length} O.S. concluídas?`)) return;
+
+    setArchivingAll(true);
+    localStorage.setItem('mach3_kanban_initialized', '1');
+    setColumns(prev => ({ ...prev, done: [] }));
+
+    try {
+      const res = await api.post('/kanban/archive-all', { cards: doneCards });
+      if (!res || res.error) {
+        await Promise.all(
+          doneCards.map(card =>
+            api.post('/kanban/archive', {
+              kanban_id: typeof card.id === 'number' || /^\d+$/.test(String(card.id)) ? card.id : null,
+              title: card.title,
+              machine: card.machine,
+              operator: card.operator,
+              priority: card.priority || 'media',
+              quality_rating: 5,
+              qty_approved: 1,
+              qty_rejected: 0,
+              observations: 'Arquivado em lote',
+            })
+          )
+        );
+      }
+      if (showArchive) {
+        loadArchive();
+      }
+    } catch (err) {
+      console.error('Erro ao arquivar todas as O.S.:', err);
+      loadKanban();
+    } finally {
+      setArchivingAll(false);
     }
   };
 
@@ -1067,11 +1114,25 @@ function PainelKanban({ jobs = [] }) {
             onDragLeave={(e) => e.currentTarget.classList.remove('ring-1', 'ring-white/20')}
             onDrop={(e) => { e.currentTarget.classList.remove('ring-1', 'ring-white/20'); handleDrop(e, col.id); }}
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <h4 className={`text-xs font-black uppercase tracking-widest ${col.color}`}>{col.label}</h4>
-              <span className={`w-6 h-6 rounded-full ${col.countBg} text-xs font-bold flex items-center justify-center`}>
-                {columns[col.id].length}
-              </span>
+              <div className="flex items-center gap-2">
+                {col.id === 'done' && columns.done.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleArchiveAllDone}
+                    disabled={archivingAll}
+                    title="Arquivar todas as O.S. concluídas"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-accent-success/15 hover:bg-accent-success/30 text-accent-success border border-accent-success/30 transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    <Archive size={11} />
+                    {archivingAll ? 'Arquivando...' : 'Arquivar Tudo'}
+                  </button>
+                )}
+                <span className={`w-6 h-6 rounded-full ${col.countBg} text-xs font-bold flex items-center justify-center`}>
+                  {columns[col.id].length}
+                </span>
+              </div>
             </div>
             <div className={`space-y-3 ${col.id === 'done' ? 'opacity-75' : ''} min-h-[150px] flex-1`}>
               {columns[col.id].map(card => (

@@ -96,7 +96,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
   const [allocationNotes, setAllocationNotes] = useState('');
 
   // Timeline archive states
-  const [timelinePeriod, setTimelinePeriod] = useState('hoje'); // 'hoje' | 'semana' | 'mes' | 'custom'
+  const [timelinePeriod, setTimelinePeriod] = useState('semana'); // 'hoje' | 'semana' | 'mes' | 'custom'
   const [archiveLogs, setArchiveLogs] = useState([]);
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [filterOperator, setFilterOperator] = useState('all');
@@ -110,6 +110,48 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
       const d = new Date();
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
+  };
+
+  const getLogLocalDateStr = (dtVal) => {
+    if (!dtVal) return getLocalTodayStr();
+    try {
+      return new Date(dtVal).toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    } catch (e) {
+      return new Date(dtVal).toISOString().split('T')[0];
+    }
+  };
+
+  const matchesOperatorLog = (log, op) => {
+    if (!log || !op) return false;
+    if (log.operator_id && Number(log.operator_id) === Number(op.id)) return true;
+    return !!(log.operator_name && op.name && log.operator_name.trim().toLowerCase() === op.name.trim().toLowerCase());
+  };
+
+  // Calcula minutos reais trabalhados sem duplicar máquinas simultâneas e ignorando folga/fim de expediente
+  const calcMergedWorkedMinutes = (logsArr) => {
+    const intervals = [];
+    const nowTs = Date.now();
+    for (const l of logsArr) {
+      const st = l.status || 'disponivel';
+      if (st === 'ausente' || st === 'fim_expediente' || st === 'almoco') continue;
+      if (!l.start_time) continue;
+      const sMs = new Date(l.start_time).getTime();
+      const eMs = l.end_time ? new Date(l.end_time).getTime() : nowTs;
+      if (eMs > sMs) intervals.push([sMs, eMs]);
+    }
+    if (intervals.length === 0) return 0;
+    intervals.sort((a, b) => a[0] - b[0]);
+    const merged = [intervals[0].slice()];
+    for (let i = 1; i < intervals.length; i++) {
+      const cur = intervals[i];
+      const last = merged[merged.length - 1];
+      if (cur[0] <= last[1]) {
+        last[1] = Math.max(last[1], cur[1]);
+      } else {
+        merged.push(cur.slice());
+      }
+    }
+    return merged.reduce((acc, [s, e]) => acc + (e - s) / 60000, 0);
   };
 
   const getDateRange = (period) => {
@@ -166,6 +208,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
     fetchKanban();
     fetchOperators();
     fetchTimeLogs();
+    fetchArchiveLogs();
 
     const interval = setInterval(() => {
       fetchTimeLogs();
@@ -173,6 +216,22 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Recarrega automaticamente quando o período da timeline muda
+  useEffect(() => {
+    if (timelinePeriod !== 'custom' || (customDateFrom && customDateTo)) {
+      fetchArchiveLogs();
+    }
+  }, [timelinePeriod, customDateFrom, customDateTo]);
+
+  // Sincroniza em tempo real quando qualquer informação do Histórico (jobs) é alterada!
+  useEffect(() => {
+    fetchOperators();
+    fetchTimeLogs();
+    if (timelinePeriod !== 'custom' || (customDateFrom && customDateTo)) {
+      fetchArchiveLogs();
+    }
+  }, [jobs]);
 
   const handleAddOperator = async (e) => {
     e.preventDefault();
@@ -600,7 +659,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                   ? operatorsList.filter(o => o.name.toLowerCase() === operatorName.toLowerCase())
                   : operatorsList)
             ).map(op => {
-              const opLogs = [...timeLogs.filter(l => l.operator_id === op.id)];
+              const opLogs = [...timeLogs.filter(l => matchesOperatorLog(l, op))];
               let activeLog = opLogs.find(l => !l.end_time);
 
               // Fallback imediato: se o operador estiver cortando na máquina, exibe o card ativo mesmo antes do recarregamento da API
@@ -757,7 +816,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                 👥 Todos
               </button>
               {operatorsList.map(op => {
-                const opLogCount = archiveLogs.filter(l => l.operator_id === op.id).length;
+                const opLogCount = archiveLogs.filter(l => matchesOperatorLog(l, op)).length;
                 if (opLogCount === 0) return null;
                 return (
                   <button
@@ -778,19 +837,21 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
           {archiveLogs.length > 0 && (() => {
             const filteredOps = filterOperator === 'all' ? operatorsList : operatorsList.filter(op => op.id === filterOperator);
             const summaryData = filteredOps.map(op => {
-              const opLogs = archiveLogs.filter(l => l.operator_id === op.id);
-              const totalMinutes = opLogs.reduce((sum, l) => {
-                const dur = l.duration_minutes || (l.end_time ? (new Date(l.end_time) - new Date(l.start_time)) / 60000 : 0);
-                return sum + dur;
-              }, 0);
-              const daysWorked = new Set(opLogs.map(l => new Date(l.start_time).toISOString().split('T')[0])).size;
+              const opLogs = archiveLogs.filter(l => matchesOperatorLog(l, op));
+              const activeLogsOnly = opLogs.filter(l => (l.status || 'disponivel') !== 'ausente' && l.status !== 'fim_expediente');
+              const totalMinutes = calcMergedWorkedMinutes(opLogs);
+              const daysWorked = new Set(activeLogsOnly.map(l => getLogLocalDateStr(l.start_time))).size;
               const statusBreakdown = {};
+              if (totalMinutes > 0) {
+                statusBreakdown['disponivel'] = totalMinutes;
+              }
               opLogs.forEach(l => {
                 const st = l.status || 'disponivel';
+                if (st === 'disponivel' || st === 'ausente' || st === 'fim_expediente') return;
                 const dur = l.duration_minutes || (l.end_time ? (new Date(l.end_time) - new Date(l.start_time)) / 60000 : 0);
                 statusBreakdown[st] = (statusBreakdown[st] || 0) + dur;
               });
-              return { op, totalMinutes, daysWorked, logCount: opLogs.length, statusBreakdown };
+              return { op, totalMinutes, daysWorked, logCount: activeLogsOnly.length || opLogs.length, statusBreakdown };
             }).filter(s => s.logCount > 0);
 
             return (
@@ -855,12 +916,15 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
 
           {/* Timeline Detalhada Agrupada por Dia */}
           {archiveLogs.length > 0 && (() => {
-            const filteredLogs = filterOperator === 'all' ? archiveLogs : archiveLogs.filter(l => l.operator_id === filterOperator);
+            const selectedOpObj = filterOperator === 'all' ? null : operatorsList.find(o => o.id === filterOperator);
+            const filteredLogs = filterOperator === 'all'
+              ? archiveLogs
+              : archiveLogs.filter(l => selectedOpObj ? matchesOperatorLog(l, selectedOpObj) : l.operator_id === filterOperator);
             
-            // Group by date
+            // Group by date (fuso horário de Brasília America/Sao_Paulo)
             const byDate = {};
             filteredLogs.forEach(l => {
-              const dateKey = new Date(l.start_time).toISOString().split('T')[0];
+              const dateKey = getLogLocalDateStr(l.start_time);
               if (!byDate[dateKey]) byDate[dateKey] = [];
               byDate[dateKey].push(l);
             });
@@ -874,7 +938,14 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                 {sortedDates.map(dateKey => {
                   const dayLogs = byDate[dateKey];
                   const dayLabel = new Date(dateKey + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
-                  const dayTotalMin = dayLogs.reduce((s, l) => s + (l.duration_minutes || (l.end_time ? (new Date(l.end_time) - new Date(l.start_time)) / 60000 : 0)), 0);
+                  // Soma horas reais trabalhadas por operador no dia (sem duplicar máquinas simultâneas)
+                  const opsInDay = {};
+                  dayLogs.forEach(l => {
+                    const k = (l.operator_name || 'Desconhecido').toLowerCase();
+                    if (!opsInDay[k]) opsInDay[k] = [];
+                    opsInDay[k].push(l);
+                  });
+                  const dayTotalMin = Object.values(opsInDay).reduce((s, arr) => s + calcMergedWorkedMinutes(arr), 0);
 
                   // Group by operator within the day
                   const byOp = {};

@@ -7,7 +7,9 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 require('dotenv').config();
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
+// Garante que colunas TIMESTAMP WITHOUT TIME ZONE (armazenadas em UTC) sejam interpretadas como UTC em qualquer SO (Windows/Linux)
+types.setTypeParser(1114, (str) => (str ? new Date(str.replace(' ', 'T') + 'Z') : null));
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
 const webpush = require('web-push');
 
@@ -363,8 +365,12 @@ async function initDb() {
                 start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 end_time TIMESTAMP,
                 duration_minutes REAL,
-                notes TEXT
+                notes TEXT,
+                job_id INTEGER REFERENCES jobs(id) ON DELETE CASCADE
             );
+
+            ALTER TABLE operator_time_logs ADD COLUMN IF NOT EXISTS job_id INTEGER REFERENCES jobs(id) ON DELETE CASCADE;
+            CREATE INDEX IF NOT EXISTS idx_operator_time_logs_job_id ON operator_time_logs(job_id);
 
             CREATE TABLE IF NOT EXISTS kaizens (
                 id SERIAL PRIMARY KEY,
@@ -2197,6 +2203,186 @@ async function autoSyncKanban(userId, jobFileName, jobFolder, routerName, target
     }
 }
 
+// Sincroniza automaticamente qualquer alteração do Histórico (jobs) com a Linha do Tempo (operator_time_logs)
+async function syncJobToTimeline(userId, updatedJob, oldJob = null) {
+    if (!updatedJob) return;
+    try {
+        let opRes = null;
+        const opNameTrimmed = (updatedJob.operator_name || '').trim();
+        if (opNameTrimmed && opNameTrimmed.toLowerCase() !== 'desconhecido') {
+            opRes = (await pool.query(
+                'SELECT id, name, status FROM operators WHERE LOWER(name) = LOWER($1) AND "userId" = $2 LIMIT 1',
+                [opNameTrimmed, userId]
+            )).rows[0];
+
+            // Se o operador foi digitado manualmente no Histórico e ainda não existir na tabela operators, cadastra-o
+            if (!opRes) {
+                opRes = (await pool.query(
+                    'INSERT INTO operators (name, shift, "userId", status, location) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, status',
+                    [opNameTrimmed, 'Geral', userId, 'disponivel', 'Na Fábrica']
+                )).rows[0];
+            }
+        }
+
+        const startDt = new Date(updatedJob.start_time);
+        const endDt = updatedJob.end_time ? new Date(updatedJob.end_time) : null;
+        const durMin = endDt ? parseFloat(Math.max(0.1, (endDt - startDt) / 60000).toFixed(2)) : null;
+        const machineLoc = updatedJob.router_name ? `⚙️ ${updatedJob.router_name}` : 'Na Máquina';
+        const qtyVal = parseInt(updatedJob.quantity, 10) || 1;
+        const qtyNote = qtyVal > 1 ? `Qtd: ${qtyVal} UN` : null;
+
+        // 1. Procura card vinculado por job_id
+        let matchedLogs = (await pool.query(
+            'SELECT * FROM operator_time_logs WHERE "userId" = $1 AND job_id = $2 ORDER BY id ASC',
+            [userId, updatedJob.id]
+        )).rows;
+
+        // 2. Fallback para registros antigos sem job_id preenchido
+        if (matchedLogs.length === 0) {
+            const refTitle = (oldJob && oldJob.file_name) || updatedJob.file_name;
+            const refStart = (oldJob && oldJob.start_time) || updatedJob.start_time;
+            if (refTitle && refStart) {
+                matchedLogs = (await pool.query(
+                    `SELECT * FROM operator_time_logs
+                     WHERE "userId" = $1
+                       AND job_id IS NULL
+                       AND kanban_title = $2
+                       AND ABS(EXTRACT(EPOCH FROM (start_time - $3::timestamp))) < 120
+                     ORDER BY ABS(EXTRACT(EPOCH FROM (start_time - $3::timestamp))) ASC
+                     LIMIT 1`,
+                    [userId, refTitle, new Date(refStart).toISOString()]
+                )).rows;
+            }
+        }
+
+        if (matchedLogs.length > 0) {
+            const primary = matchedLogs[0];
+            let mergedNotes = primary.notes || null;
+            if (mergedNotes) {
+                mergedNotes = mergedNotes.replace(/(?:^|\s*\|\s*)Qtd:\s*\d+\s*UN/gi, '').trim() || null;
+            }
+            if (qtyNote) {
+                mergedNotes = mergedNotes ? `${qtyNote} | ${mergedNotes}` : qtyNote;
+            }
+
+            if (opRes) {
+                await pool.query(
+                    `UPDATE operator_time_logs
+                     SET job_id = $1,
+                         operator_id = $2,
+                         operator_name = $3,
+                         location = $4,
+                         kanban_title = $5,
+                         start_time = $6,
+                         end_time = $7,
+                         duration_minutes = $8,
+                         notes = $9
+                     WHERE id = $10 AND "userId" = $11`,
+                    [
+                        updatedJob.id,
+                        opRes.id,
+                        opRes.name,
+                        machineLoc,
+                        updatedJob.file_name,
+                        startDt.toISOString(),
+                        endDt ? endDt.toISOString() : null,
+                        durMin,
+                        mergedNotes,
+                        primary.id,
+                        userId
+                    ]
+                );
+            } else {
+                await pool.query(
+                    `UPDATE operator_time_logs
+                     SET job_id = $1,
+                         location = $2,
+                         kanban_title = $3,
+                         start_time = $4,
+                         end_time = $5,
+                         duration_minutes = $6,
+                         notes = $7
+                     WHERE id = $8 AND "userId" = $9`,
+                    [
+                        updatedJob.id,
+                        machineLoc,
+                        updatedJob.file_name,
+                        startDt.toISOString(),
+                        endDt ? endDt.toISOString() : null,
+                        durMin,
+                        mergedNotes,
+                        primary.id,
+                        userId
+                    ]
+                );
+            }
+
+            // Remove eventuais fragmentos duplicados do mesmo job_id
+            if (matchedLogs.length > 1) {
+                const extraIds = matchedLogs.slice(1).map(l => l.id);
+                await pool.query('DELETE FROM operator_time_logs WHERE id = ANY($1::int[]) AND "userId" = $2', [extraIds, userId]);
+            }
+        } else if (opRes) {
+            // Se não existia card na Linha do Tempo para este job, cria automaticamente
+            await pool.query(
+                `INSERT INTO operator_time_logs (
+                    "userId", operator_id, operator_name, status, location, kanban_title,
+                    start_time, end_time, duration_minutes, notes, job_id
+                ) VALUES ($1, $2, $3, 'disponivel', $4, $5, $6, $7, $8, $9, $10)`,
+                [
+                    userId,
+                    opRes.id,
+                    opRes.name,
+                    machineLoc,
+                    updatedJob.file_name,
+                    startDt.toISOString(),
+                    endDt ? endDt.toISOString() : null,
+                    durMin,
+                    qtyNote,
+                    updatedJob.id
+                ]
+            );
+        }
+
+        // Se o operador foi alterado, transfere ou limpa eventual bloco ocioso 'Na Fábrica' imediatamente adjacente ao término deste corte
+        if (opRes && oldJob && oldJob.operator_name && oldJob.operator_name.trim().toLowerCase() !== opRes.name.toLowerCase() && (oldJob.end_time || updatedJob.end_time)) {
+            const refEnd = new Date(oldJob.end_time || updatedJob.end_time).toISOString();
+            const adjIdle = (await pool.query(
+                `SELECT id, start_time, end_time FROM operator_time_logs
+                 WHERE "userId" = $1
+                   AND job_id IS NULL
+                   AND kanban_title IS NULL
+                   AND location = 'Na Fábrica'
+                   AND LOWER(operator_name) = LOWER($2)
+                   AND ABS(EXTRACT(EPOCH FROM (start_time - $3::timestamp))) < 15`,
+                [userId, oldJob.operator_name.trim(), refEnd]
+            )).rows;
+
+            for (const idle of adjIdle) {
+                // Verifica se o novo operador já tem atividade nesse intervalo
+                const overlap = idle.end_time ? (await pool.query(
+                    `SELECT id FROM operator_time_logs
+                     WHERE "userId" = $1 AND operator_id = $2
+                       AND start_time < $4::timestamp AND COALESCE(end_time, NOW()) > $3::timestamp
+                     LIMIT 1`,
+                    [userId, opRes.id, new Date(idle.start_time).toISOString(), new Date(idle.end_time).toISOString()]
+                )).rows[0] : true;
+
+                if (overlap) {
+                    await pool.query('DELETE FROM operator_time_logs WHERE id = $1 AND "userId" = $2', [idle.id, userId]);
+                } else {
+                    await pool.query(
+                        'UPDATE operator_time_logs SET operator_id = $1, operator_name = $2 WHERE id = $3 AND "userId" = $4',
+                        [opRes.id, opRes.name, idle.id, userId]
+                    );
+                }
+            }
+        }
+    } catch (syncErr) {
+        console.error('[TIMELINE SYNC ERROR]:', syncErr);
+    }
+}
+
 app.post('/api/jobs', authenticateToken, async (req, res) => {
     const body = req.body || {};
     const { file_name, folder, file_path, start_time, router_name, estimated_minutes } = body;
@@ -2252,10 +2438,17 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
         const prevStart = new Date(j.start_time);
         if (dt > prevStart) {
             const duration = Math.max(0, (dt - prevStart) / (1000 * 60));
-            if (duration < 0.05) await pool.query('DELETE FROM jobs WHERE id = $1', [j.id]);
-            else await pool.query('UPDATE jobs SET end_time = $1, duration_minutes = $2 WHERE id = $3', [dt.toISOString(), duration, j.id]);
+            if (duration < 0.05) {
+                await pool.query('DELETE FROM operator_time_logs WHERE job_id = $1 AND "userId" = $2', [j.id, userId]);
+                await pool.query('DELETE FROM jobs WHERE id = $1', [j.id]);
+            } else {
+                await pool.query('UPDATE jobs SET end_time = $1, duration_minutes = $2 WHERE id = $3', [dt.toISOString(), duration, j.id]);
+                await pool.query('UPDATE operator_time_logs SET end_time = $1, duration_minutes = $2 WHERE job_id = $3 AND "userId" = $4', [dt.toISOString(), parseFloat(duration.toFixed(2)), j.id, userId]);
+            }
         } else {
-            await pool.query('UPDATE jobs SET end_time = $1, duration_minutes = 0.01 WHERE id = $2', [new Date(prevStart.getTime() + 1000).toISOString(), j.id]);
+            const fallbackEnd = new Date(prevStart.getTime() + 1000).toISOString();
+            await pool.query('UPDATE jobs SET end_time = $1, duration_minutes = 0.01 WHERE id = $2', [fallbackEnd, j.id]);
+            await pool.query('UPDATE operator_time_logs SET end_time = $1, duration_minutes = 0.01 WHERE job_id = $2 AND "userId" = $3', [fallbackEnd, j.id, userId]);
         }
     }
 
@@ -2290,7 +2483,11 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
     const maxX = req.body.max_x ? parseFloat(req.body.max_x) : null;
     const maxY = req.body.max_y ? parseFloat(req.body.max_y) : null;
     const boundArea = req.body.bounding_area_m2 ? parseFloat(req.body.bounding_area_m2) : (maxX && maxY ? parseFloat(((maxX / 1000) * (maxY / 1000)).toFixed(3)) : null);
-    const initialQty = req.body.quantity ? parseInt(req.body.quantity) : 1;
+    let initialQty = req.body.quantity ? parseInt(req.body.quantity) : null;
+    if (!initialQty || isNaN(initialQty)) {
+        const qtyMatch = cleanFileName.match(/(?:^|[\s_\-])(\d+)\s*[xX](?:\.|$|[\s_\-])/);
+        initialQty = qtyMatch ? parseInt(qtyMatch[1], 10) : 1;
+    }
 
     const result = await pool.query('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, "userId", router_name, estimated_minutes, material_id, material_name, material_price, operator_name, max_x, max_y, bounding_area_m2, quantity) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING id', 
         [cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, router_name || null, estMin, req.body.material_id || null, req.body.material_name || null, req.body.material_price || null, operatorName, maxX, maxY, boundArea, initialQty]);
@@ -2307,13 +2504,13 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
             )).rows[0];
 
             if (opRes) {
-                // 1. Close open logs for this operator
-                const openLogs = (await pool.query(
-                    'SELECT * FROM operator_time_logs WHERE operator_id = $1 AND "userId" = $2 AND end_time IS NULL ORDER BY start_time DESC',
+                // 1. Encerra apenas cards ociosos ('Na Fábrica' / sem job_id), preservando cortes simultâneos em outra máquina!
+                const openIdleLogs = (await pool.query(
+                    'SELECT * FROM operator_time_logs WHERE operator_id = $1 AND "userId" = $2 AND end_time IS NULL AND job_id IS NULL ORDER BY start_time DESC',
                     [opRes.id, userId]
                 )).rows;
 
-                for (const log of openLogs) {
+                for (const log of openIdleLogs) {
                     const startLogDt = new Date(log.start_time);
                     const durMin = (dt - startLogDt) / 60000;
                     if (durMin < 0.4) {
@@ -2326,12 +2523,13 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
                     }
                 }
 
-                // 2. Open a NEW card for this cutting activity
-                const machineLoc = router_name ? `⚙️ ${router_name}` : 'Na Máquina';
+                // 2. Abre um novo card vinculado diretamente ao job_id desta usinagem
+                const machineLoc = cleanRouterName ? `⚙️ ${cleanRouterName}` : (router_name ? `⚙️ ${router_name}` : 'Na Máquina');
+                const qtyNote = initialQty > 1 ? `Qtd: ${initialQty} UN` : null;
                 await pool.query(
                     `INSERT INTO operator_time_logs (
-                        "userId", operator_id, operator_name, status, location, kanban_title, start_time
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                        "userId", operator_id, operator_name, status, location, kanban_title, start_time, notes, job_id
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
                     [
                         userId,
                         opRes.id,
@@ -2339,12 +2537,14 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
                         'disponivel',
                         machineLoc,
                         cleanFileName,
-                        dt.toISOString()
+                        dt.toISOString(),
+                        qtyNote,
+                        result.rows[0].id
                     ]
                 );
 
                 await pool.query(
-                    `UPDATE operators SET location = $1 WHERE id = $2 AND "userId" = $3`,
+                    `UPDATE operators SET status = 'disponivel', location = $1 WHERE id = $2 AND "userId" = $3`,
                     [machineLoc, opRes.id, userId]
                 );
             }
@@ -2386,8 +2586,8 @@ app.patch('/api/jobs/latest', authenticateToken, async (req, res) => {
     const durationMinutes = (dt - startDt) / (1000 * 60);
 
     if (durationMinutes < 0.4) {
+        await pool.query('DELETE FROM operator_time_logs WHERE "userId" = $1 AND (job_id = $2 OR start_time = $3)', [userId, row.id, row.start_time]);
         await pool.query('DELETE FROM jobs WHERE id = $1', [row.id]);
-        await pool.query('DELETE FROM operator_time_logs WHERE "userId" = $1 AND start_time = $2', [userId, row.start_time]);
         return res.json({ id: row.id, deleted: true });
     }
 
@@ -2396,45 +2596,65 @@ app.patch('/api/jobs/latest', authenticateToken, async (req, res) => {
     // Auto-sync Kanban card: doing/todo -> done
     autoSyncKanban(userId, row.file_name, row.folder, router_name, 'done');
 
-    // Close operator's machine cutting time log and open new 'Na Fábrica' card
+    // Close operator's specific machine cutting time log and open 'Na Fábrica' only if no other machine is still cutting for this operator
     if (row.operator_name) {
         try {
             const opRes = (await pool.query(
-                'SELECT id, name FROM operators WHERE LOWER(name) = LOWER($1) AND "userId" = $2 LIMIT 1',
+                'SELECT id, name, status FROM operators WHERE LOWER(name) = LOWER($1) AND "userId" = $2 LIMIT 1',
                 [row.operator_name.trim(), userId]
             )).rows[0];
 
             if (opRes) {
-                const openLogs = (await pool.query(
-                    'SELECT * FROM operator_time_logs WHERE operator_id = $1 AND "userId" = $2 AND end_time IS NULL ORDER BY start_time DESC',
-                    [opRes.id, userId]
+                const targetLogs = (await pool.query(
+                    `SELECT * FROM operator_time_logs
+                     WHERE "userId" = $1
+                       AND end_time IS NULL
+                       AND (
+                         job_id = $2
+                         OR (job_id IS NULL AND operator_id = $3 AND kanban_title = $4)
+                       )`,
+                    [userId, row.id, opRes.id, row.file_name]
                 )).rows;
 
-                for (const log of openLogs) {
+                for (const log of targetLogs) {
                     const startLogDt = new Date(log.start_time);
-                    const durMin = (dt - startLogDt) / 60000;
-                    if (durMin < 0.4) {
-                        await pool.query('DELETE FROM operator_time_logs WHERE id = $1', [log.id]);
-                    } else {
-                        await pool.query(
-                            'UPDATE operator_time_logs SET end_time = $1, duration_minutes = $2 WHERE id = $3',
-                            [dt.toISOString(), parseFloat(durMin.toFixed(2)), log.id]
-                        );
-                    }
+                    const durMin = Math.max(0.1, (dt - startLogDt) / 60000);
+                    await pool.query(
+                        'UPDATE operator_time_logs SET end_time = $1, duration_minutes = $2, job_id = COALESCE(job_id, $3) WHERE id = $4',
+                        [dt.toISOString(), parseFloat(durMin.toFixed(2)), row.id, log.id]
+                    );
                 }
 
-                // Create a new 'Na Fábrica' card starting at completion time
-                await pool.query(
-                    `INSERT INTO operator_time_logs (
-                        "userId", operator_id, operator_name, status, location, start_time
-                    ) VALUES ($1, $2, $3, $4, $5, $6)`,
-                    [userId, opRes.id, opRes.name, 'disponivel', 'Na Fábrica', dt.toISOString()]
-                );
+                // Verifica se o operador ainda possui outra máquina cortando simultaneamente
+                const remainingActiveCuts = (await pool.query(
+                    'SELECT location, kanban_title FROM operator_time_logs WHERE operator_id = $1 AND "userId" = $2 AND end_time IS NULL AND job_id IS NOT NULL ORDER BY start_time DESC LIMIT 1',
+                    [opRes.id, userId]
+                )).rows[0];
 
-                await pool.query(
-                    `UPDATE operators SET location = $1 WHERE id = $2 AND "userId" = $3 AND status = 'disponivel'`,
-                    ['Na Fábrica', opRes.id, userId]
-                );
+                if (remainingActiveCuts) {
+                    await pool.query(
+                        `UPDATE operators SET location = $1 WHERE id = $2 AND "userId" = $3 AND status = 'disponivel'`,
+                        [remainingActiveCuts.location || 'Na Máquina', opRes.id, userId]
+                    );
+                } else if (opRes.status === 'disponivel') {
+                    // Cria card 'Na Fábrica' apenas se não houver outro card 'Na Fábrica' já aberto
+                    const existingIdle = (await pool.query(
+                        'SELECT id FROM operator_time_logs WHERE operator_id = $1 AND "userId" = $2 AND end_time IS NULL AND job_id IS NULL LIMIT 1',
+                        [opRes.id, userId]
+                    )).rows[0];
+                    if (!existingIdle) {
+                        await pool.query(
+                            `INSERT INTO operator_time_logs (
+                                "userId", operator_id, operator_name, status, location, start_time
+                            ) VALUES ($1, $2, $3, $4, $5, $6)`,
+                            [userId, opRes.id, opRes.name, 'disponivel', 'Na Fábrica', dt.toISOString()]
+                        );
+                    }
+                    await pool.query(
+                        `UPDATE operators SET location = $1 WHERE id = $2 AND "userId" = $3 AND status = 'disponivel'`,
+                        ['Na Fábrica', opRes.id, userId]
+                    );
+                }
             }
         } catch (opErr) {
             console.error('Erro ao encerrar time log do operador no fim do job:', opErr);
@@ -2501,7 +2721,10 @@ app.get('/api/jobs', authenticateToken, async (req, res) => {
 });
 
 app.patch('/api/jobs/:id', authenticateToken, async (req, res) => {
-    const { material_id, material_name, material_price, folder, file_name, start_time, end_time, estimated_minutes, max_x, max_y, bounding_area_m2, operator_name } = req.body;
+    const { material_id, material_name, material_price, folder, file_name, start_time, end_time, estimated_minutes, max_x, max_y, bounding_area_m2, operator_name, router_name } = req.body;
+    const oldJob = (await pool.query('SELECT * FROM jobs WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id])).rows[0];
+    if (!oldJob) return res.status(404).json({ error: "Job not found" });
+
     const fields = [];
     const values = [];
     let idx = 1;
@@ -2511,8 +2734,18 @@ app.patch('/api/jobs/:id', authenticateToken, async (req, res) => {
     if (material_price !== undefined) { fields.push(`material_price = $${idx++}`); values.push(material_price); }
     if (folder !== undefined) { fields.push(`folder = $${idx++}`); values.push(folder); }
     if (file_name !== undefined) { fields.push(`file_name = $${idx++}`); values.push(file_name); }
+    if (router_name !== undefined) { fields.push(`router_name = $${idx++}`); values.push(router_name); }
     if (start_time !== undefined) { fields.push(`start_time = $${idx++}`); values.push(start_time); }
     if (end_time !== undefined) { fields.push(`end_time = $${idx++}`); values.push(end_time); }
+    if (start_time !== undefined || end_time !== undefined) {
+        const effStart = start_time !== undefined ? start_time : oldJob.start_time;
+        const effEnd = end_time !== undefined ? end_time : oldJob.end_time;
+        if (effStart && effEnd) {
+            const recalcDur = Math.max(0.1, (new Date(effEnd) - new Date(effStart)) / 60000);
+            fields.push(`duration_minutes = $${idx++}`);
+            values.push(recalcDur);
+        }
+    }
     if (estimated_minutes !== undefined) { fields.push(`estimated_minutes = $${idx++}`); values.push(estimated_minutes ? parseFloat(estimated_minutes) : null); }
     if (max_x !== undefined) { fields.push(`max_x = $${idx++}`); values.push(max_x ? parseFloat(max_x) : null); }
     if (max_y !== undefined) { fields.push(`max_y = $${idx++}`); values.push(max_y ? parseFloat(max_y) : null); }
@@ -2525,7 +2758,12 @@ app.patch('/api/jobs/:id', authenticateToken, async (req, res) => {
     const result = await pool.query(`UPDATE jobs SET ${fields.join(', ')} WHERE id = $${idx++} AND "userId" = $${idx++} RETURNING *`, values);
     if (result.rowCount > 0) {
         const updatedJob = result.rows[0];
-        if (operator_name !== undefined && updatedJob) {
+
+        // Sincroniza imediatamente a Linha do Tempo (operator_time_logs) com a edição feita no Histórico!
+        await syncJobToTimeline(req.user.id, updatedJob, oldJob);
+
+        // Atualiza a máquina ao vivo e o cartão Kanban em execução apenas se este job ainda estiver ativo (!end_time)
+        if (operator_name !== undefined && updatedJob && !updatedJob.end_time) {
             if (updatedJob.router_name) {
                 await pool.query(
                     'UPDATE routers SET operator_name = $1 WHERE "userId" = $2 AND (name ILIKE $3 OR name ILIKE $4)',
@@ -2546,6 +2784,24 @@ app.patch('/api/jobs/:id', authenticateToken, async (req, res) => {
 });
 
 app.delete('/api/jobs/:id', authenticateToken, async (req, res) => {
+    const oldJob = (await pool.query('SELECT * FROM jobs WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id])).rows[0];
+    if (!oldJob) return res.status(404).json({ error: "Job not found" });
+
+    // Remove o card correspondente da Linha do Tempo (tanto por job_id quanto por fallback legado)
+    await pool.query(
+        `DELETE FROM operator_time_logs
+         WHERE "userId" = $1
+           AND (
+             job_id = $2
+             OR (
+               job_id IS NULL
+               AND kanban_title = $3
+               AND ABS(EXTRACT(EPOCH FROM (start_time - $4::timestamp))) < 120
+             )
+           )`,
+        [req.user.id, oldJob.id, oldJob.file_name, new Date(oldJob.start_time).toISOString()]
+    );
+
     const result = await pool.query('DELETE FROM jobs WHERE id = $1 AND "userId" = $2', [req.params.id, req.user.id]);
     if (result.rowCount > 0) res.json({ success: true });
     else res.status(404).json({ error: "Job not found" });
@@ -3281,58 +3537,56 @@ app.get('/api/operators/time-logs', authenticateToken, async (req, res) => {
         const userId = req.user.id;
         const { date } = req.query;
 
-        // Auto-reconcile: If an operator has an active cutting job, but their open log is 'Na Fábrica' or started before the job, split into a new card!
-        const openLogs = (await pool.query(
-            'SELECT * FROM operator_time_logs WHERE "userId" = $1 AND end_time IS NULL AND status = \'disponivel\'',
+        // Auto-reconcile (multi-machine safe via job_id):
+        // 1) Se algum log com job_id ficou em aberto mas o job já finalizou (ex: closeStaleJobs), fecha o log com o mesmo end_time do job
+        await pool.query(
+            `UPDATE operator_time_logs otl
+             SET end_time = j.end_time,
+                 duration_minutes = ROUND((EXTRACT(EPOCH FROM (j.end_time - otl.start_time)) / 60.0)::numeric, 2)
+             FROM jobs j
+             WHERE otl.job_id = j.id
+               AND otl."userId" = $1
+               AND otl.end_time IS NULL
+               AND j.end_time IS NOT NULL`,
+            [userId]
+        );
+
+        // 2) Garante que todo job ativo (end_time IS NULL) possua seu card correspondente na Linha do Tempo, sem cortar outra máquina ativa!
+        const activeJobs = (await pool.query(
+            'SELECT * FROM jobs WHERE "userId" = $1 AND end_time IS NULL ORDER BY start_time ASC',
             [userId]
         )).rows;
 
-        for (const log of openLogs) {
-            const opName = log.operator_name;
-            if (!opName) continue;
+        for (const activeJob of activeJobs) {
+            if (!activeJob.operator_name) continue;
+            await syncJobToTimeline(userId, activeJob, null);
 
-            const activeJob = (await pool.query(
-                `SELECT * FROM jobs 
-                 WHERE "userId" = $1 
-                 AND LOWER(operator_name) = LOWER($2) 
-                 AND end_time IS NULL 
-                 ORDER BY id DESC LIMIT 1`,
-                [userId, opName]
-            )).rows[0];
+            // Fecha eventuais cards ociosos ('Na Fábrica' sem job_id) abertos antes do início deste corte para o mesmo operador
+            const jobStart = new Date(activeJob.start_time);
+            const openIdleLogs = (await pool.query(
+                `SELECT * FROM operator_time_logs
+                 WHERE "userId" = $1
+                   AND LOWER(operator_name) = LOWER($2)
+                   AND end_time IS NULL
+                   AND job_id IS NULL
+                   AND status = 'disponivel'`,
+                [userId, activeJob.operator_name.trim()]
+            )).rows;
 
-            if (activeJob) {
-                const jobStart = new Date(activeJob.start_time);
-                const logStart = new Date(log.start_time);
-
-                // If the open log started BEFORE the job started (or has different file name):
-                if (log.kanban_title !== activeJob.file_name && jobStart > logStart) {
-                    // Close open log at jobStart time
-                    const durMin = Math.max(0.1, (jobStart - logStart) / 60000);
-                    await pool.query(
-                        'UPDATE operator_time_logs SET end_time = $1, duration_minutes = $2 WHERE id = $3',
-                        [jobStart.toISOString(), parseFloat(durMin.toFixed(2)), log.id]
-                    );
-
-                    // Insert NEW log card starting at jobStart time
-                    const machineLoc = activeJob.router_name ? `⚙️ ${activeJob.router_name}` : 'Na Máquina';
-                    await pool.query(
-                        `INSERT INTO operator_time_logs (
-                            "userId", operator_id, operator_name, status, location, kanban_title, start_time
-                        ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                        [userId, log.operator_id, opName, 'disponivel', machineLoc, activeJob.file_name, jobStart.toISOString()]
-                    );
-
-                    await pool.query(
-                        `UPDATE operators SET location = $1 WHERE id = $2 AND "userId" = $3`,
-                        [machineLoc, log.operator_id, userId]
-                    );
-                } else if (!log.kanban_title || log.location === 'Na Fábrica') {
-                    // Just update location and title if timestamps match
-                    const machineLoc = activeJob.router_name ? `⚙️ ${activeJob.router_name}` : 'Na Máquina';
-                    await pool.query(
-                        `UPDATE operator_time_logs SET location = $1, kanban_title = $2 WHERE id = $3`,
-                        [machineLoc, activeJob.file_name, log.id]
-                    );
+            for (const idleLog of openIdleLogs) {
+                const logStart = new Date(idleLog.start_time);
+                if (jobStart > logStart) {
+                    const durMin = (jobStart - logStart) / 60000;
+                    if (durMin < 0.4) {
+                        await pool.query('DELETE FROM operator_time_logs WHERE id = $1', [idleLog.id]);
+                    } else {
+                        await pool.query(
+                            'UPDATE operator_time_logs SET end_time = $1, duration_minutes = $2 WHERE id = $3',
+                            [jobStart.toISOString(), parseFloat(durMin.toFixed(2)), idleLog.id]
+                        );
+                    }
+                } else {
+                    await pool.query('DELETE FROM operator_time_logs WHERE id = $1', [idleLog.id]);
                 }
             }
         }
@@ -3462,6 +3716,60 @@ app.post('/api/kanban/archive', authenticateToken, async (req, res) => {
             await pool.query('DELETE FROM kanban_tasks WHERE id = $1 AND "userId" = $2', [kanban_id, req.user.id]);
         }
         res.json(r.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/kanban/archive-all', authenticateToken, async (req, res) => {
+    try {
+        const clientCards = Array.isArray(req.body?.cards) ? req.body.cards : null;
+        let tasksToArchive = clientCards;
+
+        if (!tasksToArchive || tasksToArchive.length === 0) {
+            tasksToArchive = (await pool.query(
+                'SELECT * FROM kanban_tasks WHERE "userId" = $1 AND column_id = $2 ORDER BY id ASC',
+                [req.user.id, 'done']
+            )).rows;
+        }
+
+        if (tasksToArchive.length > 0) {
+            for (const task of tasksToArchive) {
+                await pool.query(
+                    `INSERT INTO kanban_archive (title, machine, operator, priority, quality_rating, qty_approved, qty_rejected, observations, "userId")
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                    [
+                        task.title || 'Sem título',
+                        task.machine || '',
+                        task.operator || '',
+                        task.priority || 'media',
+                        task.quality_rating ?? 5,
+                        task.qty_approved ?? 1,
+                        task.qty_rejected ?? 0,
+                        task.observations ?? 'Arquivado em lote',
+                        req.user.id
+                    ]
+                );
+            }
+
+            const numericIds = tasksToArchive
+                .map(t => Number(t.id))
+                .filter(n => Number.isInteger(n) && n > 0);
+
+            if (numericIds.length > 0) {
+                await pool.query(
+                    'DELETE FROM kanban_tasks WHERE "userId" = $1 AND (column_id = $2 OR id = ANY($3::int[]))',
+                    [req.user.id, 'done', numericIds]
+                );
+            } else {
+                await pool.query(
+                    'DELETE FROM kanban_tasks WHERE "userId" = $1 AND column_id = $2',
+                    [req.user.id, 'done']
+                );
+            }
+        }
+
+        res.json({ success: true, count: tasksToArchive.length });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
