@@ -427,7 +427,28 @@ async function initDb() {
                 user_agent TEXT,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             );
+
+            CREATE TABLE IF NOT EXISTS oficina_sync_state (
+                id SERIAL PRIMARY KEY,
+                payload JSONB,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
         `);
+
+        // SEED OFICINA SYNC STATE
+        try {
+            const syncRes = await pool.query('SELECT count(*) as count FROM oficina_sync_state');
+            if (parseInt(syncRes.rows[0].count) === 0) {
+                const snapFile = path.join(__dirname, 'initial_snapshot.json');
+                if (fs.existsSync(snapFile)) {
+                    console.log('[SEED] Populando estado inicial de sincronização 3 - OFICINA...');
+                    const snapData = JSON.parse(fs.readFileSync(snapFile, 'utf8'));
+                    await pool.query('INSERT INTO oficina_sync_state (payload, updated_at) VALUES ($1, NOW())', [snapData]);
+                }
+            }
+        } catch (seedErr) {
+            console.error('[SEED ERROR] oficina_sync_state:', seedErr);
+        }
 
         // SEED: Ensure Casadotrem exists
         const userRes = await pool.query('SELECT * FROM users WHERE email = $1', ['casadotrem@gmail.com']);
@@ -3946,6 +3967,128 @@ app.delete('/api/occurrences/:id', authenticateToken, async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// ─── OFICINA / ONEDRIVE 3 - OFICINA SYNC & G-CODE PATCHING ───────────────────
+let oficinaSyncCache = null;
+try {
+    const snapFile = path.join(__dirname, 'initial_snapshot.json');
+    if (fs.existsSync(snapFile)) {
+        oficinaSyncCache = JSON.parse(fs.readFileSync(snapFile, 'utf8'));
+    }
+} catch (e) {}
+
+app.get('/api/oficina-sync', async (req, res) => {
+    try {
+        if (oficinaSyncCache) {
+            return res.json(oficinaSyncCache);
+        }
+        const { rows } = await pool.query('SELECT payload, updated_at FROM oficina_sync_state ORDER BY id DESC LIMIT 1');
+        if (rows.length > 0) {
+            oficinaSyncCache = { ...rows[0].payload, updated_at: rows[0].updated_at };
+            return res.json(oficinaSyncCache);
+        }
+        return res.json({
+            status: 'online',
+            last_scan_time: null,
+            total_projects: 0,
+            jobs: [],
+            active_config: {
+                source_dir: 'C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos',
+                dest_dir: 'E:\\arquivos 2024\\ARQUIVOS 2026',
+                oficina_folder_pattern: '^\\s*3\\s*-\\s*OFICINA\\s*$',
+                target_spindle_speed: '18000',
+                patch_gcode_macros: true
+            }
+        });
+    } catch (err) {
+        console.error('Erro em GET /api/oficina-sync:', err);
+        return res.status(500).json({ error: 'Erro ao buscar dados do assistente' });
+    }
+});
+
+app.post('/api/oficina-sync', async (req, res) => {
+    try {
+        const payload = req.body || {};
+        const nowIso = new Date().toISOString();
+        oficinaSyncCache = {
+            ...payload,
+            updated_at: nowIso
+        };
+        await pool.query('INSERT INTO oficina_sync_state (payload, updated_at) VALUES ($1, NOW())', [payload]);
+        await pool.query(
+            'DELETE FROM oficina_sync_state WHERE id NOT IN (SELECT id FROM oficina_sync_state ORDER BY id DESC LIMIT 10)'
+        ).catch(() => {});
+        return res.json({ ok: true, received_at: nowIso });
+    } catch (err) {
+        console.error('Erro em POST /api/oficina-sync:', err);
+        return res.status(500).json({ error: 'Erro ao atualizar dados do assistente' });
+    }
+});
+
+app.post('/api/oficina-sync/patch-gcode', (req, res) => {
+    try {
+        const { content, targetSpeed = '18000' } = req.body;
+        if (!content || typeof content !== 'string') {
+            return res.status(400).json({ error: 'Conteúdo G-Code inválido' });
+        }
+        const lines = content.split(/\r?\n/);
+        const cleanLines = lines.filter(l => !['M101', 'M102'].includes(l.trim().toUpperCase()));
+        const newLines = [];
+        let m101Inserted = false;
+        let m101Line = -1;
+
+        for (let i = 0; i < cleanLines.length; i++) {
+            let line = cleanLines[i];
+            if (targetSpeed && line.includes('S12000')) {
+                line = line.replace(/S12000/g, `S${targetSpeed}`);
+            }
+            newLines.push(line);
+            const codePart = line.split('(')[0].toUpperCase();
+            if ((codePart.includes('M03') || codePart.includes('M3')) && !codePart.includes('M30') && !m101Inserted) {
+                newLines.push('M101');
+                m101Inserted = true;
+                m101Line = newLines.length;
+            }
+        }
+        if (!m101Inserted && newLines.length > 0) {
+            const insertIdx = Math.min(2, newLines.length);
+            newLines.splice(insertIdx, 0, 'M101');
+            m101Inserted = true;
+            m101Line = insertIdx + 1;
+        }
+
+        const finalLines = [];
+        let m102Inserted = false;
+        let m102Line = -1;
+        for (let i = 0; i < newLines.length; i++) {
+            const line = newLines[i];
+            const codePart = line.split('(')[0].toUpperCase();
+            if (codePart.includes('M30') && !m102Inserted) {
+                finalLines.push('M102');
+                m102Inserted = true;
+                m102Line = finalLines.length;
+            }
+            finalLines.push(line);
+        }
+        if (!m102Inserted) {
+            finalLines.push('M102');
+            m102Inserted = true;
+            m102Line = finalLines.length;
+        }
+
+        return res.json({
+            ok: true,
+            patchedContent: finalLines.join('\n'),
+            totalLines: finalLines.length,
+            m101Line,
+            m102Line,
+            targetSpeed
+        });
+    } catch (err) {
+        console.error('Erro ao processar G-Code:', err);
+        return res.status(500).json({ error: 'Erro ao processar G-Code' });
     }
 });
 

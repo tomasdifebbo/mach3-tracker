@@ -409,6 +409,17 @@ export const api = {
     return api.get('/user/report-history');
   },
 
+  // Oficina / OneDrive Folder Control & G-code Patching
+  getOficinaSync: async () => {
+    return api.get('/oficina-sync');
+  },
+  saveOficinaSync: async (payload) => {
+    return api.post('/oficina-sync', payload);
+  },
+  patchGcode: async (content, targetSpeed = '18000') => {
+    return api.post('/oficina-sync/patch-gcode', { content, targetSpeed });
+  },
+
   deleteCustom: async (url) => {
     const resp = await fetch(`${API_URL}/api${url}`, { method: 'DELETE', headers: getAuthHeaders() });
     return safeJson(resp);

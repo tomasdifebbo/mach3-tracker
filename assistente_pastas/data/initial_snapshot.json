@@ -1,0 +1,3746 @@
+{
+  "status": "online",
+  "last_scan_time": "14:32:04",
+  "total_projects": 12,
+  "active_config": {
+    "source_dir": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos",
+    "dest_dir": "E:\\arquivos 2024\\ARQUIVOS 2026",
+    "oficina_folder_pattern": "^\\s*3\\s*-\\s*OFICINA\\s*$",
+    "target_spindle_speed": "18000",
+    "patch_gcode_macros": true,
+    "auto_copy_new": true
+  },
+  "jobs": [
+    {
+      "name": "2640  - EXPRESSO HOGWARTS CCXP",
+      "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP",
+      "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\2640  - EXPRESSO HOGWARTS CCXP",
+      "dest_exists": true,
+      "status": "sincronizado",
+      "total_files": 74,
+      "new_files_count": 0,
+      "missing_local_count": 0,
+      "total_bytes": 647195446,
+      "new_bytes": 0,
+      "categories": [
+        "MANUAL",
+        "ROUTER"
+      ],
+      "latest_mtime": 1793455785.0,
+      "latest_date_str": "31/10/2026 11:09",
+      "last_copied_at": null,
+      "ignored": false,
+      "files": [
+        {
+          "rel_path": "MANUAL/MANUAL_HOGWARTS - SALA DE MAGIA LAMBRI.pdf",
+          "name": "MANUAL_HOGWARTS - SALA DE MAGIA LAMBRI.pdf",
+          "category": "MANUAL",
+          "size": 878023,
+          "mtime": 1792439811.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "MANUAL/MANUAL_HORGWARTS_COLUNAS.pdf",
+          "name": "MANUAL_HORGWARTS_COLUNAS.pdf",
+          "category": "MANUAL",
+          "size": 1553017,
+          "mtime": 1790702705.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "MANUAL/MANUAL_HORGWARTS_PORTA ENTRADA.pdf",
+          "name": "MANUAL_HORGWARTS_PORTA ENTRADA.pdf",
+          "category": "MANUAL",
+          "size": 1140308,
+          "mtime": 1790711682.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/ESCADAS/ROUTER.cdr",
+          "name": "ROUTER.cdr",
+          "category": "ROUTER",
+          "size": 621776,
+          "mtime": 1791492809.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/GALHO/ISOPOR/1 - Top - 1.v3d",
+          "name": "1 - Top - 1.v3d",
+          "category": "ROUTER",
+          "size": 4340634,
+          "mtime": 1792652619.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/GALHO/ISOPOR/1.stl",
+          "name": "1.stl",
+          "category": "ROUTER",
+          "size": 734484,
+          "mtime": 1792652507.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/GALHO/ISOPOR/2.stl",
+          "name": "2.stl",
+          "category": "ROUTER",
+          "size": 2469184,
+          "mtime": 1792652510.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/GALHO/ISOPOR/2.v3d",
+          "name": "2.v3d",
+          "category": "ROUTER",
+          "size": 9954816,
+          "mtime": 1792652582.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/GALHO/ISOPOR/cod/1 pvc100mm b10mm.txt",
+          "name": "1 pvc100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1068754,
+          "mtime": 1792652616.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/GALHO/ISOPOR/cod/2 pvc100mm b10mm.txt",
+          "name": "2 pvc100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 3170432,
+          "mtime": 1792652579.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/GALHO/mdf/MDF.cdr",
+          "name": "MDF.cdr",
+          "category": "ROUTER",
+          "size": 114952,
+          "mtime": 1792652823.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/ORELHA/ORELHA.3mf",
+          "name": "ORELHA.3mf",
+          "category": "ROUTER",
+          "size": 2928028,
+          "mtime": 1792689354.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/QUADRIBOL GRADE/ROUTER.cdr",
+          "name": "ROUTER.cdr",
+          "category": "ROUTER",
+          "size": 593046,
+          "mtime": 1792695537.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/RAIO MAGIA INTERNO/ARTE.cdr",
+          "name": "ARTE.cdr",
+          "category": "ROUTER",
+          "size": 429951,
+          "mtime": 1793049760.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/RAIO MAGIA INTERNO/Cópia_de_segurança_de_ARTE.cdr",
+          "name": "Cópia_de_segurança_de_ARTE.cdr",
+          "category": "ROUTER",
+          "size": 70384,
+          "mtime": 1793036070.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/RAIO MAGIA INTERNO/Cópia_de_segurança_de_VETOR.cdr",
+          "name": "Cópia_de_segurança_de_VETOR.cdr",
+          "category": "ROUTER",
+          "size": 735150,
+          "mtime": 1792777298.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/RAIO MAGIA INTERNO/VETOR.cdr",
+          "name": "VETOR.cdr",
+          "category": "ROUTER",
+          "size": 1787616,
+          "mtime": 1792864258.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/RAIO/Cópia_de_segurança_de_MDF 9.cdr",
+          "name": "Cópia_de_segurança_de_MDF 9.cdr",
+          "category": "ROUTER",
+          "size": 61855,
+          "mtime": 1792655055.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/RAIO/MDF 9.cdr",
+          "name": "MDF 9.cdr",
+          "category": "ROUTER",
+          "size": 44621,
+          "mtime": 1792777213.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TELHADO VÁCUO/ROUTER MFD9.cdr",
+          "name": "ROUTER MFD9.cdr",
+          "category": "ROUTER",
+          "size": 625871,
+          "mtime": 1792863178.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE COLUNAS/1 - Top - 1.v3d",
+          "name": "1 - Top - 1.v3d",
+          "category": "ROUTER",
+          "size": 3814020,
+          "mtime": 1790686361.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE COLUNAS/1.stl",
+          "name": "1.stl",
+          "category": "ROUTER",
+          "size": 3627134,
+          "mtime": 1790686156.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE COLUNAS/1.v3d",
+          "name": "1.v3d",
+          "category": "ROUTER",
+          "size": 6988800,
+          "mtime": 1790686275.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE COLUNAS/2 - Top - 1.v3d",
+          "name": "2 - Top - 1.v3d",
+          "category": "ROUTER",
+          "size": 4436366,
+          "mtime": 1790686347.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE COLUNAS/2.stl",
+          "name": "2.stl",
+          "category": "ROUTER",
+          "size": 5130184,
+          "mtime": 1790686162.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE COLUNAS/3 - Top - 1.v3d",
+          "name": "3 - Top - 1.v3d",
+          "category": "ROUTER",
+          "size": 5349798,
+          "mtime": 1790686377.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE COLUNAS/3.stl",
+          "name": "3.stl",
+          "category": "ROUTER",
+          "size": 1801734,
+          "mtime": 1790686166.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE COLUNAS/cod/1 pvc+ 100mm b10mm.txt",
+          "name": "1 pvc+ 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1128722,
+          "mtime": 1790686359.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE COLUNAS/cod/2 pvc+ 100mm b10mm.txt",
+          "name": "2 pvc+ 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1336770,
+          "mtime": 1790686345.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE COLUNAS/cod/3 pvc+ 100mm b10mm.txt",
+          "name": "3 pvc+ 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1440449,
+          "mtime": 1790686376.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE COLUNAS/EVA 5 e 10mm.cdr",
+          "name": "EVA 5 e 10mm.cdr",
+          "category": "ROUTER",
+          "size": 776462,
+          "mtime": 1790687207.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE COLUNAS/mdf15.ai",
+          "name": "mdf15.ai",
+          "category": "ROUTER",
+          "size": 15415,
+          "mtime": 1790686422.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE COLUNAS/mdf15.cdr",
+          "name": "mdf15.cdr",
+          "category": "ROUTER",
+          "size": 611354,
+          "mtime": 1790686461.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE ISOPOR ENTRADA HALL/1pvc100mm b10mm.txt",
+          "name": "1pvc100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1526548,
+          "mtime": 1791396894.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE ISOPOR ENTRADA HALL/2pvc100mm b10mm.txt",
+          "name": "2pvc100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1990307,
+          "mtime": 1791396926.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE MUROS MDF 9/MDF 9.cdr",
+          "name": "MDF 9.cdr",
+          "category": "ROUTER",
+          "size": 587761,
+          "mtime": 1790624175.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE PEDRAS EXTERNO/1 pvc100mm b12mm.txt",
+          "name": "1 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 620399,
+          "mtime": 1791408540.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE PEDRAS EXTERNO/2 pvc100mm b12mm.txt",
+          "name": "2 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 645008,
+          "mtime": 1791408491.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE PEDRAS EXTERNO/3 pvc100mm b12mm.txt",
+          "name": "3 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 271937,
+          "mtime": 1791408515.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE PORTA ENTRADA/Cópia_de_segurança_de_MDF 9.cdr",
+          "name": "Cópia_de_segurança_de_MDF 9.cdr",
+          "category": "ROUTER",
+          "size": 734372,
+          "mtime": 1790710775.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE PORTA ENTRADA/MDF 9.cdr",
+          "name": "MDF 9.cdr",
+          "category": "ROUTER",
+          "size": 734367,
+          "mtime": 1790713752.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE RAÍZES EXTERNO/1 pvc100mm b12mm.txt",
+          "name": "1 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 433893,
+          "mtime": 1791408657.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE RAÍZES EXTERNO/2 pvc100mm b12mm.txt",
+          "name": "2 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 436164,
+          "mtime": 1791408641.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TESTE RAÍZES EXTERNO/3 pvc100mm b12mm.txt",
+          "name": "3 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 406394,
+          "mtime": 1791408625.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TIJOLO MDF DE 15mm/1.stl",
+          "name": "1.stl",
+          "category": "ROUTER",
+          "size": 269544334,
+          "mtime": 1790863145.3085985,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TIJOLO MDF DE 15mm/1_original_backup.stl",
+          "name": "1_original_backup.stl",
+          "category": "ROUTER",
+          "size": 269557284,
+          "mtime": 1790791770.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ANTIGOS/TORRE/ROUTER.cdr",
+          "name": "ROUTER.cdr",
+          "category": "ROUTER",
+          "size": 603517,
+          "mtime": 1791530782.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ARCO COM PILAR INTERNO/destec.ai",
+          "name": "destec.ai",
+          "category": "ROUTER",
+          "size": 150232,
+          "mtime": 1793451382.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ARCO COM PILAR INTERNO/ISOPOR/1.stl",
+          "name": "1.stl",
+          "category": "ROUTER",
+          "size": 199634,
+          "mtime": 1793450531.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ARCO COM PILAR INTERNO/ISOPOR/1.v3d",
+          "name": "1.v3d",
+          "category": "ROUTER",
+          "size": 8179200,
+          "mtime": 1793450662.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ARCO COM PILAR INTERNO/ISOPOR/COD/1 pvc+ 100mm b10mm.txt",
+          "name": "1 pvc+ 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 3963724,
+          "mtime": 1793450656.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ARCO COM PILAR INTERNO/router.ai",
+          "name": "router.ai",
+          "category": "ROUTER",
+          "size": 20600,
+          "mtime": 1793450688.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ARCO COM PILAR INTERNO/ROUTER.cdr",
+          "name": "ROUTER.cdr",
+          "category": "ROUTER",
+          "size": 598258,
+          "mtime": 1793450838.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ARCOS INTERNO SOBREPOSTOS/ROUTER.cdr",
+          "name": "ROUTER.cdr",
+          "category": "ROUTER",
+          "size": 1245737,
+          "mtime": 1793455785.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ENTRADA V2 e V4.cdr",
+          "name": "ENTRADA V2 e V4.cdr",
+          "category": "ROUTER",
+          "size": 1138819,
+          "mtime": 1793300827.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ISOPOR/ARCO A/COD/1 pvc100mm b12mm.txt",
+          "name": "1 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 1003390,
+          "mtime": 1793374781.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ISOPOR/ARCO A/COD/2 pvc100mm b12mm.txt",
+          "name": "2 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 725817,
+          "mtime": 1793374997.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ISOPOR/ARCO A/COD/3 pvc100mm b12mm.txt",
+          "name": "3 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 729580,
+          "mtime": 1793374977.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ISOPOR/ARCO A/COD/4 pvc100mm b12mm.txt",
+          "name": "4 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 1011822,
+          "mtime": 1793374957.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ISOPOR/ARCO B/cod/1 pvc100mm b12mm.txt",
+          "name": "1 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 905980,
+          "mtime": 1793375162.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ISOPOR/ARCO B/cod/2 pvc100mm b12mm.txt",
+          "name": "2 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 794718,
+          "mtime": 1793375133.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ISOPOR/ARCO B/cod/3 pvc100mm b12mm.txt",
+          "name": "3 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 635363,
+          "mtime": 1793375115.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ISOPOR/ARCO B/cod/4 pvc100mm b12mm.txt",
+          "name": "4 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 695274,
+          "mtime": 1793375090.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ISOPOR/ARCO B/cod/5 pvc100mm b12mm.txt",
+          "name": "5 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 903271,
+          "mtime": 1793375180.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ISOPOR/ORNAMENTO COLUNAS/cod/1 pvc100mm b12mm.txt",
+          "name": "1 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 527311,
+          "mtime": 1793375253.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ISOPOR/ORNAMENTO COLUNAS/cod/2 pvc100mm b12mm.txt",
+          "name": "2 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 253014,
+          "mtime": 1793375235.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA/ISOPOR/ORNAMENTO COLUNAS/cod/3 pvc100mm b12mm.txt",
+          "name": "3 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 584445,
+          "mtime": 1793375273.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/TEXTURA_PAREDE_TIJOLOS MDF 9 TESTE/Cópia_de_segurança_de_MDF9.cdr",
+          "name": "Cópia_de_segurança_de_MDF9.cdr",
+          "category": "ROUTER",
+          "size": 86444,
+          "mtime": 1793277644.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/TEXTURA_PAREDE_TIJOLOS MDF 9 TESTE/MDF9 att.cdr",
+          "name": "MDF9 att.cdr",
+          "category": "ROUTER",
+          "size": 78526,
+          "mtime": 1793289051.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/TEXTURA_PAREDE_TIJOLOS MDF 9 TESTE/MDF9.cdr",
+          "name": "MDF9.cdr",
+          "category": "ROUTER",
+          "size": 170172,
+          "mtime": 1793279609.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/TEXTURA_PAREDE_TIJOLOS MDF 9 TESTE/MDF9.dwg",
+          "name": "MDF9.dwg",
+          "category": "ROUTER",
+          "size": 1128154,
+          "mtime": 1793279635.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/TEXTURA_PAREDE_TIJOLOS MDF 9 TESTE/MDF9.dxf",
+          "name": "MDF9.dxf",
+          "category": "ROUTER",
+          "size": 2702785,
+          "mtime": 1793279629.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/TEXTURA_PAREDE_TIJOLOS MDF 9 TESTE/teste tijolo final mdf 9mm  descida 3mm fresa e4mm.txt",
+          "name": "teste tijolo final mdf 9mm  descida 3mm fresa e4mm.txt",
+          "category": "ROUTER",
+          "size": 298654,
+          "mtime": 1793283798.6387317,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/TORRES/MDF 9.cdr",
+          "name": "MDF 9.cdr",
+          "category": "ROUTER",
+          "size": 592127,
+          "mtime": 1793307067.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        }
+      ]
+    },
+    {
+      "name": "2663A e B - PINGUINS HELLA REVESTIDOS",
+      "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2663A e B - PINGUINS HELLA REVESTIDOS",
+      "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2663A e B - PINGUINS HELLA REVESTIDOS\\3 - OFICINA",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\2663A e B - PINGUINS HELLA REVESTIDOS",
+      "dest_exists": true,
+      "status": "sincronizado",
+      "total_files": 4,
+      "new_files_count": 0,
+      "missing_local_count": 0,
+      "total_bytes": 6627528,
+      "new_bytes": 0,
+      "categories": [
+        "IMPRESSÃO 3D",
+        "MANUAL",
+        "ROUTER"
+      ],
+      "latest_mtime": 1793378332.0,
+      "latest_date_str": "30/10/2026 13:38",
+      "last_copied_at": null,
+      "ignored": false,
+      "files": [
+        {
+          "rel_path": "IMPRESSÃO 3D/OCULOS PINGUIM (1M) 21x7,5cm.obj",
+          "name": "OCULOS PINGUIM (1M) 21x7,5cm.obj",
+          "category": "IMPRESSÃO 3D",
+          "size": 855740,
+          "mtime": 1793378332.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "MANUAL/MANUAL_2663A e B - PINGUIM 1M.pdf",
+          "name": "MANUAL_2663A e B - PINGUIM 1M.pdf",
+          "category": "MANUAL",
+          "size": 2821081,
+          "mtime": 1793372296.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/COD/1PVC 100mm b10.txt",
+          "name": "1PVC 100mm b10.txt",
+          "category": "ROUTER",
+          "size": 1284359,
+          "mtime": 1793369193.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/COD/2PVC 100mm b10.txt",
+          "name": "2PVC 100mm b10.txt",
+          "category": "ROUTER",
+          "size": 1666348,
+          "mtime": 1793369421.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        }
+      ]
+    },
+    {
+      "name": "2667A - EXPO CULTURA",
+      "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2667A - EXPO CULTURA",
+      "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2667A - EXPO CULTURA\\3 - OFICINA",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\2667A - EXPO CULTURA",
+      "dest_exists": true,
+      "status": "sincronizado",
+      "total_files": 10,
+      "new_files_count": 0,
+      "missing_local_count": 0,
+      "total_bytes": 14003323,
+      "new_bytes": 0,
+      "categories": [
+        "IMPRESSÃO 3D",
+        "MANUAL",
+        "ROUTER"
+      ],
+      "latest_mtime": 1793305411.0,
+      "latest_date_str": "29/10/2026 17:23",
+      "last_copied_at": null,
+      "ignored": false,
+      "files": [
+        {
+          "rel_path": "IMPRESSÃO 3D/TV/BOTÃO - 3 un .3mf",
+          "name": "BOTÃO - 3 un .3mf",
+          "category": "IMPRESSÃO 3D",
+          "size": 118345,
+          "mtime": 1792784150.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "IMPRESSÃO 3D/TV/BOTÃO - 3 un .stl",
+          "name": "BOTÃO - 3 un .stl",
+          "category": "IMPRESSÃO 3D",
+          "size": 227484,
+          "mtime": 1792784073.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "MANUAL/Cópia_de_segurança_de_MANUAL_2667A - EXPO CULTURA - TV RETRÔ.cdr",
+          "name": "Cópia_de_segurança_de_MANUAL_2667A - EXPO CULTURA - TV RETRÔ.cdr",
+          "category": "MANUAL",
+          "size": 1735115,
+          "mtime": 1792785706.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "MANUAL/MANUAL_2667A - EXPO CULTURA - TV RETRÔ.cdr",
+          "name": "MANUAL_2667A - EXPO CULTURA - TV RETRÔ.cdr",
+          "category": "MANUAL",
+          "size": 1735990,
+          "mtime": 1792789882.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ENTRADA CASTELO/DESTEC ENTRADA CASTELO.ai",
+          "name": "DESTEC ENTRADA CASTELO.ai",
+          "category": "ROUTER",
+          "size": 5850893,
+          "mtime": 1793305411.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/GALINHEIRO/ROUTER.cdr",
+          "name": "ROUTER.cdr",
+          "category": "ROUTER",
+          "size": 1184163,
+          "mtime": 1792988945.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/PAREDE XTUDO/ROUTER.cdr",
+          "name": "ROUTER.cdr",
+          "category": "ROUTER",
+          "size": 1306025,
+          "mtime": 1792986285.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/TV/Cópia_de_segurança_de_ROUTER.cdr",
+          "name": "Cópia_de_segurança_de_ROUTER.cdr",
+          "category": "ROUTER",
+          "size": 790347,
+          "mtime": 1792783940.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/TV/ROUTER.ai",
+          "name": "ROUTER.ai",
+          "category": "ROUTER",
+          "size": 194206,
+          "mtime": 1792979130.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/TV/ROUTER.cdr",
+          "name": "ROUTER.cdr",
+          "category": "ROUTER",
+          "size": 860755,
+          "mtime": 1792979505.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        }
+      ]
+    },
+    {
+      "name": "2666 - CAIXAS",
+      "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2666 - CAIXAS",
+      "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2666 - CAIXAS\\3 - OFICINA",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\2666 - CAIXAS",
+      "dest_exists": true,
+      "status": "sincronizado",
+      "total_files": 9,
+      "new_files_count": 0,
+      "missing_local_count": 0,
+      "total_bytes": 15064421,
+      "new_bytes": 0,
+      "categories": [
+        "MANUAL",
+        "ROUTER"
+      ],
+      "latest_mtime": 1792365000.0,
+      "latest_date_str": "18/10/2026 20:10",
+      "last_copied_at": null,
+      "ignored": false,
+      "files": [
+        {
+          "rel_path": "MANUAL/MANUAL_2666 - CAIXAS.pdf",
+          "name": "MANUAL_2666 - CAIXAS.pdf",
+          "category": "MANUAL",
+          "size": 2757572,
+          "mtime": 1792364907.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/mdf 15.ai",
+          "name": "mdf 15.ai",
+          "category": "ROUTER",
+          "size": 35961,
+          "mtime": 1792362898.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/MDF 15.cdr",
+          "name": "MDF 15.cdr",
+          "category": "ROUTER",
+          "size": 629580,
+          "mtime": 1792365000.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/USINAGEM MDF15/FRENTE.stl",
+          "name": "FRENTE.stl",
+          "category": "ROUTER",
+          "size": 720984,
+          "mtime": 1792362373.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/USINAGEM MDF15/FRENTE.v3d",
+          "name": "FRENTE.v3d",
+          "category": "ROUTER",
+          "size": 3631616,
+          "mtime": 1792362561.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/USINAGEM MDF15/LATERAL.stl",
+          "name": "LATERAL.stl",
+          "category": "ROUTER",
+          "size": 765784,
+          "mtime": 1792362380.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/USINAGEM MDF15/LATERAL.v3d",
+          "name": "LATERAL.v3d",
+          "category": "ROUTER",
+          "size": 3361792,
+          "mtime": 1792362596.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/USINAGEM MDF15/TAMPA.stl",
+          "name": "TAMPA.stl",
+          "category": "ROUTER",
+          "size": 394284,
+          "mtime": 1792362366.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/USINAGEM MDF15/TAMPA.v3d",
+          "name": "TAMPA.v3d",
+          "category": "ROUTER",
+          "size": 2766848,
+          "mtime": 1792362640.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        }
+      ]
+    },
+    {
+      "name": "2662A - CAPACETE",
+      "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2662A - CAPACETE",
+      "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2662A - CAPACETE\\3 - OFICINA",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\2662A - CAPACETE",
+      "dest_exists": true,
+      "status": "sincronizado",
+      "total_files": 108,
+      "new_files_count": 0,
+      "missing_local_count": 0,
+      "total_bytes": 42423612,
+      "new_bytes": 0,
+      "categories": [
+        "ROUTER"
+      ],
+      "latest_mtime": 1791475919.0,
+      "latest_date_str": "08/10/2026 13:11",
+      "last_copied_at": null,
+      "ignored": false,
+      "files": [
+        {
+          "rel_path": "ROUTER/COMPENSADO 10.cdr",
+          "name": "COMPENSADO 10.cdr",
+          "category": "ROUTER",
+          "size": 1490353,
+          "mtime": 1791042616.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/CORREDOR ENTRADA/ROUTER.cdr",
+          "name": "ROUTER.cdr",
+          "category": "ROUTER",
+          "size": 619369,
+          "mtime": 1791475919.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/1 pvc100mm b12mm.txt",
+          "name": "1 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 380922,
+          "mtime": 1791030794.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/10 pvc100mm b12mm.txt",
+          "name": "10 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 490744,
+          "mtime": 1791045681.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/100 pvc100mm b12mm.txt",
+          "name": "100 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 383544,
+          "mtime": 1791080773.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/101 pvc100mm b12mm.txt",
+          "name": "101 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 336694,
+          "mtime": 1791080715.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/102 pvc100mm b12mm.txt",
+          "name": "102 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 379417,
+          "mtime": 1791080820.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/103 pvc100mm b12mm.txt",
+          "name": "103 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 377087,
+          "mtime": 1791080759.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/104 pvc100mm b12mm.txt",
+          "name": "104 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 391229,
+          "mtime": 1791080836.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/105 pvc100mm b12mm.txt",
+          "name": "105 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 194510,
+          "mtime": 1791080743.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/106 pvc100mm b12mm.txt",
+          "name": "106 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 435722,
+          "mtime": 1791080852.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/107 pvc100mm b12mm.txt",
+          "name": "107 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 510059,
+          "mtime": 1791080804.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/108 pvc100mm b12mm.txt",
+          "name": "108 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 435435,
+          "mtime": 1791080789.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/11 pvc100mm b12mm.txt",
+          "name": "11 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 249080,
+          "mtime": 1791045645.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/12 pvc100mm b12mm.txt",
+          "name": "12 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 520067,
+          "mtime": 1791052841.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/13 pvc100mm b12mm.txt",
+          "name": "13 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 386075,
+          "mtime": 1791052856.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/14 pvc100mm b12mm.txt",
+          "name": "14 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 398151,
+          "mtime": 1791052824.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/15 pvc100mm b12mm.txt",
+          "name": "15 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 414445,
+          "mtime": 1791052810.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/16 pvc100mm b12mm.txt",
+          "name": "16 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 321858,
+          "mtime": 1791052794.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/17 pvc100mm b12mm.txt",
+          "name": "17 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 408854,
+          "mtime": 1791052777.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/18 pvc100mm b12mm.txt",
+          "name": "18 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 351470,
+          "mtime": 1791052759.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/19 pvc100mm b12mm.txt",
+          "name": "19 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 387452,
+          "mtime": 1791052741.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/2 pvc100mm b12mm.txt",
+          "name": "2 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 336796,
+          "mtime": 1791030918.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/20 pvc100mm b12mm.txt",
+          "name": "20 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 402613,
+          "mtime": 1791052872.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/21 pvc100mm b12mm.txt",
+          "name": "21 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 324477,
+          "mtime": 1791059072.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/22 pvc100mm b12mm.txt",
+          "name": "22 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 526673,
+          "mtime": 1791059055.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/23 pvc100mm b12mm.txt",
+          "name": "23 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 366540,
+          "mtime": 1791059039.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/24 pvc100mm b12mm.txt",
+          "name": "24 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 592655,
+          "mtime": 1791059023.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/25 pvc100mm b12mm.txt",
+          "name": "25 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 384076,
+          "mtime": 1791059007.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/26 pvc100mm b12mm.txt",
+          "name": "26 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 445830,
+          "mtime": 1791058970.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/27 pvc100mm b12mm.txt",
+          "name": "27 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 417922,
+          "mtime": 1791058956.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/28 pvc100mm b12mm.txt",
+          "name": "28 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 503409,
+          "mtime": 1791058927.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/29 pvc100mm b12mm.txt",
+          "name": "29 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 425855,
+          "mtime": 1791058913.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/3 pvc100mm b12mm.txt",
+          "name": "3 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 382329,
+          "mtime": 1791030887.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/30 pvc100mm b12mm.txt",
+          "name": "30 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 334947,
+          "mtime": 1791059088.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/31 pvc100mm b12mm.txt",
+          "name": "31 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 363804,
+          "mtime": 1791058883.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/32 pvc100mm b12mm.txt",
+          "name": "32 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 386763,
+          "mtime": 1791058866.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/33 pvc100mm b12mm.txt",
+          "name": "33 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 504551,
+          "mtime": 1791058850.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/34 pvc100mm b12mm.txt",
+          "name": "34 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 331073,
+          "mtime": 1791058815.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/35 pvc100mm b12mm.txt",
+          "name": "35 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 361993,
+          "mtime": 1791058835.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/36 pvc100mm b12mm.txt",
+          "name": "36 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 446866,
+          "mtime": 1791058800.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/37 pvc100mm b12mm.txt",
+          "name": "37 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 328002,
+          "mtime": 1791058786.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/38 pvc100mm b12mm.txt",
+          "name": "38 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 316679,
+          "mtime": 1791058654.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/39 pvc100mm b12mm.txt",
+          "name": "39 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 291431,
+          "mtime": 1791058640.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/4 pvc100mm b12mm.txt",
+          "name": "4 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 194755,
+          "mtime": 1791030902.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/40 pvc100mm b12mm.txt",
+          "name": "40 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 341183,
+          "mtime": 1791058897.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/41 pvc100mm b12mm.txt",
+          "name": "41 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 349403,
+          "mtime": 1791058601.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/42 pvc100mm b12mm.txt",
+          "name": "42 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 318783,
+          "mtime": 1791058587.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/43 pvc100mm b12mm.txt",
+          "name": "43 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 253379,
+          "mtime": 1791058570.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/44 pvc100mm b12mm.txt",
+          "name": "44 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 314441,
+          "mtime": 1791058551.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/45 pvc100mm b12mm.txt",
+          "name": "45 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 335480,
+          "mtime": 1791058521.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/46 pvc100mm b12mm.txt",
+          "name": "46 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 375624,
+          "mtime": 1791058506.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/47 pvc100mm b12mm.txt",
+          "name": "47 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 410822,
+          "mtime": 1791058489.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/48 pvc100mm b12mm.txt",
+          "name": "48 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 318991,
+          "mtime": 1791058472.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/49 pvc100mm b12mm.txt",
+          "name": "49 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 344563,
+          "mtime": 1791058456.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/5 pvc100mm b12mm.txt",
+          "name": "5 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 393983,
+          "mtime": 1791030871.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/50 pvc100mm b12mm.txt",
+          "name": "50 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 380844,
+          "mtime": 1791058624.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/51 pvc100mm b12mm.txt",
+          "name": "51 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 411106,
+          "mtime": 1791058419.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/52 pvc100mm b12mm.txt",
+          "name": "52 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 337697,
+          "mtime": 1791058405.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/53 pvc100mm b12mm.txt",
+          "name": "53 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 229355,
+          "mtime": 1791058436.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/55 pvc100mm b12mm.txt",
+          "name": "55 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 321928,
+          "mtime": 1791079976.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/56 pvc100mm b12mm.txt",
+          "name": "56 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 413618,
+          "mtime": 1791079994.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/57 pvc100mm b12mm.txt",
+          "name": "57 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 379526,
+          "mtime": 1791080009.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/58 pvc100mm b12mm.txt",
+          "name": "58 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 410303,
+          "mtime": 1791080042.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/59 pvc100mm b12mm.txt",
+          "name": "59 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 382402,
+          "mtime": 1791080027.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/6 pvc100mm b12mm.txt",
+          "name": "6 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 380279,
+          "mtime": 1791030823.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/60 pvc100mm b12mm.txt",
+          "name": "60 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 343336,
+          "mtime": 1791080206.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/62 pvc100mm b12mm.txt",
+          "name": "62 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 231907,
+          "mtime": 1791080057.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/63 pvc100mm b12mm.txt",
+          "name": "63 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 342166,
+          "mtime": 1791080073.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/64 pvc100mm b12mm.txt",
+          "name": "64 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 291196,
+          "mtime": 1791080098.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/65 pvc100mm b12mm.txt",
+          "name": "65 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 317695,
+          "mtime": 1791080116.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/66 pvc100mm b12mm.txt",
+          "name": "66 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 332829,
+          "mtime": 1791080154.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/67 pvc100mm b12mm.txt",
+          "name": "67 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 321044,
+          "mtime": 1791080140.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/68 pvc100mm b12mm.txt",
+          "name": "68 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 348953,
+          "mtime": 1791080176.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/69 pvc100mm b12mm.txt",
+          "name": "69 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 346568,
+          "mtime": 1791080191.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/7 pvc100mm b12mm.txt",
+          "name": "7 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 433203,
+          "mtime": 1791030962.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/70 pvc100mm b12mm.txt",
+          "name": "70 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 339073,
+          "mtime": 1791080224.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/71 pvc100mm b12mm.txt",
+          "name": "71 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 309988,
+          "mtime": 1791080255.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/72 pvc100mm b12mm.txt",
+          "name": "72 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 254827,
+          "mtime": 1791080239.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/73 pvc100mm b12mm.txt",
+          "name": "73 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 338544,
+          "mtime": 1791080270.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/74 pvc100mm b12mm.txt",
+          "name": "74 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 430012,
+          "mtime": 1791080286.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/75 pvc100mm b12mm.txt",
+          "name": "75 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 502067,
+          "mtime": 1791080301.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/76 pvc100mm b12mm.txt",
+          "name": "76 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 500961,
+          "mtime": 1791080316.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/77 pvc100mm b12mm.txt",
+          "name": "77 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 391667,
+          "mtime": 1791080332.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/78 pvc100mm b12mm.txt",
+          "name": "78 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 368607,
+          "mtime": 1791080347.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/79 pvc100mm b12mm.txt",
+          "name": "79 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 451836,
+          "mtime": 1791080363.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/8 pvc100mm b12mm.txt",
+          "name": "8 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 511832,
+          "mtime": 1791045697.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/80 pvc100mm b12mm.txt",
+          "name": "80 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 366565,
+          "mtime": 1791080538.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/81 pvc100mm b12mm.txt",
+          "name": "81 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 330159,
+          "mtime": 1791080393.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/82 pvc100mm b12mm.txt",
+          "name": "82 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 322737,
+          "mtime": 1791080411.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/83 pvc100mm b12mm.txt",
+          "name": "83 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 401178,
+          "mtime": 1791080426.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/84 pvc100mm b12mm.txt",
+          "name": "84 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 378231,
+          "mtime": 1791080442.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/85 pvc100mm b12mm.txt",
+          "name": "85 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 596085,
+          "mtime": 1791080457.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/86 pvc100mm b12mm.txt",
+          "name": "86 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 363389,
+          "mtime": 1791080472.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/87 pvc100mm b12mm.txt",
+          "name": "87 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 515690,
+          "mtime": 1791080488.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/88 pvc100mm b12mm.txt",
+          "name": "88 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 423020,
+          "mtime": 1791080505.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/89 pvc100mm b12mm.txt",
+          "name": "89 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 445938,
+          "mtime": 1791080520.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/9 pvc100mm b12mm.txt",
+          "name": "9 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 420726,
+          "mtime": 1791045664.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/90 pvc100mm b12mm.txt",
+          "name": "90 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 383990,
+          "mtime": 1791080700.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/91 pvc100mm b12mm.txt",
+          "name": "91 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 503647,
+          "mtime": 1791080556.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/92 pvc100mm b12mm.txt",
+          "name": "92 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 250727,
+          "mtime": 1791080571.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/93 pvc100mm b12mm.txt",
+          "name": "93 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 491896,
+          "mtime": 1791080589.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/94 pvc100mm b12mm.txt",
+          "name": "94 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 418596,
+          "mtime": 1791080612.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/95 pvc100mm b12mm.txt",
+          "name": "95 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 396370,
+          "mtime": 1791080625.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/96 pvc100mm b12mm.txt",
+          "name": "96 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 381992,
+          "mtime": 1791080640.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/97 pvc100mm b12mm.txt",
+          "name": "97 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 358965,
+          "mtime": 1791080655.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/98 pvc100mm b12mm.txt",
+          "name": "98 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 408619,
+          "mtime": 1791080670.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/99 pvc100mm b12mm.txt",
+          "name": "99 pvc100mm b12mm.txt",
+          "category": "ROUTER",
+          "size": 320495,
+          "mtime": 1791080685.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        }
+      ]
+    },
+    {
+      "name": "2660A - SOBREVIVER",
+      "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2660A - SOBREVIVER",
+      "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2660A - SOBREVIVER\\3 - OFICINA",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\2660A - SOBREVIVER",
+      "dest_exists": true,
+      "status": "sincronizado",
+      "total_files": 105,
+      "new_files_count": 0,
+      "missing_local_count": 0,
+      "total_bytes": 1304053848,
+      "new_bytes": 0,
+      "categories": [
+        "MANUAL",
+        "ROUTER"
+      ],
+      "latest_mtime": 1791393403.0,
+      "latest_date_str": "07/10/2026 14:16",
+      "last_copied_at": null,
+      "ignored": false,
+      "files": [
+        {
+          "rel_path": "MANUAL/MANUAL_2660A-BUGIO - RUIVO - REPOSIÇÃO.pdf",
+          "name": "MANUAL_2660A-BUGIO - RUIVO - REPOSIÇÃO.pdf",
+          "category": "MANUAL",
+          "size": 1366068,
+          "mtime": 1790597830.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "MANUAL/MANUAL_2660A-BUGIO - RUIVO.pdf",
+          "name": "MANUAL_2660A-BUGIO - RUIVO.pdf",
+          "category": "MANUAL",
+          "size": 3989673,
+          "mtime": 1790258941.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "MANUAL/MANUAL_2660B - GAVIÃO-REAL - 170.pdf",
+          "name": "MANUAL_2660B - GAVIÃO-REAL - 170.pdf",
+          "category": "MANUAL",
+          "size": 3049867,
+          "mtime": 1790682123.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "MANUAL/MANUAL_2660D - LOBO - BASE.pdf",
+          "name": "MANUAL_2660D - LOBO - BASE.pdf",
+          "category": "MANUAL",
+          "size": 1143787,
+          "mtime": 1791210070.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "MANUAL/MANUAL_2660D - TUBARÃO MARTELO - 170.pdf",
+          "name": "MANUAL_2660D - TUBARÃO MARTELO - 170.pdf",
+          "category": "MANUAL",
+          "size": 4312467,
+          "mtime": 1790769092.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "MANUAL/MANUAL_2660E - BOTO- VERMELHO-BASE.pdf",
+          "name": "MANUAL_2660E - BOTO- VERMELHO-BASE.pdf",
+          "category": "MANUAL",
+          "size": 4557044,
+          "mtime": 1791373470.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "MANUAL/MANUAL_2660E - BOTO- VERMELHO.pdf",
+          "name": "MANUAL_2660E - BOTO- VERMELHO.pdf",
+          "category": "MANUAL",
+          "size": 1974605,
+          "mtime": 1791299191.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "MANUAL/MANUAL_2660F-TARTARUGA-150.pdf",
+          "name": "MANUAL_2660F-TARTARUGA-150.pdf",
+          "category": "MANUAL",
+          "size": 3871288,
+          "mtime": 1790336395.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BASE/1PVC 100mm b10mm.txt",
+          "name": "1PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 2501401,
+          "mtime": 1791340330.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BASE/1PVC 100mm b10mm.v3d",
+          "name": "1PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 29234176,
+          "mtime": 1791340336.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BASE/2PVC 100mm b10mm.txt",
+          "name": "2PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 2313790,
+          "mtime": 1791393391.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BASE/2PVC 100mm b10mm.v3d",
+          "name": "2PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 27253248,
+          "mtime": 1791393403.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BASE/3PVC 100mm b10mm.txt",
+          "name": "3PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1747393,
+          "mtime": 1791340410.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BASE/3PVC 100mm b10mm.v3d",
+          "name": "3PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 24121344,
+          "mtime": 1791340414.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BASE/4PVC 100mm b10mm.txt",
+          "name": "4PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1584111,
+          "mtime": 1791340528.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BASE/4PVC 100mm b10mm.v3d",
+          "name": "4PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 24457216,
+          "mtime": 1791340532.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BASE/5PVC 100mm b10mm.txt",
+          "name": "5PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 2646958,
+          "mtime": 1791340622.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BASE/5PVC 100mm b10mm.v3d",
+          "name": "5PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 43469824,
+          "mtime": 1791340632.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BASE/6PVC 100mm b10mm.txt",
+          "name": "6PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 956852,
+          "mtime": 1791340748.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BASE/6PVC 100mm b10mm.v3d",
+          "name": "6PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 32531968,
+          "mtime": 1791340752.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BASE/7PVC 100mm b10mm.txt",
+          "name": "7PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1550128,
+          "mtime": 1791340920.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BASE/7PVC 100mm b10mm.v3d",
+          "name": "7PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 26604032,
+          "mtime": 1791340926.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BOTO/1PVC 100mm b10mm.txt",
+          "name": "1PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1810927,
+          "mtime": 1791296901.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BOTO/2PVC 100mm b10mm.txt",
+          "name": "2PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 2010724,
+          "mtime": 1791296956.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BOTO/3PVC 100mm b10mm.txt",
+          "name": "3PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1912424,
+          "mtime": 1791297007.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BOTO/4PVC 100mm b10mm.txt",
+          "name": "4PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1016627,
+          "mtime": 1791297068.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BOTO/5PVC 100mm b10mm.txt",
+          "name": "5PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 861974,
+          "mtime": 1791297123.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BOTO/6PVC 100mm b10mm.txt",
+          "name": "6PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 594095,
+          "mtime": 1791297160.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/BOTO/COD/BOTO/7PVC 100mm b10mm.txt",
+          "name": "7PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1026348,
+          "mtime": 1791297278.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/GAVIÃO/1 PVC 100mm 10mm.txt",
+          "name": "1 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 3949572,
+          "mtime": 1790619912.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/GAVIÃO/2 PVC 100mm 10mm.txt",
+          "name": "2 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 2479192,
+          "mtime": 1790620051.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/GAVIÃO/3 PVC 100mm 10mm.txt",
+          "name": "3 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 2321462,
+          "mtime": 1790623232.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/GAVIÃO/4 PVC 100mm 10mm.txt",
+          "name": "4 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 2347629,
+          "mtime": 1790622909.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/GAVIÃO/5 PVC 100mm 10mm.txt",
+          "name": "5 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 1651912,
+          "mtime": 1790623315.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/LOBO/BASE/1PVC 100mm b10mm.txt",
+          "name": "1PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 2931075,
+          "mtime": 1791207744.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/LOBO/BASE/2PVC 100mm b10mm.txt",
+          "name": "2PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 2178450,
+          "mtime": 1791206374.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/1 PVC 100mm b10mm.stl",
+          "name": "1 PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 7884384,
+          "mtime": 1790255090.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/1 PVC 100mm b6mm.stl",
+          "name": "1 PVC 100mm b6mm.stl",
+          "category": "ROUTER",
+          "size": 4504052,
+          "mtime": 1790257934.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/1 PVC 100mm b6mm.txt",
+          "name": "1 PVC 100mm b6mm.txt",
+          "category": "ROUTER",
+          "size": 4504052,
+          "mtime": 1790257996.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/1 PVC 100mm b6mm.v3d",
+          "name": "1 PVC 100mm b6mm.v3d",
+          "category": "ROUTER",
+          "size": 18161664,
+          "mtime": 1790257948.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/2 PVC 100mm b10mm.stl",
+          "name": "2 PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 78643184,
+          "mtime": 1790255146.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/2 PVC 100mm b10mm.v3d",
+          "name": "2 PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 104702464,
+          "mtime": 1790258073.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/2 PVC 100mm b6mm.txt",
+          "name": "2 PVC 100mm b6mm.txt",
+          "category": "ROUTER",
+          "size": 5318924,
+          "mtime": 1790258064.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/3 PVC 100mm b10mm.stl",
+          "name": "3 PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 68221984,
+          "mtime": 1790255572.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/3 PVC 100mm b10mm.v3d",
+          "name": "3 PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 88675328,
+          "mtime": 1790258157.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/3 PVC 100mm b6mm.txt",
+          "name": "3 PVC 100mm b6mm.txt",
+          "category": "ROUTER",
+          "size": 2628002,
+          "mtime": 1790258150.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/4 PVC 100mm b10mm.stl",
+          "name": "4 PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 6463834,
+          "mtime": 1790258479.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/4 PVC 100mm b10mm.v3d",
+          "name": "4 PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 14706176,
+          "mtime": 1790258527.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/4 PVC 100mm b6mm.txt",
+          "name": "4 PVC 100mm b6mm.txt",
+          "category": "ROUTER",
+          "size": 3058535,
+          "mtime": 1790258519.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/5 PVC 100mm b10mm.stl",
+          "name": "5 PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 14125484,
+          "mtime": 1790258623.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/5 PVC 100mm b10mm.v3d",
+          "name": "5 PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 25612288,
+          "mtime": 1790258676.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/5 PVC 100mm b6mm.txt",
+          "name": "5 PVC 100mm b6mm.txt",
+          "category": "ROUTER",
+          "size": 3938917,
+          "mtime": 1790258668.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/REPOSIÇÃO/1 pvc100mm b10mm.txt",
+          "name": "1 pvc100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1401201,
+          "mtime": 1790368790.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/MACACO/REPOSIÇÃO/2 pvc100mm b10mm.txt",
+          "name": "2 pvc100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1227191,
+          "mtime": 1790368722.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/1 PVC 100mm 10mm.txt",
+          "name": "1 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 1467869,
+          "mtime": 1790334735.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/1 PVC 100mm 10mm.v3d",
+          "name": "1 PVC 100mm 10mm.v3d",
+          "category": "ROUTER",
+          "size": 6840832,
+          "mtime": 1790334750.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/10 PVC 100mm 10mm.txt",
+          "name": "10 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 723390,
+          "mtime": 1790335282.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/10 PVC 100mm 10mm.v3d",
+          "name": "10 PVC 100mm 10mm.v3d",
+          "category": "ROUTER",
+          "size": 9542656,
+          "mtime": 1790335295.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/11 PVC 100mm 10mm.txt",
+          "name": "11 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 643216,
+          "mtime": 1790335342.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/11 PVC 100mm 10mm.v3d",
+          "name": "11 PVC 100mm 10mm.v3d",
+          "category": "ROUTER",
+          "size": 5884928,
+          "mtime": 1790335352.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/12 PVC 100mm 10mm.txt",
+          "name": "12 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 651652,
+          "mtime": 1790335656.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/12 PVC 100mm 10mm.v3d",
+          "name": "12 PVC 100mm 10mm.v3d",
+          "category": "ROUTER",
+          "size": 5889024,
+          "mtime": 1790335668.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/2 PVC 100mm 10mm.txt",
+          "name": "2 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 589999,
+          "mtime": 1790334819.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/2 PVC 100mm 10mm.v3d",
+          "name": "2 PVC 100mm 10mm.v3d",
+          "category": "ROUTER",
+          "size": 6301184,
+          "mtime": 1790334829.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/3 PVC 100mm 10mm.txt",
+          "name": "3 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 770512,
+          "mtime": 1790334865.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/3 PVC 100mm 10mm.v3d",
+          "name": "3 PVC 100mm 10mm.v3d",
+          "category": "ROUTER",
+          "size": 5966336,
+          "mtime": 1790334870.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/4 PVC 100mm 10mm.txt",
+          "name": "4 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 1476668,
+          "mtime": 1790334913.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/4 PVC 100mm 10mm.v3d",
+          "name": "4 PVC 100mm 10mm.v3d",
+          "category": "ROUTER",
+          "size": 8713728,
+          "mtime": 1790334918.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/5 PVC 100mm 10mm.txt",
+          "name": "5 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 999630,
+          "mtime": 1790334960.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/5PVC 100mm 10mm.v3d",
+          "name": "5PVC 100mm 10mm.v3d",
+          "category": "ROUTER",
+          "size": 6021120,
+          "mtime": 1790334971.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/6 PVC 100mm 10mm.txt",
+          "name": "6 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 535352,
+          "mtime": 1790335014.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/6 PVC 100mm 10mm.v3d",
+          "name": "6 PVC 100mm 10mm.v3d",
+          "category": "ROUTER",
+          "size": 5701632,
+          "mtime": 1790335025.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/7 PVC 100mm 10mm.txt",
+          "name": "7 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 1005900,
+          "mtime": 1790335063.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/7 PVC 100mm 10mm.v3d",
+          "name": "7 PVC 100mm 10mm.v3d",
+          "category": "ROUTER",
+          "size": 5896704,
+          "mtime": 1790335070.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/8 PVC 100mm 10mm.txt",
+          "name": "8 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 907146,
+          "mtime": 1790335131.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/8 PVC 100mm 10mm.v3d",
+          "name": "8 PVC 100mm 10mm.v3d",
+          "category": "ROUTER",
+          "size": 150820352,
+          "mtime": 1790335144.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/9 PVC 100mm 10mm.txt",
+          "name": "9 PVC 100mm 10mm.txt",
+          "category": "ROUTER",
+          "size": 896069,
+          "mtime": 1790335223.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TARTARUGA/9 PVC 100mm 10mm.v3d",
+          "name": "9 PVC 100mm 10mm.v3d",
+          "category": "ROUTER",
+          "size": 225697792,
+          "mtime": 1790335237.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/10PVC 100mm b10mm.txt",
+          "name": "10PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1532272,
+          "mtime": 1790768298.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/10PVC 100mm b10mm.v3d",
+          "name": "10PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 8281088,
+          "mtime": 1790768302.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/11PVC 100mm b10mm.txt",
+          "name": "11PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1368017,
+          "mtime": 1790768334.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/11PVC 100mm b10mm.v3d",
+          "name": "11PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 8187904,
+          "mtime": 1790768342.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/12PVC 100mm b10mm.txt",
+          "name": "12PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 909598,
+          "mtime": 1790768369.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/12PVC 100mm b10mm.v3d",
+          "name": "12PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 7179776,
+          "mtime": 1790768379.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/13PVC 100mm b10mm.txt",
+          "name": "13PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1160770,
+          "mtime": 1790768445.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/13PVC 100mm b10mm.v3d",
+          "name": "13PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 7865856,
+          "mtime": 1790768456.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/14PVC 100mm b10mm.txt",
+          "name": "14PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 962643,
+          "mtime": 1790768517.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/1PVC 100mm b10mm.txt",
+          "name": "1PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1695960,
+          "mtime": 1790767644.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/1PVC 100mm b10mm.v3d",
+          "name": "1PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 6994432,
+          "mtime": 1790767652.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/2PVC 100mm b10mm.txt",
+          "name": "2PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1667329,
+          "mtime": 1790767845.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/2PVC 100mm b10mm.v3d",
+          "name": "2PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 7257088,
+          "mtime": 1790767857.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/3PVC 100mm b10mm.txt",
+          "name": "3PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 704893,
+          "mtime": 1790768977.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/3PVC 100mm b10mm.v3d",
+          "name": "3PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 4453888,
+          "mtime": 1790768982.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/4PVC 100mm b10mm.txt",
+          "name": "4PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1740906,
+          "mtime": 1790767959.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/4PVC 100mm b10mm.v3d",
+          "name": "4PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 14580736,
+          "mtime": 1790767983.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/5PVC 100mm b10mm.txt",
+          "name": "5PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1254049,
+          "mtime": 1790768064.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/5PVC 100mm b10mm.v3d",
+          "name": "5PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 10134528,
+          "mtime": 1790768073.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/6PVC 100mm b10mm.txt",
+          "name": "6PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1052881,
+          "mtime": 1790768107.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/6PVC 100mm b10mm.v3d",
+          "name": "6PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 5562880,
+          "mtime": 1790768111.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/7PVC 100mm b10mm.txt",
+          "name": "7PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 935414,
+          "mtime": 1790768151.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/7PVC 100mm b10mm.v3d",
+          "name": "7PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 7718912,
+          "mtime": 1790768161.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/8PVC 100mm b10mm.txt",
+          "name": "8PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 968272,
+          "mtime": 1790768194.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/8PVC 100mm b10mm.v3d",
+          "name": "8PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 12039168,
+          "mtime": 1790768202.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/9PVC 100mm b10mm.txt",
+          "name": "9PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 885678,
+          "mtime": 1790768241.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/TUBARÃO/9PVC 100mm b10mm.v3d",
+          "name": "9PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 6907904,
+          "mtime": 1790768256.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        }
+      ]
+    },
+    {
+      "name": "2624 - PREFEITURA MAUA",
+      "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2624 - PREFEITURA MAUA",
+      "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2624 - PREFEITURA MAUA\\3 - OFICINA",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\2624 - PREFEITURA MAUA",
+      "dest_exists": true,
+      "status": "sincronizado",
+      "total_files": 1,
+      "new_files_count": 0,
+      "missing_local_count": 0,
+      "total_bytes": 663125,
+      "new_bytes": 0,
+      "categories": [
+        "MANUAL"
+      ],
+      "latest_mtime": 1791321074.0,
+      "latest_date_str": "06/10/2026 18:11",
+      "last_copied_at": null,
+      "ignored": false,
+      "files": [
+        {
+          "rel_path": "MANUAL/BASE CONCRETO - PREFEITURA MAUA.pdf",
+          "name": "BASE CONCRETO - PREFEITURA MAUA.pdf",
+          "category": "MANUAL",
+          "size": 663125,
+          "mtime": 1791321074.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        }
+      ]
+    },
+    {
+      "name": "2594A - AVIÃO FREE FIRE",
+      "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2594A - AVIÃO FREE FIRE",
+      "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2594A - AVIÃO FREE FIRE\\3 - OFICINA",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\2594A - AVIÃO FREE FIRE",
+      "dest_exists": true,
+      "status": "sincronizado",
+      "total_files": 36,
+      "new_files_count": 0,
+      "missing_local_count": 0,
+      "total_bytes": 793451639,
+      "new_bytes": 0,
+      "categories": [
+        "IMPRESSÃO 3D",
+        "MANUAL",
+        "ROUTER"
+      ],
+      "latest_mtime": 1790778333.0,
+      "latest_date_str": "30/09/2026 11:25",
+      "last_copied_at": null,
+      "ignored": false,
+      "files": [
+        {
+          "rel_path": "IMPRESSÃO 3D/hélices.stl",
+          "name": "hélices.stl",
+          "category": "IMPRESSÃO 3D",
+          "size": 268105184,
+          "mtime": 1790777672.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "MANUAL/MANUAL_2594A-FREE FIRE - HÉLICES.pdf",
+          "name": "MANUAL_2594A-FREE FIRE - HÉLICES.pdf",
+          "category": "MANUAL",
+          "size": 820257,
+          "mtime": 1790778333.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "MANUAL/MANUAL_2594A-FREE FIRE.pdf",
+          "name": "MANUAL_2594A-FREE FIRE.pdf",
+          "category": "MANUAL",
+          "size": 9825839,
+          "mtime": 1789752118.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/1 PVC 100mm b10mm.txt",
+          "name": "1 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1203945,
+          "mtime": 1789744678.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/10 PVC 100mm b10mm.txt",
+          "name": "10 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 759799,
+          "mtime": 1789746247.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/10PVC 100mm b10mm.stl",
+          "name": "10PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 2241484,
+          "mtime": 1789743246.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/10PVC 100mm b10mm.v3d",
+          "name": "10PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 6578176,
+          "mtime": 1789746260.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/11 PVC 100mm b10mm.txt",
+          "name": "11 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 493686,
+          "mtime": 1789746353.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/11PVC 100mm b10mm.stl",
+          "name": "11PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 794484,
+          "mtime": 1789746315.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/11PVC 100mm b10mm.v3d",
+          "name": "11PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 3251200,
+          "mtime": 1789746362.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/1PVC 100mm b10mm.stl",
+          "name": "1PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 2500284,
+          "mtime": 1789742883.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/1PVC 100mm b10mm.v3d",
+          "name": "1PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 7470080,
+          "mtime": 1789744565.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/2 PVC 100mm b10mm.txt",
+          "name": "2 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1130999,
+          "mtime": 1789744751.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/2PVC 100mm b10mm.stl",
+          "name": "2PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 1625284,
+          "mtime": 1789744054.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/2PVC 100mm b10mm.v3d",
+          "name": "2PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 6590464,
+          "mtime": 1789744756.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/3 PVC 100mm b10mm.txt",
+          "name": "3 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1006035,
+          "mtime": 1789744872.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/3PVC 100mm b10mm.stl",
+          "name": "3PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 34777184,
+          "mtime": 1789744160.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/3PVC 100mm b10mm.v3d",
+          "name": "3PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 46262784,
+          "mtime": 1789744875.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/4 PVC 100mm b10mm.txt",
+          "name": "4 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 541769,
+          "mtime": 1789745542.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/4PVC 100mm b12mm.stl",
+          "name": "4PVC 100mm b12mm.stl",
+          "category": "ROUTER",
+          "size": 51089284,
+          "mtime": 1789745490.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/4PVC 100mm b12mm.v3d",
+          "name": "4PVC 100mm b12mm.v3d",
+          "category": "ROUTER",
+          "size": 64964096,
+          "mtime": 1789745549.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/5 PVC 100mm b10mm.txt",
+          "name": "5 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1410282,
+          "mtime": 1789745604.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/5PVC 100mm b10mm.stl",
+          "name": "5PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 1627784,
+          "mtime": 1789743203.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/5PVC 100mm b10mm.v3d",
+          "name": "5PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 7174656,
+          "mtime": 1789745612.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/6 PVC 100mm b10mm.txt",
+          "name": "6 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1452337,
+          "mtime": 1789745718.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/6PVC 100mm b10mm.stl",
+          "name": "6PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 108716384,
+          "mtime": 1789743210.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/6PVC 100mm b10mm.v3d",
+          "name": "6PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 136807424,
+          "mtime": 1789745725.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/7 PVC 100mm b10mm.txt",
+          "name": "7 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 874177,
+          "mtime": 1789751111.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/7PVC 100mm b10mm.stl",
+          "name": "7PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 1380484,
+          "mtime": 1789751040.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/7PVC 100mm b10mm.v3d",
+          "name": "7PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 5825536,
+          "mtime": 1789751117.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/8 PVC 100mm b10mm.txt",
+          "name": "8 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1100688,
+          "mtime": 1789746031.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/8PVC 100mm b10mm.stl",
+          "name": "8PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 2029984,
+          "mtime": 1789746155.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/8PVC 100mm b10mm.v3d",
+          "name": "8PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 6954496,
+          "mtime": 1789746036.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/9 PVC 100mm b10mm.txt",
+          "name": "9 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 518074,
+          "mtime": 1789746203.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/9PVC 100mm b10mm.stl",
+          "name": "9PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 805384,
+          "mtime": 1789746146.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/9PVC 100mm b10mm.v3d",
+          "name": "9PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 4741632,
+          "mtime": 1789746207.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false
+        }
+      ]
+    },
+    {
+      "name": "2654A - REFORMA MICHELANGELO",
+      "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2654A - REFORMA MICHELANGELO",
+      "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2654A - REFORMA MICHELANGELO\\3 - OFICINA",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\2654A - REFORMA MICHELANGELO",
+      "dest_exists": false,
+      "status": "aguardando",
+      "total_files": 0,
+      "new_files_count": 0,
+      "missing_local_count": 0,
+      "total_bytes": 0,
+      "new_bytes": 0,
+      "categories": [],
+      "latest_mtime": 0.0,
+      "latest_date_str": "—",
+      "last_copied_at": null,
+      "ignored": false,
+      "files": []
+    },
+    {
+      "name": "2674A - CINTO DE SEG. VOLVO",
+      "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2674A - CINTO DE SEG. VOLVO",
+      "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2674A - CINTO DE SEG. VOLVO\\3 - OFICINA",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\2674A - CINTO DE SEG. VOLVO",
+      "dest_exists": false,
+      "status": "aguardando",
+      "total_files": 0,
+      "new_files_count": 0,
+      "missing_local_count": 0,
+      "total_bytes": 0,
+      "new_bytes": 0,
+      "categories": [],
+      "latest_mtime": 0.0,
+      "latest_date_str": "—",
+      "last_copied_at": null,
+      "ignored": false,
+      "files": []
+    },
+    {
+      "name": "2675A - HELLO KITTY TOBÔ",
+      "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2675A - HELLO KITTY TOBÔ",
+      "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2675A - HELLO KITTY TOBÔ\\3 - OFICINA",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\2675A - HELLO KITTY TOBÔ",
+      "dest_exists": false,
+      "status": "aguardando",
+      "total_files": 0,
+      "new_files_count": 0,
+      "missing_local_count": 0,
+      "total_bytes": 0,
+      "new_bytes": 0,
+      "categories": [],
+      "latest_mtime": 0.0,
+      "latest_date_str": "—",
+      "last_copied_at": null,
+      "ignored": false,
+      "files": []
+    },
+    {
+      "name": "TV CULTURA RETRÔ",
+      "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\TV CULTURA RETRÔ",
+      "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\TV CULTURA RETRÔ\\3 - OFICINA",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\TV CULTURA RETRÔ",
+      "dest_exists": false,
+      "status": "aguardando",
+      "total_files": 0,
+      "new_files_count": 0,
+      "missing_local_count": 0,
+      "total_bytes": 0,
+      "new_bytes": 0,
+      "categories": [],
+      "latest_mtime": 0.0,
+      "latest_date_str": "—",
+      "last_copied_at": null,
+      "ignored": false,
+      "files": []
+    }
+  ]
+}

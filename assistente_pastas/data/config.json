@@ -1,0 +1,19 @@
+{
+  "source_dir": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos",
+  "dest_dir": "E:\\arquivos 2024\\ARQUIVOS 2026",
+  "oficina_folder_pattern": "^\\s*3\\s*-\\s*OFICINA\\s*$",
+  "scan_interval_seconds": 25,
+  "auto_copy_new": true,
+  "notify_popup": true,
+  "sound_alert": true,
+  "patch_gcode_macros": true,
+  "target_spindle_speed": "18000",
+  "ignored_system_folders": [
+    "01 -  JOBS EM ORÇAMENTO",
+    "01 - JOBS EM ORÇAMENTO",
+    "DOCUMENTAÇÕES",
+    "DOCUMENTACOES",
+    "N1. JOB - DESCRIÇÃO JOB (PASTA MATRIZ - EXEMPLO)",
+    "Nº JOB - JOB"
+  ]
+}
