@@ -887,6 +887,24 @@ export function GeradorFichaTecnica({ jobs = [], routers = [] }) {
     setFooterNotes('');
   };
 
+  const applyPresetPendencias = () => {
+    setMode('lote');
+    setSelectedFolder('');
+    setKeywordFilter('tijolo');
+    setDateFromFilter('2026-10-29');
+    setTargetSheets(50);
+    setMinValidMinutes(24);
+    setNumRoutersProj(2);
+    setSetupMinutes(7);
+    setShiftStartTime('14:40');
+    setDocTitle('ORDEM DE CORTE · ARQUIVOS COM PENDÊNCIA (OFICINA ACT)');
+    setDocSubtitle('Lote Seriado Tijolos 9mm (Chapas 38 a 50) + Peças Avulsas (Detalhe Porta, Quadribol, Totem)');
+    setToolSpec('Fresa Ø6mm (e6mm) · Passe Z 3mm + Fresa V-Groove');
+    setCncParams('MDF 9mm, MDF 6mm, Compensado · S18000 / F3200');
+    setSheetDimLabel('Diversas Dimensões');
+    setFooterNotes('Pendências prioritárias para o turno atual. 13 chapas restantes de tijolo + detalhe porta mdf 6mm + fachada quadribol.');
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Cabeçalho da Seção */}
@@ -951,6 +969,12 @@ export function GeradorFichaTecnica({ jobs = [], routers = [] }) {
             className="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/25 cursor-pointer transition-all"
           >
             🧊 Expo Entrada · Isopor
+          </button>
+          <button
+            onClick={applyPresetPendencias}
+            className="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 cursor-pointer transition-all"
+          >
+            ⚠️ Arquivos com Pendência
           </button>
         </div>
       </div>
