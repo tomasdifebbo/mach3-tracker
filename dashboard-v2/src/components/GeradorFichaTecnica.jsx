@@ -888,21 +888,21 @@ export function GeradorFichaTecnica({ jobs = [], routers = [] }) {
   };
 
   const applyPresetPendencias = () => {
-    setMode('arquivos');
+    setMode('lote');
     setSelectedFolder('');
-    setKeywordFilter('compensado 6mm');
-    setDateFromFilter('2026-10-30');
-    setTargetSheets(9);
-    setMinValidMinutes(2);
+    setKeywordFilter('tijolo');
+    setDateFromFilter('2026-10-29');
+    setTargetSheets(50);
+    setMinValidMinutes(24);
     setNumRoutersProj(2);
-    setSetupMinutes(5);
-    setShiftStartTime('15:00');
-    setDocTitle('ORDEM DE CORTE · PROGRAMAÇÃO DE PENDÊNCIAS (OFICINA ACT)');
-    setDocSubtitle('Compensado 6mm (Chapas 6 a 9 de 9) · Isopor Pinguins · Arcos & Pilares (MDF 6/9/15mm) · Torres Concluídas');
-    setToolSpec('Fresa Topo Ø6mm + Ball Nose Ø10mm');
-    setCncParams('Compensado 6mm, Isopor 100mm, MDF 6/9/15mm · S15000 / S18000');
-    setSheetDimLabel('Compensado 6mm / Isopor / MDF');
-    setFooterNotes('Compensado 6mm Entrada: Chapas 1 a 5 concluídas em 30/10; Chapas 6 a 9 pendentes de corte (~19m). Isopor Pinguins: 2 blocos a fazer (~1h40m). MDF 9mm Torres: 100% Concluído (6x cada).');
+    setSetupMinutes(7);
+    setShiftStartTime('15:15');
+    setDocTitle('ORDEM DE CORTE · PENDÊNCIAS E MDFS 9MM FALTANTES (OFICINA ACT)');
+    setDocSubtitle('Lote MDF 9mm Tijolos (Chapas 38 a 50) + Molduras/Colunas 9mm + Compensado 6mm + Pinguins Isopor');
+    setToolSpec('Fresa Ø6mm (e6mm) Passe Z 3mm + Ball Nose Ø10mm');
+    setCncParams('MDF 9mm, MDF 6/15mm, Compensado 6mm, Isopor 100mm · S18000 / F3200');
+    setSheetDimLabel('MDF 9mm (2731×1843) / Diversos');
+    setFooterNotes('MDF 9mm Faltantes: 13 chapas lote Tijolos (38 a 50) + Moldura menor porta castelo + Colunas 9mm. Compensado 6mm Entrada: Chapas 6 a 9 de 9 pendentes (~19m). Isopor Pinguins: 2 blocos (~1h40m). Torres MDF 9mm: 100% Concluído (6x cada).');
   };
 
   return (
