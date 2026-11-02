@@ -419,6 +419,9 @@ export const api = {
   patchGcode: async (content, targetSpeed = '18000') => {
     return api.post('/oficina-sync/patch-gcode', { content, targetSpeed });
   },
+  getArquivosProducao: async (forceRefresh = false) => {
+    return api.get(`/arquivos-producao${forceRefresh ? '?refresh=true' : ''}`);
+  },
 
   deleteCustom: async (url) => {
     const resp = await fetch(`${API_URL}/api${url}`, { method: 'DELETE', headers: getAuthHeaders() });

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   LayoutGrid, Calendar, Columns3, CheckSquare2, Package, TrendingUp,
   AlertCircle, CheckCircle2, Clock, Star, ChevronRight, Zap, Target,
-  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2, Edit2, CalendarClock, User, FileCode, Box, Archive, ClipboardList, FolderSync
+  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2, Edit2, CalendarClock, User, FileCode, Box, Archive, ClipboardList, FolderSync, Layers
 } from 'lucide-react';
 import { api } from '../services/api';
 import { LinkProjectModal } from '../components/LinkProjectModal';
@@ -10,6 +10,7 @@ import { ConversorGcodeDxf } from '../components/ConversorGcodeDxf';
 import { GeradorLetraCaixa3D } from '../components/GeradorLetraCaixa3D';
 import { GeradorFichaTecnica } from '../components/GeradorFichaTecnica';
 import { ControlePastasOficina } from '../components/ControlePastasOficina';
+import { PipelineArquivosProducao } from '../components/PipelineArquivosProducao';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -2443,6 +2444,7 @@ const NAV_SECTIONS = [
   { id: 'dashboard', label: 'Dashboard Semanal', icon: LayoutGrid, group: 'Visão Geral' },
   { id: 'rotina', label: 'Rotina Semanal', icon: Calendar, group: 'Visão Geral' },
   { id: 'kanban', label: 'Painel Kanban', icon: Columns3, group: 'Produção' },
+  { id: 'pipeline_arquivos', label: 'Pipeline de Arquivos & Usinagem', icon: Layers, group: 'Produção' },
   { id: 'ficha_tecnica', label: 'Ficha Técnica & Checklist', icon: ClipboardList, group: 'Produção' },
   { id: 'liberacao_oficina', label: 'Controle de Pastas (3 - OFICINA)', icon: FolderSync, group: 'Produção' },
   { id: 'checklists', label: 'Checklists Diários', icon: CheckSquare2, group: 'Operação' },

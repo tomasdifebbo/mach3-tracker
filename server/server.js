@@ -4092,6 +4092,20 @@ app.post('/api/oficina-sync/patch-gcode', (req, res) => {
     }
 });
 
+// ─── PIPELINE DE ARQUIVOS DE PRODUÇÃO (CAD/CAM, G-CODE, EXECUTADOS) ──────────
+const { getProductionPipeline } = require('./production_pipeline');
+
+app.get('/api/arquivos-producao', async (req, res) => {
+    try {
+        const forceRefresh = req.query.refresh === 'true' || req.query.refresh === '1';
+        const data = await getProductionPipeline(pool, forceRefresh);
+        res.json(data);
+    } catch (err) {
+        console.error('Erro em GET /api/arquivos-producao:', err);
+        res.status(500).json({ error: 'Erro ao gerar pipeline de arquivos de produção' });
+    }
+});
+
 // Catch-all: Route all other non-API requests to the React SPA
 app.get('*', (req, res) => {
     const indexPath = fs.existsSync(path.join(__dirname, 'public', 'index.html'))
