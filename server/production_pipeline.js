@@ -34,114 +34,159 @@ function scanDirRecursive(dir, maxDepth = 6, depth = 0) {
     return files;
 }
 
-const SPECIAL_BATCHES = [
-    {
-        id: 'tijolos_9mm',
-        name: 'Lote Seriado MDF 9mm Tijolos (100 Chapas)',
-        job: '2640  - EXPRESSO HOGWARTS CCXP',
-        subfolder: '2640a PAREDE TIJOLO',
-        file: 'chapa 3 mdf9mm teste tijolo descida 3mm e6mm.txt',
-        material: 'MDF 9mm',
-        dimensions: '2731 × 1843 mm',
-        tool: 'Fresa Ø6mm (e6mm) Z=3mm · S18000',
-        targetSheets: 100,
-        doneSheets: 37,
-        pendingSheets: 63,
-        status: 'pronto_router',
-        estMinutesPerSheet: 21,
-        totalEstMinutes: 1323,
-        priority: 'alta'
-    },
-    {
-        id: 'compensado_6mm_entrada',
-        name: 'Compensado 6mm Entrada (Chapas 6 a 9 de 9)',
-        job: '2640  - EXPRESSO HOGWARTS CCXP',
-        subfolder: '2640 - entrada',
-        file: 'compensado 6mm_6-Corte.txt a _9-Corte.txt',
-        material: 'Compensado 6mm',
-        dimensions: '2200 × 1600 mm',
-        tool: 'Fresa Topo Ø6mm · S15000',
-        targetSheets: 9,
-        doneSheets: 5,
-        pendingSheets: 4,
-        status: 'pronto_router',
-        estMinutesPerSheet: 5,
-        totalEstMinutes: 19,
-        priority: 'alta'
-    },
-    {
-        id: 'isopor_pinguins_bloco2',
-        name: 'Isopor Pinguins 100mm (Bloco 2 a Fazer)',
-        job: '2663A e B - PINGUINS HELLA REVESTIDOS',
-        subfolder: 'ROUTER/ISOPOR/COD',
-        file: '2PVC 100mm b10.txt',
-        material: 'Isopor EPS / PVC 100mm',
-        dimensions: 'Bloco 100mm Espessura',
-        tool: 'Ball Nose Ø10mm · S18000',
-        targetSheets: 2,
-        doneSheets: 1,
-        pendingSheets: 1,
-        status: 'pronto_router',
-        estMinutesPerSheet: 55,
-        totalEstMinutes: 55,
-        priority: 'media'
-    },
-    {
-        id: 'moldura_menor_9mm',
-        name: 'Moldura Menor Porta Castelo MDF 9mm',
-        job: '2640  - EXPRESSO HOGWARTS CCXP',
-        subfolder: '2640A - porta castelo',
-        file: 'MDF 9MM MOLDURA MENOR E6MM.txt',
-        material: 'MDF 9mm',
-        dimensions: '2750 × 1850 mm',
-        tool: 'Fresa Ø6mm · S18000',
-        targetSheets: 1,
-        doneSheets: 0,
-        pendingSheets: 1,
-        status: 'pronto_router',
-        estMinutesPerSheet: 8,
-        totalEstMinutes: 8,
-        priority: 'alta'
-    },
-    {
-        id: 'colunas_parede_9mm',
-        name: 'Coluna & Parede Teste MDF 9mm',
-        job: '2640  - EXPRESSO HOGWARTS CCXP',
-        subfolder: '2640a - TESTE COLUNAS',
-        file: 'coluna mdf 9mm e6mm.txt / parede test mdf 9mm e6mm.txt',
-        material: 'MDF 9mm',
-        dimensions: '1767 × 1222 mm',
-        tool: 'Fresa Ø6mm · S18000',
-        targetSheets: 2,
-        doneSheets: 0,
-        pendingSheets: 2,
-        status: 'pronto_router',
-        estMinutesPerSheet: 23,
-        totalEstMinutes: 47,
-        priority: 'media'
-    },
-    {
-        id: 'torres_mdf_9mm',
-        name: 'Torres MDF 9mm (Chapas 1 e 2)',
-        job: '2640  - EXPRESSO HOGWARTS CCXP',
-        subfolder: 'TORRES',
-        file: 'chapa 1 mdf 9mm e6mm.txt / chapa 2 mdf 9mm e6mm.txt',
-        material: 'MDF 9mm',
-        dimensions: '2750 × 1850 mm',
-        tool: 'Fresa Ø6mm',
-        targetSheets: 12,
-        doneSheets: 12,
-        pendingSheets: 0,
-        status: 'concluido',
-        estMinutesPerSheet: 35,
-        totalEstMinutes: 0,
-        priority: 'concluido'
+function calculateDynamicBatches(dbJobs = []) {
+    // 1. Tijolos MDF 9mm (Meta: 100 chapas)
+    // Runs of tijolo since 2026-10-29 with valid duration >= 18 min or in progress (< 90 min)
+    const tijoloRuns = dbJobs.filter(j => 
+        (j.file_name || '').toLowerCase().includes('tijolo') &&
+        new Date(j.start_time) >= new Date('2026-10-29T00:00:00Z') &&
+        (Number(j.duration_minutes) >= 18 || (!j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 5400000)))
+    );
+    const tijoloDone = Math.min(100, Math.max(37, tijoloRuns.length));
+    const tijoloPending = Math.max(0, 100 - tijoloDone);
+
+    // 2. Compensado 6mm Entrada (Meta: 9 chapas)
+    const compRuns = dbJobs.filter(j => 
+        (j.file_name || '').toLowerCase().includes('compensado 6mm_') &&
+        new Date(j.start_time) >= new Date('2026-10-29T00:00:00Z')
+    );
+    const compFilesDone = new Set(compRuns.map(j => (j.file_name || '').toLowerCase().trim()));
+    let compDoneCount = 5;
+    for (let c = 6; c <= 9; c++) {
+        if (Array.from(compFilesDone).some(f => f.includes(`compensado 6mm_${c}`))) {
+            compDoneCount = Math.max(compDoneCount, c);
+        }
     }
-];
+    const compPending = Math.max(0, 9 - compDoneCount);
+
+    // 3. Isopor Pinguins 100mm (Meta: 2 blocos)
+    const hasBloco2 = dbJobs.some(j => (j.file_name || '').toLowerCase().includes('2pvc 100mm') && new Date(j.start_time) >= new Date('2026-10-25T00:00:00Z'));
+    const isoporDone = hasBloco2 ? 2 : 1;
+    const isoporPending = Math.max(0, 2 - isoporDone);
+
+    // 4. Moldura Menor 9mm (Meta: 1)
+    const molduraRuns = dbJobs.filter(j => (j.file_name || '').toLowerCase().includes('moldura menor') && (j.file_name || '').toLowerCase().includes('9mm'));
+    const molduraDone = molduraRuns.length > 0 ? 1 : 0;
+    const molduraPending = Math.max(0, 1 - molduraDone);
+
+    // 5. Coluna & Parede Teste 9mm (Meta: 2)
+    const hasColuna = dbJobs.some(j => (j.file_name || '').toLowerCase().includes('coluna mdf 9mm'));
+    const hasParede = dbJobs.some(j => (j.file_name || '').toLowerCase().includes('parede test mdf 9mm'));
+    const colDone = (hasColuna ? 1 : 0) + (hasParede ? 1 : 0);
+    const colPending = Math.max(0, 2 - colDone);
+
+    // 6. Torres MDF 9mm (Meta: 12)
+    const torresDone = 12;
+
+    return [
+        {
+            id: 'tijolos_9mm',
+            name: `Lote Seriado MDF 9mm Tijolos (${tijoloDone} de 100)`,
+            job: '2640  - EXPRESSO HOGWARTS CCXP',
+            subfolder: '2640a PAREDE TIJOLO',
+            file: 'chapa 3 mdf9mm teste tijolo descida 3mm e6mm.txt',
+            material: 'MDF 9mm',
+            dimensions: '2731 × 1843 mm',
+            tool: 'Fresa Ø6mm (e6mm) Z=3mm · S18000',
+            targetSheets: 100,
+            doneSheets: tijoloDone,
+            pendingSheets: tijoloPending,
+            status: tijoloPending === 0 ? 'concluido' : 'pronto_router',
+            estMinutesPerSheet: 21,
+            totalEstMinutes: tijoloPending * 21,
+            priority: 'alta'
+        },
+        {
+            id: 'compensado_6mm_entrada',
+            name: `Compensado 6mm Entrada (${compDoneCount} de 9)`,
+            job: '2640  - EXPRESSO HOGWARTS CCXP',
+            subfolder: '2640 - entrada',
+            file: 'compensado 6mm_6-Corte.txt a _9-Corte.txt',
+            material: 'Compensado 6mm',
+            dimensions: '2200 × 1600 mm',
+            tool: 'Fresa Topo Ø6mm · S15000',
+            targetSheets: 9,
+            doneSheets: compDoneCount,
+            pendingSheets: compPending,
+            status: compPending === 0 ? 'concluido' : 'pronto_router',
+            estMinutesPerSheet: 5,
+            totalEstMinutes: compPending * 5,
+            priority: 'alta'
+        },
+        {
+            id: 'isopor_pinguins_bloco2',
+            name: `Isopor Pinguins 100mm (${isoporDone} de 2)`,
+            job: '2663A e B - PINGUINS HELLA REVESTIDOS',
+            subfolder: 'ROUTER/ISOPOR/COD',
+            file: '2PVC 100mm b10.txt',
+            material: 'Isopor EPS / PVC 100mm',
+            dimensions: 'Bloco 100mm Espessura',
+            tool: 'Ball Nose Ø10mm · S18000',
+            targetSheets: 2,
+            doneSheets: isoporDone,
+            pendingSheets: isoporPending,
+            status: isoporPending === 0 ? 'concluido' : 'pronto_router',
+            estMinutesPerSheet: 55,
+            totalEstMinutes: isoporPending * 55,
+            priority: 'media'
+        },
+        {
+            id: 'moldura_menor_9mm',
+            name: `Moldura Menor Porta Castelo MDF 9mm (${molduraDone} de 1)`,
+            job: '2640  - EXPRESSO HOGWARTS CCXP',
+            subfolder: '2640A - porta castelo',
+            file: 'MDF 9MM MOLDURA MENOR E6MM.txt',
+            material: 'MDF 9mm',
+            dimensions: '2750 × 1850 mm',
+            tool: 'Fresa Ø6mm · S18000',
+            targetSheets: 1,
+            doneSheets: molduraDone,
+            pendingSheets: molduraPending,
+            status: molduraPending === 0 ? 'concluido' : 'pronto_router',
+            estMinutesPerSheet: 8,
+            totalEstMinutes: molduraPending * 8,
+            priority: 'alta'
+        },
+        {
+            id: 'colunas_parede_9mm',
+            name: `Coluna & Parede Teste MDF 9mm (${colDone} de 2)`,
+            job: '2640  - EXPRESSO HOGWARTS CCXP',
+            subfolder: '2640a - TESTE COLUNAS',
+            file: 'coluna mdf 9mm e6mm.txt / parede test mdf 9mm e6mm.txt',
+            material: 'MDF 9mm',
+            dimensions: '1767 × 1222 mm',
+            tool: 'Fresa Ø6mm · S18000',
+            targetSheets: 2,
+            doneSheets: colDone,
+            pendingSheets: colPending,
+            status: colPending === 0 ? 'concluido' : 'pronto_router',
+            estMinutesPerSheet: 23,
+            totalEstMinutes: colPending * 23,
+            priority: 'media'
+        },
+        {
+            id: 'torres_mdf_9mm',
+            name: 'Torres MDF 9mm (Chapas 1 e 2)',
+            job: '2640  - EXPRESSO HOGWARTS CCXP',
+            subfolder: 'TORRES',
+            file: 'chapa 1 mdf 9mm e6mm.txt / chapa 2 mdf 9mm e6mm.txt',
+            material: 'MDF 9mm',
+            dimensions: '2750 × 1850 mm',
+            tool: 'Fresa Ø6mm',
+            targetSheets: 12,
+            doneSheets: 12,
+            pendingSheets: 0,
+            status: 'concluido',
+            estMinutesPerSheet: 35,
+            totalEstMinutes: 0,
+            priority: 'concluido'
+        }
+    ];
+}
 
 let cachedResult = null;
 let lastCacheTime = 0;
-const CACHE_TTL_MS = 25000; // 25s
+const CACHE_TTL_MS = 10000; // 25s
 
 async function getProductionPipeline(pool, forceRefresh = false) {
     const now = Date.now();
@@ -278,7 +323,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                         totalGcodePronto: gcodeProntos.length,
                         totalConcluidos: gcodeFeitos.length
                     },
-                    specialBatches: SPECIAL_BATCHES,
+                    specialBatches: calculateDynamicBatches(dbJobs),
                     jobs: snap.jobs || [],
                     cadPreparar: snap.cadPreparar || [],
                     gcodeProntos,
@@ -392,7 +437,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             totalGcodePronto,
             totalConcluidos
         },
-        specialBatches: SPECIAL_BATCHES,
+        specialBatches: calculateDynamicBatches(dbJobs),
         jobs: jobsList,
         cadPreparar: allCadPreparar,
         gcodeProntos: allGcodeProntos,
