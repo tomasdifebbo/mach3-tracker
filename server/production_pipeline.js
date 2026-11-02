@@ -37,19 +37,19 @@ function scanDirRecursive(dir, maxDepth = 6, depth = 0) {
 const SPECIAL_BATCHES = [
     {
         id: 'tijolos_9mm',
-        name: 'Lote Seriado MDF 9mm Tijolos (Chapas 38 a 50)',
+        name: 'Lote Seriado MDF 9mm Tijolos (100 Chapas)',
         job: '2640  - EXPRESSO HOGWARTS CCXP',
         subfolder: '2640a PAREDE TIJOLO',
         file: 'chapa 3 mdf9mm teste tijolo descida 3mm e6mm.txt',
         material: 'MDF 9mm',
         dimensions: '2731 × 1843 mm',
         tool: 'Fresa Ø6mm (e6mm) Z=3mm · S18000',
-        targetSheets: 50,
+        targetSheets: 100,
         doneSheets: 37,
-        pendingSheets: 13,
+        pendingSheets: 63,
         status: 'pronto_router',
         estMinutesPerSheet: 21,
-        totalEstMinutes: 273,
+        totalEstMinutes: 1323,
         priority: 'alta'
     },
     {
