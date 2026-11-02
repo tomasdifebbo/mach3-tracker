@@ -173,8 +173,9 @@ async function getProductionPipeline(pool, forceRefresh = false) {
     const localRouterRoot = 'E:\\arquivos 2024\\ARQUIVOS 2026';
 
     const jobMap = {};
+    let scannedFromDisk = false;
 
-    // 1. Scan OneDrive 3 - OFICINA
+    // 1. Scan OneDrive 3 - OFICINA (if accessible)
     if (fs.existsSync(oneDriveRoot)) {
         try {
             const list = fs.readdirSync(oneDriveRoot, { withFileTypes: true });
@@ -193,13 +194,14 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                             path: oficinaPath,
                             files: files
                         };
+                        scannedFromDisk = true;
                     }
                 } catch (e) {}
             }
         } catch (e) {}
     }
 
-    // 2. Scan Local E:\arquivos 2024\ARQUIVOS 2026\router and active folders
+    // 2. Scan Local E:\arquivos 2024\ARQUIVOS 2026\router and active folders (if accessible)
     if (fs.existsSync(localRouterRoot)) {
         try {
             const list = fs.readdirSync(localRouterRoot, { withFileTypes: true });
@@ -224,6 +226,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                                 files: subFiles
                             };
                         }
+                        scannedFromDisk = true;
                     }
                 } else if (jobName.startsWith('26') || jobName.startsWith('25')) {
                     const files = scanDirRecursive(targetDir);
@@ -238,9 +241,56 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                             files: files
                         };
                     }
+                    scannedFromDisk = true;
                 }
             }
         } catch (e) {}
+    }
+
+    // Fallback if running on Railway/Cloud where local Windows drives don't exist
+    if (!scannedFromDisk || Object.keys(jobMap).length === 0) {
+        const snapFile = path.join(__dirname, 'initial_pipeline_snapshot.json');
+        if (fs.existsSync(snapFile)) {
+            try {
+                const snap = JSON.parse(fs.readFileSync(snapFile, 'utf8'));
+                // Recalculate G-code execution matches with live DB
+                const gcodeFeitos = [];
+                const gcodeProntos = [];
+                (snap.gcodeProntos || []).concat(snap.gcodeFeitos || []).forEach(gf => {
+                    const lower = (gf.name || '').toLowerCase().trim();
+                    const execs = execMap[lower] || [];
+                    if (execs.length > 0) {
+                        gcodeFeitos.push({
+                            ...gf,
+                            execCount: execs.length,
+                            lastExec: execs[0],
+                            totalDurationMinutes: execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0)
+                        });
+                    } else {
+                        gcodeProntos.push(gf);
+                    }
+                });
+
+                cachedResult = {
+                    summary: {
+                        totalJobs: snap.jobs?.length || 0,
+                        totalCadPreparar: snap.cadPreparar?.length || 0,
+                        totalGcodePronto: gcodeProntos.length,
+                        totalConcluidos: gcodeFeitos.length
+                    },
+                    specialBatches: SPECIAL_BATCHES,
+                    jobs: snap.jobs || [],
+                    cadPreparar: snap.cadPreparar || [],
+                    gcodeProntos,
+                    gcodeFeitos,
+                    updatedAt: new Date().toISOString()
+                };
+                lastCacheTime = now;
+                return cachedResult;
+            } catch (err) {
+                console.error('Error loading initial_pipeline_snapshot.json:', err);
+            }
+        }
     }
 
     let totalCadPreparar = 0;
@@ -333,7 +383,6 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         });
     }
 
-    // Sort: priority to active projects with pending files
     jobsList.sort((a, b) => (b.cadPrepararCount + b.gcodeProntoCount) - (a.cadPrepararCount + a.gcodeProntoCount));
 
     cachedResult = {
