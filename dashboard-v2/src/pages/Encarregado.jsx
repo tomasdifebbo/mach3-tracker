@@ -2466,6 +2466,7 @@ export function Encarregado({ jobs = [], routers = [] }) {
       case 'dashboard':     return <DashboardSemanal jobs={jobs} />;
       case 'rotina':        return <RotinaSemanal />;
       case 'kanban':            return <PainelKanban jobs={jobs} />;
+      case 'pipeline_arquivos': return <PipelineArquivosProducao jobs={jobs} routers={routers} />;
       case 'ficha_tecnica':     return <GeradorFichaTecnica jobs={jobs} routers={routers} />;
       case 'liberacao_oficina': return <ControlePastasOficina />;
       case 'checklists':        return <ChecklistsDiarios />;
