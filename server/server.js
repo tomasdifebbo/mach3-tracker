@@ -4097,6 +4097,9 @@ const { getProductionPipeline } = require('./production_pipeline');
 
 app.get('/api/arquivos-producao', async (req, res) => {
     try {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
         const forceRefresh = req.query.refresh === 'true' || req.query.refresh === '1';
         const data = await getProductionPipeline(pool, forceRefresh);
         res.json(data);

@@ -420,7 +420,8 @@ export const api = {
     return api.post('/oficina-sync/patch-gcode', { content, targetSpeed });
   },
   getArquivosProducao: async (forceRefresh = false) => {
-    return api.get(`/arquivos-producao${forceRefresh ? '?refresh=true' : ''}`);
+    const t = Date.now();
+    return api.get(`/arquivos-producao?_t=${t}${forceRefresh ? '&refresh=true' : ''}`);
   },
 
   deleteCustom: async (url) => {
