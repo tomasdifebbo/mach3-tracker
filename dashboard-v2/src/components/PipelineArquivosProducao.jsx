@@ -169,7 +169,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
             </div>
             <p className="text-[11px] text-slate-500 dark:text-text-muted hidden sm:block">
               {pipelineData?.updatedAt ? `Sincronizado ${formatDate(pipelineData.updatedAt)} · ` : ''}
-              Separação de vetores (.cdr, .eps, .dxf, .ai), G-codes na fila e histórico usinado
+              Apenas arquivos Corel (.cdr) a preparar, G-Codes recentes para Router e histórico usinado
             </p>
           </div>
         </div>
@@ -196,10 +196,10 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
           }`}
         >
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">1. A Preparar (CAD/CAM)</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">1. A Preparar (Corel .CDR)</p>
             <div className="flex items-baseline gap-1.5 mt-0.5">
               <span className="text-xl font-black text-slate-900 dark:text-white">{summary.totalCadPreparar}</span>
-              <span className="text-[11px] text-slate-500">vetoriais</span>
+              <span className="text-[11px] text-slate-500">arquivos .cdr</span>
             </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
@@ -220,7 +220,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
             <p className="text-[10px] font-bold uppercase tracking-wider text-orange-500">2. Pronto para Router</p>
             <div className="flex items-baseline gap-1.5 mt-0.5">
               <span className="text-xl font-black text-slate-900 dark:text-white">{summary.totalGcodePronto}</span>
-              <span className="text-[11px] text-slate-500">G-Codes na fila</span>
+              <span className="text-[11px] text-slate-500">G-Codes liberados</span>
             </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0">
@@ -277,8 +277,8 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
         <div className="flex flex-wrap items-center gap-1">
           {[
             { id: 'lotes', label: 'Lotes Seriados', icon: Award, count: specialBatches.length },
-            { id: 'preparar', label: 'A Preparar (CAD/CAM)', icon: Sparkles, count: pipelineData?.cadPreparar?.length || summary.totalCadPreparar },
-            { id: 'fila_router', label: 'Pronto p/ Router', icon: Cpu, count: pipelineData?.gcodeProntos?.length || summary.totalGcodePronto },
+            { id: 'preparar', label: 'A Preparar (.CDR)', icon: Sparkles, count: pipelineData?.cadPreparar?.length || summary.totalCadPreparar },
+            { id: 'fila_router', label: 'Pronto p/ Router (G-Code)', icon: Cpu, count: pipelineData?.gcodeProntos?.length || summary.totalGcodePronto },
             { id: 'concluidos', label: 'Já Feito (Histórico)', icon: CheckCircle2, count: pipelineData?.gcodeFeitos?.length || summary.totalConcluidos },
             { id: 'visao_geral', label: 'Jobs', icon: FolderCheck, count: allJobs.length }
           ].map(t => {
@@ -417,6 +417,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                     <th className="py-2.5 px-3">Nome do Arquivo</th>
                     <th className="py-2.5 px-3">Serviço / O.S.</th>
                     <th className="py-2.5 px-3">Tamanho</th>
+                    <th className="py-2.5 px-3">Liberado em</th>
                     <th className="py-2.5 px-3">Status</th>
                     <th className="py-2.5 px-3 text-right">Ação</th>
                   </tr>
@@ -424,8 +425,8 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                   {filteredCad.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400">
-                        Nenhum arquivo vetorial encontrado.
+                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                        Nenhum arquivo Corel (.cdr) pendente encontrado.
                       </td>
                     </tr>
                   ) : (
@@ -445,6 +446,9 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                         </td>
                         <td className="py-2 px-3 font-mono text-slate-500 text-[11px]">
                           {formatBytes(f.size)}
+                        </td>
+                        <td className="py-2 px-3 font-mono text-amber-500/90 dark:text-amber-400 text-[11px] font-semibold whitespace-nowrap">
+                          {formatDate(f.mtimeDate)}
                         </td>
                         <td className="py-2 px-3">
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
@@ -491,6 +495,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                     <th className="py-2.5 px-3">Arquivo G-Code</th>
                     <th className="py-2.5 px-3">Serviço / O.S.</th>
                     <th className="py-2.5 px-3">Tamanho</th>
+                    <th className="py-2.5 px-3">Liberado em</th>
                     <th className="py-2.5 px-3">Status</th>
                     <th className="py-2.5 px-3 text-right">Ação</th>
                   </tr>
@@ -498,8 +503,8 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                   {filteredGcodes.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400">
-                        Nenhum arquivo G-Code aguardando máquina encontrado.
+                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                        Nenhum arquivo G-Code recente aguardando máquina encontrado.
                       </td>
                     </tr>
                   ) : (
@@ -519,6 +524,9 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                         </td>
                         <td className="py-2 px-3 font-mono text-slate-500 text-[11px]">
                           {formatBytes(f.size)}
+                        </td>
+                        <td className="py-2 px-3 font-mono text-orange-500/90 dark:text-orange-400 text-[11px] font-semibold whitespace-nowrap">
+                          {formatDate(f.mtimeDate)}
                         </td>
                         <td className="py-2 px-3">
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-orange-500/10 text-orange-500 border border-orange-500/20">

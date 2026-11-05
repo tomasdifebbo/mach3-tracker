@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const CAD_EXTS = ['.cdr', '.eps', '.dxf', '.ai', '.dwg', '.crv3d', '.v3d', '.stl', '.3mf', '.svg'];
+const CAD_EXTS = ['.cdr']; // Apenas arquivos .CDR do CorelDRAW
 const GCODE_EXTS = ['.txt', '.nc', '.tap', '.gcode', '.cnc'];
 
 function scanDirRecursive(dir, maxDepth = 6, depth = 0) {
@@ -11,6 +11,8 @@ function scanDirRecursive(dir, maxDepth = 6, depth = 0) {
         const entries = fs.readdirSync(dir, { withFileTypes: true });
         for (const ent of entries) {
             if (ent.name.startsWith('.') || ent.name === 'Thumbs.db') continue;
+            const lowerName = ent.name.toLowerCase();
+            if (lowerName.startsWith('cópia_de_segurança') || lowerName.startsWith('copia_de_seguranca') || lowerName.startsWith('backup_of_') || lowerName.startsWith('@')) continue;
             const full = path.join(dir, ent.name);
             if (ent.isDirectory()) {
                 files = files.concat(scanDirRecursive(full, maxDepth, depth + 1));
@@ -279,7 +281,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 if (jobName === 'router') {
                     const routerSubs = fs.readdirSync(targetDir, { withFileTypes: true });
                     for (const rSub of routerSubs) {
-                        if (!rSub.isDirectory() || (!rSub.name.startsWith('26') && !rSub.name.startsWith('25'))) continue;
+                        if (!rSub.isDirectory() || !rSub.name.startsWith('26')) continue;
                         const subPath = path.join(targetDir, rSub.name);
                         const subFiles = scanDirRecursive(subPath);
                         const matchedKey = Object.keys(jobMap).find(k => k.toLowerCase().includes(rSub.name.toLowerCase()) || rSub.name.toLowerCase().includes(k.toLowerCase()));
@@ -295,7 +297,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                         }
                         scannedFromDisk = true;
                     }
-                } else if (jobName.startsWith('26') || jobName.startsWith('25')) {
+                } else if (jobName.startsWith('26')) {
                     const files = scanDirRecursive(targetDir);
                     const matchedKey = Object.keys(jobMap).find(k => k.toLowerCase().includes(jobName.toLowerCase()) || jobName.toLowerCase().includes(k.toLowerCase()));
                     if (matchedKey) {
@@ -381,8 +383,12 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             }
         });
 
-        const cad = unique.filter(f => f.type === 'cad');
-        const gcode = unique.filter(f => f.type === 'gcode');
+        // Filtrar apenas arquivos liberados recentemente (a partir de 01/10/2026 ou OneDrive)
+        const recentCutoff = new Date('2026-10-01T00:00:00Z').getTime();
+        const activeFiles = unique.filter(f => (f.mtime && f.mtime >= recentCutoff) || jData.source.startsWith('OneDrive'));
+
+        const cad = activeFiles.filter(f => f.type === 'cad');
+        const gcode = activeFiles.filter(f => f.type === 'gcode');
         const gcodeBases = new Set(gcode.map(g => path.parse(g.name).name.toLowerCase().replace(/[-_]/g, ' ')));
 
         const cadPreparar = [];
@@ -451,6 +457,10 @@ async function getProductionPipeline(pool, forceRefresh = false) {
     }
 
     jobsList.sort((a, b) => (b.cadPrepararCount + b.gcodeProntoCount) - (a.cadPrepararCount + a.gcodeProntoCount));
+
+    allCadPreparar.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
+    allGcodeProntos.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
+    allGcodeFeitos.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
 
     cachedResult = {
         summary: {
