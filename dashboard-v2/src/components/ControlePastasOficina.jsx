@@ -292,7 +292,7 @@ export function ControlePastasOficina() {
                 const isExpanded = !!expandedJobs[job.name];
                 const statusBadge = {
                   novo: { label: 'NOVO LIBERADO', bg: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-                  atualizacao: { label: 'ARQUIVOS NOVOS', bg: 'bg-cyan-500/20 text-accent-cyan border-cyan-500/30' },
+                  atualizacao: { label: 'ARQUIVOS NOVOS / MODIFICADOS', bg: 'bg-amber-500/20 text-amber-400 border-amber-500/30 font-black' },
                   sincronizado: { label: 'SINCRONIZADO', bg: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
                   aguardando: { label: 'AGUARDANDO LIBERAÇÃO', bg: 'bg-white/5 text-text-muted border-white/10' },
                 }[job.status] || { label: job.status?.toUpperCase(), bg: 'bg-white/5 text-white border-white/10' };
@@ -364,7 +364,11 @@ export function ControlePastasOficina() {
                                 </div>
                                 <div className="flex items-center gap-3 shrink-0">
                                   <span className="text-text-muted text-[11px]">{formatBytes(file.size)}</span>
-                                  {file.exists_local ? (
+                                  {file.is_modified ? (
+                                    <span className="text-[10px] font-bold text-amber-400 px-2 py-0.5 bg-amber-500/15 border border-amber-500/30 rounded-md">
+                                      Modificado / Revisão
+                                    </span>
+                                  ) : file.exists_local ? (
                                     <span className="text-[10px] font-bold text-blue-400 px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded-md">
                                       Copiado na Router
                                     </span>

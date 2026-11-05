@@ -3981,14 +3981,36 @@ try {
 
 app.get('/api/oficina-sync', async (req, res) => {
     try {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+
+        const forceRefresh = req.query.refresh === 'true' || req.query.refresh === '1';
+
+        // 1. Sempre tenta buscar o estado mais recente salvo no PostgreSQL
+        try {
+            const { rows } = await pool.query('SELECT payload, updated_at FROM oficina_sync_state ORDER BY id DESC LIMIT 1');
+            if (rows.length > 0 && rows[0].payload) {
+                oficinaSyncCache = { ...rows[0].payload, updated_at: rows[0].updated_at };
+                return res.json(oficinaSyncCache);
+            }
+        } catch (dbErr) {
+            console.warn('Erro ao consultar oficina_sync_state no banco:', dbErr.message);
+        }
+
+        // 2. Se em memoria estiver setado
         if (oficinaSyncCache) {
             return res.json(oficinaSyncCache);
         }
-        const { rows } = await pool.query('SELECT payload, updated_at FROM oficina_sync_state ORDER BY id DESC LIMIT 1');
-        if (rows.length > 0) {
-            oficinaSyncCache = { ...rows[0].payload, updated_at: rows[0].updated_at };
+
+        // 3. Fallback do snapshot em disco
+        const snapFile = path.join(__dirname, 'initial_snapshot.json');
+        if (fs.existsSync(snapFile)) {
+            const snap = JSON.parse(fs.readFileSync(snapFile, 'utf8'));
+            oficinaSyncCache = snap;
             return res.json(oficinaSyncCache);
         }
+
         return res.json({
             status: 'online',
             last_scan_time: null,

@@ -162,6 +162,48 @@ def _scan_oficina_files(oficina_path: Path) -> list[dict]:
     return results
 
 
+def _resolve_dest_job_dir(dest_dir: Path, job_name: str) -> tuple[Path, bool]:
+    """
+    Localiza a pasta física de um job dentro de ARQUIVOS 2026.
+    Verifica tanto diretamente na raiz de dest_dir quanto dentro da subpasta 'router',
+    com suporte a correspondência por prefixo de código de job (ex: 2640, 2662A).
+    """
+    if not dest_dir.exists():
+        return dest_dir / job_name, False
+
+    # 1. Caminho direto: E:\arquivos 2024\ARQUIVOS 2026\<job_name>
+    direct = dest_dir / job_name
+    if direct.exists() and direct.is_dir():
+        return direct, True
+
+    # 2. Caminho na subpasta router: E:\arquivos 2024\ARQUIVOS 2026\router\<job_name>
+    router_direct = dest_dir / "router" / job_name
+    if router_direct.exists() and router_direct.is_dir():
+        return router_direct, True
+
+    # 3. Busca por correspondência inteligente (prefixo numérico ou substring do job)
+    # Ex: "2662A - CAPACETE" encontra "2662A - capacete senna" ou "2640" encontra "2640 - entrada"
+    code_match = re.match(r"^(\d+[A-Za-z]*)", job_name.strip())
+    job_code = code_match.group(1).upper() if code_match else None
+
+    # Procura dentro de dest_dir / "router" e dest_dir
+    for search_base in [dest_dir / "router", dest_dir]:
+        if not search_base.exists():
+            continue
+        try:
+            with os.scandir(search_base) as it:
+                for entry in it:
+                    if not entry.is_dir(follow_symlinks=False):
+                        continue
+                    ename = entry.name.upper()
+                    if job_code and (ename.startswith(job_code) or f" {job_code} " in f" {ename} " or ename.startswith(f"{job_code} ")):
+                        return Path(entry.path), True
+        except OSError:
+            pass
+
+    return direct, False
+
+
 class FolderAssistantEngine:
     def __init__(self, on_notify: Callable[[str, str], None] | None = None):
         self._lock = threading.RLock()
@@ -253,8 +295,7 @@ class FolderAssistantEngine:
                 pass
 
             files = _scan_oficina_files(oficina_dir) if oficina_dir else []
-            dest_job_dir = dest_dir / job_name
-            dest_exists = dest_job_dir.exists()
+            dest_job_dir, dest_exists = _resolve_dest_job_dir(dest_dir, job_name)
 
             jstate = jobs_state.get(job_name, {})
             copied_set = set(jstate.get("copied_files", []))
@@ -272,10 +313,39 @@ class FolderAssistantEngine:
                 total_bytes += f["size"]
                 local_file_path = dest_job_dir / Path(rel)
                 exists_local = local_file_path.exists() if dest_exists else False
-                if not exists_local:
+
+                # Se não encontrou no caminho relativo original, verifica na raiz do job local ou subpastas comuns
+                if not exists_local and dest_exists:
+                    fn = Path(rel).name
+                    cand = dest_job_dir / fn
+                    if cand.exists():
+                        local_file_path = cand
+                        exists_local = True
+                    else:
+                        for sub_name in ("CNC", "cnc", "cod", "cortes", "ROUTER", "router"):
+                            cand_sub = dest_job_dir / sub_name / fn
+                            if cand_sub.exists():
+                                local_file_path = cand_sub
+                                exists_local = True
+                                break
+
+                # Verificação contínua de arquivo novo ou modificado/revisado
+                is_modified = False
+                if exists_local:
+                    try:
+                        st = local_file_path.stat()
+                        # Se na nuvem (OneDrive) o arquivo tem mtime superior ao local (> 5 seg de tolerância)
+                        # e houve alteração de tamanho ou mtime mais recente
+                        if f["mtime"] > (st.st_mtime + 5):
+                            if f["size"] != st.st_size or f["mtime"] > (st.st_mtime + 60):
+                                is_modified = True
+                    except OSError:
+                        pass
+                else:
                     missing_local_count += 1
 
-                is_new = (not exists_local) and (rel not in copied_set) and (rel not in ignored_set)
+                # É novo se não existe localmente OU se foi atualizado/modificado na nuvem
+                is_new = (not exists_local) or is_modified
                 if is_new:
                     new_rel_paths.append(rel)
                     new_bytes += f["size"]
@@ -285,12 +355,14 @@ class FolderAssistantEngine:
                         **f,
                         "exists_local": exists_local,
                         "is_new": is_new,
+                        "is_modified": is_modified,
                     }
                 )
 
             if len(enriched_files) == 0:
                 status = "aguardando"
             elif dest_exists:
+                # Se a pasta já foi carregada, verifica continuamente se há novos arquivos ou revisões
                 status = "atualizacao" if len(new_rel_paths) > 0 else "sincronizado"
             else:
                 if is_ignored_job and len(new_rel_paths) == 0:
@@ -408,8 +480,26 @@ class FolderAssistantEngine:
                     },
                     'jobs': snapshot,
                 }
-                base_url = cfg.get('cloud_api_url', 'https://mach3tracker.up.railway.app')
-                requests.post(f'{base_url}/api/oficina-sync', json=payload, timeout=8)
+                # 1. Salva snapshot atualizado no arquivo local do dashboard para persistência imediata
+                try:
+                    import json
+                    from pathlib import Path
+                    snap_path = Path(r"C:\DASHBOARD\server\initial_snapshot.json")
+                    if snap_path.parent.exists():
+                        snap_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding='utf-8')
+                except Exception:
+                    pass
+
+                # 2. Sincroniza com servidor da nuvem (Render) e local
+                urls = [
+                    'https://mach3-tracker.onrender.com/api/oficina-sync',
+                    'http://localhost:3000/api/oficina-sync'
+                ]
+                for u in urls:
+                    try:
+                        requests.post(u, json=payload, timeout=12)
+                    except Exception:
+                        pass
             except Exception:
                 pass
 
@@ -423,7 +513,7 @@ class FolderAssistantEngine:
         with self._copy_lock:
             cfg = load_config()
             source_job_dir = Path(cfg["source_dir"]) / job_name
-            dest_job_dir = Path(cfg["dest_dir"]) / job_name
+            dest_job_dir, _ = _resolve_dest_job_dir(Path(cfg["dest_dir"]), job_name)
             oficina_regex = re.compile(cfg["oficina_folder_pattern"], re.IGNORECASE)
 
             if not source_job_dir.exists():
