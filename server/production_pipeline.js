@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const CAD_EXTS = ['.cdr']; // Apenas arquivos .CDR do CorelDRAW
+const ASPIRE_EXTS = ['.eps', '.dxf', '.crv', '.crv3d']; // Arquivos vetoriais/projetos para abrir e preparar no Aspire
 const GCODE_EXTS = ['.txt', '.nc', '.tap', '.gcode', '.cnc'];
 
 function scanDirRecursive(dir, maxDepth = 6, depth = 0) {
@@ -18,12 +19,15 @@ function scanDirRecursive(dir, maxDepth = 6, depth = 0) {
                 files = files.concat(scanDirRecursive(full, maxDepth, depth + 1));
             } else if (ent.isFile()) {
                 const ext = path.extname(ent.name).toLowerCase();
-                if (CAD_EXTS.includes(ext) || GCODE_EXTS.includes(ext)) {
+                if (CAD_EXTS.includes(ext) || ASPIRE_EXTS.includes(ext) || GCODE_EXTS.includes(ext)) {
                     const stat = fs.statSync(full);
+                    let type = 'cad';
+                    if (ASPIRE_EXTS.includes(ext)) type = 'aspire';
+                    else if (GCODE_EXTS.includes(ext)) type = 'gcode';
                     files.push({
                         name: ent.name,
                         ext,
-                        type: CAD_EXTS.includes(ext) ? 'cad' : 'gcode',
+                        type,
                         fullPath: full,
                         size: stat.size,
                         mtime: stat.mtimeMs,
@@ -34,6 +38,35 @@ function scanDirRecursive(dir, maxDepth = 6, depth = 0) {
         }
     } catch (e) {}
     return files;
+}
+
+// Extrai inteligentemente material, espessura e quantidade do nome do arquivo
+function extractMaterialInfo(name) {
+    const fn = (name || '').toLowerCase();
+    let material = null;
+    if (fn.includes('mdf')) material = 'MDF';
+    else if (fn.includes('compensado') || fn.includes('comp ') || fn.includes('cambota')) material = 'Compensado';
+    else if (fn.includes('pvc')) material = 'PVC';
+    else if (fn.includes('isopor') || fn.includes('eps')) material = 'Isopor EPS';
+    else if (fn.includes('acrilico') || fn.includes('acrílico')) material = 'Acrílico';
+    else if (fn.includes('ps ') || fn.includes('ps3mm') || fn.includes('ps2mm') || fn.includes('ps1mm')) material = 'PS';
+    else if (fn.includes('eva')) material = 'EVA';
+    else if (fn.includes('ptg') || fn.includes('petg')) material = 'PETG';
+    else if (fn.includes('acm') || fn.includes('aluminio') || fn.includes('alumínio')) material = 'ACM';
+
+    const thickMatch = fn.match(/(\d+(?:[.,]\d+)?)\s*(?:mm|m\b)/i);
+    const thickness = thickMatch ? `${thickMatch[1].replace(',', '.')}mm` : null;
+
+    let tag = null;
+    if (material && thickness) tag = `${material} ${thickness}`;
+    else if (material) tag = material;
+    else if (thickness) tag = thickness;
+
+    // Detecta se é arquivo de chapa individual ou lote
+    const chapaMatch = fn.match(/(?:chapa\s*(\d+)|(\d+)\s*x|parte\s*(\d+)|_(\d+)|(\d+)\s*(?:pvc|mdf|comp))/i);
+    const chapaIndex = chapaMatch ? (chapaMatch[1] || chapaMatch[2] || chapaMatch[3] || chapaMatch[4] || chapaMatch[5]) : null;
+
+    return { material, thickness, tag, chapaIndex };
 }
 
 function calculateDynamicBatches(dbJobs = []) {
@@ -66,7 +99,7 @@ function calculateDynamicBatches(dbJobs = []) {
 
     // 4. Compensado 6mm Entrada (Meta: 9 chapas, chapas 1 a 5 ok, 6 a 9 a finalizar)
     const recentComp6to9 = [6, 7, 8, 9].filter(n =>
-        dbJobs.some(j => (j.file_name || '').toLowerCase().includes('compensado 6mm_' + n) && Number(j.duration_minutes) >= 8 && new Date(j.start_time) >= new Date('2026-11-03T00:00:00Z'))
+        dbJobs.some(j => (j.file_name || '').toLowerCase().includes('compensado 6mm_' + n) && Number(j.duration_minutes) >= 2 && new Date(j.start_time) >= new Date('2026-11-03T00:00:00Z'))
     ).length;
     const compDoneCount = 5 + recentComp6to9;
     const compPending = Math.max(0, 9 - compDoneCount);
@@ -210,7 +243,7 @@ function calculateDynamicBatches(dbJobs = []) {
 
 let cachedResult = null;
 let lastCacheTime = 0;
-const CACHE_TTL_MS = 10000; // 25s
+const CACHE_TTL_MS = 10000; // 10s
 
 async function getProductionPipeline(pool, forceRefresh = false) {
     const now = Date.now();
@@ -316,13 +349,17 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         } catch (e) {}
     }
 
+    // Helper: normaliza o diretório removendo subpastas técnicas (CNC, cod, etc)
+    function getNormDir(filePath) {
+        return path.dirname(filePath || '').replace(/[\\/](cod|cnc|gcode|cortes)$/i, '');
+    }
+
     // Fallback if running on Railway/Cloud where local Windows drives don't exist
     if (!scannedFromDisk || Object.keys(jobMap).length === 0) {
         const snapFile = path.join(__dirname, 'initial_pipeline_snapshot.json');
         if (fs.existsSync(snapFile)) {
             try {
                 const snap = JSON.parse(fs.readFileSync(snapFile, 'utf8'));
-                // Recalculate G-code execution matches with live DB
                 const gcodeFeitos = [];
                 const gcodeProntos = [];
                 (snap.gcodeProntos || []).concat(snap.gcodeFeitos || []).forEach(gf => {
@@ -344,12 +381,14 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     summary: {
                         totalJobs: snap.jobs?.length || 0,
                         totalCadPreparar: snap.cadPreparar?.length || 0,
+                        totalAspirePreparar: snap.aspirePreparar?.length || (snap.cadPreparar?.filter(c => ASPIRE_EXTS.includes(c.ext))?.length || 0),
                         totalGcodePronto: gcodeProntos.length,
                         totalConcluidos: gcodeFeitos.length
                     },
                     specialBatches: calculateDynamicBatches(dbJobs),
                     jobs: snap.jobs || [],
                     cadPreparar: snap.cadPreparar || [],
+                    aspirePreparar: snap.aspirePreparar || [],
                     gcodeProntos,
                     gcodeFeitos,
                     updatedAt: new Date().toISOString()
@@ -363,10 +402,12 @@ async function getProductionPipeline(pool, forceRefresh = false) {
     }
 
     let totalCadPreparar = 0;
+    let totalAspirePreparar = 0;
     let totalGcodePronto = 0;
     let totalConcluidos = 0;
 
     const allCadPreparar = [];
+    const allAspirePreparar = [];
     const allGcodeProntos = [];
     const allGcodeFeitos = [];
     const jobsList = [];
@@ -387,41 +428,154 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         const recentCutoff = new Date('2026-10-01T00:00:00Z').getTime();
         const activeFiles = unique.filter(f => (f.mtime && f.mtime >= recentCutoff) || jData.source.startsWith('OneDrive'));
 
-        const cad = activeFiles.filter(f => f.type === 'cad');
-        const gcode = activeFiles.filter(f => f.type === 'gcode');
-        const gcodeBases = new Set(gcode.map(g => path.parse(g.name).name.toLowerCase().replace(/[-_]/g, ' ')));
+        // Agrupa por pasta normalizada para cruzamento de hierarquia (Corel -> Materiais -> Lote Chapas)
+        const folderGroups = {};
+        activeFiles.forEach(f => {
+            const dir = getNormDir(f.fullPath);
+            if (!folderGroups[dir]) folderGroups[dir] = { cad: [], aspire: [], gcode: [] };
+            if (f.type === 'cad') folderGroups[dir].cad.push(f);
+            else if (f.type === 'aspire') folderGroups[dir].aspire.push(f);
+            else if (f.type === 'gcode') folderGroups[dir].gcode.push(f);
+        });
 
+        const cad = activeFiles.filter(f => f.type === 'cad');
+        const aspire = activeFiles.filter(f => f.type === 'aspire');
+        const gcode = activeFiles.filter(f => f.type === 'gcode');
+
+        // 1. Processamento Inteligente do Corel (.CDR Mestre)
         const cadPreparar = [];
         const cadComGcode = [];
+        const cadComAspire = [];
 
         cad.forEach(cf => {
-            const base = path.parse(cf.name).name.toLowerCase().replace(/[-_]/g, ' ');
-            let hasGcode = false;
-            for (const gb of gcodeBases) {
-                if (gb.includes(base) || base.includes(gb)) {
-                    hasGcode = true;
-                    break;
-                }
+            const dir = getNormDir(cf.fullPath);
+            const subfolderName = path.basename(dir);
+            const folderFiles = folderGroups[dir] || { cad: [], aspire: [], gcode: [] };
+            const matInfo = extractMaterialInfo(cf.name);
+
+            // Arquivos de Aspire na mesma pasta
+            let matchingAspire = folderFiles.aspire;
+            if (matInfo.tag) {
+                const specific = folderFiles.aspire.filter(a => {
+                    const aMat = extractMaterialInfo(a.name);
+                    return aMat.tag === matInfo.tag || (a.name || '').toLowerCase().includes((cf.name || '').toLowerCase());
+                });
+                if (specific.length > 0) matchingAspire = specific;
             }
-            const item = { ...cf, jobName: jName };
+
+            // Arquivos G-Code de chapas na mesma pasta
+            let matchingGcodes = folderFiles.gcode;
+            if (matInfo.tag) {
+                const specificGcode = folderFiles.gcode.filter(g => {
+                    const gMat = extractMaterialInfo(g.name);
+                    return gMat.tag === matInfo.tag || (g.name || '').toLowerCase().includes((cf.name || '').toLowerCase());
+                });
+                if (specificGcode.length > 0) matchingGcodes = specificGcode;
+            }
+
+            const hasGcode = matchingGcodes.length > 0;
+            const hasAspire = matchingAspire.length > 0;
+            const detectedMaterials = [...new Set(matchingAspire.map(a => extractMaterialInfo(a.name).tag).filter(Boolean))];
+
+            let stageStatus = 'aguardando_separar_materiais';
+            let statusLabel = 'Aguardando Separar Materiais';
+
+            if (hasGcode) {
+                stageStatus = 'lote_liberado';
+                statusLabel = `Lote Liberado (${matchingGcodes.length} chapas p/ Router)`;
+            } else if (hasAspire) {
+                stageStatus = 'materiais_gerados';
+                statusLabel = detectedMaterials.length > 0 
+                    ? `Separado: ${detectedMaterials.join(', ')}` 
+                    : `Separado em ${matchingAspire.length} arquivos Aspire`;
+            }
+
+            const item = {
+                ...cf,
+                jobName: jName,
+                subfolderName,
+                matInfo,
+                stageStatus,
+                statusLabel,
+                hasAspire,
+                hasGcode,
+                chapasCount: matchingGcodes.length,
+                detectedMaterials
+            };
+
             if (hasGcode) {
                 cadComGcode.push(item);
             } else {
+                if (hasAspire) cadComAspire.push(item);
                 cadPreparar.push(item);
                 allCadPreparar.push(item);
             }
         });
 
+        // 2. Processamento Inteligente do Aspire (.EPS / .DXF / .CRV - Arquivos de Materiais)
+        const aspirePreparar = [];
+        const aspireComGcode = [];
+
+        aspire.forEach(af => {
+            const dir = getNormDir(af.fullPath);
+            const subfolderName = path.basename(dir);
+            const folderFiles = folderGroups[dir] || { cad: [], aspire: [], gcode: [] };
+            const matInfo = extractMaterialInfo(af.name);
+
+            // Cruza com G-Codes da mesma pasta pelo Material ou pelo nome base
+            const base = path.parse(af.name).name.toLowerCase().replace(/[-_]/g, ' ');
+            const matchingGcodes = folderFiles.gcode.filter(g => {
+                const gMat = extractMaterialInfo(g.name);
+                if (matInfo.tag && gMat.tag && matInfo.tag === gMat.tag) return true;
+                const gBase = path.parse(g.name).name.toLowerCase().replace(/[-_]/g, ' ');
+                return gBase.includes(base) || base.includes(gBase);
+            });
+
+            const hasGcode = matchingGcodes.length > 0;
+            const chapasCount = matchingGcodes.length;
+
+            let stageStatus = hasGcode ? 'lote_liberado' : 'aguardando_lote_aspire';
+            let statusLabel = hasGcode 
+                ? `Lote Pronto: ${chapasCount} chapas geradas` 
+                : 'Aguardando Gerar Chapas no Aspire';
+
+            const item = {
+                ...af,
+                jobName: jName,
+                subfolderName,
+                matInfo,
+                stageStatus,
+                statusLabel,
+                hasGcode,
+                chapasCount,
+                chapasList: matchingGcodes.map(g => g.name)
+            };
+
+            if (hasGcode) {
+                aspireComGcode.push(item);
+            } else {
+                aspirePreparar.push(item);
+                allAspirePreparar.push(item);
+            }
+        });
+
+        // 3. Processamento dos G-Codes (.TXT, .TAP, etc. - Chapas Liberadas p/ Router)
         const gcodeProntos = [];
         const gcodeFeitos = [];
 
         gcode.forEach(gf => {
+            const dir = getNormDir(gf.fullPath);
+            const subfolderName = path.basename(dir);
+            const matInfo = extractMaterialInfo(gf.name);
             const lower = gf.name.toLowerCase().trim();
             const execs = execMap[lower] || [];
+
             if (execs.length > 0) {
                 const item = {
                     ...gf,
                     jobName: jName,
+                    subfolderName,
+                    matInfo,
                     execCount: execs.length,
                     lastExec: execs[0],
                     totalDurationMinutes: execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0)
@@ -429,13 +583,19 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 gcodeFeitos.push(item);
                 allGcodeFeitos.push(item);
             } else {
-                const item = { ...gf, jobName: jName };
+                const item = {
+                    ...gf,
+                    jobName: jName,
+                    subfolderName,
+                    matInfo
+                };
                 gcodeProntos.push(item);
                 allGcodeProntos.push(item);
             }
         });
 
         totalCadPreparar += cadPreparar.length;
+        totalAspirePreparar += aspirePreparar.length;
         totalGcodePronto += gcodeProntos.length;
         totalConcluidos += gcodeFeitos.length;
 
@@ -447,18 +607,23 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             cadCount: cad.length,
             cadPrepararCount: cadPreparar.length,
             cadComGcodeCount: cadComGcode.length,
+            cadComAspireCount: cadComAspire.length,
+            aspireCount: aspire.length,
+            aspirePrepararCount: aspirePreparar.length,
+            aspireComGcodeCount: aspireComGcode.length,
             gcodeCount: gcode.length,
             gcodeProntoCount: gcodeProntos.length,
             gcodeFeitoCount: gcodeFeitos.length,
-            progressPercent: (cad.length + gcode.length) > 0 
-                ? Math.round((gcodeFeitos.length / (cad.length + gcode.length)) * 100) 
+            progressPercent: (cad.length + aspire.length + gcode.length) > 0 
+                ? Math.round((gcodeFeitos.length / (cad.length + aspire.length + gcode.length)) * 100) 
                 : 0
         });
     }
 
-    jobsList.sort((a, b) => (b.cadPrepararCount + b.gcodeProntoCount) - (a.cadPrepararCount + a.gcodeProntoCount));
+    jobsList.sort((a, b) => (b.cadPrepararCount + b.aspirePrepararCount + b.gcodeProntoCount) - (a.cadPrepararCount + a.aspirePrepararCount + a.gcodeProntoCount));
 
     allCadPreparar.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
+    allAspirePreparar.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
     allGcodeProntos.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
     allGcodeFeitos.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
 
@@ -466,12 +631,14 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         summary: {
             totalJobs: jobsList.length,
             totalCadPreparar,
+            totalAspirePreparar,
             totalGcodePronto,
             totalConcluidos
         },
         specialBatches: calculateDynamicBatches(dbJobs),
         jobs: jobsList,
         cadPreparar: allCadPreparar,
+        aspirePreparar: allAspirePreparar,
         gcodeProntos: allGcodeProntos,
         gcodeFeitos: allGcodeFeitos,
         updatedAt: new Date().toISOString()
@@ -481,4 +648,4 @@ async function getProductionPipeline(pool, forceRefresh = false) {
     return cachedResult;
 }
 
-module.exports = { getProductionPipeline };
+module.exports = { getProductionPipeline, calculateDynamicBatches };

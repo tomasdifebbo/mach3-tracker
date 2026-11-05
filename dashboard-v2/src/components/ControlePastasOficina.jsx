@@ -35,10 +35,10 @@ export function ControlePastasOficina() {
   const [copied, setCopied] = useState(false);
   const fileInputRef = useRef(null);
 
-  const fetchSyncData = async () => {
+  const fetchSyncData = async (force = false) => {
     setLoading(true);
     try {
-      const data = await api.get('/oficina-sync');
+      const data = await api.get(`/oficina-sync${force ? '?refresh=true' : ''}`);
       if (data && !data.error) {
         setSyncData(data);
       }
@@ -151,7 +151,7 @@ export function ControlePastasOficina() {
 
         <div className="flex items-center gap-2.5">
           <button
-            onClick={fetchSyncData}
+            onClick={() => fetchSyncData(true)}
             disabled={loading}
             className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 rounded-xl text-xs font-bold text-white transition-all cursor-pointer shadow-sm"
           >
