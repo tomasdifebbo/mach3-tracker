@@ -357,11 +357,17 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                       </p>
                     </div>
                     <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black shrink-0 ${
-                      b.status === 'concluido'
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                      b.status === "concluido"
+                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        : b.status === "em_andamento"
+                        ? "bg-sky-500/20 text-sky-400 border border-sky-500/30 animate-pulse"
+                        : "bg-orange-500/20 text-orange-400 border border-orange-500/30"
                     }`}>
-                      {b.status === 'concluido' ? '100% CONCLUÍDO' : `${b.pendingSheets} FALTANTES`}
+                      {b.status === "concluido"
+                        ? "100% CONCLUÍDO"
+                        : b.status === "em_andamento"
+                        ? `RODANDO (${b.pendingSheets} RESTANTE)`
+                        : `${b.pendingSheets} FALTANTES`}
                     </span>
                   </div>
 

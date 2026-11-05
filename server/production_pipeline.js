@@ -36,7 +36,6 @@ function scanDirRecursive(dir, maxDepth = 6, depth = 0) {
 
 function calculateDynamicBatches(dbJobs = []) {
     // 1. Tijolos MDF 9mm (Meta: 100 chapas)
-    // Runs of tijolo since 2026-10-29 with valid duration >= 18 min or in progress (< 90 min)
     const tijoloRuns = dbJobs.filter(j => 
         (j.file_name || '').toLowerCase().includes('tijolo') &&
         new Date(j.start_time) >= new Date('2026-10-29T00:00:00Z') &&
@@ -45,37 +44,43 @@ function calculateDynamicBatches(dbJobs = []) {
     const tijoloDone = Math.min(100, Math.max(37, tijoloRuns.length));
     const tijoloPending = Math.max(0, 100 - tijoloDone);
 
-    // 2. Compensado 6mm Entrada (Meta: 9 chapas)
-    const compRuns = dbJobs.filter(j => 
-        (j.file_name || '').toLowerCase().includes('compensado 6mm_') &&
-        new Date(j.start_time) >= new Date('2026-10-29T00:00:00Z')
+    // 2. Pinguins Hella 100mm (Meta: 8 chapas/blocos PVC)
+    const pvcNumbers = [1, 2, 3, 4, 5, 6, 7, 8];
+    const pvcDoneList = pvcNumbers.filter(n => 
+        dbJobs.some(j => (j.file_name || '').toLowerCase().includes(n + ' pvc 100mm') && new Date(j.start_time) >= new Date('2026-11-04T00:00:00Z'))
     );
-    const compFilesDone = new Set(compRuns.map(j => (j.file_name || '').toLowerCase().trim()));
-    let compDoneCount = 5;
-    for (let c = 6; c <= 9; c++) {
-        if (Array.from(compFilesDone).some(f => f.includes(`compensado 6mm_${c}`))) {
-            compDoneCount = Math.max(compDoneCount, c);
-        }
-    }
+    const pinguinsDone = pvcDoneList.length;
+    const pinguinsPending = Math.max(0, 8 - pinguinsDone);
+
+    // 3. Arcos & Pilares Entrada (Meta: 8 chapas: 3x 15mm + 5x 9mm)
+    const arcos15Done = [1, 2, 3].filter(n =>
+        dbJobs.some(j => (j.file_name || '').toLowerCase().includes('mdf 15mm') && (j.file_name || '').toLowerCase().includes('arco corte ' + n) && new Date(j.start_time) >= new Date('2026-11-04T00:00:00Z'))
+    ).length;
+    const arcos9Done = [1, 2, 3, 4, 5].filter(n =>
+        dbJobs.some(j => (j.file_name || '').toLowerCase().includes('arcos corte ' + n) && new Date(j.start_time) >= new Date('2026-11-04T00:00:00Z'))
+    ).length;
+    const arcosTotalDone = arcos15Done + arcos9Done;
+    const arcosPending = Math.max(0, 8 - arcosTotalDone);
+
+    // 4. Compensado 6mm Entrada (Meta: 9 chapas, chapas 1 a 5 ok, 6 a 9 a finalizar)
+    const recentComp6to9 = [6, 7, 8, 9].filter(n =>
+        dbJobs.some(j => (j.file_name || '').toLowerCase().includes('compensado 6mm_' + n) && Number(j.duration_minutes) >= 8 && new Date(j.start_time) >= new Date('2026-11-03T00:00:00Z'))
+    ).length;
+    const compDoneCount = 5 + recentComp6to9;
     const compPending = Math.max(0, 9 - compDoneCount);
 
-    // 3. Isopor Pinguins 100mm (Meta: 2 blocos)
-    const hasBloco2 = dbJobs.some(j => (j.file_name || '').toLowerCase().includes('2pvc 100mm') && new Date(j.start_time) >= new Date('2026-10-25T00:00:00Z'));
-    const isoporDone = hasBloco2 ? 2 : 1;
-    const isoporPending = Math.max(0, 2 - isoporDone);
-
-    // 4. Moldura Menor 9mm (Meta: 1)
+    // 5. Moldura Menor 9mm
     const molduraRuns = dbJobs.filter(j => (j.file_name || '').toLowerCase().includes('moldura menor') && (j.file_name || '').toLowerCase().includes('9mm'));
     const molduraDone = molduraRuns.length > 0 ? 1 : 0;
     const molduraPending = Math.max(0, 1 - molduraDone);
 
-    // 5. Coluna & Parede Teste 9mm (Meta: 2)
+    // 6. Coluna & Parede Teste 9mm
     const hasColuna = dbJobs.some(j => (j.file_name || '').toLowerCase().includes('coluna mdf 9mm'));
     const hasParede = dbJobs.some(j => (j.file_name || '').toLowerCase().includes('parede test mdf 9mm'));
     const colDone = (hasColuna ? 1 : 0) + (hasParede ? 1 : 0);
     const colPending = Math.max(0, 2 - colDone);
 
-    // 6. Torres MDF 9mm (Meta: 12)
+    // 7. Torres MDF 9mm
     const torresDone = 12;
 
     return [
@@ -97,6 +102,40 @@ function calculateDynamicBatches(dbJobs = []) {
             priority: 'alta'
         },
         {
+            id: 'pinguins_hella_100mm',
+            name: `Pinguins Hella EPS/PVC 100mm (${pinguinsDone} de 8)`,
+            job: '2663A e B - PINGUINS HELLA REVESTIDOS',
+            subfolder: 'ROUTER',
+            file: '1 PVC a 8 PVC 100mm b10mm.txt',
+            material: 'Isopor EPS / PVC 100mm',
+            dimensions: 'Blocos 100mm',
+            tool: 'Ball Nose Ø10mm / Ø12mm',
+            targetSheets: 8,
+            doneSheets: pinguinsDone,
+            pendingSheets: pinguinsPending,
+            status: pinguinsPending === 0 ? 'concluido' : 'em_andamento',
+            estMinutesPerSheet: 50,
+            totalEstMinutes: pinguinsPending * 50,
+            priority: 'alta'
+        },
+        {
+            id: 'arcos_pilares_entrada',
+            name: `Arcos & Pilares Entrada (${arcosTotalDone} de 8)`,
+            job: '2640  - EXPRESSO HOGWARTS CCXP',
+            subfolder: 'FACHADA CASAS/CNC',
+            file: 'MDF 15MM E6MM ARCO (3x) + MDF 9MM ARCOS (5x)',
+            material: 'MDF 15mm & MDF 9mm',
+            dimensions: 'Chapas 2750 × 1850 mm',
+            tool: 'Fresa Topo Ø6mm · S18000',
+            targetSheets: 8,
+            doneSheets: arcosTotalDone,
+            pendingSheets: arcosPending,
+            status: arcosPending === 0 ? 'concluido' : 'pronto_router',
+            estMinutesPerSheet: 20,
+            totalEstMinutes: arcosPending * 20,
+            priority: 'alta'
+        },
+        {
             id: 'compensado_6mm_entrada',
             name: `Compensado 6mm Entrada (${compDoneCount} de 9)`,
             job: '2640  - EXPRESSO HOGWARTS CCXP',
@@ -114,23 +153,6 @@ function calculateDynamicBatches(dbJobs = []) {
             priority: 'alta'
         },
         {
-            id: 'isopor_pinguins_bloco2',
-            name: `Isopor Pinguins 100mm (${isoporDone} de 2)`,
-            job: '2663A e B - PINGUINS HELLA REVESTIDOS',
-            subfolder: 'ROUTER/ISOPOR/COD',
-            file: '2PVC 100mm b10.txt',
-            material: 'Isopor EPS / PVC 100mm',
-            dimensions: 'Bloco 100mm Espessura',
-            tool: 'Ball Nose Ø10mm · S18000',
-            targetSheets: 2,
-            doneSheets: isoporDone,
-            pendingSheets: isoporPending,
-            status: isoporPending === 0 ? 'concluido' : 'pronto_router',
-            estMinutesPerSheet: 55,
-            totalEstMinutes: isoporPending * 55,
-            priority: 'media'
-        },
-        {
             id: 'moldura_menor_9mm',
             name: `Moldura Menor Porta Castelo MDF 9mm (${molduraDone} de 1)`,
             job: '2640  - EXPRESSO HOGWARTS CCXP',
@@ -145,7 +167,7 @@ function calculateDynamicBatches(dbJobs = []) {
             status: molduraPending === 0 ? 'concluido' : 'pronto_router',
             estMinutesPerSheet: 8,
             totalEstMinutes: molduraPending * 8,
-            priority: 'alta'
+            priority: 'media'
         },
         {
             id: 'colunas_parede_9mm',
