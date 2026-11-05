@@ -178,10 +178,11 @@ class RoboNotificador:
         self.state = None
 
     # ---- API pública
-    def show(self, title: str, message: str, on_click=None, play_sound: bool = True) -> None:
+    def show(self, title: str, message: str, on_click=None, play_sound: bool = True, action_label: str | None = None) -> None:
+        self.action_label = action_label or "📁 Clique no balão para abrir a pasta"
         if self.win is not None and self.win.winfo_exists():
             if self.state in ("out_trans", "out_slide"):
-                self.pending.append((title, message, on_click, play_sound))
+                self.pending.append((title, message, on_click, play_sound, self.action_label))
                 return
             # Já está na tela: só troca a fala
             self.title, self.message, self.on_click = title, message, on_click
@@ -191,16 +192,20 @@ class RoboNotificador:
             return
         self._start(title, message, on_click, play_sound)
 
-    def demo(self) -> None:
+    def demo(self, on_click=None) -> None:
         self.show(
             "Novo serviço liberado na Oficina!",
-            "2676A - TESTE ROBÔ ROUTER\n12 arquivo(s) em 3 - OFICINA prontos para copiar.",
+            "2640 - TESTE ROBÔ ROUTER\n12 arquivo(s) em 3 - OFICINA prontos para copiar.",
+            on_click=on_click,
+            action_label="📁 Clique no balão para abrir a pasta",
         )
 
     # ---- ciclo de vida
     def _start(self, title, message, on_click, play_sound):
         self.title, self.message, self.on_click = title, message, on_click
         self.hover = False
+        self.balloon_hover = False
+        self.close_hover = False
         self.sparks = []
         self.snapped = set()
         self.text_t0 = None
@@ -219,8 +224,9 @@ class RoboNotificador:
         cv = tk.Canvas(win, width=W, height=H, bg=TRANSPARENT, highlightthickness=0, bd=0)
         cv.pack()
         cv.bind("<Button-1>", self._on_click)
+        cv.bind("<Motion>", self._on_motion)
         cv.bind("<Enter>", lambda e: setattr(self, "hover", True))
-        cv.bind("<Leave>", lambda e: setattr(self, "hover", False))
+        cv.bind("<Leave>", self._on_leave)
 
         self.win, self.canvas = win, cv
         self._goto("in")
@@ -241,16 +247,62 @@ class RoboNotificador:
         self.win = None
         self.state = None
         if self.pending:
-            t, m, c, s = self.pending.pop(0)
-            self.master.after(150, lambda: self.show(t, m, c, s))
+            item = self.pending.pop(0)
+            if len(item) == 5:
+                t, m, c, s, a = item
+            else:
+                t, m, c, s = item
+                a = None
+            self.master.after(150, lambda: self.show(t, m, c, s, a))
+
+    def _on_motion(self, event):
+        if self.state != "talk":
+            return
+        # Bounding box do botão fechar X
+        is_close = (244 <= event.x <= 272 and 10 <= event.y <= 36)
+        # Bounding box do balão
+        is_balloon = (8 <= event.x <= 280 and 10 <= event.y <= 160)
+
+        self.close_hover = is_close
+        self.balloon_hover = is_balloon and not is_close
+
+        if is_balloon or is_close:
+            try:
+                self.canvas.config(cursor="hand2")
+            except Exception:
+                pass
+        else:
+            try:
+                self.canvas.config(cursor="")
+            except Exception:
+                pass
+
+    def _on_leave(self, event):
+        self.hover = False
+        self.balloon_hover = False
+        self.close_hover = False
+        if self.canvas:
+            try:
+                self.canvas.config(cursor="")
+            except Exception:
+                pass
 
     def _on_click(self, event):
-        if self.state == "talk" and 8 <= event.x <= 272 and 10 <= event.y <= 152:
-            if self.on_click:
-                try:
-                    self.on_click()
-                except Exception:
-                    pass
+        if self.state == "talk":
+            # Clicou no X (fechar sem abrir pasta)
+            if 244 <= event.x <= 272 and 10 <= event.y <= 36:
+                if self.state not in ("out_trans", "out_slide"):
+                    self._goto("out_trans")
+                return
+
+            # Clicou em cima do balão de notificação -> abre a pasta do arquivo!
+            if 8 <= event.x <= 280 and 10 <= event.y <= 160:
+                if self.on_click:
+                    try:
+                        self.on_click()
+                    except Exception as err:
+                        pass
+        
         if self.state not in ("out_trans", "out_slide"):
             self._goto("out_trans")
 
@@ -435,7 +487,8 @@ class RoboNotificador:
             (x2, y2 - r), (x2, y2), (x2 - r, y2), (x1 + r, y2), (x1, y2), (x1, y2 - r), (x1, y1 + r), (x1, y1),
         ]
         pts = [sc(x, y) for x, y in rr]
-        cv.create_polygon(flat(pts), fill="#1e293b", outline=AMBER, width=2, smooth=True)
+        border_col = CYAN if getattr(self, "balloon_hover", False) else AMBER
+        cv.create_polygon(flat(pts), fill="#1e293b", outline=border_col, width=2, smooth=True)
         if k < 0.95:
             return
 
@@ -446,9 +499,17 @@ class RoboNotificador:
             shown = int(max(0.0, now - self.text_t0) * CPS)
         cv.create_text(24, 50, anchor="nw", text=self.message[:shown], fill="#f1f5f9",
                        font=("Segoe UI", 9), width=236)
-        cv.create_text(24, 136, anchor="sw", text="Clique aqui para abrir o painel", fill="#94a3b8",
-                       font=("Segoe UI", 8))
-        cv.create_text(258, 22, text="✕", fill="#94a3b8", font=("Segoe UI", 9))
+        
+        # Rodapé de ação rápida: clicar no balão abre a pasta do arquivo
+        action_str = getattr(self, "action_label", "📁 Clique no balão para abrir a pasta")
+        is_hover = getattr(self, "balloon_hover", False)
+        footer_col = CYAN if is_hover else "#94a3b8"
+        footer_font = ("Segoe UI Bold" if is_hover else "Segoe UI", 8)
+        cv.create_text(24, 136, anchor="sw", text=action_str, fill=footer_col, font=footer_font)
+        
+        is_close_hover = getattr(self, "close_hover", False)
+        close_col = "#ef4444" if is_close_hover else "#94a3b8"
+        cv.create_text(258, 22, text="✕", fill=close_col, font=("Segoe UI", 9))
 
 
 if __name__ == "__main__":

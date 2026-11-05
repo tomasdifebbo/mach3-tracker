@@ -239,13 +239,57 @@ class FolderAssistantEngine:
     def trigger_scan_now(self) -> None:
         self._wake_event.set()
 
-    def _notify(self, title: str, message: str) -> None:
+    def _notify(
+        self,
+        title: str,
+        message: str,
+        folder_path: str | None = None,
+        job_name: str | None = None,
+    ) -> None:
         cfg = load_config()
         if cfg.get("notify_popup", True) and self._on_notify:
             try:
-                self._on_notify(title, message)
+                try:
+                    self._on_notify(title, message, folder_path, job_name)
+                except TypeError:
+                    self._on_notify(title, message)
             except Exception:
                 pass
+
+    def _resolve_target_folder(
+        self,
+        job_info: dict,
+        rel_paths: list[str] | set[str] | None = None,
+    ) -> str | None:
+        dest_path_str = job_info.get("dest_path")
+        oficina_path_str = job_info.get("oficina_path")
+        src_path_str = job_info.get("source_path")
+
+        # 1. Se temos caminhos relativos de arquivos novos, aponta para a subpasta exata onde eles estão
+        if rel_paths:
+            first_rel = next(iter(rel_paths), None)
+            if first_rel:
+                # Se existe no destino local (ARQUIVOS 2026)
+                if dest_path_str and Path(dest_path_str).exists():
+                    cand = (Path(dest_path_str) / Path(first_rel)).parent
+                    if cand.exists():
+                        return str(cand)
+                # Se existe na pasta 3 - OFICINA do OneDrive
+                if oficina_path_str and Path(oficina_path_str).exists():
+                    cand = (Path(oficina_path_str) / Path(first_rel)).parent
+                    if cand.exists():
+                        return str(cand)
+
+        # 2. Se a pasta de destino local existir, usa ela
+        if dest_path_str and Path(dest_path_str).exists():
+            return dest_path_str
+        # 3. Senão, se a pasta 3 - OFICINA existir, usa ela
+        if oficina_path_str and Path(oficina_path_str).exists():
+            return oficina_path_str
+        # 4. Fallback para a pasta raiz do job
+        if src_path_str and Path(src_path_str).exists():
+            return src_path_str
+        return None
 
     def scan_once(self, allow_auto_copy: bool = True) -> list[dict]:
         cfg = load_config()
@@ -407,10 +451,13 @@ class FolderAssistantEngine:
                 if unnotified:
                     self._notified_signatures[job_name] = prev_notified | set(new_rel_paths)
                     if not was_first_scan:
+                        target_folder = self._resolve_target_folder(job_info, unnotified)
                         if status == "novo":
                             self._notify(
                                 "Novo serviço liberado na Oficina!",
                                 f"{job_name} ({len(new_rel_paths)} arquivo(s) em 3 - OFICINA)",
+                                folder_path=target_folder,
+                                job_name=job_name,
                             )
                             add_history_event(
                                 "detected",
@@ -422,6 +469,8 @@ class FolderAssistantEngine:
                             self._notify(
                                 "Novos arquivos em 3 - OFICINA!",
                                 f"{job_name}: +{len(unnotified)} arquivo(s) novo(s)",
+                                folder_path=target_folder,
+                                job_name=job_name,
                             )
                             add_history_event(
                                 "detected",
@@ -646,9 +695,16 @@ class FolderAssistantEngine:
                     copied_files_now,
                 )
                 if triggered_by == "auto":
+                    dest_target = str(dest_job_dir) if dest_job_dir and dest_job_dir.exists() else None
+                    if dest_target and copied_files_now:
+                        sub = (dest_job_dir / Path(copied_files_now[0])).parent
+                        if sub.exists():
+                            dest_target = str(sub)
                     self._notify(
                         "Serviço copiado para ARQUIVOS 2026!",
                         f"{job_name}: {len(copied_files_now)} arquivo(s) de 3 - OFICINA copiado(s).",
+                        folder_path=dest_target,
+                        job_name=job_name,
                     )
 
             if errors:

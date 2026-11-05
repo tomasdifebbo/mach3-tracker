@@ -92,8 +92,14 @@ class FolderAssistantApp:
         self.engine.start()
         self.root.after(300, self._poll_loop)
 
-    def _enqueue_notification(self, title: str, message: str) -> None:
-        self.ui_queue.put(("notify", (title, message)))
+    def _enqueue_notification(
+        self,
+        title: str,
+        message: str,
+        folder_path: str | None = None,
+        job_name: str | None = None,
+    ) -> None:
+        self.ui_queue.put(("notify", (title, message, folder_path, job_name)))
 
     def _setup_styles(self) -> None:
         style = ttk.Style(self.root)
@@ -218,7 +224,7 @@ class FolderAssistantApp:
         chk_auto.pack(side="left", padx=(0, 8))
 
         self._make_btn(controls_box, "⟳ Verificar Agora", self._on_scan_now).pack(side="left", padx=(0, 8))
-        self._make_btn(controls_box, "🤖 Testar Robô", lambda: self.robo.demo()).pack(side="left", padx=(0, 8))
+        self._make_btn(controls_box, "🤖 Testar Robô", self._on_test_robo).pack(side="left", padx=(0, 8))
         self._make_btn(controls_box, "◱ Modo Mini-Barra", self._enter_mini_mode).pack(side="left", padx=(0, 8))
         self._make_btn(controls_box, "⚙ Configurações", self._open_settings_dialog).pack(side="left")
 
@@ -492,8 +498,15 @@ class FolderAssistantApp:
             try:
                 kind, payload = self.ui_queue.get_nowait()
                 if kind == "notify":
-                    title, msg = payload
-                    self._show_toast_popup(title, msg)
+                    if len(payload) >= 4:
+                        title, msg, folder_path, job_name = payload[:4]
+                    elif len(payload) == 3:
+                        title, msg, folder_path = payload
+                        job_name = None
+                    else:
+                        title, msg = payload
+                        folder_path, job_name = None, None
+                    self._show_toast_popup(title, msg, folder_path=folder_path, job_name=job_name)
                 elif kind == "msg":
                     title, msg, is_err = payload
                     if is_err:
@@ -825,19 +838,79 @@ class FolderAssistantApp:
         if job:
             self._open_folder(job["oficina_path"] or job["source_path"])
 
+    def _on_test_robo(self) -> None:
+        """Testa o Robô Notificador abrindo a pasta real do job ativo ao clicar no balão."""
+        job = self._get_job(self.selected_job_name) if self.selected_job_name else None
+        if not job and self.engine.jobs_snapshot:
+            job = self.engine.jobs_snapshot[0]
+
+        target_folder = None
+        job_name = None
+        if job:
+            job_name = job.get("name")
+            target_folder = job.get("oficina_path") or job.get("dest_path") or job.get("source_path")
+        if not target_folder:
+            cfg = load_config()
+            target_folder = cfg.get("source_dir") or cfg.get("dest_dir")
+
+        self._show_toast_popup(
+            title="Novo serviço liberado na Oficina!",
+            message=f"{job_name or '2640 - EXPRESSO HOGWARTS'}\nArquivos em 3 - OFICINA prontos para copiar.",
+            folder_path=target_folder,
+            job_name=job_name,
+        )
+
     # ---------------- Corner Toast Notification & Mini Mode ----------------
-    def _show_toast_popup(self, title: str, message: str, play_sound: bool = True) -> None:
+    def _show_toast_popup(
+        self,
+        title: str,
+        message: str,
+        play_sound: bool = True,
+        folder_path: str | None = None,
+        job_name: str | None = None,
+    ) -> None:
         cfg = load_config()
         if not cfg.get("notify_popup", True):
             return
+
+        def _handle_click():
+            logging.info(f"Clique no balão de notificação: folder_path={folder_path}, job_name={job_name}")
+            opened = False
+            # 1. Abre a pasta do arquivo no Windows Explorer
+            if folder_path:
+                try:
+                    p = Path(folder_path)
+                    if p.exists():
+                        target_dir = p if p.is_dir() else p.parent
+                        os.startfile(str(target_dir))
+                        opened = True
+                except Exception as e:
+                    logging.warning(f"Erro ao abrir pasta {folder_path}: {e}")
+
+            if not opened and job_name:
+                job = self._get_job(job_name)
+                if job:
+                    target = job.get("oficina_path") or job.get("dest_path") or job.get("source_path")
+                    if target and Path(target).exists():
+                        try:
+                            os.startfile(str(target))
+                            opened = True
+                        except Exception:
+                            pass
+
+            # 2. Seleciona o job na lista do painel e restaura a janela
+            if job_name:
+                self.selected_job_name = job_name
+            self._restore_from_mini_or_minimized()
 
         # Notificador animado: Robô Transformer da Router CNC (estilo Mordomo Bob)
         try:
             self.robo.show(
                 title=title,
                 message=message,
-                on_click=self._restore_from_mini_or_minimized,
+                on_click=_handle_click,
                 play_sound=play_sound,
+                action_label="📁 Clique no balão para abrir a pasta",
             )
             return
         except Exception:
@@ -863,20 +936,25 @@ class FolderAssistantApp:
             inner, text=message, bg=BG_CARD, fg=FG_MAIN, font=("Segoe UI", 9), wraplength=320, justify="left", anchor="w"
         )
         lbl_m.pack(fill="x", pady=(3, 0))
+        lbl_action = tk.Label(
+            inner, text="📁 Clique para abrir a pasta do arquivo", bg=BG_CARD, fg=SKY, font=("Segoe UI Semibold", 8), anchor="w"
+        )
+        lbl_action.pack(fill="x", pady=(4, 0))
 
         toast.update_idletasks()
         w = max(340, toast.winfo_reqwidth())
-        h = max(72, toast.winfo_reqheight())
+        h = max(80, toast.winfo_reqheight())
         sw = toast.winfo_screenwidth()
         sh = toast.winfo_screenheight()
         toast.geometry(f"{w}x{h}+{sw - w - 22}+{sh - h - 58}")
 
-        def _focus_main(_e=None):
+        def _click_toast(_e=None):
             toast.destroy()
-            self._restore_from_mini_or_minimized()
+            _handle_click()
 
-        for widget in (toast, inner, lbl_t, lbl_m):
-            widget.bind("<Button-1>", _focus_main)
+        for widget in (toast, inner, lbl_t, lbl_m, lbl_action):
+            widget.config(cursor="hand2")
+            widget.bind("<Button-1>", _click_toast)
 
         toast.after(6500, lambda: toast.destroy() if toast.winfo_exists() else None)
 
