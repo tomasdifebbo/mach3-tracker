@@ -4,7 +4,7 @@ import {
   Search, Filter, Copy, Check, ExternalLink, ArrowRight, HardDrive,
   Cpu, Wrench, Sparkles, ChevronDown, ChevronRight, FolderCheck,
   FileSpreadsheet, Zap, Flame, ShieldAlert, Award, PlayCircle, Compass,
-  FolderTree, Box, CheckSquare
+  FolderTree, Box, CheckSquare, Square
 } from 'lucide-react';
 import { api } from '../services/api';
 import { CaixaChecklistProducao } from './CaixaChecklistProducao';
@@ -56,6 +56,43 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
   const [selectedExt, setSelectedExt] = useState('todas');
   const [copiedPath, setCopiedPath] = useState(null);
   const [expandedJobs, setExpandedJobs] = useState({});
+
+  // Checklist interativo para o operador dar OK nos arquivos concluídos
+  const [fileChecklist, setFileChecklist] = useState(() => {
+    try {
+      const s = localStorage.getItem('mach3_pipeline_file_checklist_v1');
+      return s ? JSON.parse(s) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const [cadCheckFilter, setCadCheckFilter] = useState('todos'); // 'todos' | 'pendentes' | 'concluidos'
+  const [aspireCheckFilter, setAspireCheckFilter] = useState('todos'); // 'todos' | 'pendentes' | 'concluidos'
+  const [routerCheckFilter, setRouterCheckFilter] = useState('todos'); // 'todos' | 'pendentes' | 'concluidos'
+
+  const getFileKey = (f) => f.fullPath || `${f.jobName || ''}_${f.name}`;
+
+  const toggleFileCheck = (f, stage = '') => {
+    const key = getFileKey(f);
+    setFileChecklist(prev => {
+      const next = { ...prev };
+      if (next[key]) {
+        delete next[key];
+      } else {
+        next[key] = {
+          checkedAt: new Date().toISOString(),
+          stage: stage,
+          name: f.name,
+          operator: 'Tomas'
+        };
+      }
+      try {
+        localStorage.setItem('mach3_pipeline_file_checklist_v1', JSON.stringify(next));
+      } catch (err) {}
+      return next;
+    });
+  };
 
   const fetchPipeline = async (force = false) => {
     setLoading(true);
@@ -161,6 +198,70 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       return true;
     });
   }, [pipelineData, selectedJob, searchTerm]);
+
+  // Contadores e Listas para Checklist Interativo
+  const cadCounts = useMemo(() => {
+    let concluidos = 0;
+    filteredCad.forEach(f => {
+      if (fileChecklist[getFileKey(f)]) concluidos++;
+    });
+    return {
+      total: filteredCad.length,
+      concluidos,
+      pendentes: Math.max(0, filteredCad.length - concluidos)
+    };
+  }, [filteredCad, fileChecklist]);
+
+  const displayedCad = useMemo(() => {
+    return filteredCad.filter(f => {
+      const isChecked = !!fileChecklist[getFileKey(f)];
+      if (cadCheckFilter === 'pendentes') return !isChecked;
+      if (cadCheckFilter === 'concluidos') return isChecked;
+      return true;
+    });
+  }, [filteredCad, fileChecklist, cadCheckFilter]);
+
+  const aspireCounts = useMemo(() => {
+    let concluidos = 0;
+    filteredAspire.forEach(f => {
+      if (fileChecklist[getFileKey(f)] || (f.chapasCount > 0)) concluidos++;
+    });
+    return {
+      total: filteredAspire.length,
+      concluidos,
+      pendentes: Math.max(0, filteredAspire.length - concluidos)
+    };
+  }, [filteredAspire, fileChecklist]);
+
+  const displayedAspire = useMemo(() => {
+    return filteredAspire.filter(f => {
+      const isChecked = !!fileChecklist[getFileKey(f)] || (f.chapasCount > 0);
+      if (aspireCheckFilter === 'pendentes') return !isChecked;
+      if (aspireCheckFilter === 'concluidos') return isChecked;
+      return true;
+    });
+  }, [filteredAspire, fileChecklist, aspireCheckFilter]);
+
+  const routerCounts = useMemo(() => {
+    let concluidos = 0;
+    filteredGcodes.forEach(f => {
+      if (fileChecklist[getFileKey(f)] || f.isExecuted) concluidos++;
+    });
+    return {
+      total: filteredGcodes.length,
+      concluidos,
+      pendentes: Math.max(0, filteredGcodes.length - concluidos)
+    };
+  }, [filteredGcodes, fileChecklist]);
+
+  const displayedGcodes = useMemo(() => {
+    return filteredGcodes.filter(f => {
+      const isChecked = !!fileChecklist[getFileKey(f)] || f.isExecuted;
+      if (routerCheckFilter === 'pendentes') return !isChecked;
+      if (routerCheckFilter === 'concluidos') return isChecked;
+      return true;
+    });
+  }, [filteredGcodes, fileChecklist, routerCheckFilter]);
 
   // Filtered Jobs
   const filteredJobs = useMemo(() => {
@@ -340,12 +441,12 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       <div className="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-white/[0.02] p-2 rounded-xl border border-slate-200 dark:border-white/5 shrink-0">
         <div className="flex flex-wrap items-center gap-1">
           {[
+            { id: 'preparar', label: '1. Corel (.CDR)', icon: Sparkles, count: cadCounts.pendentes, total: cadCounts.total },
+            { id: 'aspire', label: '2. Materiais Aspire (.EPS / .DXF)', icon: Compass, count: aspireCounts.pendentes, total: aspireCounts.total },
+            { id: 'fila_router', label: '3. Fila Router (.TXT)', icon: Cpu, count: routerCounts.pendentes, total: routerCounts.total },
             { id: 'lotes', label: 'Lotes Seriados', icon: Award, count: specialBatches.length },
-            { id: 'checklist', label: 'Caixa de Checklist', icon: CheckSquare, count: 20 },
-            { id: 'preparar', label: '1. Corel (.CDR)', icon: Sparkles, count: pipelineData?.cadPreparar?.length || summary.totalCadPreparar },
-            { id: 'aspire', label: '2. Materiais Aspire (.EPS / .DXF)', icon: Compass, count: pipelineData?.aspirePreparar?.length || summary.totalAspirePreparar || filteredAspire.length },
-            { id: 'fila_router', label: '3. Fila Router (.TXT)', icon: Cpu, count: pipelineData?.gcodeProntos?.length || summary.totalGcodePronto },
             { id: 'concluidos', label: '4. Já Feito (Histórico)', icon: CheckCircle2, count: pipelineData?.gcodeFeitos?.length || summary.totalConcluidos },
+            { id: 'checklist', label: 'Painel Geral', icon: CheckSquare, count: cadCounts.concluidos + aspireCounts.concluidos + routerCounts.concluidos },
             { id: 'visao_geral', label: 'Jobs', icon: FolderCheck, count: allJobs.length }
           ].map(t => {
             const Icon = t.icon;
@@ -482,10 +583,53 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
         {/* TAB 1: ARQUIVOS COREL A PREPARAR (.CDR MESTRE) */}
         {activeTab === 'preparar' && (
           <div className="bg-white dark:bg-white/[0.03] rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm">
+            <div className="p-3 bg-amber-500/5 border-b border-slate-200 dark:border-white/5 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                  Etapa CAD: Corel (.CDR)
+                </span>
+                <p className="text-xs text-slate-600 dark:text-slate-300">
+                  Dê <strong>OK</strong> nos arquivos conforme você for abrindo no Corel e salvando os materiais para o Aspire.
+                </p>
+              </div>
+
+              {/* Filtros rápidos do checklist */}
+              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 p-1 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setCadCheckFilter('todos')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                    cadCheckFilter === 'todos' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  Todos ({cadCounts.total})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCadCheckFilter('pendentes')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                    cadCheckFilter === 'pendentes' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  ⏳ Pendentes ({cadCounts.pendentes})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCadCheckFilter('concluidos')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                    cadCheckFilter === 'concluidos' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  ✓ Concluídos ({cadCounts.concluidos})
+                </button>
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-text-muted uppercase text-[9px] font-black tracking-wider border-b border-slate-200 dark:border-white/5">
                   <tr>
+                    <th className="py-2.5 px-3 text-center w-12">OK</th>
                     <th className="py-2.5 px-3">Ext</th>
                     <th className="py-2.5 px-3">Arquivo Corel</th>
                     <th className="py-2.5 px-3">Subpasta / O.S.</th>
@@ -495,80 +639,114 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                  {filteredCad.length === 0 ? (
+                  {displayedCad.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400">
-                        Nenhum arquivo Corel (.cdr) pendente encontrado.
+                      <td colSpan={7} className="py-8 text-center text-slate-400">
+                        Nenhum arquivo Corel (.cdr) encontrado para este filtro.
                       </td>
                     </tr>
                   ) : (
-                    filteredCad.map((f, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
-                        <td className="py-2 px-3">
-                          <span className={`px-1.5 py-0.2 rounded text-[9px] font-black border ${getExtBadgeClass(f.ext)}`}>
-                            {f.ext}
-                          </span>
-                        </td>
-                        <td className="py-2 px-3">
-                          <p className="font-bold text-slate-900 dark:text-white truncate max-w-sm">{f.name}</p>
-                          <p className="text-[9px] text-slate-500 truncate max-w-md font-mono">{f.fullPath}</p>
-                        </td>
-                        <td className="py-2 px-3">
-                          <p className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[150px]">{f.subfolderName || 'Geral'}</p>
-                          <p className="text-[10px] text-slate-400 truncate max-w-[150px]">{f.jobName}</p>
-                        </td>
-                        <td className="py-2 px-3">
-                          {f.matInfo?.tag ? renderMaterialBadge(f.matInfo.tag) : (
-                            f.detectedMaterials && f.detectedMaterials.length > 0 ? (
-                              <div className="flex flex-wrap gap-1">
-                                {f.detectedMaterials.map((m, i) => (
-                                  <span key={i}>{renderMaterialBadge(m)}</span>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-[10px] text-slate-400 italic">Mestre (Vários)</span>
-                            )
-                          )}
-                        </td>
-                        <td className="py-2 px-3">
-                          {f.stageStatus === 'lote_liberado' ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              <span className="w-1 h-1 rounded-full bg-emerald-400"></span>
-                              {f.statusLabel || `Lote Liberado (${f.chapasCount} chapas)`}
+                    displayedCad.map((f, idx) => {
+                      const key = getFileKey(f);
+                      const isChecked = !!fileChecklist[key];
+                      return (
+                        <tr 
+                          key={key || idx} 
+                          className={`transition-colors ${
+                            isChecked 
+                              ? 'bg-emerald-500/[0.04] dark:bg-emerald-500/[0.07]' 
+                              : 'hover:bg-slate-50 dark:hover:bg-white/[0.02]'
+                          }`}
+                        >
+                          <td className="py-2 px-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => toggleFileCheck(f, 'corel')}
+                              className={`w-6 h-6 mx-auto rounded flex items-center justify-center transition-all ${
+                                isChecked
+                                  ? 'bg-emerald-500 text-white shadow-sm ring-2 ring-emerald-500/20'
+                                  : 'border-2 border-slate-300 dark:border-white/20 text-transparent hover:border-emerald-500 hover:text-emerald-500/40'
+                              }`}
+                              title={isChecked ? `Marcado como OK em ${formatDate(fileChecklist[key]?.checkedAt)} por Tomas - Clique para desmarcar` : 'Clique para marcar como OK (Concluído)'}
+                            >
+                              <Check size={13} className="stroke-[3]" />
+                            </button>
+                          </td>
+                          <td className="py-2 px-3">
+                            <span className={`px-1.5 py-0.2 rounded text-[9px] font-black border ${getExtBadgeClass(f.ext)}`}>
+                              {f.ext}
                             </span>
-                          ) : f.stageStatus === 'materiais_gerados' ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                              <span className="w-1 h-1 rounded-full bg-sky-400"></span>
-                              {f.statusLabel || 'Separado em Materiais'}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
-                              <span className="w-1 h-1 rounded-full bg-amber-500"></span>
-                              Aguardando Separar Materiais
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2 px-3 text-right">
-                          <button
-                            onClick={() => handleCopy(f.fullPath)}
-                            className="px-2 py-1 rounded text-[10px] font-bold bg-slate-100 dark:bg-white/5 hover:bg-orange-500 hover:text-white transition-all inline-flex items-center gap-1"
-                            title="Copiar caminho"
-                          >
-                            {copiedPath === f.fullPath ? (
-                              <>
-                                <Check size={11} className="text-emerald-400" />
-                                <span>Copiado</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy size={11} />
-                                <span>Copiar</span>
-                              </>
+                          </td>
+                          <td className="py-2 px-3">
+                            <p className={`font-bold truncate max-w-sm transition-all ${
+                              isChecked ? 'line-through text-emerald-700 dark:text-emerald-300 opacity-80' : 'text-slate-900 dark:text-white'
+                            }`}>
+                              {f.name}
+                            </p>
+                            <p className="text-[9px] text-slate-500 truncate max-w-md font-mono">{f.fullPath}</p>
+                          </td>
+                          <td className="py-2 px-3">
+                            <p className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[150px]">{f.subfolderName || 'Geral'}</p>
+                            <p className="text-[10px] text-slate-400 truncate max-w-[150px]">{f.jobName}</p>
+                          </td>
+                          <td className="py-2 px-3">
+                            {f.matInfo?.tag ? renderMaterialBadge(f.matInfo.tag) : (
+                              f.detectedMaterials && f.detectedMaterials.length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {f.detectedMaterials.map((m, i) => (
+                                    <span key={i}>{renderMaterialBadge(m)}</span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-[10px] text-slate-400 italic">Mestre (Vários)</span>
+                              )
                             )}
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                          <td className="py-2 px-3">
+                            {isChecked ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                                <Check size={11} className="stroke-[3]" />
+                                OK (Separado / Feito)
+                              </span>
+                            ) : f.stageStatus === 'lote_liberado' ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                <span className="w-1 h-1 rounded-full bg-emerald-400"></span>
+                                {f.statusLabel || `Lote Liberado (${f.chapasCount} chapas)`}
+                              </span>
+                            ) : f.stageStatus === 'materiais_gerados' ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                                <span className="w-1 h-1 rounded-full bg-sky-400"></span>
+                                {f.statusLabel || 'Separado em Materiais'}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                <span className="w-1 h-1 rounded-full bg-amber-500"></span>
+                                Aguardando Separar Materiais
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2 px-3 text-right">
+                            <button
+                              onClick={() => handleCopy(f.fullPath)}
+                              className="px-2 py-1 rounded text-[10px] font-bold bg-slate-100 dark:bg-white/5 hover:bg-orange-500 hover:text-white transition-all inline-flex items-center gap-1"
+                              title="Copiar caminho"
+                            >
+                              {copiedPath === f.fullPath ? (
+                                <>
+                                  <Check size={11} className="text-emerald-400" />
+                                  <span>Copiado</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy size={11} />
+                                  <span>Copiar</span>
+                                </>
+                              )}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -585,18 +763,47 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                   Etapa CAM: Aspire
                 </span>
                 <p className="text-xs text-slate-600 dark:text-slate-300">
-                  Arquivos separados por material (<strong>MDF, Compensado, PVC, etc.</strong>) prontos para abrir no Aspire, montar o aproveitamento de chapas (Lote) e salvar o G-Code.
+                  Dê <strong>OK</strong> quando você já tiver gerado o lote de chapas e salvo o arquivo no Aspire.
                 </p>
               </div>
-              <span className="text-xs font-bold text-sky-400 font-mono">
-                {filteredAspire.length} arquivo(s)
-              </span>
+
+              {/* Filtros rápidos do checklist */}
+              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 p-1 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setAspireCheckFilter('todos')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                    aspireCheckFilter === 'todos' ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  Todos ({aspireCounts.total})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAspireCheckFilter('pendentes')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                    aspireCheckFilter === 'pendentes' ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  ⏳ Aguardando Aspire ({aspireCounts.pendentes})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAspireCheckFilter('concluidos')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                    aspireCheckFilter === 'concluidos' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  ✓ Lotes Prontos ({aspireCounts.concluidos})
+                </button>
+              </div>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-text-muted uppercase text-[9px] font-black tracking-wider border-b border-slate-200 dark:border-white/5">
                   <tr>
+                    <th className="py-2.5 px-3 text-center w-12">OK</th>
                     <th className="py-2.5 px-3">Ext</th>
                     <th className="py-2.5 px-3">Arquivo do Material</th>
                     <th className="py-2.5 px-3">Subpasta / O.S.</th>
@@ -607,76 +814,105 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                  {filteredAspire.length === 0 ? (
+                  {displayedAspire.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-400">
-                        Nenhum arquivo vetorial (.eps / .dxf) aguardando percurso no Aspire no momento.
+                      <td colSpan={8} className="py-8 text-center text-slate-400">
+                        Nenhum arquivo vetorial (.eps / .dxf) encontrado para este filtro.
                       </td>
                     </tr>
                   ) : (
-                    filteredAspire.map((f, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
-                        <td className="py-2 px-3">
-                          <span className={`px-1.5 py-0.2 rounded text-[9px] font-black border ${getExtBadgeClass(f.ext)}`}>
-                            {f.ext}
-                          </span>
-                        </td>
-                        <td className="py-2 px-3">
-                          <p className="font-bold text-slate-900 dark:text-white truncate max-w-sm">{f.name}</p>
-                          <p className="text-[9px] text-slate-500 truncate max-w-md font-mono">{f.fullPath}</p>
-                        </td>
-                        <td className="py-2 px-3">
-                          <p className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[150px]">{f.subfolderName || 'Geral'}</p>
-                          <p className="text-[10px] text-slate-400 truncate max-w-[150px]">{f.jobName}</p>
-                        </td>
-                        <td className="py-2 px-3">
-                          {renderMaterialBadge(f.matInfo?.tag) || (
-                            <span className="text-[10px] text-slate-400 italic">Identificando</span>
-                          )}
-                        </td>
-                        <td className="py-2 px-3 font-mono">
-                          {f.chapasCount > 0 ? (
-                            <span className="font-black text-emerald-400 text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                              {f.chapasCount} chapas liberadas
+                    displayedAspire.map((f, idx) => {
+                      const key = getFileKey(f);
+                      const isChecked = !!fileChecklist[key] || (f.chapasCount > 0);
+                      return (
+                        <tr 
+                          key={key || idx} 
+                          className={`transition-colors ${
+                            isChecked 
+                              ? 'bg-emerald-500/[0.04] dark:bg-emerald-500/[0.07]' 
+                              : 'hover:bg-slate-50 dark:hover:bg-white/[0.02]'
+                          }`}
+                        >
+                          <td className="py-2 px-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => toggleFileCheck(f, 'aspire')}
+                              className={`w-6 h-6 mx-auto rounded flex items-center justify-center transition-all ${
+                                isChecked
+                                  ? 'bg-emerald-500 text-white shadow-sm ring-2 ring-emerald-500/20'
+                                  : 'border-2 border-slate-300 dark:border-white/20 text-transparent hover:border-emerald-500 hover:text-emerald-500/40'
+                              }`}
+                              title={isChecked ? `Marcado como OK em ${formatDate(fileChecklist[key]?.checkedAt)} - Clique para desmarcar` : 'Clique para marcar como Lote Salvo no Aspire (OK)'}
+                            >
+                              <Check size={13} className="stroke-[3]" />
+                            </button>
+                          </td>
+                          <td className="py-2 px-3">
+                            <span className={`px-1.5 py-0.2 rounded text-[9px] font-black border ${getExtBadgeClass(f.ext)}`}>
+                              {f.ext}
                             </span>
-                          ) : (
-                            <span className="text-slate-400 text-[11px] italic">Nenhuma chapa ainda</span>
-                          )}
-                        </td>
-                        <td className="py-2 px-3">
-                          {f.chapasCount > 0 ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              <span className="w-1 h-1 rounded-full bg-emerald-400"></span>
-                              Lote Liberado p/ Router
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                              <span className="w-1 h-1 rounded-full bg-sky-400 animate-pulse"></span>
-                              Abrir no Aspire (Gerar Lote)
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2 px-3 text-right">
-                          <button
-                            onClick={() => handleCopy(f.fullPath)}
-                            className="px-2 py-1 rounded text-[10px] font-bold bg-slate-100 dark:bg-white/5 hover:bg-sky-500 hover:text-white transition-all inline-flex items-center gap-1"
-                            title="Copiar caminho"
-                          >
-                            {copiedPath === f.fullPath ? (
-                              <>
-                                <Check size={11} className="text-emerald-400" />
-                                <span>Copiado</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy size={11} />
-                                <span>Copiar</span>
-                              </>
+                          </td>
+                          <td className="py-2 px-3">
+                            <p className={`font-bold truncate max-w-sm transition-all ${
+                              isChecked ? 'line-through text-emerald-700 dark:text-emerald-300 opacity-80' : 'text-slate-900 dark:text-white'
+                            }`}>
+                              {f.name}
+                            </p>
+                            <p className="text-[9px] text-slate-500 truncate max-w-md font-mono">{f.fullPath}</p>
+                          </td>
+                          <td className="py-2 px-3">
+                            <p className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[150px]">{f.subfolderName || 'Geral'}</p>
+                            <p className="text-[10px] text-slate-400 truncate max-w-[150px]">{f.jobName}</p>
+                          </td>
+                          <td className="py-2 px-3">
+                            {renderMaterialBadge(f.matInfo?.tag) || (
+                              <span className="text-[10px] text-slate-400 italic">Identificando</span>
                             )}
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                          <td className="py-2 px-3 font-mono">
+                            {f.chapasCount > 0 ? (
+                              <span className="font-black text-emerald-400 text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                                {f.chapasCount} chapas liberadas
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 text-[11px] italic">Nenhuma chapa ainda</span>
+                            )}
+                          </td>
+                          <td className="py-2 px-3">
+                            {isChecked ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                                <Check size={11} className="stroke-[3]" />
+                                OK (Lote Aspire Salvo)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                                <span className="w-1 h-1 rounded-full bg-sky-400 animate-pulse"></span>
+                                Abrir no Aspire (Gerar Lote)
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2 px-3 text-right">
+                            <button
+                              onClick={() => handleCopy(f.fullPath)}
+                              className="px-2 py-1 rounded text-[10px] font-bold bg-slate-100 dark:bg-white/5 hover:bg-sky-500 hover:text-white transition-all inline-flex items-center gap-1"
+                              title="Copiar caminho"
+                            >
+                              {copiedPath === f.fullPath ? (
+                                <>
+                                  <Check size={11} className="text-emerald-400" />
+                                  <span>Copiado</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy size={11} />
+                                  <span>Copiar</span>
+                                </>
+                              )}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -687,10 +923,53 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
         {/* TAB 3: PRONTO PARA ROUTER (CHAPAS G-CODE LIBERADAS) */}
         {activeTab === 'fila_router' && (
           <div className="bg-white dark:bg-white/[0.03] rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm">
+            <div className="p-3 bg-orange-500/5 border-b border-slate-200 dark:border-white/5 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                  Fila Router: G-Codes (.TXT)
+                </span>
+                <p className="text-xs text-slate-600 dark:text-slate-300">
+                  Dê <strong>OK</strong> quando a chapa tiver sido executada e usinada na Router CNC.
+                </p>
+              </div>
+
+              {/* Filtros rápidos do checklist */}
+              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 p-1 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setRouterCheckFilter('todos')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                    routerCheckFilter === 'todos' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  Todos ({routerCounts.total})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRouterCheckFilter('pendentes')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                    routerCheckFilter === 'pendentes' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  ⏳ Aguardando Máquina ({routerCounts.pendentes})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRouterCheckFilter('concluidos')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                    routerCheckFilter === 'concluidos' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  ✓ Usinados ({routerCounts.concluidos})
+                </button>
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-text-muted uppercase text-[9px] font-black tracking-wider border-b border-slate-200 dark:border-white/5">
                   <tr>
+                    <th className="py-2.5 px-3 text-center w-12">OK</th>
                     <th className="py-2.5 px-3">Tipo</th>
                     <th className="py-2.5 px-3">Arquivo de Chapa (G-Code)</th>
                     <th className="py-2.5 px-3">Subpasta / O.S.</th>
@@ -701,63 +980,99 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                  {filteredGcodes.length === 0 ? (
+                  {displayedGcodes.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-400">
-                        Nenhum arquivo G-Code recente aguardando máquina encontrado.
+                      <td colSpan={8} className="py-8 text-center text-slate-400">
+                        Nenhum arquivo G-Code recente encontrado para este filtro.
                       </td>
                     </tr>
                   ) : (
-                    filteredGcodes.map((f, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
-                        <td className="py-2 px-3">
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                            {f.ext}
-                          </span>
-                        </td>
-                        <td className="py-2 px-3">
-                          <p className="font-bold text-slate-900 dark:text-white truncate max-w-sm">{f.name}</p>
-                          <p className="text-[9px] text-slate-500 truncate max-w-md font-mono">{f.fullPath}</p>
-                        </td>
-                        <td className="py-2 px-3">
-                          <p className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[150px]">{f.subfolderName || 'Geral'}</p>
-                          <p className="text-[10px] text-slate-400 truncate max-w-[150px]">{f.jobName}</p>
-                        </td>
-                        <td className="py-2 px-3">
-                          {renderMaterialBadge(f.matInfo?.tag) || (
-                            <span className="text-[10px] text-slate-400 italic">-</span>
-                          )}
-                        </td>
-                        <td className="py-2 px-3 font-mono text-slate-500 text-[11px]">
-                          {formatBytes(f.size)}
-                        </td>
-                        <td className="py-2 px-3">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-orange-500/10 text-orange-500 border border-orange-500/20">
-                            <span className="w-1 h-1 rounded-full bg-orange-500 animate-pulse"></span>
-                            Pronto p/ Usinar na Router
-                          </span>
-                        </td>
-                        <td className="py-2 px-3 text-right">
-                          <button
-                            onClick={() => handleCopy(f.fullPath)}
-                            className="px-2 py-1 rounded text-[10px] font-bold bg-slate-100 dark:bg-white/5 hover:bg-orange-500 hover:text-white transition-all inline-flex items-center gap-1"
-                            title="Copiar caminho"
-                          >
-                            {copiedPath === f.fullPath ? (
-                              <>
-                                <Check size={11} className="text-emerald-400" />
-                                <span>Copiado</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy size={11} />
-                                <span>Copiar</span>
-                              </>
+                    displayedGcodes.map((f, idx) => {
+                      const key = getFileKey(f);
+                      const isChecked = !!fileChecklist[key] || f.isExecuted;
+                      return (
+                        <tr 
+                          key={key || idx} 
+                          className={`transition-colors ${
+                            isChecked 
+                              ? 'bg-emerald-500/[0.04] dark:bg-emerald-500/[0.07]' 
+                              : 'hover:bg-slate-50 dark:hover:bg-white/[0.02]'
+                          }`}
+                        >
+                          <td className="py-2 px-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => toggleFileCheck(f, 'router')}
+                              className={`w-6 h-6 mx-auto rounded flex items-center justify-center transition-all ${
+                                isChecked
+                                  ? 'bg-emerald-500 text-white shadow-sm ring-2 ring-emerald-500/20'
+                                  : 'border-2 border-slate-300 dark:border-white/20 text-transparent hover:border-emerald-500 hover:text-emerald-500/40'
+                              }`}
+                              title={isChecked ? `Marcado como Usinado - Clique para desmarcar` : 'Clique para marcar como Usinado (OK)'}
+                            >
+                              <Check size={13} className="stroke-[3]" />
+                            </button>
+                          </td>
+                          <td className="py-2 px-3">
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                              {f.ext}
+                            </span>
+                          </td>
+                          <td className="py-2 px-3">
+                            <p className={`font-bold truncate max-w-sm transition-all ${
+                              isChecked ? 'line-through text-emerald-700 dark:text-emerald-300 opacity-80' : 'text-slate-900 dark:text-white'
+                            }`}>
+                              {f.name}
+                            </p>
+                            <p className="text-[9px] text-slate-500 truncate max-w-md font-mono">{f.fullPath}</p>
+                          </td>
+                          <td className="py-2 px-3">
+                            <p className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[150px]">{f.subfolderName || 'Geral'}</p>
+                            <p className="text-[10px] text-slate-400 truncate max-w-[150px]">{f.jobName}</p>
+                          </td>
+                          <td className="py-2 px-3">
+                            {renderMaterialBadge(f.matInfo?.tag) || (
+                              <span className="text-[10px] text-slate-400 italic">-</span>
                             )}
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                          <td className="py-2 px-3 font-mono text-slate-500 text-[11px]">
+                            {formatBytes(f.size)}
+                          </td>
+                          <td className="py-2 px-3">
+                            {isChecked ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                                <Check size={11} className="stroke-[3]" />
+                                OK (Chapa Usinada)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-orange-500/10 text-orange-500 border border-orange-500/20">
+                                <span className="w-1 h-1 rounded-full bg-orange-500 animate-pulse"></span>
+                                Pronto p/ Usinar na Router
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2 px-3 text-right">
+                            <button
+                              onClick={() => handleCopy(f.fullPath)}
+                              className="px-2 py-1 rounded text-[10px] font-bold bg-slate-100 dark:bg-white/5 hover:bg-orange-500 hover:text-white transition-all inline-flex items-center gap-1"
+                              title="Copiar caminho"
+                            >
+                              {copiedPath === f.fullPath ? (
+                                <>
+                                  <Check size={11} className="text-emerald-400" />
+                                  <span>Copiado</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy size={11} />
+                                  <span>Copiar</span>
+                                </>
+                              )}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
