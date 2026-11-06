@@ -504,14 +504,14 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
         {/* TAB: CAIXA DE CHECKLIST OFICIAL */}
         {activeTab === 'checklist' && (
           <div className="space-y-3">
-            <CaixaChecklistProducao operatorName="Tomas" />
+            <CaixaChecklistProducao pipelineData={pipelineData} jobs={jobs} routers={routers} operatorName="Tomas" />
           </div>
         )}
 
         {/* TAB: LOTES SERIADOS & PRIORIDADES ATIVAS */}
         {activeTab === 'lotes' && (
           <div className="space-y-3">
-            <CaixaChecklistProducao operatorName="Tomas" />
+            <CaixaChecklistProducao pipelineData={pipelineData} jobs={jobs} routers={routers} operatorName="Tomas" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             {specialBatches.map(b => {
               const percent = b.targetSheets > 0 ? Math.round((b.doneSheets / b.targetSheets) * 100) : 0;
@@ -929,7 +929,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                   Fila Router: G-Codes (.TXT)
                 </span>
                 <p className="text-xs text-slate-600 dark:text-slate-300">
-                  Dê <strong>OK</strong> quando a chapa tiver sido executada e usinada na Router CNC.
+                  ⚡ <strong>Baixa Automática:</strong> Conforme os arquivos rodam nas Routers (Mach3), o sistema detecta a conclusão automaticamente sem precisar de OK manual.
                 </p>
               </div>
 
