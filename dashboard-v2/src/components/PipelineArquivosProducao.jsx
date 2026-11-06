@@ -4,9 +4,10 @@ import {
   Search, Filter, Copy, Check, ExternalLink, ArrowRight, HardDrive,
   Cpu, Wrench, Sparkles, ChevronDown, ChevronRight, FolderCheck,
   FileSpreadsheet, Zap, Flame, ShieldAlert, Award, PlayCircle, Compass,
-  FolderTree, Box
+  FolderTree, Box, CheckSquare
 } from 'lucide-react';
 import { api } from '../services/api';
+import { CaixaChecklistProducao } from './CaixaChecklistProducao';
 
 function formatBytes(bytes) {
   if (!bytes || bytes <= 0) return '0 B';
@@ -340,6 +341,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
         <div className="flex flex-wrap items-center gap-1">
           {[
             { id: 'lotes', label: 'Lotes Seriados', icon: Award, count: specialBatches.length },
+            { id: 'checklist', label: 'Caixa de Checklist', icon: CheckSquare, count: 20 },
             { id: 'preparar', label: '1. Corel (.CDR)', icon: Sparkles, count: pipelineData?.cadPreparar?.length || summary.totalCadPreparar },
             { id: 'aspire', label: '2. Materiais Aspire (.EPS / .DXF)', icon: Compass, count: pipelineData?.aspirePreparar?.length || summary.totalAspirePreparar || filteredAspire.length },
             { id: 'fila_router', label: '3. Fila Router (.TXT)', icon: Cpu, count: pipelineData?.gcodeProntos?.length || summary.totalGcodePronto },
@@ -398,9 +400,18 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto pr-1 space-y-2.5" style={{ scrollbarWidth: 'thin' }}>
+        {/* TAB: CAIXA DE CHECKLIST OFICIAL */}
+        {activeTab === 'checklist' && (
+          <div className="space-y-3">
+            <CaixaChecklistProducao operatorName="Tomas" />
+          </div>
+        )}
+
         {/* TAB: LOTES SERIADOS & PRIORIDADES ATIVAS */}
         {activeTab === 'lotes' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+          <div className="space-y-3">
+            <CaixaChecklistProducao operatorName="Tomas" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             {specialBatches.map(b => {
               const percent = b.targetSheets > 0 ? Math.round((b.doneSheets / b.targetSheets) * 100) : 0;
               return (
@@ -464,6 +475,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                 </div>
               );
             })}
+            </div>
           </div>
         )}
 
