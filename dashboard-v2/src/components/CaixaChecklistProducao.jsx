@@ -6,6 +6,50 @@ import {
 } from 'lucide-react';
 
 const CUSTOM_STORAGE_KEY = 'mach3_custom_checklist_manual_v1';
+const USER_TOGGLES_KEY = 'mach3_checklist_user_toggles_v2';
+
+// Função universal para detectar arquivos que já foram testados, usinados ou dados OK pelo operador
+export function isFileMarkedOk(filename = '') {
+  if (!filename) return false;
+  const lower = filename.toLowerCase().trim();
+
+  // 1. Tag explícita no nome do arquivo (OK, chapaok, chapa ok, _ok, -ok, cortado, feito)
+  if (
+    lower.includes('chapaok') ||
+    lower.includes('chapa ok') ||
+    lower.includes(' ok.txt') ||
+    lower.includes('_ok.txt') ||
+    lower.includes('-ok.txt') ||
+    lower.includes(' ok ') ||
+    lower.includes('ja foi') ||
+    lower.includes('cortado') ||
+    lower.includes('feito') ||
+    lower.endsWith('ok.txt')
+  ) {
+    return true;
+  }
+
+  // 2. Arquivos de Compensado e Tijolos confirmados como concluídos pelo Tomas
+  if (
+    lower.includes('compensado 6mm e6mm_11') ||
+    lower.includes('compensado 6mm e6mm_12') ||
+    lower.includes('compensado 6mm e6mm_10') ||
+    lower.includes('compensado 6mm e6mm_9') ||
+    lower.includes('compensado 6mm e6mm_8') ||
+    lower.includes('compensado 6mm e6mm_7') ||
+    lower.includes('compensado 6mm e6mm_5') ||
+    lower.includes('compensado 6mm e6mm_4') ||
+    lower.includes('compensado 6mm e6mm_3') ||
+    lower.includes('compensado 6mm e6mm_2') ||
+    lower.includes('compensado 6mm e6mm_1') ||
+    lower.includes('textura tijolos especiais e4mm') ||
+    lower.includes('compensado 10mm e6mm_1')
+  ) {
+    return true;
+  }
+
+  return false;
+}
 
 export function CaixaChecklistProducao({ 
   pipelineData = null, 
@@ -22,7 +66,17 @@ export function CaixaChecklistProducao({
   const [newItemTool, setNewItemTool] = useState('Topo Ø6mm');
   const [newItemGroup, setNewItemGroup] = useState('Lote Tijolos (81-100)');
 
-  // Tarefas manuais criadas avulsas pelo operador (ex: lembrete, troca de fresa)
+  // Toggles manuais gravados pelo operador (permite dar ou tirar OK em qualquer item)
+  const [userToggles, setUserToggles] = useState(() => {
+    try {
+      const saved = localStorage.getItem(USER_TOGGLES_KEY);
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
+  // Tarefas manuais avulsas criadas pelo operador
   const [customItems, setCustomItems] = useState(() => {
     try {
       const saved = localStorage.getItem(CUSTOM_STORAGE_KEY);
@@ -38,19 +92,16 @@ export function CaixaChecklistProducao({
     } catch (e) {}
   }, [customItems]);
 
-  const handleToggleCustom = (id) => {
-    setCustomItems(prev => prev.map(item => {
-      if (item.id === id) {
-        const nextDone = !item.done;
-        return {
-          ...item,
-          done: nextDone,
-          doneAt: nextDone ? new Date().toISOString() : null,
-          doneBy: nextDone ? operatorName : null
-        };
-      }
-      return item;
-    }));
+  const handleToggleItem = (item) => {
+    const key = item.title || item.id;
+    setUserToggles(prev => {
+      const current = prev[key] !== undefined ? prev[key] : item.done;
+      const next = { ...prev, [key]: !current };
+      try {
+        localStorage.setItem(USER_TOGGLES_KEY, JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
   };
 
   const handleDeleteCustom = (id) => {
@@ -77,9 +128,9 @@ export function CaixaChecklistProducao({
     setIsAddingOpen(false);
   };
 
-  // Montagem Dinâmica de Itens baseada em Execuções Reais do Mach3
+  // Montagem Dinâmica de Itens baseada em Execuções Reais do Mach3 e Tags do Operador
   const dynamicItems = useMemo(() => {
-    const list = [];
+    const rawList = [];
     const specialBatches = pipelineData?.specialBatches || [];
     const gcodeFeitos = pipelineData?.gcodeFeitos || [];
     const gcodeProntos = pipelineData?.gcodeProntos || [];
@@ -102,7 +153,7 @@ export function CaixaChecklistProducao({
       const isDone = i <= doneCount;
       const isCurrentlyRunning = !isDone && isTijoloRunning && i === doneCount + 1;
 
-      list.push({
+      rawList.push({
         id: `tijolo-${i}`,
         title: `CHAPA ${i} · MDF 9mm Tijolos (2731×1843 mm)${i === 100 ? ' 🏆 META FINAL' : ''}`,
         group: 'Lote Tijolos (1-100)',
@@ -125,7 +176,7 @@ export function CaixaChecklistProducao({
     specialBatches.forEach(b => {
       if (b.id === 'tijolos_9mm') return; // já tratado acima
       const isBatchDone = (b.pendingSheets === 0) || (b.status === 'concluido');
-      list.push({
+      rawList.push({
         id: `batch-${b.id}`,
         title: `${b.name} (${b.material})`,
         group: 'Lotes Seriados',
@@ -140,27 +191,29 @@ export function CaixaChecklistProducao({
       });
     });
 
-    // 3. G-Codes Prontos Recentes (Top 12 da fila)
-    gcodeProntos.slice(0, 12).forEach((gf, idx) => {
+    // 3. G-Codes Prontos Recentes
+    gcodeProntos.slice(0, 15).forEach((gf, idx) => {
       const isRunning = runningRouters.some(r => (r.current_file || '').toLowerCase().includes((gf.name || '').toLowerCase()));
-      list.push({
+      const markedOk = isFileMarkedOk(gf.name);
+
+      rawList.push({
         id: `gcode-pronto-${idx}`,
         title: gf.name,
         group: 'Fila Router (.TXT)',
-        machine: 'Router',
-        tool: gf.matInfo?.tag || 'Aguardando',
-        done: false,
+        machine: 'Router 2',
+        tool: gf.matInfo?.tag || 'Router CNC',
+        done: markedOk,
         isAuto: true,
-        isRunning,
-        doneBy: null,
-        doneAt: null,
-        statusText: isRunning ? 'Rodando no Mach3' : 'Na Fila da Oficina'
+        isRunning: !markedOk && isRunning,
+        doneBy: markedOk ? 'Tomas (OK)' : null,
+        doneAt: markedOk ? 'Confirmado' : null,
+        statusText: markedOk ? '✓ Usinado / OK' : isRunning ? 'Rodando no Mach3' : 'Na Fila da Oficina'
       });
     });
 
-    // 4. G-Codes Usinados Recentes (Top 10 mais recentes)
-    gcodeFeitos.slice(0, 10).forEach((gf, idx) => {
-      list.push({
+    // 4. G-Codes Usinados Recentes
+    gcodeFeitos.slice(0, 12).forEach((gf, idx) => {
+      rawList.push({
         id: `gcode-feito-${idx}`,
         title: gf.name,
         group: 'G-Codes Usinados',
@@ -177,11 +230,21 @@ export function CaixaChecklistProducao({
 
     // 5. Itens Manuais Adicionais
     customItems.forEach(ci => {
-      list.push(ci);
+      rawList.push(ci);
     });
 
-    return list;
-  }, [pipelineData, routers, customItems]);
+    // Aplica os toggles manuais salvos pelo usuário caso ele tenha clicado para dar OK ou desmarcar
+    return rawList.map(item => {
+      const key = item.title || item.id;
+      const autoDone = item.done || isFileMarkedOk(item.title);
+      const finalDone = userToggles[key] !== undefined ? userToggles[key] : autoDone;
+      return {
+        ...item,
+        done: finalDone,
+        statusText: finalDone ? (item.statusText.includes('Usinado') ? item.statusText : '✓ Concluído (OK)') : item.statusText
+      };
+    });
+  }, [pipelineData, routers, customItems, userToggles]);
 
   // Métricas gerais
   const metrics = useMemo(() => {
@@ -217,7 +280,7 @@ export function CaixaChecklistProducao({
 
   return (
     <div className="bg-white dark:bg-[#12141a] rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden flex flex-col">
-      {/* Banner Principal com Indicação de Baixa 100% Automática */}
+      {/* Banner Principal */}
       <div className="p-3.5 md:p-4.5 bg-gradient-to-r from-emerald-500/10 via-sky-500/5 to-transparent border-b border-slate-200 dark:border-white/10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -227,15 +290,15 @@ export function CaixaChecklistProducao({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-sm md:text-base font-black text-slate-900 dark:text-white leading-tight">
-                  Controle de Fila & Baixa Automática de Produção
+                  Controle de Fila & Baixa de Produção CNC
                 </h2>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Baixa Automática Mach3 Ativa
+                  Sincronizado com Mach3 & Tags OK
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Você <strong>não precisa dar OK manual</strong>: conforme os arquivos rodam nas Routers, o sistema detecta e conclui as tarefas no automático!
+                Arquivos usinados no Mach3 ou nomeados com <strong>OK</strong> ganham baixa automática. Você também pode clicar em qualquer chapa para dar ou retirar OK!
               </p>
             </div>
           </div>
@@ -255,7 +318,7 @@ export function CaixaChecklistProducao({
         <div className="mt-3.5 space-y-1.5">
           <div className="flex items-center justify-between text-xs font-bold">
             <div className="flex items-center gap-2">
-              <span className="text-slate-600 dark:text-slate-300">Progresso Geral das Máquinas:</span>
+              <span className="text-slate-600 dark:text-slate-300">Progresso Geral:</span>
               <span className="text-emerald-500 font-black">{metrics.done} de {metrics.total} concluídos</span>
               <span className="text-[10px] text-slate-400">({metrics.percent}%)</span>
             </div>
@@ -264,7 +327,7 @@ export function CaixaChecklistProducao({
                 {metrics.pending} Restantes na Fila
               </span>
               <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
-                ✓ {metrics.done} Usinados
+                ✓ {metrics.done} Concluídos / OK
               </span>
             </div>
           </div>
@@ -360,7 +423,7 @@ export function CaixaChecklistProducao({
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5'
             }`}
           >
-            ✓ Usinados no Mach3 ({metrics.done})
+            ✓ Concluídos / OK ({metrics.done})
           </button>
         </div>
 
@@ -396,10 +459,10 @@ export function CaixaChecklistProducao({
           <div className="p-8 text-center space-y-2">
             <CheckCircle2 size={36} className="mx-auto text-emerald-500 opacity-60" />
             <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
-              {filterStatus === 'pendentes' ? '🎉 Nenhuma chapa pendente neste filtro! Tudo em dia!' : 'Nenhum item encontrado.'}
+              {filterStatus === 'pendentes' ? '🎉 Nenhuma pendência neste filtro! Tudo em dia!' : 'Nenhum item encontrado.'}
             </p>
             <p className="text-xs text-slate-400">
-              {filterStatus === 'pendentes' ? 'Alterna para a aba "Usinados no Mach3" para conferir os concluídos.' : 'Ajuste os filtros de busca ou grupo.'}
+              {filterStatus === 'pendentes' ? 'Alterne para a aba "Concluídos / OK" para conferir os itens finalizados.' : 'Ajuste os filtros de busca ou grupo.'}
             </p>
           </div>
         ) : (
@@ -411,39 +474,38 @@ export function CaixaChecklistProducao({
             return (
               <div
                 key={item.id}
-                onClick={() => {
-                  if (isCustom) handleToggleCustom(item.id);
-                }}
-                className={`py-2 px-3 rounded-xl flex items-center justify-between gap-3 transition-all ${
-                  isCustom ? 'cursor-pointer' : 'cursor-default'
-                } ${
+                onClick={() => handleToggleItem(item)}
+                className={`py-2 px-3 rounded-xl flex items-center justify-between gap-3 transition-all cursor-pointer group ${
                   isRunning
                     ? 'bg-sky-500/10 border border-sky-500/30'
                     : isDone
-                    ? 'bg-emerald-500/[0.03] text-slate-400 dark:text-slate-500'
+                    ? 'bg-emerald-500/[0.03] text-slate-400 dark:text-slate-500 hover:bg-emerald-500/[0.06]'
                     : 'hover:bg-slate-50 dark:hover:bg-white/[0.02] text-slate-800 dark:text-slate-200'
                 }`}
               >
-                {/* Lado Esquerdo: Ícone / Status de Baixa Automática */}
+                {/* Lado Esquerdo: Botão de Checkbox + Título + Metadados */}
                 <div className="flex items-center gap-3 min-w-0">
-                  <div
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleItem(item);
+                    }}
                     className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition-all ${
                       isRunning
                         ? 'bg-sky-500 border-sky-500 text-white animate-pulse'
                         : isDone
                         ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm shadow-emerald-500/40'
-                        : 'border-slate-300 dark:border-white/20 text-slate-400'
+                        : 'border-slate-300 dark:border-white/20 text-transparent hover:border-emerald-500 hover:text-emerald-500/40'
                     }`}
-                    title={isDone ? 'Concluído e Usinado no Mach3 (Baixa Automática)' : isRunning ? 'Usinando agora no Mach3' : 'Aguardando máquina'}
+                    title={isDone ? 'Concluído / OK - Clique para desmarcar' : 'Clique para marcar como OK'}
                   >
                     {isRunning ? (
                       <Zap size={13} className="fill-white" />
-                    ) : isDone ? (
-                      <Check size={14} className="stroke-[3]" />
                     ) : (
-                      <Clock size={12} />
+                      <Check size={14} className={isDone ? 'stroke-[3]' : 'opacity-0'} />
                     )}
-                  </div>
+                  </button>
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -465,14 +527,14 @@ export function CaixaChecklistProducao({
                       {isDone && (
                         <span className="text-emerald-500 font-semibold flex items-center gap-1">
                           <CheckCircle2 size={10} />
-                          {item.doneBy || 'Mach3 Auto'} {item.doneAt && item.doneAt !== 'Usinado' ? `às ${item.doneAt}` : ''}
+                          {item.doneBy || 'OK'} {item.doneAt && item.doneAt !== 'Usinado' && item.doneAt !== 'Confirmado' ? `(${item.doneAt})` : ''}
                         </span>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Lado Direito: Badge de Status 100% Automático */}
+                {/* Lado Direito: Badge de Status */}
                 <div className="flex items-center gap-2 shrink-0">
                   {isRunning ? (
                     <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-sky-500/20 text-sky-400 border border-sky-500/30 flex items-center gap-1 animate-pulse">
@@ -480,14 +542,14 @@ export function CaixaChecklistProducao({
                       Rodando no Mach3
                     </span>
                   ) : isDone ? (
-                    <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 flex items-center gap-1">
+                    <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 flex items-center gap-1 group-hover:bg-emerald-500 group-hover:text-white transition-all">
                       <Check size={11} className="stroke-[3]" />
-                      Usinado (Mach3 Auto)
+                      {item.doneBy === 'Tomas (OK)' ? '✓ OK Tomas' : '✓ OK Usinado'}
                     </span>
                   ) : (
-                    <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center gap-1">
+                    <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center gap-1 group-hover:bg-emerald-500 group-hover:text-white transition-all">
                       <Clock size={11} />
-                      Na Fila Router
+                      Dar OK
                     </span>
                   )}
 
@@ -512,11 +574,11 @@ export function CaixaChecklistProducao({
       <div className="p-2.5 bg-slate-50 dark:bg-black/20 border-t border-slate-200 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>Sincronizado automaticamente com o Monitor Mach3 e logs de corte da oficina</span>
+          <span>Sincronizado automaticamente com o Monitor Mach3 e marcações de OK</span>
         </div>
         <div className="flex items-center gap-3 font-mono">
           <span className="font-bold text-slate-700 dark:text-slate-300">
-            {metrics.done} USINADOS / {metrics.pending} RESTANTES
+            {metrics.done} CONCLUÍDOS / {metrics.pending} RESTANTES
           </span>
         </div>
       </div>

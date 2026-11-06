@@ -7,7 +7,7 @@ import {
   FolderTree, Box, CheckSquare, Square
 } from 'lucide-react';
 import { api } from '../services/api';
-import { CaixaChecklistProducao } from './CaixaChecklistProducao';
+import { CaixaChecklistProducao, isFileMarkedOk } from './CaixaChecklistProducao';
 
 function formatBytes(bytes) {
   if (!bytes || bytes <= 0) return '0 B';
@@ -245,7 +245,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
   const routerCounts = useMemo(() => {
     let concluidos = 0;
     filteredGcodes.forEach(f => {
-      if (fileChecklist[getFileKey(f)] || f.isExecuted) concluidos++;
+      if (fileChecklist[getFileKey(f)] || f.isExecuted || isFileMarkedOk(f.name)) concluidos++;
     });
     return {
       total: filteredGcodes.length,
@@ -256,7 +256,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
 
   const displayedGcodes = useMemo(() => {
     return filteredGcodes.filter(f => {
-      const isChecked = !!fileChecklist[getFileKey(f)] || f.isExecuted;
+      const isChecked = !!fileChecklist[getFileKey(f)] || f.isExecuted || isFileMarkedOk(f.name);
       if (routerCheckFilter === 'pendentes') return !isChecked;
       if (routerCheckFilter === 'concluidos') return isChecked;
       return true;
@@ -989,7 +989,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                   ) : (
                     displayedGcodes.map((f, idx) => {
                       const key = getFileKey(f);
-                      const isChecked = !!fileChecklist[key] || f.isExecuted;
+                      const isChecked = !!fileChecklist[key] || f.isExecuted || isFileMarkedOk(f.name);
                       return (
                         <tr 
                           key={key || idx} 
