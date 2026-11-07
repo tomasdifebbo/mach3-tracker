@@ -110,7 +110,8 @@ function isFileMarkedOk(filename = '') {
         lower.includes('aplique mdf 9mm_3-corte 3') ||
         lower.includes('aplique mdf 9mm_4-corte 4') ||
         lower.includes('aplique mdf 9mm_1-corte 5') ||
-        lower.includes('aplique mdf 9mm_2-corte 6')
+        lower.includes('aplique mdf 9mm_2-corte 6') ||
+        lower.includes('aplique mdf 9mm_4-corte 7')
     ) {
         return true;
     }
@@ -119,14 +120,9 @@ function isFileMarkedOk(filename = '') {
 }
 
 function calculateDynamicBatches(dbJobs = []) {
-    // 1. Tijolos MDF 9mm (Meta: 100 chapas)
-    const tijoloRuns = dbJobs.filter(j => 
-        (j.file_name || '').toLowerCase().includes('tijolo') &&
-        new Date(j.start_time) >= new Date('2026-10-29T00:00:00Z') &&
-        (Number(j.duration_minutes) >= 18 || (!j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 5400000)))
-    );
-    const tijoloDone = Math.min(100, Math.max(37, tijoloRuns.length));
-    const tijoloPending = Math.max(0, 100 - tijoloDone);
+    // 1. Tijolos MDF 9mm (Meta: 100 chapas - 100% Concluído/OK)
+    const tijoloDone = 100;
+    const tijoloPending = 0;
 
     // 2. Pinguins Hella 100mm (Meta: 8 chapas/blocos PVC)
     const pvcNumbers = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -165,11 +161,17 @@ function calculateDynamicBatches(dbJobs = []) {
     const torresDone = 12;
 
     // 8. Hogsmead Apliques MDF 9mm & 15mm (11 cortes no total)
-    const apliqueRuns = dbJobs.filter(j => 
-        ((j.file_name || '').toLowerCase().includes('aplique mdf 9mm') || (j.file_name || '').toLowerCase().includes('aplique mdf 15')) &&
-        new Date(j.start_time) >= new Date('2026-11-07T00:00:00Z')
-    );
-    const apliqueDone = Math.min(11, Math.max(6, apliqueRuns.length));
+    const apliqueDoneSet = new Set();
+    dbJobs.forEach(j => {
+        const fn = (j.file_name || '').toLowerCase();
+        if (fn.includes('aplique mdf 9mm') || fn.includes('aplique mdf 15')) {
+            const match = fn.match(/corte\s*(\d+)/i);
+            if (match) apliqueDoneSet.add(parseInt(match[1]));
+        }
+    });
+    // Cortes 1 a 7 já executados / confirmados
+    [1, 2, 3, 4, 5, 6, 7].forEach(n => apliqueDoneSet.add(n));
+    const apliqueDone = Math.min(11, apliqueDoneSet.size);
     const apliquePending = Math.max(0, 11 - apliqueDone);
 
     // 9. Parede Especial Photo Opp (33 cortes executados na madrugada de 07/11)
@@ -334,7 +336,7 @@ function calculateDynamicBatches(dbJobs = []) {
 
 let cachedResult = null;
 let lastCacheTime = 0;
-const CACHE_TTL_MS = 10000; // 10s
+const CACHE_TTL_MS = 4000; // 4s para atualização rápida e tempo real
 
 async function getProductionPipeline(pool, forceRefresh = false) {
     const now = Date.now();

@@ -127,7 +127,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
 
   useEffect(() => {
     fetchPipeline(false);
-    const interval = setInterval(() => fetchPipeline(false), 10000);
+    const interval = setInterval(() => fetchPipeline(false), 4000);
     return () => clearInterval(interval);
   }, []);
 

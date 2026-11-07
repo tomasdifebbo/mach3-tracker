@@ -49,7 +49,8 @@ export function isFileMarkedOk(filename = '') {
     lower.includes('aplique mdf 9mm_3-corte 3') ||
     lower.includes('aplique mdf 9mm_4-corte 4') ||
     lower.includes('aplique mdf 9mm_1-corte 5') ||
-    lower.includes('aplique mdf 9mm_2-corte 6')
+    lower.includes('aplique mdf 9mm_2-corte 6') ||
+    lower.includes('aplique mdf 9mm_4-corte 7')
   ) {
     return true;
   }
@@ -144,20 +145,12 @@ export function CaixaChecklistProducao({
     // Checa máquinas que estão rodando agora
     const runningRouters = routers.filter(r => r.status === 'running' || r.status === 'executing');
 
-    // 1. Lote Seriado de Tijolos MDF 9mm (Meta 100 chapas)
-    const tijoloBatch = specialBatches.find(b => b.id === 'tijolos_9mm') || {
-      targetSheets: 100,
-      doneSheets: 90,
-      pendingSheets: 10
-    };
-
-    const doneCount = tijoloBatch.doneSheets || 0;
-    const targetCount = tijoloBatch.targetSheets || 100;
-    const isTijoloRunning = runningRouters.some(r => (r.current_file || '').toLowerCase().includes('tijolo'));
+    // 1. Lote Seriado de Tijolos MDF 9mm (Meta 100 chapas - 100% Concluído/OK)
+    const targetCount = 100;
+    const doneCount = 100; // Confirmado pelo operador Tomas: todas as 100 chapas usinadas!
 
     for (let i = 1; i <= targetCount; i++) {
-      const isDone = i <= doneCount;
-      const isCurrentlyRunning = !isDone && isTijoloRunning && i === doneCount + 1;
+      const isDone = true; // 100% concluído, sai das pendências e vai para a lista de concluídos
 
       rawList.push({
         id: `tijolo-${i}`,
@@ -167,20 +160,17 @@ export function CaixaChecklistProducao({
         tool: 'Topo Ø6mm Z=3mm',
         done: isDone,
         isAuto: true,
-        isRunning: isCurrentlyRunning,
-        doneBy: isDone ? 'Mach3 Auto' : null,
-        doneAt: isDone ? 'Usinado' : null,
-        statusText: isDone 
-          ? '100% Usinado no Mach3' 
-          : isCurrentlyRunning 
-          ? 'Rodando agora no Mach3' 
-          : 'Na Fila da Router 2'
+        isRunning: false,
+        doneBy: 'Mach3 Auto / Tomas',
+        doneAt: 'Usinado',
+        statusText: '100% Usinado no Mach3'
       });
     }
 
-    // 2. Outros Lotes Seriados (Pinguins, Arcos, Compensado, etc.)
+    // 2. Outros Lotes Seriados (Apenas metas sem arquivos individuais rastreados)
     specialBatches.forEach(b => {
-      if (b.id === 'tijolos_9mm') return; // já tratado acima
+      // Tijolos e Apliques já são listados pelas suas chapas e arquivos individuais reais!
+      if (b.id === 'tijolos_9mm' || b.id === 'hogsmead_apliques_9mm') return;
       const isBatchDone = (b.pendingSheets === 0) || (b.status === 'concluido');
       rawList.push({
         id: `batch-${b.id}`,
@@ -197,30 +187,41 @@ export function CaixaChecklistProducao({
       });
     });
 
-    // 3. G-Codes Prontos Recentes
-    gcodeProntos.slice(0, 15).forEach((gf, idx) => {
-      const isRunning = runningRouters.some(r => (r.current_file || '').toLowerCase().includes((gf.name || '').toLowerCase()));
+    // 3. TODOS os G-Codes da Fila Router (.TXT) que aguardam corte
+    gcodeProntos.forEach((gf, idx) => {
+      const lowerName = (gf.name || '').toLowerCase().trim();
+      const runningMatch = runningRouters.find(r => (r.current_file || '').toLowerCase().includes(lowerName));
+      const hasRunInJobs = (jobs || []).some(j => {
+        const jFn = (j.file_name || '').toLowerCase().trim();
+        return jFn && (jFn === lowerName || jFn.includes(lowerName) || lowerName.includes(jFn));
+      });
       const markedOk = isFileMarkedOk(gf.name);
+      const isDone = markedOk || hasRunInJobs;
+      const isRunning = !isDone && !!runningMatch;
 
       rawList.push({
-        id: `gcode-pronto-${idx}`,
+        id: `gcode-pronto-${gf.name}-${idx}`,
         title: gf.name,
         group: 'Fila Router (.TXT)',
-        machine: 'Router 2',
+        machine: isRunning ? (runningMatch.name || 'Router') : (gf.subfolderName || 'Router CNC'),
         tool: gf.matInfo?.tag || 'Router CNC',
-        done: markedOk,
+        done: isDone,
         isAuto: true,
-        isRunning: !markedOk && isRunning,
-        doneBy: markedOk ? 'Tomas (OK)' : null,
-        doneAt: markedOk ? 'Confirmado' : null,
-        statusText: markedOk ? '✓ Usinado / OK' : isRunning ? 'Rodando no Mach3' : 'Na Fila da Oficina'
+        isRunning: isRunning,
+        doneBy: markedOk ? 'Tomas (OK)' : (hasRunInJobs ? 'Mach3 Auto' : null),
+        doneAt: markedOk ? 'Confirmado' : (hasRunInJobs ? 'Usinado' : null),
+        statusText: isDone 
+          ? '✓ Usinado no Mach3' 
+          : isRunning 
+          ? `⚡ Rodando agora no ${runningMatch.name || 'Mach3'}` 
+          : 'Na Fila da Oficina'
       });
     });
 
     // 4. G-Codes Usinados Recentes
-    gcodeFeitos.slice(0, 12).forEach((gf, idx) => {
+    gcodeFeitos.forEach((gf, idx) => {
       rawList.push({
-        id: `gcode-feito-${idx}`,
+        id: `gcode-feito-${gf.name}-${idx}`,
         title: gf.name,
         group: 'G-Codes Usinados',
         machine: gf.lastExec?.machine_name || 'Router',
@@ -250,7 +251,7 @@ export function CaixaChecklistProducao({
         statusText: finalDone ? (item.statusText.includes('Usinado') ? item.statusText : '✓ Concluído (OK)') : item.statusText
       };
     });
-  }, [pipelineData, routers, customItems, userToggles]);
+  }, [pipelineData, jobs, routers, customItems, userToggles]);
 
   // Métricas gerais
   const metrics = useMemo(() => {
