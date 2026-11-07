@@ -2,9 +2,9 @@
   "summary": {
     "totalJobs": 64,
     "totalCadPreparar": 27,
-    "totalAspirePreparar": 35,
-    "totalGcodePronto": 11,
-    "totalConcluidos": 746
+    "totalAspirePreparar": 34,
+    "totalGcodePronto": 1,
+    "totalConcluidos": 757
   },
   "specialBatches": [
     {
@@ -111,7 +111,7 @@
     },
     {
       "id": "sala_magia_compensado_6mm",
-      "name": "Sala de Magia Compensado 6mm (4 de 6 chapas)",
+      "name": "Sala de Magia Compensado 6mm (6 de 6 chapas)",
       "job": "2640  - EXPRESSO HOGWARTS CCXP",
       "subfolder": "ROUTER/SALA DE MAGIA",
       "file": "4X COMPENSADO 6MM E6MM.TXT (4x) + 2X COMPENSADO 6MM E6MM_1-Corte 2.txt (2x)",
@@ -119,11 +119,11 @@
       "dimensions": "Chapas 2200 × 1600 mm",
       "tool": "Fresa Topo Ø6mm (e6mm)",
       "targetSheets": 6,
-      "doneSheets": 4,
-      "pendingSheets": 2,
-      "status": "em_andamento",
+      "doneSheets": 6,
+      "pendingSheets": 0,
+      "status": "concluido",
       "estMinutesPerSheet": 12,
-      "totalEstMinutes": 24,
+      "totalEstMinutes": 0,
       "priority": "alta"
     },
     {
@@ -183,18 +183,18 @@
       "name": "2640  - EXPRESSO HOGWARTS CCXP",
       "source": "OneDrive (3 - OFICINA)",
       "path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA",
-      "totalFiles": 224,
+      "totalFiles": 225,
       "cadCount": 33,
       "cadPrepararCount": 16,
       "cadComGcodeCount": 17,
       "cadComAspireCount": 3,
       "aspireCount": 28,
-      "aspirePrepararCount": 13,
-      "aspireComGcodeCount": 15,
-      "gcodeCount": 163,
-      "gcodeProntoCount": 9,
-      "gcodeFeitoCount": 154,
-      "progressPercent": 69
+      "aspirePrepararCount": 12,
+      "aspireComGcodeCount": 16,
+      "gcodeCount": 164,
+      "gcodeProntoCount": 1,
+      "gcodeFeitoCount": 163,
+      "progressPercent": 72
     },
     {
       "name": "2667A - EXPO CULTURA",
@@ -280,23 +280,6 @@
       "gcodeProntoCount": 0,
       "gcodeFeitoCount": 8,
       "progressPercent": 62
-    },
-    {
-      "name": "2615A - pequeno principe",
-      "source": "Router Local",
-      "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2615A - pequeno principe",
-      "totalFiles": 37,
-      "cadCount": 13,
-      "cadPrepararCount": 0,
-      "cadComGcodeCount": 13,
-      "cadComAspireCount": 0,
-      "aspireCount": 9,
-      "aspirePrepararCount": 0,
-      "aspireComGcodeCount": 9,
-      "gcodeCount": 15,
-      "gcodeProntoCount": 2,
-      "gcodeFeitoCount": 13,
-      "progressPercent": 35
     },
     {
       "name": "2631D - 1 BANCO + 2 LUMINÁRIAS",
@@ -654,6 +637,23 @@
       "gcodeProntoCount": 0,
       "gcodeFeitoCount": 0,
       "progressPercent": 0
+    },
+    {
+      "name": "2615A - pequeno principe",
+      "source": "Router Local",
+      "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2615A - pequeno principe",
+      "totalFiles": 37,
+      "cadCount": 13,
+      "cadPrepararCount": 0,
+      "cadComGcodeCount": 13,
+      "cadComAspireCount": 0,
+      "aspireCount": 9,
+      "aspirePrepararCount": 0,
+      "aspireComGcodeCount": 9,
+      "gcodeCount": 15,
+      "gcodeProntoCount": 0,
+      "gcodeFeitoCount": 15,
+      "progressPercent": 41
     },
     {
       "name": "2622A - dna",
@@ -1270,6 +1270,34 @@
   ],
   "cadPreparar": [
     {
+      "name": "TEXTURA TIJOLOS (1) - OTIMIZADO.cdr",
+      "ext": ".cdr",
+      "type": "cad",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\TEXTURA_PAREDE_TIJOLOS MDF 9 TESTE\\TEXTURA TIJOLOS (1) - OTIMIZADO.cdr",
+      "size": 91827,
+      "mtime": 1794080756734.1013,
+      "mtimeDate": "2026-11-07T19:45:56.734Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "TEXTURA_PAREDE_TIJOLOS MDF 9 TESTE",
+      "matInfo": {
+        "material": null,
+        "thickness": null,
+        "tag": null,
+        "chapaIndex": null,
+        "targetQuantity": 1
+      },
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Liberado (3 chapas p/ Router)",
+      "hasAspire": true,
+      "hasGcode": true,
+      "chapasCount": 3,
+      "detectedMaterials": [
+        "MDF",
+        "6mm"
+      ],
+      "isManuallyDone": true
+    },
+    {
       "name": "RAMPAS.cdr",
       "ext": ".cdr",
       "type": "cad",
@@ -1319,34 +1347,6 @@
       "hasGcode": false,
       "chapasCount": 0,
       "detectedMaterials": [],
-      "isManuallyDone": true
-    },
-    {
-      "name": "TEXTURA TIJOLOS (1) - OTIMIZADO.cdr",
-      "ext": ".cdr",
-      "type": "cad",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\TEXTURA_PAREDE_TIJOLOS MDF 9 TESTE\\TEXTURA TIJOLOS (1) - OTIMIZADO.cdr",
-      "size": 1789169,
-      "mtime": 1793983809459.6194,
-      "mtimeDate": "2026-11-06T16:50:09.460Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "TEXTURA_PAREDE_TIJOLOS MDF 9 TESTE",
-      "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Liberado (3 chapas p/ Router)",
-      "hasAspire": true,
-      "hasGcode": true,
-      "chapasCount": 3,
-      "detectedMaterials": [
-        "MDF",
-        "6mm"
-      ],
       "isManuallyDone": true
     },
     {
@@ -1451,10 +1451,10 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Liberado (2 chapas p/ Router)",
+      "statusLabel": "Lote Liberado (3 chapas p/ Router)",
       "hasAspire": true,
       "hasGcode": true,
-      "chapasCount": 2,
+      "chapasCount": 3,
       "detectedMaterials": [
         "Compensado 6mm",
         "MDF 9mm"
@@ -3168,11 +3168,13 @@
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": [],
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 1 chapas geradas",
+      "hasGcode": true,
+      "chapasCount": 1,
+      "chapasList": [
+        "MDF 9MM_1-°CHAPA.txt"
+      ],
       "isManuallyDone": false
     },
     {
@@ -5447,111 +5449,6 @@
   ],
   "gcodeProntos": [
     {
-      "name": "MDF 9MM RAMPA A1_1-°CHAPA.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM RAMPA A1_1-°CHAPA.txt",
-      "size": 58567,
-      "mtime": 1794074536964.6692,
-      "mtimeDate": "2026-11-07T18:02:16.965Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "SALA ESCADAS",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "isCurrentlyRunning": true,
-      "runningMachine": "Router 2",
-      "runningStartTime": "2026-11-07T19:13:59.000Z"
-    },
-    {
-      "name": "CAMBOTA compensado 10mm_1-Corte 1.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\HOGSMEAD\\CAMBOTA compensado 10mm_1-Corte 1.txt",
-      "size": 205526,
-      "mtime": 1794075121002.8323,
-      "mtimeDate": "2026-11-07T18:12:01.003Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "HOGSMEAD",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "10mm",
-        "tag": "Compensado 10mm",
-        "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "isCurrentlyRunning": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "MDF 9MM RAMPA A1_2-°CHAPA.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM RAMPA A1_2-°CHAPA.txt",
-      "size": 57744,
-      "mtime": 1794074536983.1345,
-      "mtimeDate": "2026-11-07T18:02:16.983Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "SALA ESCADAS",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": "2",
-        "targetQuantity": 1
-      },
-      "isCurrentlyRunning": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "2X COMPENSADO 6MM E6MM_1-Corte 2.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA DE MAGIA\\2X COMPENSADO 6MM E6MM_1-Corte 2.txt",
-      "size": 10355,
-      "mtime": 1794063069076.5256,
-      "mtimeDate": "2026-11-07T14:51:09.077Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "SALA DE MAGIA",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "6mm",
-        "tag": "Compensado 6mm",
-        "chapaIndex": "2",
-        "targetQuantity": 2
-      },
-      "isCurrentlyRunning": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "4X COMPENSADO 6MM E6MM.TXT",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA DE MAGIA\\4X COMPENSADO 6MM E6MM.TXT",
-      "size": 12480,
-      "mtime": 1794062959847.2083,
-      "mtimeDate": "2026-11-07T14:49:19.847Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "SALA DE MAGIA",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "6mm",
-        "tag": "Compensado 6mm",
-        "chapaIndex": "4",
-        "targetQuantity": 4
-      },
-      "isCurrentlyRunning": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
       "name": "APLIQUE MDF 15_1-Corte 11.txt",
       "ext": ".txt",
       "type": "gcode",
@@ -5571,114 +5468,36 @@
       "isCurrentlyRunning": false,
       "runningMachine": null,
       "runningStartTime": null
-    },
-    {
-      "name": "correçao mdf 15 mm 20x circulos de 20 e6mm_1-Corte 47.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2615A - pequeno principe\\correçao mdf 15 mm 20x circulos de 20 e6mm_1-Corte 47.txt",
-      "size": 6950,
-      "mtime": 1793970639204.6736,
-      "mtimeDate": "2026-11-06T13:10:39.205Z",
-      "jobName": "2615A - pequeno principe",
-      "subfolderName": "2615A - pequeno principe",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "15mm",
-        "tag": "MDF 15mm",
-        "chapaIndex": "20",
-        "targetQuantity": 20
-      },
-      "isCurrentlyRunning": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "mdf 15 mm 20x circulos de 20 e6mm_1-Corte 46.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2615A - pequeno principe\\mdf 15 mm 20x circulos de 20 e6mm_1-Corte 46.txt",
-      "size": 9407,
-      "mtime": 1793968718956.3242,
-      "mtimeDate": "2026-11-06T12:38:38.956Z",
-      "jobName": "2615A - pequeno principe",
-      "subfolderName": "2615A - pequeno principe",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "15mm",
-        "tag": "MDF 15mm",
-        "chapaIndex": "20",
-        "targetQuantity": 20
-      },
-      "isCurrentlyRunning": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "2X CHAPA 3 compensado 6mm e6mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\quadriboll\\2X CHAPA 3 compensado 6mm e6mm.txt",
-      "size": 4016,
-      "mtime": 1793819822630.2114,
-      "mtimeDate": "2026-11-04T19:17:02.630Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "quadriboll",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "6mm",
-        "tag": "Compensado 6mm",
-        "chapaIndex": "2",
-        "targetQuantity": 2
-      },
-      "isCurrentlyRunning": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "4X CHAPA 2 compensado 6mm e6mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\quadriboll\\4X CHAPA 2 compensado 6mm e6mm.txt",
-      "size": 14421,
-      "mtime": 1793819809819.0085,
-      "mtimeDate": "2026-11-04T19:16:49.819Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "quadriboll",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "6mm",
-        "tag": "Compensado 6mm",
-        "chapaIndex": "4",
-        "targetQuantity": 4
-      },
-      "isCurrentlyRunning": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "4X compensado 6mm e6mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\quadriboll\\4X compensado 6mm e6mm.txt",
-      "size": 16255,
-      "mtime": 1793819792654.6672,
-      "mtimeDate": "2026-11-04T19:16:32.655Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "quadriboll",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "6mm",
-        "tag": "Compensado 6mm",
-        "chapaIndex": "4",
-        "targetQuantity": 4
-      },
-      "isCurrentlyRunning": false,
-      "runningMachine": null,
-      "runningStartTime": null
     }
   ],
   "gcodeFeitos": [
+    {
+      "name": "MDF 9MM_1-°CHAPA.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA DE MAGIA\\MDF 9MM_1-°CHAPA.txt",
+      "size": 151436,
+      "mtime": 1794082256951.9075,
+      "mtimeDate": "2026-11-07T20:10:56.952Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA DE MAGIA",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "execCount": 1,
+      "lastExec": {
+        "operator_name": "Tomas",
+        "machine_name": "Router 2",
+        "start_time": "2026-11-07T23:44:26.787Z",
+        "duration_minutes": 15
+      },
+      "totalDurationMinutes": 15,
+      "isManuallyDone": true
+    },
     {
       "name": "MDF 3MM E4 MM JANELAS_1-Corte 2.txt",
       "ext": ".txt",
@@ -5711,6 +5530,95 @@
       "isManuallyDone": false
     },
     {
+      "name": "CAMBOTA compensado 10mm_1-Corte 1.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\HOGSMEAD\\CAMBOTA compensado 10mm_1-Corte 1.txt",
+      "size": 205526,
+      "mtime": 1794075121002.8323,
+      "mtimeDate": "2026-11-07T18:12:01.003Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "HOGSMEAD",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "10mm",
+        "tag": "Compensado 10mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "execCount": 1,
+      "lastExec": {
+        "operator_name": "Tomas",
+        "machine_name": "Router 2",
+        "start_time": "2026-11-07T23:40:56.334Z",
+        "duration_minutes": 15
+      },
+      "totalDurationMinutes": 15,
+      "isManuallyDone": true
+    },
+    {
+      "name": "MDF 9MM RAMPA A1_2-°CHAPA.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM RAMPA A1_2-°CHAPA.txt",
+      "size": 57744,
+      "mtime": 1794074536983.1345,
+      "mtimeDate": "2026-11-07T18:02:16.983Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "2",
+        "targetQuantity": 1
+      },
+      "execCount": 1,
+      "lastExec": {
+        "id": "10268",
+        "file_name": "MDF 9MM RAMPA A1_2-°CHAPA.txt",
+        "folder": "SALA ESCADAS",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-07T20:00:00.000Z",
+        "end_time": "2026-11-07T20:10:53.000Z",
+        "duration_minutes": 10.8833
+      },
+      "totalDurationMinutes": 10.8833,
+      "isManuallyDone": false
+    },
+    {
+      "name": "MDF 9MM RAMPA A1_1-°CHAPA.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM RAMPA A1_1-°CHAPA.txt",
+      "size": 58567,
+      "mtime": 1794074536964.6692,
+      "mtimeDate": "2026-11-07T18:02:16.965Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "execCount": 1,
+      "lastExec": {
+        "id": "10266",
+        "file_name": "MDF 9MM RAMPA A1_1-°CHAPA.txt",
+        "folder": "SALA ESCADAS",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-07T19:13:59.000Z",
+        "end_time": "2026-11-07T19:24:52.000Z",
+        "duration_minutes": 10.8833
+      },
+      "totalDurationMinutes": 10.8833,
+      "isManuallyDone": false
+    },
+    {
       "name": "CAMBOTA compensado 10mm e6mm_1-Corte 1.txt",
       "ext": ".txt",
       "type": "gcode",
@@ -5740,6 +5648,68 @@
       },
       "totalDurationMinutes": 27.0833,
       "isManuallyDone": false
+    },
+    {
+      "name": "2X COMPENSADO 6MM E6MM_1-Corte 2.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA DE MAGIA\\2X COMPENSADO 6MM E6MM_1-Corte 2.txt",
+      "size": 10355,
+      "mtime": 1794063069076.5256,
+      "mtimeDate": "2026-11-07T14:51:09.077Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA DE MAGIA",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "6mm",
+        "tag": "Compensado 6mm",
+        "chapaIndex": "2",
+        "targetQuantity": 2
+      },
+      "execCount": 1,
+      "lastExec": {
+        "id": "10229",
+        "file_name": "2X COMPENSADO 6MM E6MM_1-Corte 2.txt",
+        "folder": "SALA DE MAGIA",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-07T16:35:34.000Z",
+        "end_time": "2026-11-07T16:39:33.000Z",
+        "duration_minutes": 3.98333
+      },
+      "totalDurationMinutes": 3.98333,
+      "isManuallyDone": false
+    },
+    {
+      "name": "4X COMPENSADO 6MM E6MM.TXT",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA DE MAGIA\\4X COMPENSADO 6MM E6MM.TXT",
+      "size": 12480,
+      "mtime": 1794062959847.2083,
+      "mtimeDate": "2026-11-07T14:49:19.847Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA DE MAGIA",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "6mm",
+        "tag": "Compensado 6mm",
+        "chapaIndex": "4",
+        "targetQuantity": 4
+      },
+      "execCount": 3,
+      "lastExec": {
+        "id": "10239",
+        "file_name": "4X COMPENSADO 6MM E6MM.TXT",
+        "folder": "SALA DE MAGIA",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-07T17:15:24.000Z",
+        "end_time": "2026-11-07T17:18:59.000Z",
+        "duration_minutes": 3.58333
+      },
+      "totalDurationMinutes": 19.2667,
+      "isManuallyDone": true
     },
     {
       "name": "APLIQUE MDF 9MM_6-Corte 10.txt",
@@ -6860,6 +6830,68 @@
       "isManuallyDone": false
     },
     {
+      "name": "correçao mdf 15 mm 20x circulos de 20 e6mm_1-Corte 47.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2615A - pequeno principe\\correçao mdf 15 mm 20x circulos de 20 e6mm_1-Corte 47.txt",
+      "size": 6950,
+      "mtime": 1793970639204.6736,
+      "mtimeDate": "2026-11-06T13:10:39.205Z",
+      "jobName": "2615A - pequeno principe",
+      "subfolderName": "2615A - pequeno principe",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "15mm",
+        "tag": "MDF 15mm",
+        "chapaIndex": "20",
+        "targetQuantity": 20
+      },
+      "execCount": 1,
+      "lastExec": {
+        "id": "10093",
+        "file_name": "correçao mdf 15 mm 20x circulos de 20 e6mm_1-Corte 47.txt",
+        "folder": "2615A - pequeno principe",
+        "router_name": "Router Central",
+        "operator_name": "Italo",
+        "start_time": "2026-11-06T13:11:16.000Z",
+        "end_time": "2026-11-06T13:18:16.000Z",
+        "duration_minutes": 7
+      },
+      "totalDurationMinutes": 7,
+      "isManuallyDone": true
+    },
+    {
+      "name": "mdf 15 mm 20x circulos de 20 e6mm_1-Corte 46.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2615A - pequeno principe\\mdf 15 mm 20x circulos de 20 e6mm_1-Corte 46.txt",
+      "size": 9407,
+      "mtime": 1793968718956.3242,
+      "mtimeDate": "2026-11-06T12:38:38.956Z",
+      "jobName": "2615A - pequeno principe",
+      "subfolderName": "2615A - pequeno principe",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "15mm",
+        "tag": "MDF 15mm",
+        "chapaIndex": "20",
+        "targetQuantity": 20
+      },
+      "execCount": 1,
+      "lastExec": {
+        "id": "10091",
+        "file_name": "mdf 15 mm 20x circulos de 20 e6mm_1-Corte 46.txt",
+        "folder": "2615A - pequeno principe",
+        "router_name": "Router Central",
+        "operator_name": "Italo",
+        "start_time": "2026-11-06T12:55:40.000Z",
+        "end_time": "2026-11-06T13:05:20.000Z",
+        "duration_minutes": 9.66667
+      },
+      "totalDurationMinutes": 9.66667,
+      "isManuallyDone": true
+    },
+    {
       "name": "compensado 10mm e6mm_3-° CHAPAOK.txt",
       "ext": ".txt",
       "type": "gcode",
@@ -7440,7 +7472,7 @@
         "end_time": "2026-10-22T20:04:27.000Z",
         "duration_minutes": 62.6333
       },
-      "totalDurationMinutes": 1235.9165000000003,
+      "totalDurationMinutes": 1235.9165,
       "isManuallyDone": false
     },
     {
@@ -7471,7 +7503,7 @@
         "end_time": "2026-10-22T20:04:27.000Z",
         "duration_minutes": 62.6333
       },
-      "totalDurationMinutes": 1235.9165000000003,
+      "totalDurationMinutes": 1235.9165,
       "isManuallyDone": false
     },
     {
@@ -7626,7 +7658,7 @@
         "end_time": "2026-10-22T20:04:27.000Z",
         "duration_minutes": 62.6333
       },
-      "totalDurationMinutes": 1235.9165000000003,
+      "totalDurationMinutes": 1235.9165,
       "isManuallyDone": false
     },
     {
@@ -7657,7 +7689,7 @@
         "end_time": "2026-10-22T20:04:27.000Z",
         "duration_minutes": 62.6333
       },
-      "totalDurationMinutes": 1235.9165000000003,
+      "totalDurationMinutes": 1235.9165,
       "isManuallyDone": false
     },
     {
@@ -7750,7 +7782,7 @@
         "end_time": "2026-10-22T20:04:27.000Z",
         "duration_minutes": 62.6333
       },
-      "totalDurationMinutes": 1235.9165000000003,
+      "totalDurationMinutes": 1235.9165,
       "isManuallyDone": false
     },
     {
@@ -7781,8 +7813,101 @@
         "end_time": "2026-10-22T20:04:27.000Z",
         "duration_minutes": 62.6333
       },
-      "totalDurationMinutes": 1235.9165000000003,
+      "totalDurationMinutes": 1235.9165,
       "isManuallyDone": false
+    },
+    {
+      "name": "2X CHAPA 3 compensado 6mm e6mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\quadriboll\\2X CHAPA 3 compensado 6mm e6mm.txt",
+      "size": 4016,
+      "mtime": 1793819822630.2114,
+      "mtimeDate": "2026-11-04T19:17:02.630Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "quadriboll",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "6mm",
+        "tag": "Compensado 6mm",
+        "chapaIndex": "2",
+        "targetQuantity": 2
+      },
+      "execCount": 1,
+      "lastExec": {
+        "id": "10074",
+        "file_name": "2X CHAPA 3 compensado 6mm e6mm.txt",
+        "folder": "quadriboll",
+        "router_name": "Router Central",
+        "operator_name": "Italo",
+        "start_time": "2026-11-05T21:00:26.000Z",
+        "end_time": "2026-11-05T21:15:32.000Z",
+        "duration_minutes": 15.1
+      },
+      "totalDurationMinutes": 15.1,
+      "isManuallyDone": true
+    },
+    {
+      "name": "4X CHAPA 2 compensado 6mm e6mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\quadriboll\\4X CHAPA 2 compensado 6mm e6mm.txt",
+      "size": 14421,
+      "mtime": 1793819809819.0085,
+      "mtimeDate": "2026-11-04T19:16:49.819Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "quadriboll",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "6mm",
+        "tag": "Compensado 6mm",
+        "chapaIndex": "4",
+        "targetQuantity": 4
+      },
+      "execCount": 1,
+      "lastExec": {
+        "id": "10032",
+        "file_name": "4X CHAPA 2 compensado 6mm e6mm.txt",
+        "folder": "quadriboll",
+        "router_name": "Router Central",
+        "operator_name": "Italo",
+        "start_time": "2026-11-05T14:43:46.000Z",
+        "end_time": "2026-11-05T15:07:39.000Z",
+        "duration_minutes": 23.8833
+      },
+      "totalDurationMinutes": 23.8833,
+      "isManuallyDone": true
+    },
+    {
+      "name": "4X compensado 6mm e6mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\quadriboll\\4X compensado 6mm e6mm.txt",
+      "size": 16255,
+      "mtime": 1793819792654.6672,
+      "mtimeDate": "2026-11-04T19:16:32.655Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "quadriboll",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "6mm",
+        "tag": "Compensado 6mm",
+        "chapaIndex": "4",
+        "targetQuantity": 4
+      },
+      "execCount": 1,
+      "lastExec": {
+        "id": "9977",
+        "file_name": "4X compensado 6mm e6mm.txt",
+        "folder": "quadriboll",
+        "router_name": "Router Central",
+        "operator_name": "tomas",
+        "start_time": "2026-11-04T20:29:26.000Z",
+        "end_time": "2026-11-04T20:56:15.000Z",
+        "duration_minutes": 26.8167
+      },
+      "totalDurationMinutes": 26.8167,
+      "isManuallyDone": true
     },
     {
       "name": "8 PVC 100mm b10mm.txt",
@@ -9802,7 +9927,7 @@
         "end_time": "2026-09-29T18:21:42.000Z",
         "duration_minutes": 26.4667
       },
-      "totalDurationMinutes": 1603.651101,
+      "totalDurationMinutes": 1603.6511009999997,
       "isManuallyDone": false
     },
     {
@@ -9833,7 +9958,7 @@
         "end_time": "2026-09-29T18:21:42.000Z",
         "duration_minutes": 26.4667
       },
-      "totalDurationMinutes": 1603.651101,
+      "totalDurationMinutes": 1603.6511009999997,
       "isManuallyDone": false
     },
     {
@@ -10569,7 +10694,7 @@
         "end_time": "2026-09-29T18:21:42.000Z",
         "duration_minutes": 26.4667
       },
-      "totalDurationMinutes": 1603.651101,
+      "totalDurationMinutes": 1603.6511009999997,
       "isManuallyDone": false
     },
     {
@@ -12766,7 +12891,7 @@
         "end_time": "2026-10-22T20:04:27.000Z",
         "duration_minutes": 62.6333
       },
-      "totalDurationMinutes": 1235.9165000000003,
+      "totalDurationMinutes": 1235.9165,
       "isManuallyDone": false
     },
     {
@@ -12952,7 +13077,7 @@
         "end_time": "2026-10-22T20:04:27.000Z",
         "duration_minutes": 62.6333
       },
-      "totalDurationMinutes": 1235.9165000000003,
+      "totalDurationMinutes": 1235.9165,
       "isManuallyDone": false
     },
     {
@@ -15868,14 +15993,14 @@
       },
       "execCount": 4,
       "lastExec": {
-        "id": "7651",
+        "id": "9030",
         "file_name": "compensado 15mm chapa 7 2X.txt",
         "folder": "2615A - pequeno principe base",
         "router_name": "Router 2",
-        "operator_name": "Italo",
+        "operator_name": "brenno",
         "start_time": "2026-10-05T15:22:48.000Z",
-        "end_time": "2026-10-05T15:31:41.000Z",
-        "duration_minutes": 8.88333
+        "end_time": "2026-10-05T15:37:58.800Z",
+        "duration_minutes": 15.18
       },
       "totalDurationMinutes": 41.79667,
       "isManuallyDone": false
@@ -15899,11 +16024,11 @@
       },
       "execCount": 4,
       "lastExec": {
-        "id": "7644",
+        "id": "9027",
         "file_name": "compensado 15mm chapa 6 2X.txt",
         "folder": "2615A - pequeno principe base",
         "router_name": "Router 2",
-        "operator_name": "Italo",
+        "operator_name": "brenno",
         "start_time": "2026-10-05T14:40:04.000Z",
         "end_time": "2026-10-05T14:47:49.000Z",
         "duration_minutes": 7.75
@@ -15930,11 +16055,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7635",
+        "id": "9022",
         "file_name": "compensado 15mm chapa 5.txt",
         "folder": "2615A - pequeno principe base",
         "router_name": "Router 2",
-        "operator_name": "Italo",
+        "operator_name": "brenno",
         "start_time": "2026-10-05T13:52:16.000Z",
         "end_time": "2026-10-05T14:02:27.000Z",
         "duration_minutes": 10.1833
@@ -16116,11 +16241,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7625",
+        "id": "9018",
         "file_name": "compensado 15mm chapa 3.txt",
         "folder": "2615A - pequeno principe base",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-05T12:29:26.000Z",
         "end_time": "2026-10-05T12:36:34.000Z",
         "duration_minutes": 7.13333
@@ -16147,11 +16272,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7623",
+        "id": "9016",
         "file_name": "compensado 15mm chapa 2.txt",
         "folder": "2615A - pequeno principe base",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-05T12:17:34.000Z",
         "end_time": "2026-10-05T12:26:00.000Z",
         "duration_minutes": 8.43333
@@ -21149,11 +21274,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "9007",
+        "id": "7603",
         "file_name": "52 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T20:30:40.000Z",
         "end_time": "2026-10-04T21:00:41.000Z",
         "duration_minutes": 30.0167
@@ -21273,11 +21398,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "9003",
+        "id": "7595",
         "file_name": "48 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T19:36:05.000Z",
         "end_time": "2026-10-04T19:56:27.000Z",
         "duration_minutes": 20.3667
@@ -21397,11 +21522,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7587",
+        "id": "8999",
         "file_name": "44 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T18:24:36.000Z",
         "end_time": "2026-10-04T19:00:41.000Z",
         "duration_minutes": 36.0833
@@ -21459,11 +21584,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7583",
+        "id": "8997",
         "file_name": "42 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T17:51:49.000Z",
         "end_time": "2026-10-04T18:22:02.000Z",
         "duration_minutes": 30.2167
@@ -21614,7 +21739,7 @@
       },
       "execCount": 5,
       "lastExec": {
-        "id": "7571",
+        "id": "8992",
         "file_name": "37 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -21645,7 +21770,7 @@
       },
       "execCount": 3,
       "lastExec": {
-        "id": "7569",
+        "id": "8990",
         "file_name": "36 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -21831,7 +21956,7 @@
       },
       "execCount": 5,
       "lastExec": {
-        "id": "7555",
+        "id": "8983",
         "file_name": "30 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -21893,7 +22018,7 @@
       },
       "execCount": 9,
       "lastExec": {
-        "id": "7549",
+        "id": "8981",
         "file_name": "28 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -21955,11 +22080,11 @@
       },
       "execCount": 9,
       "lastExec": {
-        "id": "7543",
+        "id": "8978",
         "file_name": "26 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T02:07:58.000Z",
         "end_time": "2026-10-04T02:34:56.000Z",
         "duration_minutes": 26.9667
@@ -21986,14 +22111,14 @@
       },
       "execCount": 7,
       "lastExec": {
-        "id": "8976",
+        "id": "7480",
         "file_name": "25 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T01:30:52.000Z",
-        "end_time": "2026-10-04T01:56:08.800Z",
-        "duration_minutes": 25.28
+        "end_time": "2026-10-04T01:58:43.000Z",
+        "duration_minutes": 27.85
       },
       "totalDurationMinutes": 203.96339999999998,
       "isManuallyDone": false
@@ -22110,11 +22235,11 @@
       },
       "execCount": 19,
       "lastExec": {
-        "id": "7411",
+        "id": "8972",
         "file_name": "21 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T00:12:11.000Z",
         "end_time": "2026-10-04T00:43:39.000Z",
         "duration_minutes": 31.4667
@@ -22381,11 +22506,11 @@
       },
       "execCount": 10,
       "lastExec": {
-        "id": "8964",
+        "id": "7393",
         "file_name": "12 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-03T21:32:24.000Z",
         "end_time": "2026-10-03T22:12:23.000Z",
         "duration_minutes": 39.9833
@@ -22443,11 +22568,11 @@
       },
       "execCount": 10,
       "lastExec": {
-        "id": "7389",
+        "id": "8962",
         "file_name": "10 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-03T20:55:06.000Z",
         "end_time": "2026-10-03T21:25:05.000Z",
         "duration_minutes": 29.9833
@@ -22753,7 +22878,7 @@
       },
       "execCount": 5,
       "lastExec": {
-        "id": "7555",
+        "id": "8983",
         "file_name": "30 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -22784,7 +22909,7 @@
       },
       "execCount": 5,
       "lastExec": {
-        "id": "7555",
+        "id": "8983",
         "file_name": "30 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -22815,11 +22940,11 @@
       },
       "execCount": 19,
       "lastExec": {
-        "id": "7411",
+        "id": "8972",
         "file_name": "21 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T00:12:11.000Z",
         "end_time": "2026-10-04T00:43:39.000Z",
         "duration_minutes": 31.4667
@@ -22846,11 +22971,11 @@
       },
       "execCount": 19,
       "lastExec": {
-        "id": "7411",
+        "id": "8972",
         "file_name": "21 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T00:12:11.000Z",
         "end_time": "2026-10-04T00:43:39.000Z",
         "duration_minutes": 31.4667
@@ -23063,14 +23188,14 @@
       },
       "execCount": 7,
       "lastExec": {
-        "id": "8976",
+        "id": "7480",
         "file_name": "25 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T01:30:52.000Z",
-        "end_time": "2026-10-04T01:56:08.800Z",
-        "duration_minutes": 25.28
+        "end_time": "2026-10-04T01:58:43.000Z",
+        "duration_minutes": 27.85
       },
       "totalDurationMinutes": 203.96339999999998,
       "isManuallyDone": false
@@ -23094,14 +23219,14 @@
       },
       "execCount": 7,
       "lastExec": {
-        "id": "8976",
+        "id": "7480",
         "file_name": "25 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T01:30:52.000Z",
-        "end_time": "2026-10-04T01:56:08.800Z",
-        "duration_minutes": 25.28
+        "end_time": "2026-10-04T01:58:43.000Z",
+        "duration_minutes": 27.85
       },
       "totalDurationMinutes": 203.96339999999998,
       "isManuallyDone": false
@@ -23125,11 +23250,11 @@
       },
       "execCount": 9,
       "lastExec": {
-        "id": "7543",
+        "id": "8978",
         "file_name": "26 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T02:07:58.000Z",
         "end_time": "2026-10-04T02:34:56.000Z",
         "duration_minutes": 26.9667
@@ -23156,11 +23281,11 @@
       },
       "execCount": 9,
       "lastExec": {
-        "id": "7543",
+        "id": "8978",
         "file_name": "26 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T02:07:58.000Z",
         "end_time": "2026-10-04T02:34:56.000Z",
         "duration_minutes": 26.9667
@@ -23249,7 +23374,7 @@
       },
       "execCount": 9,
       "lastExec": {
-        "id": "7549",
+        "id": "8981",
         "file_name": "28 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -23280,7 +23405,7 @@
       },
       "execCount": 9,
       "lastExec": {
-        "id": "7549",
+        "id": "8981",
         "file_name": "28 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -23745,7 +23870,7 @@
       },
       "execCount": 3,
       "lastExec": {
-        "id": "7569",
+        "id": "8990",
         "file_name": "36 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -23776,7 +23901,7 @@
       },
       "execCount": 3,
       "lastExec": {
-        "id": "7569",
+        "id": "8990",
         "file_name": "36 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -23807,7 +23932,7 @@
       },
       "execCount": 5,
       "lastExec": {
-        "id": "7571",
+        "id": "8992",
         "file_name": "37 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -23838,7 +23963,7 @@
       },
       "execCount": 5,
       "lastExec": {
-        "id": "7571",
+        "id": "8992",
         "file_name": "37 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -24117,11 +24242,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7583",
+        "id": "8997",
         "file_name": "42 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T17:51:49.000Z",
         "end_time": "2026-10-04T18:22:02.000Z",
         "duration_minutes": 30.2167
@@ -24148,11 +24273,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7583",
+        "id": "8997",
         "file_name": "42 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T17:51:49.000Z",
         "end_time": "2026-10-04T18:22:02.000Z",
         "duration_minutes": 30.2167
@@ -24241,11 +24366,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7587",
+        "id": "8999",
         "file_name": "44 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T18:24:36.000Z",
         "end_time": "2026-10-04T19:00:41.000Z",
         "duration_minutes": 36.0833
@@ -24272,11 +24397,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7587",
+        "id": "8999",
         "file_name": "44 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T18:24:36.000Z",
         "end_time": "2026-10-04T19:00:41.000Z",
         "duration_minutes": 36.0833
@@ -24489,11 +24614,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "9003",
+        "id": "7595",
         "file_name": "48 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T19:36:05.000Z",
         "end_time": "2026-10-04T19:56:27.000Z",
         "duration_minutes": 20.3667
@@ -24520,11 +24645,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "9003",
+        "id": "7595",
         "file_name": "48 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T19:36:05.000Z",
         "end_time": "2026-10-04T19:56:27.000Z",
         "duration_minutes": 20.3667
@@ -24737,11 +24862,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "9007",
+        "id": "7603",
         "file_name": "52 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T20:30:40.000Z",
         "end_time": "2026-10-04T21:00:41.000Z",
         "duration_minutes": 30.0167
@@ -24768,11 +24893,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "9007",
+        "id": "7603",
         "file_name": "52 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T20:30:40.000Z",
         "end_time": "2026-10-04T21:00:41.000Z",
         "duration_minutes": 30.0167
@@ -24981,11 +25106,11 @@
       },
       "execCount": 10,
       "lastExec": {
-        "id": "8964",
+        "id": "7393",
         "file_name": "12 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-03T21:32:24.000Z",
         "end_time": "2026-10-03T22:12:23.000Z",
         "duration_minutes": 39.9833
@@ -25322,11 +25447,11 @@
       },
       "execCount": 10,
       "lastExec": {
-        "id": "7389",
+        "id": "8962",
         "file_name": "10 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-03T20:55:06.000Z",
         "end_time": "2026-10-03T21:25:05.000Z",
         "duration_minutes": 29.9833
@@ -25818,7 +25943,7 @@
       },
       "execCount": 4,
       "lastExec": {
-        "id": "8916",
+        "id": "6693",
         "file_name": "13PVC 100mm b10mm.txt",
         "folder": "2660D - TUBARÃO",
         "router_name": "Router 2",
@@ -25849,7 +25974,7 @@
       },
       "execCount": 4,
       "lastExec": {
-        "id": "8916",
+        "id": "6693",
         "file_name": "13PVC 100mm b10mm.txt",
         "folder": "2660D - TUBARÃO",
         "router_name": "Router 2",
@@ -25880,14 +26005,14 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8912",
+        "id": "6688",
         "file_name": "12PVC 100mm b10mm.txt",
         "folder": "2660D - TUBARÃO",
         "router_name": "Router 2",
         "operator_name": "brenno",
         "start_time": "2026-10-01T13:47:17.000Z",
-        "end_time": "2026-10-01T15:16:45.800Z",
-        "duration_minutes": 89.48
+        "end_time": "2026-10-01T14:37:13.000Z",
+        "duration_minutes": 49.9333
       },
       "totalDurationMinutes": 139.4133,
       "isManuallyDone": false
@@ -25911,14 +26036,14 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8912",
+        "id": "6688",
         "file_name": "12PVC 100mm b10mm.txt",
         "folder": "2660D - TUBARÃO",
         "router_name": "Router 2",
         "operator_name": "brenno",
         "start_time": "2026-10-01T13:47:17.000Z",
-        "end_time": "2026-10-01T15:16:45.800Z",
-        "duration_minutes": 89.48
+        "end_time": "2026-10-01T14:37:13.000Z",
+        "duration_minutes": 49.9333
       },
       "totalDurationMinutes": 139.4133,
       "isManuallyDone": false
@@ -25942,7 +26067,7 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "6686",
+        "id": "8910",
         "file_name": "11PVC 100mm b10mm.txt",
         "folder": "2660D - TUBARÃO",
         "router_name": "Router 2",
@@ -25973,7 +26098,7 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "6686",
+        "id": "8910",
         "file_name": "11PVC 100mm b10mm.txt",
         "folder": "2660D - TUBARÃO",
         "router_name": "Router 2",
@@ -26004,7 +26129,7 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8908",
+        "id": "6682",
         "file_name": "10PVC 100mm b10mm.txt",
         "folder": "2660D - TUBARÃO",
         "router_name": "Router 2",
@@ -26035,7 +26160,7 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8908",
+        "id": "6682",
         "file_name": "10PVC 100mm b10mm.txt",
         "folder": "2660D - TUBARÃO",
         "router_name": "Router 2",
@@ -26128,14 +26253,14 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8901",
+        "id": "6672",
         "file_name": "8PVC 100mm b10mm.txt",
         "folder": "2660D - TUBARÃO",
         "router_name": "Router 2",
         "operator_name": "brenno",
         "start_time": "2026-09-30T19:09:32.000Z",
-        "end_time": "2026-09-30T20:36:47.600Z",
-        "duration_minutes": 87.26
+        "end_time": "2026-09-30T20:01:38.000Z",
+        "duration_minutes": 52.1
       },
       "totalDurationMinutes": 139.36,
       "isManuallyDone": false
@@ -26159,14 +26284,14 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8901",
+        "id": "6672",
         "file_name": "8PVC 100mm b10mm.txt",
         "folder": "2660D - TUBARÃO",
         "router_name": "Router 2",
         "operator_name": "brenno",
         "start_time": "2026-09-30T19:09:32.000Z",
-        "end_time": "2026-09-30T20:36:47.600Z",
-        "duration_minutes": 87.26
+        "end_time": "2026-09-30T20:01:38.000Z",
+        "duration_minutes": 52.1
       },
       "totalDurationMinutes": 139.36,
       "isManuallyDone": false
@@ -26602,7 +26727,7 @@
         "end_time": "2026-09-29T18:21:42.000Z",
         "duration_minutes": 26.4667
       },
-      "totalDurationMinutes": 1603.651101,
+      "totalDurationMinutes": 1603.6511009999997,
       "isManuallyDone": false
     },
     {
@@ -26655,11 +26780,11 @@
       },
       "execCount": 5,
       "lastExec": {
-        "id": "8890",
+        "id": "6606",
         "file_name": "5 PVC 100mm 10mm.txt",
         "folder": "2660b - GAVIÃO",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-09-29T17:18:48.000Z",
         "end_time": "2026-09-29T17:32:40.000Z",
         "duration_minutes": 13.8667
@@ -26686,11 +26811,11 @@
       },
       "execCount": 5,
       "lastExec": {
-        "id": "8890",
+        "id": "6606",
         "file_name": "5 PVC 100mm 10mm.txt",
         "folder": "2660b - GAVIÃO",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-09-29T17:18:48.000Z",
         "end_time": "2026-09-29T17:32:40.000Z",
         "duration_minutes": 13.8667
@@ -26717,11 +26842,11 @@
       },
       "execCount": 4,
       "lastExec": {
-        "id": "8884",
+        "id": "6596",
         "file_name": "3 PVC 100mm 10mm.txt",
         "folder": "2660b - GAVIÃO",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-09-29T14:18:25.000Z",
         "end_time": "2026-09-29T15:21:38.000Z",
         "duration_minutes": 63.2167
@@ -26748,11 +26873,11 @@
       },
       "execCount": 4,
       "lastExec": {
-        "id": "8884",
+        "id": "6596",
         "file_name": "3 PVC 100mm 10mm.txt",
         "folder": "2660b - GAVIÃO",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-09-29T14:18:25.000Z",
         "end_time": "2026-09-29T15:21:38.000Z",
         "duration_minutes": 63.2167
@@ -27036,7 +27161,7 @@
         "end_time": "2026-10-22T20:04:27.000Z",
         "duration_minutes": 62.6333
       },
-      "totalDurationMinutes": 1235.9165000000003,
+      "totalDurationMinutes": 1235.9165,
       "isManuallyDone": false
     },
     {
@@ -27067,7 +27192,7 @@
         "end_time": "2026-10-22T20:04:27.000Z",
         "duration_minutes": 62.6333
       },
-      "totalDurationMinutes": 1235.9165000000003,
+      "totalDurationMinutes": 1235.9165,
       "isManuallyDone": false
     },
     {
@@ -27089,11 +27214,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "6520",
+        "id": "8850",
         "file_name": "12 PVC 100mm 10mm.txt",
         "folder": "TARTARUGA",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-09-26T18:38:40.000Z",
         "end_time": "2026-09-26T19:06:41.000Z",
         "duration_minutes": 28.0167
@@ -27120,11 +27245,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "6520",
+        "id": "8850",
         "file_name": "12 PVC 100mm 10mm.txt",
         "folder": "TARTARUGA",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-09-26T18:38:40.000Z",
         "end_time": "2026-09-26T19:06:41.000Z",
         "duration_minutes": 28.0167
@@ -27213,11 +27338,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "6503",
+        "id": "8848",
         "file_name": "10 PVC 100mm 10mm.txt",
         "folder": "TARTARUGA",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-09-26T17:31:28.000Z",
         "end_time": "2026-09-26T18:07:19.000Z",
         "duration_minutes": 35.85
@@ -27244,11 +27369,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "6503",
+        "id": "8848",
         "file_name": "10 PVC 100mm 10mm.txt",
         "folder": "TARTARUGA",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-09-26T17:31:28.000Z",
         "end_time": "2026-09-26T18:07:19.000Z",
         "duration_minutes": 35.85
@@ -27399,11 +27524,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8842",
+        "id": "6494",
         "file_name": "7 PVC 100mm 10mm.txt",
         "folder": "TARTARUGA",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-09-26T15:25:31.000Z",
         "end_time": "2026-09-26T15:54:35.000Z",
         "duration_minutes": 29.0667
@@ -27430,11 +27555,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8842",
+        "id": "6494",
         "file_name": "7 PVC 100mm 10mm.txt",
         "folder": "TARTARUGA",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-09-26T15:25:31.000Z",
         "end_time": "2026-09-26T15:54:35.000Z",
         "duration_minutes": 29.0667
@@ -27461,11 +27586,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8840",
+        "id": "6492",
         "file_name": "6 PVC 100mm 10mm.txt",
         "folder": "TARTARUGA",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-09-26T14:56:32.000Z",
         "end_time": "2026-09-26T15:22:31.000Z",
         "duration_minutes": 25.9833
@@ -27492,11 +27617,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8840",
+        "id": "6492",
         "file_name": "6 PVC 100mm 10mm.txt",
         "folder": "TARTARUGA",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-09-26T14:56:32.000Z",
         "end_time": "2026-09-26T15:22:31.000Z",
         "duration_minutes": 25.9833
@@ -27585,11 +27710,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8838",
+        "id": "6483",
         "file_name": "4 PVC 100mm 10mm.txt",
         "folder": "TARTARUGA",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-09-26T14:08:42.000Z",
         "end_time": "2026-09-26T14:43:32.000Z",
         "duration_minutes": 34.8333
@@ -27616,11 +27741,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8838",
+        "id": "6483",
         "file_name": "4 PVC 100mm 10mm.txt",
         "folder": "TARTARUGA",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-09-26T14:08:42.000Z",
         "end_time": "2026-09-26T14:43:32.000Z",
         "duration_minutes": 34.8333
@@ -27995,11 +28120,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8810",
+        "id": "6408",
         "file_name": "2 PVC 100mm b6mm.txt",
         "folder": "2660 A BUGIO RUIVO",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-09-24T17:12:52.000Z",
         "end_time": "2026-09-24T17:43:41.000Z",
         "duration_minutes": 30.8167
@@ -28026,11 +28151,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8810",
+        "id": "6408",
         "file_name": "2 PVC 100mm b6mm.txt",
         "folder": "2660 A BUGIO RUIVO",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-09-24T17:12:52.000Z",
         "end_time": "2026-09-24T17:43:41.000Z",
         "duration_minutes": 30.8167
@@ -28057,11 +28182,11 @@
       },
       "execCount": 4,
       "lastExec": {
-        "id": "8817",
+        "id": "6423",
         "file_name": "1 PVC 100mm b6mm.txt",
         "folder": "2660 A BUGIO RUIVO",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-09-24T19:16:54.000Z",
         "end_time": "2026-09-24T20:53:16.000Z",
         "duration_minutes": 96.3667
@@ -28088,11 +28213,11 @@
       },
       "execCount": 4,
       "lastExec": {
-        "id": "8817",
+        "id": "6423",
         "file_name": "1 PVC 100mm b6mm.txt",
         "folder": "2660 A BUGIO RUIVO",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-09-24T19:16:54.000Z",
         "end_time": "2026-09-24T20:53:16.000Z",
         "duration_minutes": 96.3667
@@ -28150,11 +28275,11 @@
       },
       "execCount": 8,
       "lastExec": {
-        "id": "6261",
+        "id": "8753",
         "file_name": "11 PVC 100mm b10mm.txt",
         "folder": "2594A - AVIÃO FREE FIRE",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-09-19T14:40:05.000Z",
         "end_time": "2026-09-19T15:13:50.000Z",
         "duration_minutes": 33.75
@@ -28181,11 +28306,11 @@
       },
       "execCount": 8,
       "lastExec": {
-        "id": "6255",
+        "id": "8751",
         "file_name": "10 PVC 100mm b10mm.txt",
         "folder": "2594A - AVIÃO FREE FIRE",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-09-19T14:05:49.000Z",
         "end_time": "2026-09-19T14:35:26.000Z",
         "duration_minutes": 29.6167
@@ -28500,7 +28625,7 @@
         "end_time": "2026-09-29T18:21:42.000Z",
         "duration_minutes": 26.4667
       },
-      "totalDurationMinutes": 1603.651101,
+      "totalDurationMinutes": 1603.6511009999997,
       "isManuallyDone": false
     },
     {
@@ -28566,5 +28691,5 @@
       "isManuallyDone": false
     }
   ],
-  "updatedAt": "2026-11-07T19:24:03.320Z"
+  "updatedAt": "2026-11-07T20:51:19.963Z"
 }

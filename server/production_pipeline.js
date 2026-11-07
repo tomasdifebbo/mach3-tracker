@@ -115,7 +115,9 @@ function isFileMarkedOk(filename = '') {
         lower.includes('aplique mdf 9mm_4-corte 4') ||
         lower.includes('aplique mdf 9mm_1-corte 5') ||
         lower.includes('aplique mdf 9mm_2-corte 6') ||
-        lower.includes('aplique mdf 9mm_4-corte 7')
+        lower.includes('aplique mdf 9mm_4-corte 7') ||
+        lower === '4x compensado 6mm e6mm.txt' ||
+        lower === '2x compensado 6mm e6mm_1-corte 2.txt'
     ) {
         return true;
     }
@@ -123,7 +125,7 @@ function isFileMarkedOk(filename = '') {
     return false;
 }
 
-function calculateDynamicBatches(dbJobs = []) {
+function calculateDynamicBatches(dbJobs = [], completedFilesMap = {}) {
     // 1. Tijolos MDF 9mm (Meta: 100 chapas - 90 Usinadas / 10 Faltantes)
     const tijoloRuns = dbJobs.filter(j => 
         (j.file_name || '').toLowerCase().includes('tijolo') &&
@@ -178,6 +180,12 @@ function calculateDynamicBatches(dbJobs = []) {
             if (match) apliqueDoneSet.add(parseInt(match[1]));
         }
     });
+    Object.keys(completedFilesMap || {}).forEach(k => {
+        if (k.includes('aplique mdf 9mm') || k.includes('aplique mdf 15')) {
+            const match = k.match(/corte\s*(\d+)/i);
+            if (match) apliqueDoneSet.add(parseInt(match[1]));
+        }
+    });
     // Cortes 1 a 7 já executados / confirmados
     [1, 2, 3, 4, 5, 6, 7].forEach(n => apliqueDoneSet.add(n));
     const apliqueDone = Math.min(11, apliqueDoneSet.size);
@@ -186,7 +194,7 @@ function calculateDynamicBatches(dbJobs = []) {
     // 9. Parede Especial Photo Opp (33 cortes executados na madrugada de 07/11)
     const paredeEspDone = 33;
 
-    return [
+    const batches = [
         {
             id: 'tijolos_9mm',
             name: `Lote Seriado MDF 9mm Tijolos (${tijoloDone} de 100)`,
@@ -291,7 +299,7 @@ function calculateDynamicBatches(dbJobs = []) {
         },
         {
             id: 'sala_magia_compensado_6mm',
-            name: 'Sala de Magia Compensado 6mm (4 de 6 chapas)',
+            name: 'Sala de Magia Compensado 6mm (6 de 6 chapas)',
             job: '2640  - EXPRESSO HOGWARTS CCXP',
             subfolder: 'ROUTER/SALA DE MAGIA',
             file: '4X COMPENSADO 6MM E6MM.TXT (4x) + 2X COMPENSADO 6MM E6MM_1-Corte 2.txt (2x)',
@@ -299,11 +307,11 @@ function calculateDynamicBatches(dbJobs = []) {
             dimensions: 'Chapas 2200 × 1600 mm',
             tool: 'Fresa Topo Ø6mm (e6mm)',
             targetSheets: 6,
-            doneSheets: 4,
-            pendingSheets: 2,
-            status: 'em_andamento',
+            doneSheets: 6,
+            pendingSheets: 0,
+            status: 'concluido',
             estMinutesPerSheet: 12,
-            totalEstMinutes: 24,
+            totalEstMinutes: 0,
             priority: 'alta'
         },
         {
@@ -358,6 +366,25 @@ function calculateDynamicBatches(dbJobs = []) {
             priority: 'concluido'
         }
     ];
+
+    return batches.map(b => {
+        const isBatchChecked = Boolean(
+            completedFilesMap[`batch_${b.id}`] ||
+            completedFilesMap[b.id] ||
+            completedFilesMap[(b.file || '').toLowerCase().trim()] ||
+            completedFilesMap[(b.name || '').toLowerCase().trim()]
+        );
+        if (isBatchChecked) {
+            return {
+                ...b,
+                doneSheets: b.targetSheets,
+                pendingSheets: 0,
+                status: 'concluido',
+                totalEstMinutes: 0
+            };
+        }
+        return b;
+    });
 }
 
 let cachedResult = null;
@@ -632,7 +659,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                         totalGcodePronto: gcodeProntos.length,
                         totalConcluidos: gcodeFeitos.length
                     },
-                    specialBatches: calculateDynamicBatches(dbJobs),
+                    specialBatches: calculateDynamicBatches(dbJobs, completedFilesMap),
                     jobs: snap.jobs || [],
                     cadPreparar: cadPrepararList,
                     aspirePreparar: aspirePrepararList,
@@ -944,7 +971,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             totalGcodePronto,
             totalConcluidos
         },
-        specialBatches: calculateDynamicBatches(dbJobs),
+        specialBatches: calculateDynamicBatches(dbJobs, completedFilesMap),
         jobs: jobsList,
         cadPreparar: allCadPreparar,
         aspirePreparar: allAspirePreparar,
