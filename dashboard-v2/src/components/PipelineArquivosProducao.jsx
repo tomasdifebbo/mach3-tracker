@@ -67,14 +67,17 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
     }
   });
 
-  const [cadCheckFilter, setCadCheckFilter] = useState('todos'); // 'todos' | 'pendentes' | 'concluidos'
-  const [aspireCheckFilter, setAspireCheckFilter] = useState('todos'); // 'todos' | 'pendentes' | 'concluidos'
-  const [routerCheckFilter, setRouterCheckFilter] = useState('todos'); // 'todos' | 'pendentes' | 'concluidos'
+  const [cadCheckFilter, setCadCheckFilter] = useState('pendentes'); // 'pendentes' | 'concluidos' | 'todos'
+  const [aspireCheckFilter, setAspireCheckFilter] = useState('pendentes'); // 'pendentes' | 'concluidos' | 'todos'
+  const [routerCheckFilter, setRouterCheckFilter] = useState('pendentes'); // 'pendentes' | 'concluidos' | 'todos'
+  const [stageToast, setStageToast] = useState(null);
 
   const getFileKey = (f) => f.fullPath || `${f.jobName || ''}_${f.name}`;
 
   const toggleFileCheck = (f, stage = '') => {
     const key = getFileKey(f);
+    const willBeChecked = !fileChecklist[key];
+
     setFileChecklist(prev => {
       const next = { ...prev };
       if (next[key]) {
@@ -92,6 +95,20 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       } catch (err) {}
       return next;
     });
+
+    if (willBeChecked) {
+      let nextStageName = 'Próxima Etapa';
+      if (stage === 'corel') nextStageName = '2. Materiais Aspire (.EPS / .DXF)';
+      else if (stage === 'aspire') nextStageName = '3. Fila Router (.TXT)';
+      else if (stage === 'router') nextStageName = '4. Já Feito (Histórico)';
+
+      setStageToast({
+        title: f.name,
+        stageAtual: stage,
+        nextStage: nextStageName
+      });
+      setTimeout(() => setStageToast(null), 3500);
+    }
   };
 
   const fetchPipeline = async (force = false) => {
@@ -152,7 +169,24 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
 
   // Filtered Aspire Preparation Files (.EPS, .DXF, .CRV, .CRV3D)
   const filteredAspire = useMemo(() => {
-    const list = pipelineData?.aspirePreparar || [];
+    const list = [...(pipelineData?.aspirePreparar || [])];
+
+    // Arquivos Corel que foram dados OK avançam para a etapa de Aspire!
+    (pipelineData?.cadPreparar || []).forEach(cf => {
+      const k = getFileKey(cf);
+      if (fileChecklist[k]?.stage === 'corel') {
+        if (!list.some(a => a.name === cf.name || a.name.includes(cf.name.replace('.cdr', '')))) {
+          list.push({
+            ...cf,
+            ext: '.eps',
+            type: 'aspire',
+            promotedFromCorel: true,
+            statusLabel: 'Avançado do Corel (Pronto p/ Aspire)'
+          });
+        }
+      }
+    });
+
     return list.filter(f => {
       if (selectedJob !== 'todos' && f.jobName !== selectedJob) return false;
       if (selectedExt !== 'todas' && f.ext !== selectedExt) return false;
@@ -165,11 +199,28 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       }
       return true;
     });
-  }, [pipelineData, selectedJob, selectedExt, searchTerm]);
+  }, [pipelineData, fileChecklist, selectedJob, selectedExt, searchTerm]);
 
-  // Filtered G-Codes
+  // Filtered G-Codes (Fila Router)
   const filteredGcodes = useMemo(() => {
-    const list = pipelineData?.gcodeProntos || [];
+    const list = [...(pipelineData?.gcodeProntos || [])];
+
+    // Arquivos de Aspire que foram dados OK avançam para a Fila Router!
+    (pipelineData?.aspirePreparar || []).forEach(af => {
+      const k = getFileKey(af);
+      if (fileChecklist[k]?.stage === 'aspire') {
+        if (!list.some(g => g.name === af.name || g.name.includes(af.name.replace(/\.[^.]+$/, '')))) {
+          list.push({
+            ...af,
+            ext: '.txt',
+            type: 'gcode',
+            promotedFromAspire: true,
+            statusLabel: 'Avançado do Aspire (Pronto p/ Router)'
+          });
+        }
+      }
+    });
+
     return list.filter(f => {
       if (selectedJob !== 'todos' && f.jobName !== selectedJob) return false;
       if (selectedExt !== 'todas' && f.ext !== selectedExt) return false;
@@ -182,11 +233,30 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       }
       return true;
     });
-  }, [pipelineData, selectedJob, selectedExt, searchTerm]);
+  }, [pipelineData, fileChecklist, selectedJob, selectedExt, searchTerm]);
 
-  // Filtered Concluded Executions
+  // Filtered Concluded Executions (4. Já Feito / Histórico)
   const filteredDone = useMemo(() => {
-    const list = pipelineData?.gcodeFeitos || [];
+    const list = [...(pipelineData?.gcodeFeitos || [])];
+
+    // G-Codes que foram dados OK avançam para Concluídos / Histórico!
+    (pipelineData?.gcodeProntos || []).forEach(gf => {
+      const k = getFileKey(gf);
+      const isOk = !!fileChecklist[k] || gf.isExecuted || isFileMarkedOk(gf.name);
+      if (isOk && !list.some(d => d.name === gf.name)) {
+        list.push({
+          ...gf,
+          execCount: 1,
+          lastExec: {
+            operator_name: fileChecklist[k]?.operator || 'Tomas',
+            machine_name: 'Router 2',
+            start_time: fileChecklist[k]?.checkedAt || gf.mtimeDate || new Date().toISOString()
+          },
+          totalDurationMinutes: 15
+        });
+      }
+    });
+
     return list.filter(f => {
       if (selectedJob !== 'todos' && f.jobName !== selectedJob) return false;
       if (searchTerm) {
@@ -197,7 +267,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       }
       return true;
     });
-  }, [pipelineData, selectedJob, searchTerm]);
+  }, [pipelineData, fileChecklist, selectedJob, searchTerm]);
 
   // Contadores e Listas para Checklist Interativo
   const cadCounts = useMemo(() => {
@@ -597,6 +667,15 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
               <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 p-1 rounded-lg">
                 <button
                   type="button"
+                  onClick={() => setCadCheckFilter('pendentes')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                    cadCheckFilter === 'pendentes' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  ⏳ Pendentes na Etapa ({cadCounts.pendentes})
+                </button>
+                <button
+                  type="button"
                   onClick={() => setCadCheckFilter('todos')}
                   className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
                     cadCheckFilter === 'todos' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
@@ -606,21 +685,12 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setCadCheckFilter('pendentes')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
-                    cadCheckFilter === 'pendentes' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-                  }`}
-                >
-                  ⏳ Pendentes ({cadCounts.pendentes})
-                </button>
-                <button
-                  type="button"
                   onClick={() => setCadCheckFilter('concluidos')}
                   className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
                     cadCheckFilter === 'concluidos' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
                   }`}
                 >
-                  ✓ Concluídos ({cadCounts.concluidos})
+                  ✓ Concluídos (Avançados: {cadCounts.concluidos})
                 </button>
               </div>
             </div>
@@ -642,7 +712,13 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                   {displayedCad.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-8 text-center text-slate-400">
-                        Nenhum arquivo Corel (.cdr) encontrado para este filtro.
+                        {cadCheckFilter === 'pendentes' ? (
+                          <div className="flex flex-col items-center gap-1.5 py-4">
+                            <CheckCircle2 size={32} className="text-emerald-500 opacity-80" />
+                            <p className="font-bold text-slate-800 dark:text-slate-200">🎉 Nenhum arquivo pendente nesta etapa!</p>
+                            <p className="text-[11px] text-slate-500">Todos os arquivos que você deu OK já avançaram para a etapa de Aspire.</p>
+                          </div>
+                        ) : 'Nenhum arquivo Corel (.cdr) encontrado para este filtro.'}
                       </td>
                     </tr>
                   ) : (
@@ -771,15 +847,6 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
               <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 p-1 rounded-lg">
                 <button
                   type="button"
-                  onClick={() => setAspireCheckFilter('todos')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
-                    aspireCheckFilter === 'todos' ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-                  }`}
-                >
-                  Todos ({aspireCounts.total})
-                </button>
-                <button
-                  type="button"
                   onClick={() => setAspireCheckFilter('pendentes')}
                   className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
                     aspireCheckFilter === 'pendentes' ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
@@ -789,12 +856,21 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                 </button>
                 <button
                   type="button"
+                  onClick={() => setAspireCheckFilter('todos')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                    aspireCheckFilter === 'todos' ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  Todos ({aspireCounts.total})
+                </button>
+                <button
+                  type="button"
                   onClick={() => setAspireCheckFilter('concluidos')}
                   className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
                     aspireCheckFilter === 'concluidos' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
                   }`}
                 >
-                  ✓ Lotes Prontos ({aspireCounts.concluidos})
+                  ✓ Lotes Prontos (Avançados: {aspireCounts.concluidos})
                 </button>
               </div>
             </div>
@@ -817,7 +893,13 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                   {displayedAspire.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="py-8 text-center text-slate-400">
-                        Nenhum arquivo vetorial (.eps / .dxf) encontrado para este filtro.
+                        {aspireCheckFilter === 'pendentes' ? (
+                          <div className="flex flex-col items-center gap-1.5 py-4">
+                            <CheckCircle2 size={32} className="text-emerald-500 opacity-80" />
+                            <p className="font-bold text-slate-800 dark:text-slate-200">🎉 Nenhum lote pendente no Aspire!</p>
+                            <p className="text-[11px] text-slate-500">Todos os arquivos que você deu OK já avançaram para a 3. Fila Router (.TXT).</p>
+                          </div>
+                        ) : 'Nenhum arquivo vetorial (.eps / .dxf) encontrado para este filtro.'}
                       </td>
                     </tr>
                   ) : (
@@ -937,6 +1019,15 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
               <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 p-1 rounded-lg">
                 <button
                   type="button"
+                  onClick={() => setRouterCheckFilter('pendentes')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                    routerCheckFilter === 'pendentes' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
+                  }`}
+                >
+                  ⏳ Fila da Máquina ({routerCounts.pendentes})
+                </button>
+                <button
+                  type="button"
                   onClick={() => setRouterCheckFilter('todos')}
                   className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
                     routerCheckFilter === 'todos' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
@@ -946,21 +1037,12 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setRouterCheckFilter('pendentes')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
-                    routerCheckFilter === 'pendentes' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-                  }`}
-                >
-                  ⏳ Aguardando Máquina ({routerCounts.pendentes})
-                </button>
-                <button
-                  type="button"
                   onClick={() => setRouterCheckFilter('concluidos')}
                   className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
                     routerCheckFilter === 'concluidos' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
                   }`}
                 >
-                  ✓ Usinados ({routerCounts.concluidos})
+                  ✓ Usinados (Avançados: {routerCounts.concluidos})
                 </button>
               </div>
             </div>
@@ -983,7 +1065,13 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                   {displayedGcodes.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="py-8 text-center text-slate-400">
-                        Nenhum arquivo G-Code recente encontrado para este filtro.
+                        {routerCheckFilter === 'pendentes' ? (
+                          <div className="flex flex-col items-center gap-1.5 py-4">
+                            <CheckCircle2 size={32} className="text-emerald-500 opacity-80" />
+                            <p className="font-bold text-slate-800 dark:text-slate-200">🎉 Fila de corte 100% em dia!</p>
+                            <p className="text-[11px] text-slate-500">Todas as chapas usinadas e dadas baixa avançaram para 4. Já Feito (Histórico).</p>
+                          </div>
+                        ) : 'Nenhum arquivo G-Code recente encontrado para este filtro.'}
                       </td>
                     </tr>
                   ) : (
@@ -1202,6 +1290,21 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
           </div>
         )}
       </div>
+
+      {/* Toast flutuante de avanço de etapa: Some da lista e vai pra próxima! */}
+      {stageToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 dark:bg-black/95 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-emerald-500/50 backdrop-blur-md animate-in fade-in slide-in-from-bottom-5">
+          <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/30">
+            <Check size={18} className="stroke-[3]" />
+          </div>
+          <div>
+            <p className="text-xs font-black text-emerald-400">✓ Concluído e Avançado!</p>
+            <p className="text-[11px] text-slate-300">
+              <strong className="text-white truncate max-w-[200px] inline-block align-bottom">{stageToast.title}</strong> saiu da lista e avançou para <span className="text-orange-400 font-bold underline">{stageToast.nextStage}</span>.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
