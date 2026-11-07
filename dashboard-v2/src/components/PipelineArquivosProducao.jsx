@@ -250,9 +250,10 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
     });
   }, [pipelineData, selectedJob, selectedExt, searchTerm]);
 
-  // Filtered Aspire Preparation Files (.EPS, .DXF, .CRV, .CRV3D)
+  // Filtered Aspire Preparation Files (.EPS, .DXF)
   const filteredAspire = useMemo(() => {
-    const list = [...(pipelineData?.aspirePreparar || [])];
+    const rawList = [...(pipelineData?.aspirePreparar || [])];
+    const list = rawList.filter(f => f.ext !== '.crv3d' && f.ext !== '.crv' && !(f.name || '').toLowerCase().endsWith('.crv3d') && !(f.name || '').toLowerCase().endsWith('.crv'));
 
     // Arquivos Corel que foram dados OK avançam para a etapa de Aspire!
     (pipelineData?.cadPreparar || []).forEach(cf => {
@@ -913,7 +914,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
           </div>
         )}
 
-        {/* TAB 2: ARQUIVOS DE MATERIAIS PARA O ASPIRE (.EPS / .DXF / .CRV3D) */}
+        {/* TAB 2: ARQUIVOS DE MATERIAIS PARA O ASPIRE (.EPS / .DXF) */}
         {activeTab === 'aspire' && (
           <div className="bg-white dark:bg-white/[0.03] rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm">
             <div className="p-3 bg-sky-500/5 border-b border-slate-200 dark:border-white/5 flex flex-wrap items-center justify-between gap-2">

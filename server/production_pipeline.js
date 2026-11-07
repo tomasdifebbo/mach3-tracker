@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const CAD_EXTS = ['.cdr']; // Apenas arquivos .CDR do CorelDRAW
-const ASPIRE_EXTS = ['.eps', '.dxf', '.crv', '.crv3d']; // Arquivos vetoriais/projetos para abrir e preparar no Aspire
+const ASPIRE_EXTS = ['.eps', '.dxf']; // Apenas arquivos vetoriais (.EPS/.DXF) para abrir e preparar no Aspire (.crv3d e .crv são backups e não devem ser exibidos)
 const GCODE_EXTS = ['.txt', '.nc', '.tap', '.gcode', '.cnc'];
 
 function scanDirRecursive(dir, maxDepth = 6, depth = 0) {
@@ -13,7 +13,7 @@ function scanDirRecursive(dir, maxDepth = 6, depth = 0) {
         for (const ent of entries) {
             if (ent.name.startsWith('.') || ent.name === 'Thumbs.db') continue;
             const lowerName = ent.name.toLowerCase();
-            if (lowerName.startsWith('cópia_de_segurança') || lowerName.startsWith('copia_de_seguranca') || lowerName.startsWith('backup_of_') || lowerName.startsWith('@')) continue;
+            if (lowerName.startsWith('cópia_de_segurança') || lowerName.startsWith('copia_de_seguranca') || lowerName.startsWith('backup_of_') || lowerName.startsWith('@') || lowerName.endsWith('.crv3d') || lowerName.endsWith('.crv')) continue;
             const full = path.join(dir, ent.name);
             if (ent.isDirectory()) {
                 files = files.concat(scanDirRecursive(full, maxDepth, depth + 1));
@@ -542,14 +542,16 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     };
                 });
 
-                const aspirePrepararList = (snap.aspirePreparar || []).map(af => {
-                    const lower = (af.name || '').toLowerCase().trim();
-                    const key = (af.fullPath || `${af.jobName || ''}_${af.name}`).toLowerCase().trim();
-                    return {
-                        ...af,
-                        isManuallyDone: Boolean(completedFilesMap[lower] || completedFilesMap[key])
-                    };
-                });
+                const aspirePrepararList = (snap.aspirePreparar || [])
+                    .filter(af => af.ext !== '.crv3d' && af.ext !== '.crv' && !(af.name || '').toLowerCase().endsWith('.crv3d') && !(af.name || '').toLowerCase().endsWith('.crv'))
+                    .map(af => {
+                        const lower = (af.name || '').toLowerCase().trim();
+                        const key = (af.fullPath || `${af.jobName || ''}_${af.name}`).toLowerCase().trim();
+                        return {
+                            ...af,
+                            isManuallyDone: Boolean(completedFilesMap[lower] || completedFilesMap[key])
+                        };
+                    });
 
                 cachedResult = {
                     summary: {

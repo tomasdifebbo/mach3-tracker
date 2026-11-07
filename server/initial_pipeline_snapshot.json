@@ -3096,34 +3096,6 @@
   ],
   "aspirePreparar": [
     {
-      "name": "MDF 9MM.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\HOGSMEAD\\RAIO\\MDF 9MM.crv3d",
-      "size": 208896,
-      "mtime": 1794074360487,
-      "mtimeDate": "2026-11-07T17:59:20.487Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "RAIO",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 4 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 4,
-      "chapasList": [
-        "chapa 2 mdf9mm e4mm.txt",
-        "chapa 3 mdf9mm e4mm.txt",
-        "corte mdf9mm e4mm_1.txt",
-        "mdf9mm e4mm_1-Corte 30.txt"
-      ]
-    },
-    {
       "name": "MDF 9MM RAMPA A1.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -3170,29 +3142,6 @@
       "chapasList": [
         "CAMBOTA compensado 10mm e6mm_1-Corte 1.txt"
       ]
-    },
-    {
-      "name": "MDF 15MM.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\HOGSMEAD\\MDF 15MM.crv3d",
-      "size": 667648,
-      "mtime": 1794069395137,
-      "mtimeDate": "2026-11-07T16:36:35.137Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "HOGSMEAD",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "15mm",
-        "tag": "MDF 15mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
     },
     {
       "name": "MDF 9MM.eps",
@@ -3267,40 +3216,6 @@
       "chapasList": []
     },
     {
-      "name": "MDF 9MM.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\HOGSMEAD\\MDF 9MM.crv3d",
-      "size": 2460672,
-      "mtime": 1794057896443,
-      "mtimeDate": "2026-11-07T13:24:56.443Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "HOGSMEAD",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 10 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 10,
-      "chapasList": [
-        "APLIQUE MDF 9MM_1-Corte 1 OK.txt",
-        "APLIQUE MDF 9MM_1-Corte 5 OK.txt",
-        "APLIQUE MDF 9MM_2-Corte 2 OK.txt",
-        "APLIQUE MDF 9MM_2-Corte 6 OK.txt",
-        "APLIQUE MDF 9MM_3-Corte 3 OK.txt",
-        "APLIQUE MDF 9MM_3-Corte 8 OK.txt",
-        "APLIQUE MDF 9MM_4-Corte 4 OK.txt",
-        "APLIQUE MDF 9MM_4-Corte 7 OK.txt",
-        "APLIQUE MDF 9MM_5-Corte 9.txt",
-        "APLIQUE MDF 9MM_6-Corte 10.txt"
-      ]
-    },
-    {
       "name": "MDF 9MM.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -3335,29 +3250,6 @@
       ]
     },
     {
-      "name": "TEXTURA TIJOLOS (1) - FINAL OTIMIZADO.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\TEXTURA_PAREDE_TIJOLOS MDF 9 TESTE\\TEXTURA TIJOLOS (1) - FINAL OTIMIZADO.crv3d",
-      "size": 32577536,
-      "mtime": 1794001580350,
-      "mtimeDate": "2026-11-06T21:46:20.350Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "TEXTURA_PAREDE_TIJOLOS MDF 9 TESTE",
-      "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
-    },
-    {
       "name": "peças faltantes mdf 9mm.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -3390,42 +3282,6 @@
         "MDF 9MM E4MM 3 JANELAS CORTE 2_1-Corte 4.txt",
         "MDF 9MM E4MM 3 JANELAS_1-Corte 3.txt",
         "MDF 9MM E4MM.txt"
-      ]
-    },
-    {
-      "name": "compensado certo 6mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA PHOTO OPP\\compensado certo 6mm.crv3d",
-      "size": 384512,
-      "mtime": 1793985150553,
-      "mtimeDate": "2026-11-06T17:12:30.553Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "FACHADA PHOTO OPP",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "6mm",
-        "tag": "Compensado 6mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 12 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 12,
-      "chapasList": [
-        "2X compensado 6mm e6mm_1-°chapaok.txt",
-        "2X compensado 6mm e6mm_2-°chapaok.txt",
-        "2X compensado 6mm e6mm_3-°chapaok.txt",
-        "2X compensado 6mm e6mm_4-°chapa OK.txt",
-        "2X compensado 6mm e6mm_5-°CHAPA OK.txt",
-        "A compensado 6mm e6mm_11-°CHAPA OK.txt",
-        "A compensado 6mm e6mm_12-°CHAPA.txt",
-        "A compensado 6mm e6mm_8-°CHAPA OK.txt",
-        "B 2X compensado 6mm e6mm_7-°CHAPA OK.txt",
-        "B 2X compensado 6mm e6mm_9-°CHAPA OK.txt",
-        "B2X compensado 6mm e6mm_10-°CHAPA OK.txt",
-        "compensado 6mm e6mm_6-°CHAPA OK.txt"
       ]
     },
     {
@@ -3521,37 +3377,6 @@
       "chapasList": []
     },
     {
-      "name": "lateral compensado 6mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\HOGSMEAD\\RAIO\\lateral compensado 6mm.crv3d",
-      "size": 185856,
-      "mtime": 1793973670675,
-      "mtimeDate": "2026-11-06T14:01:10.675Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "RAIO",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "6mm",
-        "tag": "Compensado 6mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 7 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 7,
-      "chapasList": [
-        "1 compensado 6mm fundo raio  e6mm_1-Corte 1.txt",
-        "2 compensado 6mm fundo raio  e6mm_1-Corte 2.txt",
-        "compensado 6mm e6mm_1-Corte 1.txt",
-        "compensado 6mm e6mm_2-Corte 2.txt",
-        "compensado 6mm e6mm_3-Corte 3.txt",
-        "compensado 6mm e6mm_4-Corte 4.txt",
-        "compensado 6mm e6mm_5-Corte 5.txt"
-      ]
-    },
-    {
       "name": "1.dxf",
       "ext": ".dxf",
       "type": "aspire",
@@ -3598,42 +3423,6 @@
       "chapasList": []
     },
     {
-      "name": "compensado 6mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA PHOTO OPP\\compensado 6mm.crv3d",
-      "size": 1335808,
-      "mtime": 1793920546712,
-      "mtimeDate": "2026-11-05T23:15:46.712Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "FACHADA PHOTO OPP",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "6mm",
-        "tag": "Compensado 6mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 12 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 12,
-      "chapasList": [
-        "2X compensado 6mm e6mm_1-°chapaok.txt",
-        "2X compensado 6mm e6mm_2-°chapaok.txt",
-        "2X compensado 6mm e6mm_3-°chapaok.txt",
-        "2X compensado 6mm e6mm_4-°chapa OK.txt",
-        "2X compensado 6mm e6mm_5-°CHAPA OK.txt",
-        "A compensado 6mm e6mm_11-°CHAPA OK.txt",
-        "A compensado 6mm e6mm_12-°CHAPA.txt",
-        "A compensado 6mm e6mm_8-°CHAPA OK.txt",
-        "B 2X compensado 6mm e6mm_7-°CHAPA OK.txt",
-        "B 2X compensado 6mm e6mm_9-°CHAPA OK.txt",
-        "B2X compensado 6mm e6mm_10-°CHAPA OK.txt",
-        "compensado 6mm e6mm_6-°CHAPA OK.txt"
-      ]
-    },
-    {
       "name": "compensado 6mm.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -3641,42 +3430,6 @@
       "size": 200588,
       "mtime": 1793917784768.1287,
       "mtimeDate": "2026-11-05T22:29:44.768Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "FACHADA PHOTO OPP",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "6mm",
-        "tag": "Compensado 6mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 12 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 12,
-      "chapasList": [
-        "2X compensado 6mm e6mm_1-°chapaok.txt",
-        "2X compensado 6mm e6mm_2-°chapaok.txt",
-        "2X compensado 6mm e6mm_3-°chapaok.txt",
-        "2X compensado 6mm e6mm_4-°chapa OK.txt",
-        "2X compensado 6mm e6mm_5-°CHAPA OK.txt",
-        "A compensado 6mm e6mm_11-°CHAPA OK.txt",
-        "A compensado 6mm e6mm_12-°CHAPA.txt",
-        "A compensado 6mm e6mm_8-°CHAPA OK.txt",
-        "B 2X compensado 6mm e6mm_7-°CHAPA OK.txt",
-        "B 2X compensado 6mm e6mm_9-°CHAPA OK.txt",
-        "B2X compensado 6mm e6mm_10-°CHAPA OK.txt",
-        "compensado 6mm e6mm_6-°CHAPA OK.txt"
-      ]
-    },
-    {
-      "name": "PEÇA C   Compensado 6mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA PHOTO OPP\\PEÇA C   Compensado 6mm.crv3d",
-      "size": 214528,
-      "mtime": 1793917730601,
-      "mtimeDate": "2026-11-05T22:28:50.601Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
       "subfolderName": "FACHADA PHOTO OPP",
       "matInfo": {
@@ -3765,33 +3518,6 @@
       ]
     },
     {
-      "name": "compensado de 6mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\quadriboll\\compensado de 6mm.crv3d",
-      "size": 326656,
-      "mtime": 1793888955417,
-      "mtimeDate": "2026-11-05T14:29:15.417Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "quadriboll",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "6mm",
-        "tag": "Compensado 6mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 3 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 3,
-      "chapasList": [
-        "2X CHAPA 3 compensado 6mm e6mm.txt",
-        "4X CHAPA 2 compensado 6mm e6mm.txt",
-        "4X compensado 6mm e6mm.txt"
-      ]
-    },
-    {
       "name": "compensado de 6mm.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -3863,29 +3589,6 @@
         "MDF 9 MM E6 ARCOS CORTE 5_1-Corte 5.txt",
         "MDF 9MM E4MM_1-Corte 29.txt"
       ]
-    },
-    {
-      "name": "ROUTER.eps CASAS.crv3d PORTA E ARCO.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA CASAS\\CNC\\ROUTER.eps CASAS.crv3d PORTA E ARCO.crv3d",
-      "size": 1720832,
-      "mtime": 1793805988031,
-      "mtimeDate": "2026-11-04T15:26:28.031Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "FACHADA CASAS",
-      "matInfo": {
-        "material": "Isopor EPS",
-        "thickness": null,
-        "tag": "Isopor EPS",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
     },
     {
       "name": "ROUTER.eps CASAS.eps",
@@ -3980,41 +3683,6 @@
       "chapasList": []
     },
     {
-      "name": "MDF 9MM.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA CASTELO\\MDF 9MM.crv3d",
-      "size": 3427328,
-      "mtime": 1793714959926,
-      "mtimeDate": "2026-11-03T14:09:19.926Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "FACHADA CASTELO",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 11 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 11,
-      "chapasList": [
-        "CHAPA 2 MDF 9MM E4MM.txt",
-        "CHAPA 3 MDF 9MM E4MM.txt",
-        "CHAPA 4 MDF 9MM E4MM.txt",
-        "CHAPA 5 MDF 9MM E4MM.txt",
-        "CHAPA 6 MDF 9MM E4MM.txt",
-        "CHAPA 7 MDF 9MM E4MM.txt",
-        "CHAPA 8 MDF 9MM E4MM.txt",
-        "CHAPA 9 MDF 9MM E4MM.txt",
-        "MDF 9MM E4MM 3 JANELAS CORTE 2_1-Corte 4.txt",
-        "MDF 9MM E4MM 3 JANELAS_1-Corte 3.txt",
-        "MDF 9MM E4MM.txt"
-      ]
-    },
-    {
       "name": "compensado 6mm.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -4041,64 +3709,6 @@
         "compensado e6mm_3-Corte 3.txt",
         "compensado e6mm_4-Corte 4.txt",
         "compensado e6mm_5-Corte 5.txt"
-      ]
-    },
-    {
-      "name": "MDF 15MM.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA CASTELO\\MDF 15MM.crv3d",
-      "size": 2427904,
-      "mtime": 1793713314167,
-      "mtimeDate": "2026-11-03T13:41:54.167Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "FACHADA CASTELO",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "15mm",
-        "tag": "MDF 15mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 3 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 3,
-      "chapasList": [
-        "CHAPA 2 MDF 15MM E4MM.txt",
-        "CHAPA 3 MDF 15MM E4MM.txt",
-        "MDF 15MM E4MM.txt"
-      ]
-    },
-    {
-      "name": "MDF 9MM detalhe porta.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640A - porta castelo\\MDF 9MM detalhe porta.crv3d",
-      "size": 2043904,
-      "mtime": 1793709626497,
-      "mtimeDate": "2026-11-03T12:40:26.497Z",
-      "jobName": "2640 - Expresso hogwarts",
-      "subfolderName": "2640A - porta castelo",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 7 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 7,
-      "chapasList": [
-        "detalhe porta.txt",
-        "mdf 9mm e4mm.txt",
-        "mdf 9mm e6mm.txt",
-        "MDF 9MM MOLDURA MENOR E4MM.txt",
-        "MDF 9MM MOLDURA MENOR E6MM.txt",
-        "MDF 9MM MOLDURA MENOR VBIT ARREDONDADA.txt",
-        "mdf 9mm vbit arredondada.txt"
       ]
     },
     {
@@ -4195,59 +3805,6 @@
       ]
     },
     {
-      "name": "acabamento lateral porta mdf 9mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640A - porta castelo\\acabamento lateral porta mdf 9mm.crv3d",
-      "size": 629760,
-      "mtime": 1793647626792,
-      "mtimeDate": "2026-11-02T19:27:06.792Z",
-      "jobName": "2640 - Expresso hogwarts",
-      "subfolderName": "2640A - porta castelo",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 6 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 6,
-      "chapasList": [
-        "mdf 9mm e4mm.txt",
-        "mdf 9mm e6mm.txt",
-        "MDF 9MM MOLDURA MENOR E4MM.txt",
-        "MDF 9MM MOLDURA MENOR E6MM.txt",
-        "MDF 9MM MOLDURA MENOR VBIT ARREDONDADA.txt",
-        "mdf 9mm vbit arredondada.txt"
-      ]
-    },
-    {
-      "name": "COMPENSADO bandeira.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2667A - EXPO CULTURA - GALINHEIRO\\COMPENSADO bandeira.crv3d",
-      "size": 386560,
-      "mtime": 1793644269889,
-      "mtimeDate": "2026-11-02T18:31:09.889Z",
-      "jobName": "2667A - EXPO CULTURA",
-      "subfolderName": "2667A - EXPO CULTURA - GALINHEIRO",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": null,
-        "tag": "Compensado",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
-    },
-    {
       "name": "acabamento lateral porta mdf 9mm.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -4276,29 +3833,6 @@
         "MDF 9MM MOLDURA MENOR VBIT ARREDONDADA.txt",
         "mdf 9mm vbit arredondada.txt"
       ]
-    },
-    {
-      "name": "compensado 15mm escada.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2667A - EXPO CULTURA - GALINHEIRO\\compensado 15mm escada.crv3d",
-      "size": 440320,
-      "mtime": 1793626772272,
-      "mtimeDate": "2026-11-02T13:39:32.272Z",
-      "jobName": "2667A - EXPO CULTURA",
-      "subfolderName": "2667A - EXPO CULTURA - GALINHEIRO",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "15mm",
-        "tag": "Compensado 15mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
     },
     {
       "name": "fundo em-1.eps",
@@ -4396,32 +3930,6 @@
       ]
     },
     {
-      "name": "CAMBOTA COMPENSADO 15MM.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2667A - EXPO ENTRADA\\CAMBOTA COMPENSADO 15MM.crv3d",
-      "size": 499712,
-      "mtime": 1793465719829,
-      "mtimeDate": "2026-10-31T16:55:19.829Z",
-      "jobName": "2667A - EXPO ENTRADA",
-      "subfolderName": "2667A - EXPO ENTRADA",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "15mm",
-        "tag": "Compensado 15mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 2 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 2,
-      "chapasList": [
-        "CAMBOTA COMPENSADO 15MM contorno superior porta E6MM_1-Corte 4.txt",
-        "CAMBOTA COMPENSADO 15MM contorno superior porta E6MM_2-Corte 5.txt"
-      ]
-    },
-    {
       "name": "compensado 15mm DIVIDIDO.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -4472,29 +3980,6 @@
         "CAMBOTA COMPENSADO 15MM contorno superior porta E6MM_1-Corte 4.txt",
         "CAMBOTA COMPENSADO 15MM contorno superior porta E6MM_2-Corte 5.txt"
       ]
-    },
-    {
-      "name": "tudo.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2667A - EXPO ENTRADA\\tudo.crv3d",
-      "size": 288256,
-      "mtime": 1793464831163,
-      "mtimeDate": "2026-10-31T16:40:31.163Z",
-      "jobName": "2667A - EXPO ENTRADA",
-      "subfolderName": "2667A - EXPO ENTRADA",
-      "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
     },
     {
       "name": "escada.eps",
@@ -4625,105 +4110,6 @@
       "chapasList": []
     },
     {
-      "name": "compensado 10mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640g - sala de escada\\compensado 10mm.crv3d",
-      "size": 81920,
-      "mtime": 1793384927015,
-      "mtimeDate": "2026-10-30T18:28:47.015Z",
-      "jobName": "2640 - Expresso hogwarts",
-      "subfolderName": "2640g - sala de escada",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "10mm",
-        "tag": "Compensado 10mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 2 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 2,
-      "chapasList": [
-        "compensado 10mm E6MM_1-Corte 1.txt",
-        "compensado 10mm E6MM_1-Corte 2.txt"
-      ]
-    },
-    {
-      "name": "mdf 9mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2667A - EXPO ENTRADA\\mdf 9mm.crv3d",
-      "size": 168960,
-      "mtime": 1793384654836,
-      "mtimeDate": "2026-10-30T18:24:14.836Z",
-      "jobName": "2667A - EXPO ENTRADA",
-      "subfolderName": "2667A - EXPO ENTRADA",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 3 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 3,
-      "chapasList": [
-        "porta castelo  MDF 9MM corte e6mm_1-Corte 2.txt",
-        "porta castelo  MDF 9MM_1-Preenchimento 1_1-Preenchimento 1.txt",
-        "porta castelo chapa 2 MDF 9MM corte e6mm_1-Corte 3.txt"
-      ]
-    },
-    {
-      "name": "TESTEIRA ENTRADACOMPENSADO 10MM.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2667A - EXPO ENTRADA\\TESTEIRA ENTRADACOMPENSADO 10MM.crv3d",
-      "size": 358912,
-      "mtime": 1793384522993,
-      "mtimeDate": "2026-10-30T18:22:02.993Z",
-      "jobName": "2667A - EXPO ENTRADA",
-      "subfolderName": "2667A - EXPO ENTRADA",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "10mm",
-        "tag": "Compensado 10mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
-    },
-    {
-      "name": "COMPENSADO 10MM.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2667A - EXPO ENTRADA\\COMPENSADO 10MM.crv3d",
-      "size": 1125888,
-      "mtime": 1793384165362,
-      "mtimeDate": "2026-10-30T18:16:05.362Z",
-      "jobName": "2667A - EXPO ENTRADA",
-      "subfolderName": "2667A - EXPO ENTRADA",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "10mm",
-        "tag": "Compensado 10mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
-    },
-    {
       "name": "mdf 9mm.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -4822,39 +4208,6 @@
       "chapasList": [
         "compensado 10mm E6MM_1-Corte 1.txt",
         "compensado 10mm E6MM_1-Corte 2.txt"
-      ]
-    },
-    {
-      "name": "compensado 6mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640 - entrada\\ENTRADA\\compensado 6mm.crv3d",
-      "size": 694784,
-      "mtime": 1793319166019,
-      "mtimeDate": "2026-10-30T00:12:46.019Z",
-      "jobName": "2640 - Expresso hogwarts",
-      "subfolderName": "ENTRADA",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "6mm",
-        "tag": "Compensado 6mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 9 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 9,
-      "chapasList": [
-        "compensado 6mm_1-Corte 2x.txt",
-        "compensado 6mm_2-Corte 2x.txt",
-        "compensado 6mm_3-Corte 2x.txt",
-        "compensado 6mm_4-Corte 2x.txt",
-        "compensado 6mm_5-Corte 2x.txt",
-        "compensado 6mm_6-Corte.txt",
-        "compensado 6mm_7-Corte.txt",
-        "compensado 6mm_8-Corte.txt",
-        "compensado 6mm_9-Corte.txt"
       ]
     },
     {
@@ -4983,29 +4336,6 @@
       "chapasList": []
     },
     {
-      "name": "COMPENSADO VISTA 2.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2667A - EXPO CULTURA - GALINHEIRO\\COMPENSADO VISTA 2.crv3d",
-      "size": 1598976,
-      "mtime": 1793277890745,
-      "mtimeDate": "2026-10-29T12:44:50.745Z",
-      "jobName": "2667A - EXPO CULTURA",
-      "subfolderName": "2667A - EXPO CULTURA - GALINHEIRO",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": null,
-        "tag": "Compensado",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
-    },
-    {
       "name": "COMPENSADO VISTA 3.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -5036,29 +4366,6 @@
       "size": 17621424,
       "mtime": 1793212674557.102,
       "mtimeDate": "2026-10-28T18:37:54.557Z",
-      "jobName": "2667A - EXPO CULTURA",
-      "subfolderName": "2667A - EXPO CULTURA - GALINHEIRO",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": null,
-        "tag": "Compensado",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
-    },
-    {
-      "name": "COMPENSADO VISTA 1.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2667A - EXPO CULTURA - GALINHEIRO\\COMPENSADO VISTA 1.crv3d",
-      "size": 2647552,
-      "mtime": 1793211616504,
-      "mtimeDate": "2026-10-28T18:20:16.504Z",
       "jobName": "2667A - EXPO CULTURA",
       "subfolderName": "2667A - EXPO CULTURA - GALINHEIRO",
       "matInfo": {
@@ -5125,31 +4432,6 @@
       ]
     },
     {
-      "name": "mdf 15mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2667A - EXPO tv CULTURA\\mdf 15mm.crv3d",
-      "size": 344576,
-      "mtime": 1793191217194,
-      "mtimeDate": "2026-10-28T12:40:17.194Z",
-      "jobName": "2667A - EXPO tv CULTURA",
-      "subfolderName": "2667A - EXPO tv CULTURA",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "15mm",
-        "tag": "MDF 15mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 1 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 1,
-      "chapasList": [
-        "mdf15mm complementos tv cultura e4mm.txt"
-      ]
-    },
-    {
       "name": "mdf 15mm.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -5175,33 +4457,6 @@
       ]
     },
     {
-      "name": "complemento mdf9mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2667A - EXPO CULTURA - PAREDE XTUDO\\complemento mdf9mm.crv3d",
-      "size": 782848,
-      "mtime": 1793190241557,
-      "mtimeDate": "2026-10-28T12:24:01.557Z",
-      "jobName": "2667A - EXPO CULTURA",
-      "subfolderName": "2667A - EXPO CULTURA - PAREDE XTUDO",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 3 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 3,
-      "chapasList": [
-        "mdf9mm e6mm.txt",
-        "mdf9mm xtudo e4mm.txt",
-        "painel atualizado mdf9mm e4mm.txt"
-      ]
-    },
-    {
       "name": "mdf15mm.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -5215,29 +4470,6 @@
         "material": "MDF",
         "thickness": "15mm",
         "tag": "MDF 15mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
-    },
-    {
-      "name": "routers pequeno principe-1.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2615A - pequeno principe\\routers pequeno principe-1.crv3d",
-      "size": 643584,
-      "mtime": 1793188111203,
-      "mtimeDate": "2026-10-28T11:48:31.203Z",
-      "jobName": "2615A - pequeno principe",
-      "subfolderName": "2615A - pequeno principe",
-      "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
         "chapaIndex": null,
         "targetQuantity": 1
       },
@@ -5348,79 +4580,6 @@
       "chapasList": []
     },
     {
-      "name": "mdf15mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2667A - EXPO CULTURA - PAREDE XTUDO\\mdf15mm.crv3d",
-      "size": 867328,
-      "mtime": 1793030987797,
-      "mtimeDate": "2026-10-26T16:09:47.797Z",
-      "jobName": "2667A - EXPO CULTURA",
-      "subfolderName": "2667A - EXPO CULTURA - PAREDE XTUDO",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "15mm",
-        "tag": "MDF 15mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
-    },
-    {
-      "name": "fundo caixa.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2666 - Caixas\\fundo caixa.crv3d",
-      "size": 46080,
-      "mtime": 1793021956061,
-      "mtimeDate": "2026-10-26T13:39:16.061Z",
-      "jobName": "2666 - CAIXAS",
-      "subfolderName": "2666 - Caixas",
-      "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
-    },
-    {
-      "name": "mdf9mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2667A - EXPO CULTURA - PAREDE XTUDO\\mdf9mm.crv3d",
-      "size": 240640,
-      "mtime": 1793020100893,
-      "mtimeDate": "2026-10-26T13:08:20.893Z",
-      "jobName": "2667A - EXPO CULTURA",
-      "subfolderName": "2667A - EXPO CULTURA - PAREDE XTUDO",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 3 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 3,
-      "chapasList": [
-        "mdf9mm e6mm.txt",
-        "mdf9mm xtudo e4mm.txt",
-        "painel atualizado mdf9mm e4mm.txt"
-      ]
-    },
-    {
       "name": "TELEVISAO RETRO MDF9MM.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -5448,31 +4607,6 @@
         "TELEVISAO PARTE3 MDF9MM E6MM.txt",
         "TELEVISAO PARTE4 MDF9MM E6MM.txt",
         "TELEVISAO PARTE5 MDF9MM E6MM.txt"
-      ]
-    },
-    {
-      "name": "mdf 9mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640 - raio\\mdf 9mm.crv3d",
-      "size": 1528320,
-      "mtime": 1792845395988,
-      "mtimeDate": "2026-10-24T12:36:35.988Z",
-      "jobName": "2640 - Expresso hogwarts",
-      "subfolderName": "2640 - raio",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 1 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 1,
-      "chapasList": [
-        "teste raio atualizado mdf9mm e4mm.txt"
       ]
     },
     {
@@ -5528,29 +4662,6 @@
         "compensado 10mm e6mm.txt",
         "CORREÇAO RECUO  BALCAO COMPENSADO 10MM E6MM.txt"
       ]
-    },
-    {
-      "name": "mascara carneiro chapa 2.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2615A - pequeno principe\\mascara carneiro chapa 2.crv3d",
-      "size": 3183104,
-      "mtime": 1792671920654,
-      "mtimeDate": "2026-10-22T12:25:20.654Z",
-      "jobName": "2615A - pequeno principe",
-      "subfolderName": "2615A - pequeno principe",
-      "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
-        "chapaIndex": "2",
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
     },
     {
       "name": "mascara carneiro chapa 1-3.eps",
@@ -5773,35 +4884,6 @@
       "chapasList": []
     },
     {
-      "name": "acrilico 6mm -2.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2615A - pequeno principe\\acrilico 6mm -2.crv3d",
-      "size": 2539008,
-      "mtime": 1792167943334,
-      "mtimeDate": "2026-10-16T16:25:43.334Z",
-      "jobName": "2615A - pequeno principe",
-      "subfolderName": "2615A - pequeno principe",
-      "matInfo": {
-        "material": "Acrílico",
-        "thickness": "6mm",
-        "tag": "Acrílico 6mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 5 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 5,
-      "chapasList": [
-        "acrilico 6mm peça 1.txt",
-        "acrilico 6mm peça 2 e6mm.txt",
-        "acrilico 6mm peça 3 e6mm.txt",
-        "corte acrilico 6mm peça 1.txt",
-        "corte acrilico 6mm peça 3 e6mm.txt"
-      ]
-    },
-    {
       "name": "curva painel tv.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -5920,31 +5002,6 @@
       "chapasList": []
     },
     {
-      "name": "mdf 15mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2662A - capaacete senna\\mdf 15mm.crv3d",
-      "size": 518144,
-      "mtime": 1791988190019,
-      "mtimeDate": "2026-10-14T14:29:50.019Z",
-      "jobName": "2662A - capaacete senna",
-      "subfolderName": "2662A - capaacete senna",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "15mm",
-        "tag": "MDF 15mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 1 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 1,
-      "chapasList": [
-        "mdf 15mm cambota reduzida.txt"
-      ]
-    },
-    {
       "name": "mdf 15mm.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -5993,54 +5050,6 @@
       "chapasList": []
     },
     {
-      "name": "corredor capacete.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2662A - capaacete senna\\corredor capacete.crv3d",
-      "size": 713216,
-      "mtime": 1791564921315,
-      "mtimeDate": "2026-10-09T16:55:21.315Z",
-      "jobName": "2662A - capaacete senna",
-      "subfolderName": "2662A - capaacete senna",
-      "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
-    },
-    {
-      "name": "mdf6mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640A - Expresso Hogwarts escada\\mdf6mm.crv3d",
-      "size": 780288,
-      "mtime": 1791558901681,
-      "mtimeDate": "2026-10-09T15:15:01.681Z",
-      "jobName": "2640 - Expresso hogwarts",
-      "subfolderName": "2640A - Expresso Hogwarts escada",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "6mm",
-        "tag": "MDF 6mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 1 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 1,
-      "chapasList": [
-        "mdf6mm e6mm.txt"
-      ]
-    },
-    {
       "name": "mdf6mm.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -6064,29 +5073,6 @@
       "chapasList": [
         "mdf6mm e6mm.txt"
       ]
-    },
-    {
-      "name": "escada compensado 6mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640A - Expresso Hogwarts escada\\escada compensado 6mm.crv3d",
-      "size": 458752,
-      "mtime": 1791552604514,
-      "mtimeDate": "2026-10-09T13:30:04.514Z",
-      "jobName": "2640 - Expresso hogwarts",
-      "subfolderName": "2640A - Expresso Hogwarts escada",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "6mm",
-        "tag": "Compensado 6mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
     },
     {
       "name": "compensado 6mm.eps",
@@ -6161,54 +5147,6 @@
       ]
     },
     {
-      "name": "FORMA PORTA MDF 15MM.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2652A - Submarino termas\\FORMA PORTA MDF 15MM.crv3d",
-      "size": 235008,
-      "mtime": 1791466361746,
-      "mtimeDate": "2026-10-08T13:32:41.746Z",
-      "jobName": "2652A - Submarino termas",
-      "subfolderName": "2652A - Submarino termas",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "15mm",
-        "tag": "MDF 15mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
-    },
-    {
-      "name": "ENGROSSO 1.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640A - porta castelo\\ENGROSSO 1.crv3d",
-      "size": 68096,
-      "mtime": 1791318656989,
-      "mtimeDate": "2026-10-06T20:30:56.989Z",
-      "jobName": "2640 - Expresso hogwarts",
-      "subfolderName": "2640A - porta castelo",
-      "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 1 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 1,
-      "chapasList": [
-        "MDF 15MM ENGROSSO 1 E6MM.txt"
-      ]
-    },
-    {
       "name": "acm encaixe.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -6230,33 +5168,6 @@
       "hasGcode": false,
       "chapasCount": 0,
       "chapasList": []
-    },
-    {
-      "name": "compensado 15 mm.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2615A - pequeno principe\\compensado 15 mm.crv3d",
-      "size": 393216,
-      "mtime": 1791313983023,
-      "mtimeDate": "2026-10-06T19:13:03.023Z",
-      "jobName": "2615A - pequeno principe",
-      "subfolderName": "2615A - pequeno principe",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": "15mm",
-        "tag": "Compensado 15mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 3 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 3,
-      "chapasList": [
-        "compensado 15mm -parte 1 e6mm.txt",
-        "compensado 15mm -parte 2 e6mm.txt",
-        "compensado 15mm -parte 3 e6mm.txt"
-      ]
     },
     {
       "name": "base compensado 15 mm.eps",
@@ -6283,109 +5194,6 @@
         "compensado 15mm -parte 1 e6mm.txt",
         "compensado 15mm -parte 2 e6mm.txt",
         "compensado 15mm -parte 3 e6mm.txt"
-      ]
-    },
-    {
-      "name": "mdf 15mm porta.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640a - TESTE COLUNAS\\mdf 15mm porta.crv3d",
-      "size": 10895872,
-      "mtime": 1791222250619,
-      "mtimeDate": "2026-10-05T17:44:10.619Z",
-      "jobName": "2640 - Expresso hogwarts",
-      "subfolderName": "2640a - TESTE COLUNAS",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "15mm",
-        "tag": "MDF 15mm",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
-    },
-    {
-      "name": "parte 3 COMPENSADO 15.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2662A - capaacete senna\\compensado 15mm\\parte 3 COMPENSADO 15.crv3d",
-      "size": 951296,
-      "mtime": 1791220887798,
-      "mtimeDate": "2026-10-05T17:21:27.798Z",
-      "jobName": "2662A - capaacete senna",
-      "subfolderName": "compensado 15mm",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": null,
-        "tag": "Compensado",
-        "chapaIndex": "3",
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
-    },
-    {
-      "name": "parte 2 A1 COMPENSADO 15.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2662A - capaacete senna\\compensado 15mm\\parte 2 A1 COMPENSADO 15.crv3d",
-      "size": 420352,
-      "mtime": 1791208746282,
-      "mtimeDate": "2026-10-05T13:59:06.282Z",
-      "jobName": "2662A - capaacete senna",
-      "subfolderName": "compensado 15mm",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": null,
-        "tag": "Compensado",
-        "chapaIndex": "2",
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
-    },
-    {
-      "name": "COMPENSADO 15.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2662A - capaacete senna\\compensado 15mm\\COMPENSADO 15.crv3d",
-      "size": 1283584,
-      "mtime": 1791206031832,
-      "mtimeDate": "2026-10-05T13:13:51.832Z",
-      "jobName": "2662A - capaacete senna",
-      "subfolderName": "compensado 15mm",
-      "matInfo": {
-        "material": "Compensado",
-        "thickness": null,
-        "tag": "Compensado",
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 10 chapas geradas",
-      "hasGcode": true,
-      "chapasCount": 10,
-      "chapasList": [
-        "2 compensado 15mm base para o led e6mm.txt",
-        "compensado 15mm base para o led e6mm.txt",
-        "compensado 15mm chapa 1.txt",
-        "compensado 15mm chapa 2.txt",
-        "compensado 15mm chapa 3.txt",
-        "compensado 15mm chapa 4.txt",
-        "compensado 15mm chapa 5.txt",
-        "compensado 15mm chapa 6 2X.txt",
-        "compensado 15mm chapa 7 2X.txt",
-        "compensado 15mm chapa 8.txt"
       ]
     },
     {
@@ -6426,29 +5234,6 @@
         "thickness": null,
         "tag": "Compensado",
         "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": []
-    },
-    {
-      "name": "PAREDE TIJOLO.crv3d",
-      "ext": ".crv3d",
-      "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640a PAREDE TIJOLO\\PAREDE TIJOLO.crv3d",
-      "size": 2797056,
-      "mtime": 1790939772926,
-      "mtimeDate": "2026-10-02T11:16:12.926Z",
-      "jobName": "2640 - Expresso hogwarts",
-      "subfolderName": "2640a PAREDE TIJOLO",
-      "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
-        "chapaIndex": null,
         "targetQuantity": 1
       },
       "stageStatus": "aguardando_lote_aspire",
