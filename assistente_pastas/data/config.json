@@ -1,6 +1,6 @@
 {
   "source_dir": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos",
-  "dest_dir": "E:\\arquivos 2024\\ARQUIVOS 2026",
+  "dest_dir": "E:\\arquivos 2024\\ARQUIVOS 2026\\ROUTER",
   "oficina_folder_pattern": "^\\s*3\\s*-\\s*OFICINA\\s*$",
   "scan_interval_seconds": 25,
   "auto_copy_new": true,

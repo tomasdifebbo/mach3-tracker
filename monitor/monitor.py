@@ -485,8 +485,21 @@ def processa_fim(iso_time, origem):
 
 def parse_mach3_time(data_str, hora_str):
     try:
-        dt = datetime.datetime.strptime(f"{data_str.strip()} {hora_str.strip()}", "%d/%m/%Y %H:%M:%S")
-        return dt.astimezone().isoformat()
+        dt = datetime.datetime.strptime(f"{data_str.strip()} {hora_str.strip()}", "%d/%m/%Y %H:%M:%S").astimezone()
+        now = datetime.datetime.now().astimezone()
+        diff_sec = (dt - now).total_seconds()
+        
+        # Se o relogio da maquina CNC estiver adiantado no futuro:
+        if diff_sec > 30:
+            # Caso classico de Horario de Verao indevido do Windows no Brasil (~3600 segundos adiantado)
+            if 2700 <= diff_sec <= 4500:
+                print(f"[!] CNC com Horario de Verao indevido (+1h detectado). Corrigindo timestamp (-1h).")
+                dt = dt - datetime.timedelta(hours=1)
+            else:
+                print(f"[!] Timestamp da CNC no futuro ({diff_sec:.0f}s a frente). Ajustando para hora atual.")
+                dt = now
+                
+        return dt.isoformat()
     except Exception:
         return datetime.datetime.now().astimezone().isoformat()
 

@@ -1,10 +1,10 @@
 {
   "status": "online",
-  "last_scan_time": "18:46:09",
+  "last_scan_time": "11:45:59",
   "total_projects": 12,
   "active_config": {
     "source_dir": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos",
-    "dest_dir": "E:\\arquivos 2024\\ARQUIVOS 2026",
+    "dest_dir": "E:\\arquivos 2024\\ARQUIVOS 2026\\ROUTER",
     "oficina_folder_pattern": "^\\s*3\\s*-\\s*OFICINA\\s*$",
     "target_spindle_speed": "18000",
     "patch_gcode_macros": true,
@@ -15,22 +15,22 @@
       "name": "2640  - EXPRESSO HOGWARTS CCXP",
       "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP",
       "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA",
-      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\2640  - EXPRESSO HOGWARTS CCXP",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\ROUTER\\2640  - EXPRESSO HOGWARTS CCXP",
       "dest_exists": true,
       "status": "atualizacao",
-      "total_files": 101,
-      "new_files_count": 90,
-      "missing_local_count": 90,
-      "total_bytes": 747825261,
-      "new_bytes": 646870188,
+      "total_files": 116,
+      "new_files_count": 13,
+      "missing_local_count": 6,
+      "total_bytes": 793714159,
+      "new_bytes": 43905634,
       "categories": [
         "IMPRESSÃO 3D",
         "MANUAL",
         "ROUTER"
       ],
-      "latest_mtime": 1793913380.0,
-      "latest_date_str": "05/11/2026 18:16",
-      "last_copied_at": null,
+      "latest_mtime": 1794058734.305819,
+      "latest_date_str": "07/11/2026 10:38",
+      "last_copied_at": "07/11/2026 10:39:14",
       "ignored": false,
       "files": [
         {
@@ -161,8 +161,8 @@
           "size": 3170432,
           "mtime": 1792652579.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -172,8 +172,8 @@
           "size": 114952,
           "mtime": 1792652823.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -183,8 +183,8 @@
           "size": 2928028,
           "mtime": 1792689354.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -194,8 +194,8 @@
           "size": 593046,
           "mtime": 1792695537.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -205,8 +205,8 @@
           "size": 429951,
           "mtime": 1793049760.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -216,8 +216,8 @@
           "size": 70384,
           "mtime": 1793036070.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -227,8 +227,8 @@
           "size": 735150,
           "mtime": 1792777298.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -238,8 +238,8 @@
           "size": 1787616,
           "mtime": 1792864258.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -249,8 +249,8 @@
           "size": 61855,
           "mtime": 1792655055.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -260,8 +260,8 @@
           "size": 44621,
           "mtime": 1792777213.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -271,8 +271,8 @@
           "size": 625871,
           "mtime": 1792863178.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -282,8 +282,8 @@
           "size": 3814020,
           "mtime": 1790686361.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -293,8 +293,8 @@
           "size": 3627134,
           "mtime": 1790686156.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -304,8 +304,8 @@
           "size": 6988800,
           "mtime": 1790686275.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -315,8 +315,8 @@
           "size": 4436366,
           "mtime": 1790686347.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -326,8 +326,8 @@
           "size": 5130184,
           "mtime": 1790686162.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -337,8 +337,8 @@
           "size": 5349798,
           "mtime": 1790686377.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -348,8 +348,8 @@
           "size": 1801734,
           "mtime": 1790686166.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -359,8 +359,8 @@
           "size": 1128722,
           "mtime": 1790686359.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -370,8 +370,8 @@
           "size": 1336770,
           "mtime": 1790686345.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -381,8 +381,8 @@
           "size": 1440449,
           "mtime": 1790686376.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -392,8 +392,8 @@
           "size": 776462,
           "mtime": 1790687207.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -403,8 +403,8 @@
           "size": 15415,
           "mtime": 1790686422.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -414,8 +414,8 @@
           "size": 611354,
           "mtime": 1790686461.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -425,8 +425,8 @@
           "size": 1526548,
           "mtime": 1791396894.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -436,8 +436,8 @@
           "size": 1990307,
           "mtime": 1791396926.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -447,8 +447,8 @@
           "size": 587761,
           "mtime": 1790624175.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -458,8 +458,8 @@
           "size": 620399,
           "mtime": 1791408540.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -469,8 +469,8 @@
           "size": 645008,
           "mtime": 1791408491.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -480,8 +480,8 @@
           "size": 271937,
           "mtime": 1791408515.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -491,8 +491,8 @@
           "size": 734372,
           "mtime": 1790710775.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -502,8 +502,8 @@
           "size": 734367,
           "mtime": 1790713752.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -513,8 +513,8 @@
           "size": 433893,
           "mtime": 1791408657.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -524,8 +524,8 @@
           "size": 436164,
           "mtime": 1791408641.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -535,8 +535,8 @@
           "size": 406394,
           "mtime": 1791408625.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -546,8 +546,8 @@
           "size": 269544334,
           "mtime": 1790863145.3085985,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -557,8 +557,8 @@
           "size": 269557284,
           "mtime": 1790791770.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -568,8 +568,8 @@
           "size": 603517,
           "mtime": 1791530782.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -579,8 +579,8 @@
           "size": 150232,
           "mtime": 1793451382.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -590,8 +590,8 @@
           "size": 199634,
           "mtime": 1793450531.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -601,8 +601,8 @@
           "size": 8179200,
           "mtime": 1793450662.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -612,8 +612,8 @@
           "size": 3963724,
           "mtime": 1793450656.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -623,8 +623,8 @@
           "size": 20600,
           "mtime": 1793450688.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -634,8 +634,8 @@
           "size": 598258,
           "mtime": 1793450838.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -645,8 +645,8 @@
           "size": 7605,
           "mtime": 1793736428.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -656,8 +656,8 @@
           "size": 31264,
           "mtime": 1793736401.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -667,8 +667,8 @@
           "size": 1245737,
           "mtime": 1793455785.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -678,8 +678,8 @@
           "size": 1138819,
           "mtime": 1793300827.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -689,8 +689,8 @@
           "size": 1003390,
           "mtime": 1793374781.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -700,8 +700,8 @@
           "size": 725817,
           "mtime": 1793374997.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -711,8 +711,8 @@
           "size": 729580,
           "mtime": 1793374977.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -722,8 +722,8 @@
           "size": 1011822,
           "mtime": 1793374957.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -733,8 +733,8 @@
           "size": 905980,
           "mtime": 1793375162.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -744,8 +744,8 @@
           "size": 794718,
           "mtime": 1793375133.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -755,8 +755,8 @@
           "size": 635363,
           "mtime": 1793375115.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -766,8 +766,8 @@
           "size": 695274,
           "mtime": 1793375090.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -777,8 +777,8 @@
           "size": 903271,
           "mtime": 1793375180.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -788,8 +788,8 @@
           "size": 527311,
           "mtime": 1793375253.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -799,8 +799,8 @@
           "size": 253014,
           "mtime": 1793375235.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -810,8 +810,8 @@
           "size": 584445,
           "mtime": 1793375273.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -832,8 +832,8 @@
           "size": 684579,
           "mtime": 1793678226.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -843,8 +843,8 @@
           "size": 374429,
           "mtime": 1793650456.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -854,8 +854,8 @@
           "size": 374429,
           "mtime": 1793650456.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -865,8 +865,8 @@
           "size": 795678,
           "mtime": 1793640046.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -876,8 +876,8 @@
           "size": 1205757,
           "mtime": 1793856706.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -887,8 +887,8 @@
           "size": 1218388,
           "mtime": 1793856627.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -898,8 +898,8 @@
           "size": 1170563,
           "mtime": 1793856765.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -909,8 +909,8 @@
           "size": 1170425,
           "mtime": 1793856743.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -920,8 +920,8 @@
           "size": 1373660,
           "mtime": 1793856875.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -931,8 +931,8 @@
           "size": 1315876,
           "mtime": 1793856836.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -942,8 +942,8 @@
           "size": 1672372,
           "mtime": 1793856811.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -953,8 +953,41 @@
           "size": 580312,
           "mtime": 1793897578.0,
           "is_cloud": false,
-          "exists_local": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/FICHA_TECNICA_PROGRAMACAO_PENDENCIAS_CNC.pdf",
+          "name": "FICHA_TECNICA_PROGRAMACAO_PENDENCIAS_CNC.pdf",
+          "category": "ROUTER",
+          "size": 254775,
+          "mtime": 1794058734.305819,
+          "is_cloud": false,
+          "exists_local": true,
           "is_new": true,
+          "is_modified": true
+        },
+        {
+          "rel_path": "ROUTER/FICHA_TECNICA_PROGRAMACAO_PENDENCIAS_CNC_06NOV.pdf",
+          "name": "FICHA_TECNICA_PROGRAMACAO_PENDENCIAS_CNC_06NOV.pdf",
+          "category": "ROUTER",
+          "size": 251049,
+          "mtime": 1793994905.695761,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/FICHA_TECNICA_PROGRAMACAO_PENDENCIAS_CNC_07NOV.pdf",
+          "name": "FICHA_TECNICA_PROGRAMACAO_PENDENCIAS_CNC_07NOV.pdf",
+          "category": "ROUTER",
+          "size": 254775,
+          "mtime": 1794058734.3028274,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -964,8 +997,8 @@
           "size": 867698,
           "mtime": 1793687473.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -975,8 +1008,8 @@
           "size": 280052,
           "mtime": 1793683813.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -986,8 +1019,8 @@
           "size": 280052,
           "mtime": 1793682854.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -997,8 +1030,8 @@
           "size": 870418,
           "mtime": 1793687895.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1008,30 +1041,118 @@
           "size": 875376,
           "mtime": 1793725909.0,
           "is_cloud": false,
-          "exists_local": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/HOGSMEAD/CNC/TEXTURA TIJOLOS/1.ai",
+          "name": "1.ai",
+          "category": "ROUTER",
+          "size": 1597318,
+          "mtime": 1793947938.0,
+          "is_cloud": true,
+          "exists_local": true,
           "is_new": true,
+          "is_modified": true
+        },
+        {
+          "rel_path": "ROUTER/HOGSMEAD/CNC/TEXTURA TIJOLOS/1.aibak",
+          "name": "1.aibak",
+          "category": "ROUTER",
+          "size": 331663,
+          "mtime": 1793947689.0,
+          "is_cloud": true,
+          "exists_local": true,
+          "is_new": true,
+          "is_modified": true
+        },
+        {
+          "rel_path": "ROUTER/HOGSMEAD/CNC/TEXTURA TIJOLOS/1.dxf",
+          "name": "1.dxf",
+          "category": "ROUTER",
+          "size": 1701992,
+          "mtime": 1793948235.0,
+          "is_cloud": true,
+          "exists_local": true,
+          "is_new": true,
+          "is_modified": true
+        },
+        {
+          "rel_path": "ROUTER/HOGSMEAD/CNC/TEXTURA TIJOLOS/1.dxfbak",
+          "name": "1.dxfbak",
+          "category": "ROUTER",
+          "size": 1995261,
+          "mtime": 1793948087.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/HOGSMEAD/CNC/TEXTURA TIJOLOS/Cópia_de_segurança_de_TEXTURA TIJOLOS.cdr",
+          "name": "Cópia_de_segurança_de_TEXTURA TIJOLOS.cdr",
+          "category": "ROUTER",
+          "size": 72653,
+          "mtime": 1793913380.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/HOGSMEAD/CNC/TEXTURA TIJOLOS/Cópia_de_segurança_de_TEXTURA TIJOLOS_teste.cdr",
+          "name": "Cópia_de_segurança_de_TEXTURA TIJOLOS_teste.cdr",
+          "category": "ROUTER",
+          "size": 2112871,
+          "mtime": 1793983589.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
           "rel_path": "ROUTER/HOGSMEAD/CNC/TEXTURA TIJOLOS/MDF9.ai",
           "name": "MDF9.ai",
           "category": "ROUTER",
+          "size": 16796677,
+          "mtime": 1793945414.0,
+          "is_cloud": true,
+          "exists_local": true,
+          "is_new": true,
+          "is_modified": true
+        },
+        {
+          "rel_path": "ROUTER/HOGSMEAD/CNC/TEXTURA TIJOLOS/MDF9.aibak",
+          "name": "MDF9.aibak",
+          "category": "ROUTER",
           "size": 248087,
           "mtime": 1793912517.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
           "rel_path": "ROUTER/HOGSMEAD/CNC/TEXTURA TIJOLOS/TEXTURA TIJOLOS.cdr",
           "name": "TEXTURA TIJOLOS.cdr",
           "category": "ROUTER",
-          "size": 72653,
-          "mtime": 1793913380.0,
-          "is_cloud": false,
-          "exists_local": false,
+          "size": 16319608,
+          "mtime": 1793949313.0,
+          "is_cloud": true,
+          "exists_local": true,
           "is_new": true,
+          "is_modified": true
+        },
+        {
+          "rel_path": "ROUTER/HOGSMEAD/CNC/TEXTURA TIJOLOS/TEXTURA TIJOLOS_teste.cdr",
+          "name": "TEXTURA TIJOLOS_teste.cdr",
+          "category": "ROUTER",
+          "size": 2154123,
+          "mtime": 1793984308.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1041,8 +1162,8 @@
           "size": 52,
           "mtime": 1793688062.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1052,9 +1173,9 @@
           "size": 1941842,
           "mtime": 1793726030.0,
           "is_cloud": false,
-          "exists_local": false,
+          "exists_local": true,
           "is_new": true,
-          "is_modified": false
+          "is_modified": true
         },
         {
           "rel_path": "ROUTER/HOGSMEAD/MANUAL/MANUAL_2640  - HOGSMEAD.pdf",
@@ -1063,8 +1184,52 @@
           "size": 4228493,
           "mtime": 1793689055.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/SALA DE MAGIA/ROUTER.cdr",
+          "name": "ROUTER.cdr",
+          "category": "ROUTER",
+          "size": 673392,
+          "mtime": 1793954681.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/SALA ESCADAS/RAMPAS.cdr",
+          "name": "RAMPAS.cdr",
+          "category": "ROUTER",
+          "size": 637948,
+          "mtime": 1794033950.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/SALA ESCADAS/ROUTER RAMPAS.ai",
+          "name": "ROUTER RAMPAS.ai",
+          "category": "ROUTER",
+          "size": 168810,
+          "mtime": 1794033902.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/SALA PASSAGEM/ROUTER.cdr",
+          "name": "ROUTER.cdr",
+          "category": "ROUTER",
+          "size": 638636,
+          "mtime": 1793950812.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1129,8 +1294,8 @@
           "size": 298654,
           "mtime": 1793283798.6387317,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1140,8 +1305,8 @@
           "size": 592127,
           "mtime": 1793307067.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         }
       ]
@@ -1150,7 +1315,7 @@
       "name": "2663A e B - PINGUINS HELLA REVESTIDOS",
       "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2663A e B - PINGUINS HELLA REVESTIDOS",
       "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2663A e B - PINGUINS HELLA REVESTIDOS\\3 - OFICINA",
-      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2663A e B - PINGUINS HELLA REVESTIDOS",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\ROUTER\\2663A e B - PINGUINS HELLA REVESTIDOS",
       "dest_exists": true,
       "status": "atualizacao",
       "total_files": 29,
@@ -1490,10 +1655,430 @@
       ]
     },
     {
+      "name": "2594A - AVIÃO FREE FIRE",
+      "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2594A - AVIÃO FREE FIRE",
+      "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2594A - AVIÃO FREE FIRE\\3 - OFICINA",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\ROUTER\\2594A - AVIÃO FREE FIRE",
+      "dest_exists": true,
+      "status": "atualizacao",
+      "total_files": 36,
+      "new_files_count": 4,
+      "missing_local_count": 0,
+      "total_bytes": 793451639,
+      "new_bytes": 17906036,
+      "categories": [
+        "IMPRESSÃO 3D",
+        "MANUAL",
+        "ROUTER"
+      ],
+      "latest_mtime": 1790778333.0,
+      "latest_date_str": "30/09/2026 11:25",
+      "last_copied_at": null,
+      "ignored": false,
+      "files": [
+        {
+          "rel_path": "IMPRESSÃO 3D/hélices.stl",
+          "name": "hélices.stl",
+          "category": "IMPRESSÃO 3D",
+          "size": 268105184,
+          "mtime": 1790777672.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "MANUAL/MANUAL_2594A-FREE FIRE - HÉLICES.pdf",
+          "name": "MANUAL_2594A-FREE FIRE - HÉLICES.pdf",
+          "category": "MANUAL",
+          "size": 820257,
+          "mtime": 1790778333.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "MANUAL/MANUAL_2594A-FREE FIRE.pdf",
+          "name": "MANUAL_2594A-FREE FIRE.pdf",
+          "category": "MANUAL",
+          "size": 9825839,
+          "mtime": 1789752118.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": true,
+          "is_modified": true
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/1 PVC 100mm b10mm.txt",
+          "name": "1 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1203945,
+          "mtime": 1789744678.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/10 PVC 100mm b10mm.txt",
+          "name": "10 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 759799,
+          "mtime": 1789746247.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/10PVC 100mm b10mm.stl",
+          "name": "10PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 2241484,
+          "mtime": 1789743246.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/10PVC 100mm b10mm.v3d",
+          "name": "10PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 6578176,
+          "mtime": 1789746260.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/11 PVC 100mm b10mm.txt",
+          "name": "11 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 493686,
+          "mtime": 1789746353.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/11PVC 100mm b10mm.stl",
+          "name": "11PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 794484,
+          "mtime": 1789746315.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/11PVC 100mm b10mm.v3d",
+          "name": "11PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 3251200,
+          "mtime": 1789746362.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/1PVC 100mm b10mm.stl",
+          "name": "1PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 2500284,
+          "mtime": 1789742883.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/1PVC 100mm b10mm.v3d",
+          "name": "1PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 7470080,
+          "mtime": 1789744565.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/2 PVC 100mm b10mm.txt",
+          "name": "2 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1130999,
+          "mtime": 1789744751.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/2PVC 100mm b10mm.stl",
+          "name": "2PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 1625284,
+          "mtime": 1789744054.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/2PVC 100mm b10mm.v3d",
+          "name": "2PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 6590464,
+          "mtime": 1789744756.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/3 PVC 100mm b10mm.txt",
+          "name": "3 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1006035,
+          "mtime": 1789744872.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/3PVC 100mm b10mm.stl",
+          "name": "3PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 34777184,
+          "mtime": 1789744160.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/3PVC 100mm b10mm.v3d",
+          "name": "3PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 46262784,
+          "mtime": 1789744875.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/4 PVC 100mm b10mm.txt",
+          "name": "4 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 541769,
+          "mtime": 1789745542.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/4PVC 100mm b12mm.stl",
+          "name": "4PVC 100mm b12mm.stl",
+          "category": "ROUTER",
+          "size": 51089284,
+          "mtime": 1789745490.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/4PVC 100mm b12mm.v3d",
+          "name": "4PVC 100mm b12mm.v3d",
+          "category": "ROUTER",
+          "size": 64964096,
+          "mtime": 1789745549.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/5 PVC 100mm b10mm.txt",
+          "name": "5 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1410282,
+          "mtime": 1789745604.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/5PVC 100mm b10mm.stl",
+          "name": "5PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 1627784,
+          "mtime": 1789743203.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/5PVC 100mm b10mm.v3d",
+          "name": "5PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 7174656,
+          "mtime": 1789745612.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/6 PVC 100mm b10mm.txt",
+          "name": "6 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1452337,
+          "mtime": 1789745718.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/6PVC 100mm b10mm.stl",
+          "name": "6PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 108716384,
+          "mtime": 1789743210.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/6PVC 100mm b10mm.v3d",
+          "name": "6PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 136807424,
+          "mtime": 1789745725.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/7 PVC 100mm b10mm.txt",
+          "name": "7 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 874177,
+          "mtime": 1789751111.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": true,
+          "is_modified": true
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/7PVC 100mm b10mm.stl",
+          "name": "7PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 1380484,
+          "mtime": 1789751040.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": true,
+          "is_modified": true
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/7PVC 100mm b10mm.v3d",
+          "name": "7PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 5825536,
+          "mtime": 1789751117.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": true,
+          "is_modified": true
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/8 PVC 100mm b10mm.txt",
+          "name": "8 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 1100688,
+          "mtime": 1789746031.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/8PVC 100mm b10mm.stl",
+          "name": "8PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 2029984,
+          "mtime": 1789746155.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/8PVC 100mm b10mm.v3d",
+          "name": "8PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 6954496,
+          "mtime": 1789746036.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/9 PVC 100mm b10mm.txt",
+          "name": "9 PVC 100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 518074,
+          "mtime": 1789746203.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/9PVC 100mm b10mm.stl",
+          "name": "9PVC 100mm b10mm.stl",
+          "category": "ROUTER",
+          "size": 805384,
+          "mtime": 1789746146.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/ISOPOR/9PVC 100mm b10mm.v3d",
+          "name": "9PVC 100mm b10mm.v3d",
+          "category": "ROUTER",
+          "size": 4741632,
+          "mtime": 1789746207.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        }
+      ]
+    },
+    {
       "name": "2667A - EXPO CULTURA",
       "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2667A - EXPO CULTURA",
       "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2667A - EXPO CULTURA\\3 - OFICINA",
-      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2667A - EXPO CULTURA",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\ROUTER\\2667A - EXPO CULTURA",
       "dest_exists": true,
       "status": "sincronizado",
       "total_files": 10,
@@ -1627,7 +2212,7 @@
       "name": "2666 - CAIXAS",
       "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2666 - CAIXAS",
       "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2666 - CAIXAS\\3 - OFICINA",
-      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2666 - CAIXAS",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\ROUTER\\2666 - CAIXAS",
       "dest_exists": true,
       "status": "sincronizado",
       "total_files": 9,
@@ -1749,7 +2334,7 @@
       "name": "2662A - CAPACETE",
       "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2662A - CAPACETE",
       "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2662A - CAPACETE\\3 - OFICINA",
-      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2662A - CAPACETE",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\ROUTER\\2662A - CAPACETE",
       "dest_exists": true,
       "status": "sincronizado",
       "total_files": 108,
@@ -2959,7 +3544,7 @@
       "name": "2660A - SOBREVIVER",
       "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2660A - SOBREVIVER",
       "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2660A - SOBREVIVER\\3 - OFICINA",
-      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2660A - SOBREVIVER",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\ROUTER\\2660A - SOBREVIVER",
       "dest_exists": true,
       "status": "sincronizado",
       "total_files": 105,
@@ -4137,7 +4722,7 @@
       "name": "2624 - PREFEITURA MAUA",
       "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2624 - PREFEITURA MAUA",
       "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2624 - PREFEITURA MAUA\\3 - OFICINA",
-      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\2624 - PREFEITURA MAUA",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\ROUTER\\2624 - PREFEITURA MAUA - judoca",
       "dest_exists": true,
       "status": "sincronizado",
       "total_files": 1,
@@ -4150,7 +4735,7 @@
       ],
       "latest_mtime": 1791321074.0,
       "latest_date_str": "06/10/2026 18:11",
-      "last_copied_at": "05/11/2026 18:37:45",
+      "last_copied_at": null,
       "ignored": false,
       "files": [
         {
@@ -4167,430 +4752,10 @@
       ]
     },
     {
-      "name": "2594A - AVIÃO FREE FIRE",
-      "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2594A - AVIÃO FREE FIRE",
-      "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2594A - AVIÃO FREE FIRE\\3 - OFICINA",
-      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\2594A - AVIÃO FREE FIRE",
-      "dest_exists": true,
-      "status": "sincronizado",
-      "total_files": 36,
-      "new_files_count": 0,
-      "missing_local_count": 0,
-      "total_bytes": 793451639,
-      "new_bytes": 0,
-      "categories": [
-        "IMPRESSÃO 3D",
-        "MANUAL",
-        "ROUTER"
-      ],
-      "latest_mtime": 1790778333.0,
-      "latest_date_str": "30/09/2026 11:25",
-      "last_copied_at": "05/11/2026 18:37:45",
-      "ignored": false,
-      "files": [
-        {
-          "rel_path": "IMPRESSÃO 3D/hélices.stl",
-          "name": "hélices.stl",
-          "category": "IMPRESSÃO 3D",
-          "size": 268105184,
-          "mtime": 1790777672.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "MANUAL/MANUAL_2594A-FREE FIRE - HÉLICES.pdf",
-          "name": "MANUAL_2594A-FREE FIRE - HÉLICES.pdf",
-          "category": "MANUAL",
-          "size": 820257,
-          "mtime": 1790778333.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "MANUAL/MANUAL_2594A-FREE FIRE.pdf",
-          "name": "MANUAL_2594A-FREE FIRE.pdf",
-          "category": "MANUAL",
-          "size": 9825839,
-          "mtime": 1789752118.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/1 PVC 100mm b10mm.txt",
-          "name": "1 PVC 100mm b10mm.txt",
-          "category": "ROUTER",
-          "size": 1203945,
-          "mtime": 1789744678.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/10 PVC 100mm b10mm.txt",
-          "name": "10 PVC 100mm b10mm.txt",
-          "category": "ROUTER",
-          "size": 759799,
-          "mtime": 1789746247.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/10PVC 100mm b10mm.stl",
-          "name": "10PVC 100mm b10mm.stl",
-          "category": "ROUTER",
-          "size": 2241484,
-          "mtime": 1789743246.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/10PVC 100mm b10mm.v3d",
-          "name": "10PVC 100mm b10mm.v3d",
-          "category": "ROUTER",
-          "size": 6578176,
-          "mtime": 1789746260.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/11 PVC 100mm b10mm.txt",
-          "name": "11 PVC 100mm b10mm.txt",
-          "category": "ROUTER",
-          "size": 493686,
-          "mtime": 1789746353.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/11PVC 100mm b10mm.stl",
-          "name": "11PVC 100mm b10mm.stl",
-          "category": "ROUTER",
-          "size": 794484,
-          "mtime": 1789746315.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/11PVC 100mm b10mm.v3d",
-          "name": "11PVC 100mm b10mm.v3d",
-          "category": "ROUTER",
-          "size": 3251200,
-          "mtime": 1789746362.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/1PVC 100mm b10mm.stl",
-          "name": "1PVC 100mm b10mm.stl",
-          "category": "ROUTER",
-          "size": 2500284,
-          "mtime": 1789742883.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/1PVC 100mm b10mm.v3d",
-          "name": "1PVC 100mm b10mm.v3d",
-          "category": "ROUTER",
-          "size": 7470080,
-          "mtime": 1789744565.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/2 PVC 100mm b10mm.txt",
-          "name": "2 PVC 100mm b10mm.txt",
-          "category": "ROUTER",
-          "size": 1130999,
-          "mtime": 1789744751.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/2PVC 100mm b10mm.stl",
-          "name": "2PVC 100mm b10mm.stl",
-          "category": "ROUTER",
-          "size": 1625284,
-          "mtime": 1789744054.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/2PVC 100mm b10mm.v3d",
-          "name": "2PVC 100mm b10mm.v3d",
-          "category": "ROUTER",
-          "size": 6590464,
-          "mtime": 1789744756.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/3 PVC 100mm b10mm.txt",
-          "name": "3 PVC 100mm b10mm.txt",
-          "category": "ROUTER",
-          "size": 1006035,
-          "mtime": 1789744872.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/3PVC 100mm b10mm.stl",
-          "name": "3PVC 100mm b10mm.stl",
-          "category": "ROUTER",
-          "size": 34777184,
-          "mtime": 1789744160.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/3PVC 100mm b10mm.v3d",
-          "name": "3PVC 100mm b10mm.v3d",
-          "category": "ROUTER",
-          "size": 46262784,
-          "mtime": 1789744875.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/4 PVC 100mm b10mm.txt",
-          "name": "4 PVC 100mm b10mm.txt",
-          "category": "ROUTER",
-          "size": 541769,
-          "mtime": 1789745542.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/4PVC 100mm b12mm.stl",
-          "name": "4PVC 100mm b12mm.stl",
-          "category": "ROUTER",
-          "size": 51089284,
-          "mtime": 1789745490.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/4PVC 100mm b12mm.v3d",
-          "name": "4PVC 100mm b12mm.v3d",
-          "category": "ROUTER",
-          "size": 64964096,
-          "mtime": 1789745549.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/5 PVC 100mm b10mm.txt",
-          "name": "5 PVC 100mm b10mm.txt",
-          "category": "ROUTER",
-          "size": 1410282,
-          "mtime": 1789745604.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/5PVC 100mm b10mm.stl",
-          "name": "5PVC 100mm b10mm.stl",
-          "category": "ROUTER",
-          "size": 1627784,
-          "mtime": 1789743203.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/5PVC 100mm b10mm.v3d",
-          "name": "5PVC 100mm b10mm.v3d",
-          "category": "ROUTER",
-          "size": 7174656,
-          "mtime": 1789745612.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/6 PVC 100mm b10mm.txt",
-          "name": "6 PVC 100mm b10mm.txt",
-          "category": "ROUTER",
-          "size": 1452337,
-          "mtime": 1789745718.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/6PVC 100mm b10mm.stl",
-          "name": "6PVC 100mm b10mm.stl",
-          "category": "ROUTER",
-          "size": 108716384,
-          "mtime": 1789743210.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/6PVC 100mm b10mm.v3d",
-          "name": "6PVC 100mm b10mm.v3d",
-          "category": "ROUTER",
-          "size": 136807424,
-          "mtime": 1789745725.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/7 PVC 100mm b10mm.txt",
-          "name": "7 PVC 100mm b10mm.txt",
-          "category": "ROUTER",
-          "size": 874177,
-          "mtime": 1789751111.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/7PVC 100mm b10mm.stl",
-          "name": "7PVC 100mm b10mm.stl",
-          "category": "ROUTER",
-          "size": 1380484,
-          "mtime": 1789751040.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/7PVC 100mm b10mm.v3d",
-          "name": "7PVC 100mm b10mm.v3d",
-          "category": "ROUTER",
-          "size": 5825536,
-          "mtime": 1789751117.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/8 PVC 100mm b10mm.txt",
-          "name": "8 PVC 100mm b10mm.txt",
-          "category": "ROUTER",
-          "size": 1100688,
-          "mtime": 1789746031.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/8PVC 100mm b10mm.stl",
-          "name": "8PVC 100mm b10mm.stl",
-          "category": "ROUTER",
-          "size": 2029984,
-          "mtime": 1789746155.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/8PVC 100mm b10mm.v3d",
-          "name": "8PVC 100mm b10mm.v3d",
-          "category": "ROUTER",
-          "size": 6954496,
-          "mtime": 1789746036.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/9 PVC 100mm b10mm.txt",
-          "name": "9 PVC 100mm b10mm.txt",
-          "category": "ROUTER",
-          "size": 518074,
-          "mtime": 1789746203.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/9PVC 100mm b10mm.stl",
-          "name": "9PVC 100mm b10mm.stl",
-          "category": "ROUTER",
-          "size": 805384,
-          "mtime": 1789746146.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        },
-        {
-          "rel_path": "ROUTER/ISOPOR/9PVC 100mm b10mm.v3d",
-          "name": "9PVC 100mm b10mm.v3d",
-          "category": "ROUTER",
-          "size": 4741632,
-          "mtime": 1789746207.0,
-          "is_cloud": false,
-          "exists_local": true,
-          "is_new": false,
-          "is_modified": false
-        }
-      ]
-    },
-    {
       "name": "2654A - REFORMA MICHELANGELO",
       "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2654A - REFORMA MICHELANGELO",
       "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2654A - REFORMA MICHELANGELO\\3 - OFICINA",
-      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2654A - adesivo michelangelo",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\ROUTER\\2654A - adesivo michelangelo",
       "dest_exists": true,
       "status": "aguardando",
       "total_files": 0,
@@ -4609,7 +4774,7 @@
       "name": "2674A - CINTO DE SEG. VOLVO",
       "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2674A - CINTO DE SEG. VOLVO",
       "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2674A - CINTO DE SEG. VOLVO\\3 - OFICINA",
-      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\2674A - CINTO DE SEG. VOLVO",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\ROUTER\\2674A - CINTO DE SEG. VOLVO",
       "dest_exists": false,
       "status": "aguardando",
       "total_files": 0,
@@ -4628,7 +4793,7 @@
       "name": "2675A - HELLO KITTY TOBÔ",
       "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2675A - HELLO KITTY TOBÔ",
       "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2675A - HELLO KITTY TOBÔ\\3 - OFICINA",
-      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\2675A - HELLO KITTY TOBÔ",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\ROUTER\\2675A - HELLO KITTY TOBÔ",
       "dest_exists": false,
       "status": "aguardando",
       "total_files": 0,
@@ -4647,7 +4812,7 @@
       "name": "TV CULTURA RETRÔ",
       "source_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\TV CULTURA RETRÔ",
       "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\TV CULTURA RETRÔ\\3 - OFICINA",
-      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\TV CULTURA RETRÔ",
+      "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\ROUTER\\TV CULTURA RETRÔ",
       "dest_exists": false,
       "status": "aguardando",
       "total_files": 0,

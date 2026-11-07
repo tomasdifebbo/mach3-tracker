@@ -4189,6 +4189,23 @@
         "tag": "PVC 100mm",
         "chapaIndex": "3"
       }
+    },
+    {
+      "name": "APLIQUE MDF 15_1-Corte 11.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\HOGSMEAD\\APLIQUE MDF 15_1-Corte 11.txt",
+      "size": 113759,
+      "mtime": 1794060964872,
+      "mtimeDate": "2026-11-07T14:16:04.872Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "HOGSMEAD",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "15mm",
+        "tag": "MDF 15mm",
+        "chapaIndex": "1"
+      }
     }
   ],
   "gcodeFeitos": [

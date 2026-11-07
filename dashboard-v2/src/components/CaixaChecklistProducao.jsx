@@ -43,7 +43,13 @@ export function isFileMarkedOk(filename = '') {
     lower.includes('compensado 6mm e6mm_2') ||
     lower.includes('compensado 6mm e6mm_1') ||
     lower.includes('textura tijolos especiais e4mm') ||
-    lower.includes('compensado 10mm e6mm_1')
+    lower.includes('compensado 10mm e6mm_1') ||
+    lower.includes('aplique mdf 9mm_1-corte 1') ||
+    lower.includes('aplique mdf 9mm_2-corte 2') ||
+    lower.includes('aplique mdf 9mm_3-corte 3') ||
+    lower.includes('aplique mdf 9mm_4-corte 4') ||
+    lower.includes('aplique mdf 9mm_1-corte 5') ||
+    lower.includes('aplique mdf 9mm_2-corte 6')
   ) {
     return true;
   }

@@ -104,7 +104,13 @@ function isFileMarkedOk(filename = '') {
         lower.includes('compensado 6mm e6mm_2') ||
         lower.includes('compensado 6mm e6mm_1') ||
         lower.includes('textura tijolos especiais e4mm') ||
-        lower.includes('compensado 10mm e6mm_1')
+        lower.includes('compensado 10mm e6mm_1') ||
+        lower.includes('aplique mdf 9mm_1-corte 1') ||
+        lower.includes('aplique mdf 9mm_2-corte 2') ||
+        lower.includes('aplique mdf 9mm_3-corte 3') ||
+        lower.includes('aplique mdf 9mm_4-corte 4') ||
+        lower.includes('aplique mdf 9mm_1-corte 5') ||
+        lower.includes('aplique mdf 9mm_2-corte 6')
     ) {
         return true;
     }
@@ -158,13 +164,13 @@ function calculateDynamicBatches(dbJobs = []) {
     // 7. Torres MDF 9mm
     const torresDone = 12;
 
-    // 8. Hogsmead Apliques MDF 9mm (10 cortes no total)
+    // 8. Hogsmead Apliques MDF 9mm & 15mm (11 cortes no total)
     const apliqueRuns = dbJobs.filter(j => 
-        (j.file_name || '').toLowerCase().includes('aplique mdf 9mm') &&
+        ((j.file_name || '').toLowerCase().includes('aplique mdf 9mm') || (j.file_name || '').toLowerCase().includes('aplique mdf 15')) &&
         new Date(j.start_time) >= new Date('2026-11-07T00:00:00Z')
     );
-    const apliqueDone = Math.min(10, Math.max(4, apliqueRuns.length));
-    const apliquePending = Math.max(0, 10 - apliqueDone);
+    const apliqueDone = Math.min(11, Math.max(6, apliqueRuns.length));
+    const apliquePending = Math.max(0, 11 - apliqueDone);
 
     // 9. Parede Especial Photo Opp (33 cortes executados na madrugada de 07/11)
     const paredeEspDone = 33;
@@ -274,19 +280,19 @@ function calculateDynamicBatches(dbJobs = []) {
         },
         {
             id: 'hogsmead_apliques_9mm',
-            name: `Apliques Hogsmead MDF 9mm (${apliqueDone} de 10 cortes)`,
+            name: `Apliques Hogsmead MDF 9mm & 15mm (${apliqueDone} de 11 cortes)`,
             job: '2640  - EXPRESSO HOGWARTS CCXP',
             subfolder: 'ROUTER/HOGSMEAD',
-            file: 'APLIQUE MDF 9MM_1 a 6 (Cortes 1 a 10)',
-            material: 'MDF 9mm',
+            file: 'APLIQUE MDF 9MM & 15MM (Cortes 1 a 11)',
+            material: 'MDF 9mm & 15mm',
             dimensions: 'Chapas 2750 × 1850 mm',
             tool: 'Fresa Topo Ø6mm / Ø4mm',
-            targetSheets: 10,
+            targetSheets: 11,
             doneSheets: apliqueDone,
             pendingSheets: apliquePending,
             status: apliquePending === 0 ? 'concluido' : 'em_andamento',
-            estMinutesPerSheet: 11,
-            totalEstMinutes: apliquePending * 11,
+            estMinutesPerSheet: 18,
+            totalEstMinutes: apliquePending * 18,
             priority: 'alta'
         },
         {
