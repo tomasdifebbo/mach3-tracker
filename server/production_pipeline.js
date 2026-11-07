@@ -158,6 +158,17 @@ function calculateDynamicBatches(dbJobs = []) {
     // 7. Torres MDF 9mm
     const torresDone = 12;
 
+    // 8. Hogsmead Apliques MDF 9mm (10 cortes no total)
+    const apliqueRuns = dbJobs.filter(j => 
+        (j.file_name || '').toLowerCase().includes('aplique mdf 9mm') &&
+        new Date(j.start_time) >= new Date('2026-11-07T00:00:00Z')
+    );
+    const apliqueDone = Math.min(10, Math.max(4, apliqueRuns.length));
+    const apliquePending = Math.max(0, 10 - apliqueDone);
+
+    // 9. Parede Especial Photo Opp (33 cortes executados na madrugada de 07/11)
+    const paredeEspDone = 33;
+
     return [
         {
             id: 'tijolos_9mm',
@@ -260,6 +271,40 @@ function calculateDynamicBatches(dbJobs = []) {
             estMinutesPerSheet: 23,
             totalEstMinutes: colPending * 23,
             priority: 'media'
+        },
+        {
+            id: 'hogsmead_apliques_9mm',
+            name: `Apliques Hogsmead MDF 9mm (${apliqueDone} de 10 cortes)`,
+            job: '2640  - EXPRESSO HOGWARTS CCXP',
+            subfolder: 'ROUTER/HOGSMEAD',
+            file: 'APLIQUE MDF 9MM_1 a 6 (Cortes 1 a 10)',
+            material: 'MDF 9mm',
+            dimensions: 'Chapas 2750 × 1850 mm',
+            tool: 'Fresa Topo Ø6mm / Ø4mm',
+            targetSheets: 10,
+            doneSheets: apliqueDone,
+            pendingSheets: apliquePending,
+            status: apliquePending === 0 ? 'concluido' : 'em_andamento',
+            estMinutesPerSheet: 11,
+            totalEstMinutes: apliquePending * 11,
+            priority: 'alta'
+        },
+        {
+            id: 'parede_especial_photo_opp',
+            name: 'Parede Especial Photo Opp (33 de 33 chapas)',
+            job: '2640  - EXPRESSO HOGWARTS CCXP',
+            subfolder: 'FACHADA PHOTO OPP/PAREDE ESPECIAL',
+            file: 'MDF 9 MM E4MM CHAPA_1 a 34',
+            material: 'MDF 9mm',
+            dimensions: 'Chapas 2750 × 1850 mm',
+            tool: 'Fresa Topo Ø4mm (e4mm)',
+            targetSheets: 33,
+            doneSheets: 33,
+            pendingSheets: 0,
+            status: 'concluido',
+            estMinutesPerSheet: 32,
+            totalEstMinutes: 0,
+            priority: 'alta'
         },
         {
             id: 'torres_mdf_9mm',
