@@ -424,6 +424,17 @@ export const api = {
     return api.get(`/arquivos-producao?_t=${t}${forceRefresh ? '&refresh=true' : ''}`);
   },
 
+  // Persistência Definitiva de Arquivos Concluídos no PostgreSQL
+  getPipelineCompletedFiles: async () => {
+    return api.get('/pipeline/completed-files');
+  },
+  togglePipelineCompleted: async (payload) => {
+    return api.post('/pipeline/toggle-completed', payload);
+  },
+  bulkSyncPipelineCompleted: async (items) => {
+    return api.post('/pipeline/bulk-completed', { items });
+  },
+
   deleteCustom: async (url) => {
     const resp = await fetch(`${API_URL}/api${url}`, { method: 'DELETE', headers: getAuthHeaders() });
     return safeJson(resp);

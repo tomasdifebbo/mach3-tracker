@@ -4,6 +4,7 @@ import {
   Search, Filter, Printer, Layers, Cpu, Award, Sparkles, Check, ChevronDown,
   ChevronUp, UserCheck, AlertCircle, Compass, FileText, Zap, RefreshCw
 } from 'lucide-react';
+import { api } from '../services/api';
 
 const CUSTOM_STORAGE_KEY = 'mach3_custom_checklist_manual_v1';
 const USER_TOGGLES_KEY = 'mach3_checklist_user_toggles_v2';
@@ -99,16 +100,46 @@ export function CaixaChecklistProducao({
     } catch (e) {}
   }, [customItems]);
 
+  // Sincroniza toggles com PostgreSQL
+  useEffect(() => {
+    api.getPipelineCompletedFiles().then(res => {
+      if (res && res.success && res.map) {
+        setUserToggles(prev => {
+          const merged = { ...prev };
+          Object.entries(res.map).forEach(([k, entry]) => {
+            if (entry.done) {
+              merged[k] = true;
+              if (entry.file_name) merged[entry.file_name] = true;
+            }
+          });
+          return merged;
+        });
+      }
+    }).catch(err => console.warn('Erro ao carregar arquivos concluídos no checklist:', err));
+  }, []);
+
   const handleToggleItem = (item) => {
     const key = item.title || item.id;
+    const current = userToggles[key] !== undefined ? userToggles[key] : item.done;
+    const nextVal = !current;
+
     setUserToggles(prev => {
-      const current = prev[key] !== undefined ? prev[key] : item.done;
-      const next = { ...prev, [key]: !current };
+      const next = { ...prev, [key]: nextVal };
+      if (item.title) next[item.title] = nextVal;
       try {
         localStorage.setItem(USER_TOGGLES_KEY, JSON.stringify(next));
       } catch (e) {}
       return next;
     });
+
+    // Salva permanentemente no PostgreSQL
+    api.togglePipelineCompleted({
+      file_key: key,
+      file_name: item.title || key,
+      stage: 'checklist',
+      done: nextVal,
+      operator_name: operatorName || 'Tomas'
+    }).catch(err => console.warn('Erro ao sincronizar toggle com PostgreSQL:', err));
   };
 
   const handleDeleteCustom = (id) => {

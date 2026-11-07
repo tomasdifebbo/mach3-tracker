@@ -364,6 +364,11 @@ let cachedResult = null;
 let lastCacheTime = 0;
 const CACHE_TTL_MS = 4000; // 4s para atualização rápida e tempo real
 
+function invalidatePipelineCache() {
+    lastCacheTime = 0;
+    cachedResult = null;
+}
+
 async function getProductionPipeline(pool, forceRefresh = false) {
     const now = Date.now();
     if (!forceRefresh && cachedResult && (now - lastCacheTime < CACHE_TTL_MS)) {
@@ -381,6 +386,22 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         dbJobs = rows;
     } catch (e) {
         console.error('Error fetching jobs in getProductionPipeline:', e.message);
+    }
+
+    // 1.1 Obter arquivos marcados como concluídos manualmente pelo operador (salvos permanentemente no PostgreSQL)
+    let completedFilesMap = {};
+    try {
+        const { rows } = await pool.query(`
+            SELECT file_key, file_name, stage, subfolder, job_name, done, operator_name, completed_at
+            FROM pipeline_completed_files
+            WHERE done = TRUE
+        `);
+        rows.forEach(r => {
+            if (r.file_key) completedFilesMap[r.file_key.toLowerCase().trim()] = r;
+            if (r.file_name) completedFilesMap[r.file_name.toLowerCase().trim()] = r;
+        });
+    } catch (e) {
+        console.error('Error fetching pipeline_completed_files in getProductionPipeline:', e.message);
     }
 
     const execMap = {};
@@ -490,37 +511,58 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 const gcodeProntos = [];
                 (snap.gcodeProntos || []).concat(snap.gcodeFeitos || []).forEach(gf => {
                     const lower = (gf.name || '').toLowerCase().trim();
+                    const key = (gf.fullPath || `${gf.jobName || ''}_${gf.name}`).toLowerCase().trim();
                     const execs = execMap[lower] || [];
-                    const isOk = isFileMarkedOk(gf.name) || (execs.length > 0);
+                    const isDbDone = Boolean(completedFilesMap[lower] || completedFilesMap[key]);
+                    const isOk = isFileMarkedOk(gf.name) || (execs.length > 0) || isDbDone;
                     if (isOk) {
                         gcodeFeitos.push({
                             ...gf,
                             execCount: execs.length > 0 ? execs.length : 1,
                             lastExec: execs[0] || {
-                                operator_name: 'Tomas',
+                                operator_name: (completedFilesMap[lower] || completedFilesMap[key])?.operator_name || 'Tomas',
                                 machine_name: 'Router 2',
-                                start_time: gf.mtimeDate || new Date().toISOString(),
+                                start_time: (completedFilesMap[lower] || completedFilesMap[key])?.completed_at || gf.mtimeDate || new Date().toISOString(),
                                 duration_minutes: 15
                             },
-                            totalDurationMinutes: execs.length > 0 ? execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) : 15
+                            totalDurationMinutes: execs.length > 0 ? execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) : 15,
+                            isManuallyDone: isDbDone
                         });
                     } else {
                         gcodeProntos.push(gf);
                     }
                 });
 
+                const cadPrepararList = (snap.cadPreparar || []).map(cf => {
+                    const lower = (cf.name || '').toLowerCase().trim();
+                    const key = (cf.fullPath || `${cf.jobName || ''}_${cf.name}`).toLowerCase().trim();
+                    return {
+                        ...cf,
+                        isManuallyDone: Boolean(completedFilesMap[lower] || completedFilesMap[key])
+                    };
+                });
+
+                const aspirePrepararList = (snap.aspirePreparar || []).map(af => {
+                    const lower = (af.name || '').toLowerCase().trim();
+                    const key = (af.fullPath || `${af.jobName || ''}_${af.name}`).toLowerCase().trim();
+                    return {
+                        ...af,
+                        isManuallyDone: Boolean(completedFilesMap[lower] || completedFilesMap[key])
+                    };
+                });
+
                 cachedResult = {
                     summary: {
                         totalJobs: snap.jobs?.length || 0,
-                        totalCadPreparar: snap.cadPreparar?.length || 0,
-                        totalAspirePreparar: snap.aspirePreparar?.length || (snap.cadPreparar?.filter(c => ASPIRE_EXTS.includes(c.ext))?.length || 0),
+                        totalCadPreparar: cadPrepararList.length,
+                        totalAspirePreparar: aspirePrepararList.length || (cadPrepararList.filter(c => ASPIRE_EXTS.includes(c.ext))?.length || 0),
                         totalGcodePronto: gcodeProntos.length,
                         totalConcluidos: gcodeFeitos.length
                     },
                     specialBatches: calculateDynamicBatches(dbJobs),
                     jobs: snap.jobs || [],
-                    cadPreparar: snap.cadPreparar || [],
-                    aspirePreparar: snap.aspirePreparar || [],
+                    cadPreparar: cadPrepararList,
+                    aspirePreparar: aspirePrepararList,
                     gcodeProntos,
                     gcodeFeitos,
                     updatedAt: new Date().toISOString()
@@ -626,6 +668,10 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     : `Separado em ${matchingAspire.length} arquivos Aspire`;
             }
 
+            const cfLower = (cf.name || '').toLowerCase().trim();
+            const cfKey = (cf.fullPath || `${jName}_${cf.name}`).toLowerCase().trim();
+            const isManuallyDone = Boolean(completedFilesMap[cfLower] || completedFilesMap[cfKey]);
+
             const item = {
                 ...cf,
                 jobName: jName,
@@ -636,7 +682,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 hasAspire,
                 hasGcode,
                 chapasCount: matchingGcodes.length,
-                detectedMaterials
+                detectedMaterials,
+                isManuallyDone
             };
 
             if (hasGcode) {
@@ -676,6 +723,10 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 ? `Lote Pronto: ${chapasCount} chapas geradas` 
                 : 'Aguardando Gerar Chapas no Aspire';
 
+            const afLower = (af.name || '').toLowerCase().trim();
+            const afKey = (af.fullPath || `${jName}_${af.name}`).toLowerCase().trim();
+            const isManuallyDone = Boolean(completedFilesMap[afLower] || completedFilesMap[afKey]);
+
             const item = {
                 ...af,
                 jobName: jName,
@@ -685,7 +736,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 statusLabel,
                 hasGcode,
                 chapasCount,
-                chapasList: matchingGcodes.map(g => g.name)
+                chapasList: matchingGcodes.map(g => g.name),
+                isManuallyDone
             };
 
             if (hasGcode) {
@@ -705,13 +757,15 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             const subfolderName = path.basename(dir);
             const matInfo = extractMaterialInfo(gf.name);
             const lower = gf.name.toLowerCase().trim();
+            const gfKey = (gf.fullPath || `${jName}_${gf.name}`).toLowerCase().trim();
             const subLower = (subfolderName || '').toLowerCase().trim();
             const compoundKey = `${lower}___${subLower}`;
             const execs = execMap[compoundKey] || execMap[lower] || [];
             const completedExecs = execs.filter(j => j.end_time != null || Number(j.duration_minutes) > 0 || (Date.now() - new Date(j.start_time).getTime() > 3600000));
             const isCurrentlyRunning = execs.some(j => j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000));
             const targetQty = matInfo.targetQuantity || 1;
-            const isOk = isFileMarkedOk(gf.name) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0);
+            const isDbDone = Boolean(completedFilesMap[lower] || completedFilesMap[gfKey] || completedFilesMap[compoundKey]);
+            const isOk = isFileMarkedOk(gf.name) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0) || isDbDone;
 
             if (isOk) {
                 const item = {
@@ -721,12 +775,13 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     matInfo,
                     execCount: execs.length > 0 ? execs.length : 1,
                     lastExec: execs[0] || {
-                        operator_name: 'Tomas',
+                        operator_name: (completedFilesMap[lower] || completedFilesMap[gfKey] || completedFilesMap[compoundKey])?.operator_name || 'Tomas',
                         machine_name: 'Router 2',
-                        start_time: gf.mtimeDate || new Date().toISOString(),
+                        start_time: (completedFilesMap[lower] || completedFilesMap[gfKey] || completedFilesMap[compoundKey])?.completed_at || gf.mtimeDate || new Date().toISOString(),
                         duration_minutes: 15
                     },
-                    totalDurationMinutes: execs.length > 0 ? execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) : 15
+                    totalDurationMinutes: execs.length > 0 ? execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) : 15,
+                    isManuallyDone: isDbDone
                 };
                 gcodeFeitos.push(item);
                 allGcodeFeitos.push(item);
@@ -796,4 +851,4 @@ async function getProductionPipeline(pool, forceRefresh = false) {
     return cachedResult;
 }
 
-module.exports = { getProductionPipeline, calculateDynamicBatches };
+module.exports = { getProductionPipeline, calculateDynamicBatches, invalidatePipelineCache };

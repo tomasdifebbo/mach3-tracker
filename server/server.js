@@ -4115,7 +4115,7 @@ app.post('/api/oficina-sync/patch-gcode', (req, res) => {
 });
 
 // ─── PIPELINE DE ARQUIVOS DE PRODUÇÃO (CAD/CAM, G-CODE, EXECUTADOS) ──────────
-const { getProductionPipeline } = require('./production_pipeline');
+const { getProductionPipeline, invalidatePipelineCache } = require('./production_pipeline');
 
 app.get('/api/arquivos-producao', async (req, res) => {
     try {
@@ -4128,6 +4128,99 @@ app.get('/api/arquivos-producao', async (req, res) => {
     } catch (err) {
         console.error('Erro em GET /api/arquivos-producao:', err);
         res.status(500).json({ error: 'Erro ao gerar pipeline de arquivos de produção' });
+    }
+});
+
+// Busca todos os arquivos marcados manualmente como concluídos salvos no PostgreSQL
+app.get('/api/pipeline/completed-files', async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT file_key, file_name, stage, subfolder, job_name, done, operator_name, completed_at, updated_at
+            FROM pipeline_completed_files
+            ORDER BY updated_at DESC
+        `);
+        const map = {};
+        rows.forEach(r => {
+            map[r.file_key] = r;
+        });
+        res.json({ success: true, count: rows.length, files: rows, map });
+    } catch (err) {
+        console.error('Erro em GET /api/pipeline/completed-files:', err);
+        res.status(500).json({ error: 'Erro ao buscar arquivos concluídos' });
+    }
+});
+
+// Salva ou alterna o status de conclusão de um arquivo de forma definitiva no PostgreSQL
+app.post('/api/pipeline/toggle-completed', async (req, res) => {
+    try {
+        const { file_key, file_name, stage, subfolder, job_name, done, operator_name } = req.body;
+        if (!file_key && !file_name) {
+            return res.status(400).json({ error: 'file_key ou file_name é obrigatório' });
+        }
+        const key = (file_key || file_name).trim();
+        const name = (file_name || file_key).trim();
+        const isDone = done !== undefined ? Boolean(done) : true;
+        const op = operator_name || 'Tomas';
+
+        const query = `
+            INSERT INTO pipeline_completed_files (file_key, file_name, stage, subfolder, job_name, done, operator_name, completed_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ON CONFLICT (file_key) 
+            DO UPDATE SET 
+                done = EXCLUDED.done,
+                operator_name = EXCLUDED.operator_name,
+                stage = COALESCE(EXCLUDED.stage, pipeline_completed_files.stage),
+                subfolder = COALESCE(EXCLUDED.subfolder, pipeline_completed_files.subfolder),
+                job_name = COALESCE(EXCLUDED.job_name, pipeline_completed_files.job_name),
+                updated_at = CURRENT_TIMESTAMP
+            RETURNING *;
+        `;
+        const result = await pool.query(query, [key, name, stage || null, subfolder || null, job_name || null, isDone, op]);
+        invalidatePipelineCache();
+        res.json({ success: true, item: result.rows[0] });
+    } catch (err) {
+        console.error('Erro em POST /api/pipeline/toggle-completed:', err);
+        res.status(500).json({ error: 'Erro ao salvar conclusão de arquivo no banco' });
+    }
+});
+
+// Sincronização em massa de arquivos já concluídos (migração de localStorage para PostgreSQL)
+app.post('/api/pipeline/bulk-completed', async (req, res) => {
+    try {
+        const { items } = req.body;
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.json({ success: true, synced: 0 });
+        }
+        let synced = 0;
+        for (const item of items) {
+            const key = (item.file_key || item.key || item.name || item.title || '').trim();
+            const name = (item.file_name || item.name || item.title || key).trim();
+            if (!key) continue;
+            const isDone = item.done !== undefined ? Boolean(item.done) : true;
+            const op = item.operator_name || item.operator || 'Tomas';
+            const stage = item.stage || null;
+            const subfolder = item.subfolder || null;
+            const job_name = item.job_name || item.jobName || null;
+
+            await pool.query(`
+                INSERT INTO pipeline_completed_files (file_key, file_name, stage, subfolder, job_name, done, operator_name, completed_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ON CONFLICT (file_key) 
+                DO UPDATE SET 
+                    done = EXCLUDED.done,
+                    operator_name = EXCLUDED.operator_name,
+                    stage = COALESCE(EXCLUDED.stage, pipeline_completed_files.stage),
+                    subfolder = COALESCE(EXCLUDED.subfolder, pipeline_completed_files.subfolder),
+                    job_name = COALESCE(EXCLUDED.job_name, pipeline_completed_files.job_name),
+                    updated_at = CURRENT_TIMESTAMP;
+            `, [key, name, stage, subfolder, job_name, isDone, op]);
+            synced++;
+        }
+        invalidatePipelineCache();
+        res.json({ success: true, synced });
+    } catch (err) {
+        console.error('Erro em POST /api/pipeline/bulk-completed:', err);
+        res.status(500).json({ error: 'Erro ao sincronizar arquivos em lote' });
     }
 });
 

@@ -74,27 +74,109 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
 
   const getFileKey = (f) => f.fullPath || `${f.jobName || ''}_${f.name}`;
 
-  const toggleFileCheck = (f, stage = '') => {
+  const isFileChecked = (f) => {
+    if (!f) return false;
+    const k = getFileKey(f);
+    return Boolean(fileChecklist[k] || fileChecklist[f.name] || f.isManuallyDone);
+  };
+
+  // Carrega e sincroniza arquivos concluídos do PostgreSQL de forma definitiva
+  const syncCompletedFiles = async () => {
+    try {
+      const res = await api.getPipelineCompletedFiles();
+      if (res && res.success && res.map) {
+        setFileChecklist(prev => {
+          const merged = { ...prev };
+          Object.entries(res.map).forEach(([k, item]) => {
+            if (item.done) {
+              const entry = {
+                checkedAt: item.completed_at || new Date().toISOString(),
+                stage: item.stage || '',
+                name: item.file_name || k,
+                operator: item.operator_name || 'Tomas'
+              };
+              merged[k] = entry;
+              if (item.file_name) merged[item.file_name] = entry;
+            } else {
+              delete merged[k];
+              if (item.file_name) delete merged[item.file_name];
+            }
+          });
+          try {
+            localStorage.setItem('mach3_pipeline_file_checklist_v1', JSON.stringify(merged));
+          } catch (e) {}
+          return merged;
+        });
+
+        // Migração automática de itens locais para o PostgreSQL caso ainda não estejam lá
+        const localItems = [];
+        try {
+          const raw = localStorage.getItem('mach3_pipeline_file_checklist_v1');
+          const parsed = raw ? JSON.parse(raw) : {};
+          Object.entries(parsed).forEach(([key, val]) => {
+            if (val && !res.map[key]) {
+              localItems.push({
+                file_key: key,
+                file_name: val.name || key,
+                stage: val.stage || '',
+                done: true,
+                operator_name: val.operator || 'Tomas'
+              });
+            }
+          });
+        } catch (e) {}
+
+        if (localItems.length > 0) {
+          api.bulkSyncPipelineCompleted(localItems).catch(() => {});
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao sincronizar arquivos concluídos com o banco:', err);
+    }
+  };
+
+  const toggleFileCheck = async (f, stage = '') => {
     const key = getFileKey(f);
-    const willBeChecked = !fileChecklist[key];
+    const currentlyChecked = isFileChecked(f);
+    const willBeChecked = !currentlyChecked;
 
     setFileChecklist(prev => {
       const next = { ...prev };
-      if (next[key]) {
-        delete next[key];
-      } else {
-        next[key] = {
+      if (willBeChecked) {
+        const entry = {
           checkedAt: new Date().toISOString(),
           stage: stage,
           name: f.name,
           operator: 'Tomas'
         };
+        next[key] = entry;
+        next[f.name] = entry;
+      } else {
+        delete next[key];
+        delete next[f.name];
       }
       try {
         localStorage.setItem('mach3_pipeline_file_checklist_v1', JSON.stringify(next));
       } catch (err) {}
       return next;
     });
+
+    // Salva permanentemente no PostgreSQL para que nunca mais volte para a fila
+    try {
+      await api.togglePipelineCompleted({
+        file_key: key,
+        file_name: f.name,
+        stage: stage,
+        subfolder: f.subfolderName || null,
+        job_name: f.jobName || null,
+        done: willBeChecked,
+        operator_name: 'Tomas'
+      });
+      // Invalida cache e recarrega na hora
+      fetchPipeline(true);
+    } catch (err) {
+      console.warn('Erro ao persistir conclusão no PostgreSQL:', err);
+    }
 
     if (willBeChecked) {
       let nextStageName = 'Próxima Etapa';
@@ -126,6 +208,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
   };
 
   useEffect(() => {
+    syncCompletedFiles();
     fetchPipeline(false);
     const interval = setInterval(() => fetchPipeline(false), 4000);
     return () => clearInterval(interval);
@@ -242,7 +325,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
     // G-Codes que foram dados OK avançam para Concluídos / Histórico!
     (pipelineData?.gcodeProntos || []).forEach(gf => {
       const k = getFileKey(gf);
-      const isOk = !!fileChecklist[k] || gf.isExecuted || isFileMarkedOk(gf.name);
+      const isOk = isFileChecked(gf) || gf.isExecuted || isFileMarkedOk(gf.name);
       if (isOk && !list.some(d => d.name === gf.name)) {
         list.push({
           ...gf,
@@ -273,7 +356,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
   const cadCounts = useMemo(() => {
     let concluidos = 0;
     filteredCad.forEach(f => {
-      if (fileChecklist[getFileKey(f)]) concluidos++;
+      if (isFileChecked(f)) concluidos++;
     });
     return {
       total: filteredCad.length,
@@ -284,7 +367,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
 
   const displayedCad = useMemo(() => {
     return filteredCad.filter(f => {
-      const isChecked = !!fileChecklist[getFileKey(f)];
+      const isChecked = isFileChecked(f);
       if (cadCheckFilter === 'pendentes') return !isChecked;
       if (cadCheckFilter === 'concluidos') return isChecked;
       return true;
@@ -294,7 +377,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
   const aspireCounts = useMemo(() => {
     let concluidos = 0;
     filteredAspire.forEach(f => {
-      if (fileChecklist[getFileKey(f)] || (f.chapasCount > 0)) concluidos++;
+      if (isFileChecked(f) || (f.chapasCount > 0)) concluidos++;
     });
     return {
       total: filteredAspire.length,
@@ -305,7 +388,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
 
   const displayedAspire = useMemo(() => {
     return filteredAspire.filter(f => {
-      const isChecked = !!fileChecklist[getFileKey(f)] || (f.chapasCount > 0);
+      const isChecked = isFileChecked(f) || (f.chapasCount > 0);
       if (aspireCheckFilter === 'pendentes') return !isChecked;
       if (aspireCheckFilter === 'concluidos') return isChecked;
       return true;
@@ -315,7 +398,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
   const routerCounts = useMemo(() => {
     let concluidos = 0;
     filteredGcodes.forEach(f => {
-      if (fileChecklist[getFileKey(f)] || f.isExecuted || isFileMarkedOk(f.name)) concluidos++;
+      if (isFileChecked(f) || f.isExecuted || isFileMarkedOk(f.name)) concluidos++;
     });
     return {
       total: filteredGcodes.length,
@@ -326,7 +409,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
 
   const displayedGcodes = useMemo(() => {
     return filteredGcodes.filter(f => {
-      const isChecked = !!fileChecklist[getFileKey(f)] || f.isExecuted || isFileMarkedOk(f.name);
+      const isChecked = isFileChecked(f) || f.isExecuted || isFileMarkedOk(f.name);
       if (routerCheckFilter === 'pendentes') return !isChecked;
       if (routerCheckFilter === 'concluidos') return isChecked;
       return true;
@@ -724,7 +807,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                   ) : (
                     displayedCad.map((f, idx) => {
                       const key = getFileKey(f);
-                      const isChecked = !!fileChecklist[key];
+                      const isChecked = isFileChecked(f);
                       return (
                         <tr 
                           key={key || idx} 
@@ -905,7 +988,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                   ) : (
                     displayedAspire.map((f, idx) => {
                       const key = getFileKey(f);
-                      const isChecked = !!fileChecklist[key] || (f.chapasCount > 0);
+                      const isChecked = isFileChecked(f) || (f.chapasCount > 0);
                       return (
                         <tr 
                           key={key || idx} 
@@ -1077,7 +1160,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                   ) : (
                     displayedGcodes.map((f, idx) => {
                       const key = getFileKey(f);
-                      const isChecked = !!fileChecklist[key] || f.isExecuted || isFileMarkedOk(f.name);
+                      const isChecked = isFileChecked(f) || f.isExecuted || isFileMarkedOk(f.name);
                       return (
                         <tr 
                           key={key || idx} 
