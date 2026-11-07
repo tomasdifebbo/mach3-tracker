@@ -40,9 +40,9 @@ function scanDirRecursive(dir, maxDepth = 6, depth = 0) {
     return files;
 }
 
-// Extrai inteligentemente material, espessura e quantidade do nome do arquivo
+// Extrai inteligentemente material, espessura e quantidade do nome do arquivo (sem a extensão .eps/.cdr/.txt)
 function extractMaterialInfo(name) {
-    const fn = (name || '').toLowerCase();
+    const fn = path.parse(name || '').name.toLowerCase();
     let material = null;
     if (fn.includes('mdf')) material = 'MDF';
     else if (fn.includes('compensado') || fn.includes('comp ') || fn.includes('cambota')) material = 'Compensado';
@@ -501,23 +501,55 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         return path.dirname(filePath || '').replace(/[\\/](cod|cnc|gcode|cortes)$/i, '');
     }
 
-    // Fallback if running on Railway/Cloud where local Windows drives don't exist
+    // Fallback if running on Railway/Render/Cloud where local Windows drives don't exist
     if (!scannedFromDisk || Object.keys(jobMap).length === 0) {
-        const snapFile = path.join(__dirname, 'initial_pipeline_snapshot.json');
-        if (fs.existsSync(snapFile)) {
+        let snap = null;
+        try {
+            const dbSnap = await pool.query('SELECT snapshot_data FROM pipeline_live_snapshot WHERE id = 1');
+            if (dbSnap.rows.length > 0 && dbSnap.rows[0].snapshot_data) {
+                snap = dbSnap.rows[0].snapshot_data;
+            }
+        } catch (e) {}
+
+        if (!snap) {
+            const snapFile = path.join(__dirname, 'initial_pipeline_snapshot.json');
+            if (fs.existsSync(snapFile)) {
+                try {
+                    snap = JSON.parse(fs.readFileSync(snapFile, 'utf8'));
+                } catch (err) {
+                    console.error('Error loading initial_pipeline_snapshot.json:', err);
+                }
+            }
+        }
+
+        if (snap) {
             try {
-                const snap = JSON.parse(fs.readFileSync(snapFile, 'utf8'));
                 const gcodeFeitos = [];
                 const gcodeProntos = [];
+                const seenGcodeNames = new Set();
+
                 (snap.gcodeProntos || []).concat(snap.gcodeFeitos || []).forEach(gf => {
                     const lower = (gf.name || '').toLowerCase().trim();
+                    const subLower = (gf.subfolderName || '').toLowerCase().trim();
+                    const dedupKey = `${lower}___${subLower}`;
+                    if (seenGcodeNames.has(dedupKey)) return;
+                    seenGcodeNames.add(dedupKey);
+                    seenGcodeNames.add(lower);
+
                     const key = (gf.fullPath || `${gf.jobName || ''}_${gf.name}`).toLowerCase().trim();
-                    const execs = execMap[lower] || [];
-                    const isDbDone = Boolean(completedFilesMap[lower] || completedFilesMap[key]);
-                    const isOk = isFileMarkedOk(gf.name) || (execs.length > 0) || isDbDone;
-                    if (isOk) {
+                    const execs = execMap[dedupKey] || execMap[lower] || [];
+                    const completedExecs = execs.filter(j => j.end_time != null || Number(j.duration_minutes) > 0 || (Date.now() - new Date(j.start_time).getTime() > 3600000));
+                    const activeExec = execs.find(j => j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000));
+                    const isCurrentlyRunning = Boolean(activeExec);
+                    const matInfo = gf.matInfo?.tag ? gf.matInfo : extractMaterialInfo(gf.name);
+                    const targetQty = matInfo.targetQuantity || 1;
+                    const isDbDone = Boolean(completedFilesMap[lower] || completedFilesMap[key] || completedFilesMap[dedupKey]);
+                    const isOk = isFileMarkedOk(gf.name) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0) || isDbDone;
+
+                    if (isOk && !isCurrentlyRunning) {
                         gcodeFeitos.push({
                             ...gf,
+                            matInfo,
                             execCount: execs.length > 0 ? execs.length : 1,
                             lastExec: execs[0] || {
                                 operator_name: (completedFilesMap[lower] || completedFilesMap[key])?.operator_name || 'Tomas',
@@ -529,9 +561,48 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                             isManuallyDone: isDbDone
                         });
                     } else {
-                        gcodeProntos.push(gf);
+                        gcodeProntos.push({
+                            ...gf,
+                            matInfo,
+                            isCurrentlyRunning,
+                            runningMachine: activeExec?.router_name || null,
+                            runningStartTime: activeExec?.start_time || null
+                        });
                     }
                 });
+
+                // Auto-injetar qualquer arquivo que esteja rodando ou tenha rodado nas últimas 48h no Mach3 e ainda não constava no snapshot
+                const recentJobCutoff = Date.now() - 48 * 3600 * 1000;
+                dbJobs.forEach(j => {
+                    const st = new Date(j.start_time).getTime();
+                    if (!st || st < recentJobCutoff) return;
+                    const lower = (j.file_name || '').toLowerCase().trim();
+                    if (!lower || seenGcodeNames.has(lower)) return;
+                    seenGcodeNames.add(lower);
+
+                    const matInfo = extractMaterialInfo(j.file_name);
+                    const isRunning = j.end_time == null && !j.duration_minutes && (Date.now() - st < 3600000);
+                    const isDbDone = Boolean(completedFilesMap[lower]);
+                    if (isRunning && !isDbDone) {
+                        gcodeProntos.unshift({
+                            name: j.file_name,
+                            ext: path.extname(j.file_name).toLowerCase() || '.txt',
+                            type: 'gcode',
+                            fullPath: `${j.folder || 'Router'}\\${j.file_name}`,
+                            size: 0,
+                            mtime: st,
+                            mtimeDate: j.start_time,
+                            jobName: j.folder || 'Fila Router Mach3',
+                            subfolderName: j.folder || 'Mach3',
+                            matInfo,
+                            isCurrentlyRunning: true,
+                            runningMachine: j.router_name || 'Router CNC',
+                            runningStartTime: j.start_time
+                        });
+                    }
+                });
+
+                gcodeProntos.sort((a, b) => (b.isCurrentlyRunning ? 1 : 0) - (a.isCurrentlyRunning ? 1 : 0) || (b.mtime || 0) - (a.mtime || 0));
 
                 const cadPrepararList = (snap.cadPreparar || []).map(cf => {
                     const lower = (cf.name || '').toLowerCase().trim();
@@ -572,7 +643,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 lastCacheTime = now;
                 return cachedResult;
             } catch (err) {
-                console.error('Error loading initial_pipeline_snapshot.json:', err);
+                console.error('Error processing snapshot in getProductionPipeline:', err);
             }
         }
     }
@@ -587,6 +658,17 @@ async function getProductionPipeline(pool, forceRefresh = false) {
     const allGcodeProntos = [];
     const allGcodeFeitos = [];
     const jobsList = [];
+
+    // Coleta todos os G-Codes recentes globalmente para cruzar caso o Aspire salve o .txt em outra pasta (ex: JANELAS (1).eps -> MDF 3MM E4 MM JANELAS_1-Corte 2.txt)
+    const globalGcodes = [];
+    const recentCutoffGlobal = new Date('2026-10-01T00:00:00Z').getTime();
+    for (const jData of Object.values(jobMap)) {
+        (jData.files || []).forEach(f => {
+            if (f.type === 'gcode' && ((f.mtime && f.mtime >= recentCutoffGlobal) || jData.source.startsWith('OneDrive'))) {
+                globalGcodes.push(f);
+            }
+        });
+    }
 
     for (const [jName, jData] of Object.entries(jobMap)) {
         // Deduplicate files by filename + size
@@ -706,16 +788,34 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             const subfolderName = path.basename(dir);
             const subName = path.basename(dir).toLowerCase().trim();
             const folderFiles = folderGroups[subName] || folderGroups[dir] || { cad: [], aspire: [], gcode: [] };
-            const matInfo = extractMaterialInfo(af.name);
+            let matInfo = extractMaterialInfo(af.name);
 
             // Cruza com G-Codes da mesma pasta pelo Material ou pelo nome base
-            const base = path.parse(af.name).name.toLowerCase().replace(/[-_]/g, ' ');
-            const matchingGcodes = folderFiles.gcode.filter(g => {
+            const base = path.parse(af.name).name.toLowerCase().replace(/[-_()]/g, ' ').replace(/\s+/g, ' ').trim();
+            let matchingGcodes = folderFiles.gcode.filter(g => {
                 const gMat = extractMaterialInfo(g.name);
                 if (matInfo.tag && gMat.tag && matInfo.tag === gMat.tag) return true;
-                const gBase = path.parse(g.name).name.toLowerCase().replace(/[-_]/g, ' ');
+                const gBase = path.parse(g.name).name.toLowerCase().replace(/[-_()]/g, ' ').replace(/\s+/g, ' ').trim();
                 return gBase.includes(base) || base.includes(gBase);
             });
+
+            // Se não achou na mesma pasta, busca globalmente por palavra-chave específica (ex: JANELAS (1).eps -> MDF 3MM E4 MM JANELAS_1-Corte 2.txt)
+            if (matchingGcodes.length === 0) {
+                const cleanKeyword = base.replace(/\b(\d+|mdf|comp|compensado|mm|chapa|corte|parte)\b/gi, '').trim();
+                if (cleanKeyword.length >= 4) {
+                    matchingGcodes = globalGcodes.filter(g => {
+                        const gLower = g.name.toLowerCase();
+                        const timeClose = af.mtime && g.mtime ? Math.abs(g.mtime - af.mtime) < 12 * 3600 * 1000 : true;
+                        return timeClose && gLower.includes(cleanKeyword);
+                    });
+                }
+            }
+
+            // Se o arquivo .eps não tinha o material escrito no nome (ex: JANELAS (1).eps), herda o material do G-Code gerado (ex: MDF 3MM)
+            if (!matInfo.tag && matchingGcodes.length > 0) {
+                const inherited = extractMaterialInfo(matchingGcodes[0].name);
+                if (inherited.tag) matInfo = inherited;
+            }
 
             const hasGcode = matchingGcodes.length > 0;
             const chapasCount = matchingGcodes.length;
@@ -764,12 +864,13 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             const compoundKey = `${lower}___${subLower}`;
             const execs = execMap[compoundKey] || execMap[lower] || [];
             const completedExecs = execs.filter(j => j.end_time != null || Number(j.duration_minutes) > 0 || (Date.now() - new Date(j.start_time).getTime() > 3600000));
-            const isCurrentlyRunning = execs.some(j => j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000));
+            const activeExec = execs.find(j => j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000));
+            const isCurrentlyRunning = Boolean(activeExec);
             const targetQty = matInfo.targetQuantity || 1;
             const isDbDone = Boolean(completedFilesMap[lower] || completedFilesMap[gfKey] || completedFilesMap[compoundKey]);
             const isOk = isFileMarkedOk(gf.name) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0) || isDbDone;
 
-            if (isOk) {
+            if (isOk && !isCurrentlyRunning) {
                 const item = {
                     ...gf,
                     jobName: jName,
@@ -792,7 +893,10 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     ...gf,
                     jobName: jName,
                     subfolderName,
-                    matInfo
+                    matInfo,
+                    isCurrentlyRunning,
+                    runningMachine: activeExec?.router_name || null,
+                    runningStartTime: activeExec?.start_time || null
                 };
                 gcodeProntos.push(item);
                 allGcodeProntos.push(item);
@@ -829,7 +933,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
 
     allCadPreparar.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
     allAspirePreparar.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
-    allGcodeProntos.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
+    allGcodeProntos.sort((a, b) => (b.isCurrentlyRunning ? 1 : 0) - (a.isCurrentlyRunning ? 1 : 0) || (b.mtime || 0) - (a.mtime || 0));
     allGcodeFeitos.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
 
     cachedResult = {
@@ -849,6 +953,15 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         updatedAt: new Date().toISOString()
     };
     lastCacheTime = now;
+
+    // Salva automaticamente no PostgreSQL para sincronizar em tempo real com o servidor Render Cloud
+    if (scannedFromDisk) {
+        pool.query(`
+            INSERT INTO pipeline_live_snapshot (id, snapshot_data, updated_at)
+            VALUES (1, $1, CURRENT_TIMESTAMP)
+            ON CONFLICT (id) DO UPDATE SET snapshot_data = EXCLUDED.snapshot_data, updated_at = CURRENT_TIMESTAMP
+        `, [JSON.stringify(cachedResult)]).catch(() => {});
+    }
 
     return cachedResult;
 }

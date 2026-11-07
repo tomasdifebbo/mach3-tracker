@@ -1168,6 +1168,8 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                           className={`transition-colors ${
                             isChecked 
                               ? 'bg-emerald-500/[0.04] dark:bg-emerald-500/[0.07]' 
+                              : f.isCurrentlyRunning
+                              ? 'bg-cyan-500/[0.08] dark:bg-cyan-500/[0.12] border-l-2 border-l-cyan-400'
                               : 'hover:bg-slate-50 dark:hover:bg-white/[0.02]'
                           }`}
                         >
@@ -1215,6 +1217,11 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
                                 <Check size={11} className="stroke-[3]" />
                                 OK (Chapa Usinada)
+                              </span>
+                            ) : f.isCurrentlyRunning ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 shadow-sm">
+                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+                                ⚡ RODANDO AGORA ({f.runningMachine || 'Mach3'})
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-orange-500/10 text-orange-500 border border-orange-500/20">
