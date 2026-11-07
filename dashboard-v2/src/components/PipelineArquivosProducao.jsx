@@ -668,36 +668,58 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
             <CaixaChecklistProducao pipelineData={pipelineData} jobs={jobs} routers={routers} operatorName="Tomas" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             {specialBatches.map(b => {
-              const percent = b.targetSheets > 0 ? Math.round((b.doneSheets / b.targetSheets) * 100) : 0;
+              const batchKey = `batch_${b.id}`;
+              const isBatchDone = b.status === 'concluido' || Boolean(fileChecklist[batchKey] || fileChecklist[b.id] || fileChecklist[b.name]);
+              const effectiveDone = isBatchDone ? b.targetSheets : b.doneSheets;
+              const effectivePending = isBatchDone ? 0 : b.pendingSheets;
+              const percent = b.targetSheets > 0 ? Math.round((effectiveDone / b.targetSheets) * 100) : 0;
               return (
                 <div
                   key={b.id}
-                  className="bg-white dark:bg-white/[0.03] rounded-xl border border-slate-200 dark:border-white/5 p-3.5 shadow-sm space-y-2.5 hover:border-orange-500/30 transition-all"
+                  className={`bg-white dark:bg-white/[0.03] rounded-xl border p-3.5 shadow-sm space-y-2.5 transition-all ${
+                    isBatchDone
+                      ? 'border-emerald-500/30 bg-emerald-500/[0.02]'
+                      : 'border-slate-200 dark:border-white/5 hover:border-orange-500/30'
+                  }`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <span className="text-[9px] font-black uppercase tracking-wider text-orange-500">
-                        {b.job}
-                      </span>
-                      <h3 className="font-black text-sm text-slate-900 dark:text-white leading-tight truncate">
-                        {b.name}
-                      </h3>
-                      <p className="text-[11px] text-slate-400 font-mono truncate">
-                        {b.file}
-                      </p>
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => toggleFileCheck({ name: b.name, fullPath: batchKey, jobName: b.job, subfolderName: b.subfolder }, 'router')}
+                        className={`mt-0.5 w-6 h-6 shrink-0 rounded flex items-center justify-center transition-all ${
+                          isBatchDone
+                            ? 'bg-emerald-500 text-white shadow-sm ring-2 ring-emerald-500/20'
+                            : 'border-2 border-slate-300 dark:border-white/20 text-transparent hover:border-emerald-500 hover:text-emerald-500/40'
+                        }`}
+                        title={isBatchDone ? 'Lote Concluído (OK) - Clique para alterar' : 'Clique para dar OK (Concluir Lote Inteiro)'}
+                      >
+                        <Check size={13} className="stroke-[3]" />
+                      </button>
+                      <div className="min-w-0">
+                        <span className="text-[9px] font-black uppercase tracking-wider text-orange-500">
+                          {b.job}
+                        </span>
+                        <h3 className="font-black text-sm text-slate-900 dark:text-white leading-tight truncate">
+                          {isBatchDone ? b.name.replace(/\(\d+\s*de\s*(\d+)/i, '($1 de $1') : b.name}
+                        </h3>
+                        <p className="text-[11px] text-slate-400 font-mono truncate">
+                          {b.file}
+                        </p>
+                      </div>
                     </div>
                     <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black shrink-0 ${
-                      b.status === "concluido"
+                      isBatchDone
                         ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
                         : b.status === "em_andamento"
                         ? "bg-sky-500/20 text-sky-400 border border-sky-500/30 animate-pulse"
                         : "bg-orange-500/20 text-orange-400 border border-orange-500/30"
                     }`}>
-                      {b.status === "concluido"
+                      {isBatchDone
                         ? "100% CONCLUÍDO"
                         : b.status === "em_andamento"
-                        ? `RODANDO (${b.pendingSheets} RESTANTE)`
-                        : `${b.pendingSheets} FALTANTES`}
+                        ? `RODANDO (${effectivePending} RESTANTE)`
+                        : `${effectivePending} FALTANTES`}
                     </span>
                   </div>
 
@@ -705,7 +727,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                   <div className="space-y-1">
                     <div className="flex justify-between text-[11px] font-bold">
                       <span className="text-slate-400">Progresso do Lote</span>
-                      <span className="text-orange-400">{b.doneSheets} / {b.targetSheets} ({percent}%)</span>
+                      <span className={percent >= 100 ? "text-emerald-400" : "text-orange-400"}>{effectiveDone} / {b.targetSheets} ({percent}%)</span>
                     </div>
                     <div className="w-full bg-slate-100 dark:bg-white/10 h-2 rounded-full overflow-hidden">
                       <div

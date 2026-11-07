@@ -51,7 +51,9 @@ export function isFileMarkedOk(filename = '') {
     lower.includes('aplique mdf 9mm_4-corte 4') ||
     lower.includes('aplique mdf 9mm_1-corte 5') ||
     lower.includes('aplique mdf 9mm_2-corte 6') ||
-    lower.includes('aplique mdf 9mm_4-corte 7')
+    lower.includes('aplique mdf 9mm_4-corte 7') ||
+    lower === '4x compensado 6mm e6mm.txt' ||
+    lower === '2x compensado 6mm e6mm_1-corte 2.txt'
   ) {
     return true;
   }
