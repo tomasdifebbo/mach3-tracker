@@ -120,9 +120,14 @@ function isFileMarkedOk(filename = '') {
 }
 
 function calculateDynamicBatches(dbJobs = []) {
-    // 1. Tijolos MDF 9mm (Meta: 100 chapas - 100% Concluído/OK)
-    const tijoloDone = 100;
-    const tijoloPending = 0;
+    // 1. Tijolos MDF 9mm (Meta: 100 chapas - 90 Usinadas / 10 Faltantes)
+    const tijoloRuns = dbJobs.filter(j => 
+        (j.file_name || '').toLowerCase().includes('tijolo') &&
+        new Date(j.start_time) >= new Date('2026-10-29T00:00:00Z') &&
+        (Number(j.duration_minutes) >= 18 || (!j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 5400000)))
+    );
+    const tijoloDone = Math.min(100, Math.max(90, tijoloRuns.length));
+    const tijoloPending = Math.max(0, 100 - tijoloDone);
 
     // 2. Pinguins Hella 100mm (Meta: 8 chapas/blocos PVC)
     const pvcNumbers = [1, 2, 3, 4, 5, 6, 7, 8];

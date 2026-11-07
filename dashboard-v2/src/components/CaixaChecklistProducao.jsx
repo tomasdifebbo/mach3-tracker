@@ -145,12 +145,20 @@ export function CaixaChecklistProducao({
     // Checa máquinas que estão rodando agora
     const runningRouters = routers.filter(r => r.status === 'running' || r.status === 'executing');
 
-    // 1. Lote Seriado de Tijolos MDF 9mm (Meta 100 chapas - 100% Concluído/OK)
-    const targetCount = 100;
-    const doneCount = 100; // Confirmado pelo operador Tomas: todas as 100 chapas usinadas!
+    // 1. Lote Seriado de Tijolos MDF 9mm (Meta: 100 chapas - 90 Concluídas / 10 Pendentes)
+    const tijoloBatch = specialBatches.find(b => b.id === 'tijolos_9mm') || {
+      targetSheets: 100,
+      doneSheets: 90,
+      pendingSheets: 10
+    };
+
+    const doneCount = tijoloBatch.doneSheets ?? 90;
+    const targetCount = tijoloBatch.targetSheets || 100;
+    const isTijoloRunning = runningRouters.some(r => (r.current_file || '').toLowerCase().includes('tijolo'));
 
     for (let i = 1; i <= targetCount; i++) {
-      const isDone = true; // 100% concluído, sai das pendências e vai para a lista de concluídos
+      const isDone = i <= doneCount;
+      const isCurrentlyRunning = !isDone && isTijoloRunning && i === doneCount + 1;
 
       rawList.push({
         id: `tijolo-${i}`,
@@ -160,10 +168,14 @@ export function CaixaChecklistProducao({
         tool: 'Topo Ø6mm Z=3mm',
         done: isDone,
         isAuto: true,
-        isRunning: false,
-        doneBy: 'Mach3 Auto / Tomas',
-        doneAt: 'Usinado',
-        statusText: '100% Usinado no Mach3'
+        isRunning: isCurrentlyRunning,
+        doneBy: isDone ? 'Mach3 Auto' : null,
+        doneAt: isDone ? 'Usinado' : null,
+        statusText: isDone 
+          ? '100% Usinado no Mach3' 
+          : isCurrentlyRunning 
+          ? '⚡ Rodando agora no Mach3' 
+          : 'Na Fila da Router 2'
       });
     }
 
