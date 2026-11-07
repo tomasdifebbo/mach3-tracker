@@ -708,8 +708,10 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             const subLower = (subfolderName || '').toLowerCase().trim();
             const compoundKey = `${lower}___${subLower}`;
             const execs = execMap[compoundKey] || execMap[lower] || [];
+            const completedExecs = execs.filter(j => j.end_time != null || Number(j.duration_minutes) > 0 || (Date.now() - new Date(j.start_time).getTime() > 3600000));
+            const isCurrentlyRunning = execs.some(j => j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000));
             const targetQty = matInfo.targetQuantity || 1;
-            const isOk = isFileMarkedOk(gf.name) || (targetQty > 1 ? execs.length >= targetQty : execs.length > 0);
+            const isOk = isFileMarkedOk(gf.name) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0);
 
             if (isOk) {
                 const item = {
