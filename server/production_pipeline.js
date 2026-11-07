@@ -108,7 +108,7 @@ function isFileMarkedOk(filename = '') {
         lower === 'compensado 6mm e6mm_2.txt' ||
         lower === 'compensado 6mm e6mm_1.txt' ||
         lower.includes('textura tijolos especiais e4mm') ||
-        lower.includes('compensado 10mm e6mm_1') ||
+        lower === 'compensado 10mm e6mm_1.txt' ||
         lower.includes('aplique mdf 9mm_1-corte 1') ||
         lower.includes('aplique mdf 9mm_2-corte 2') ||
         lower.includes('aplique mdf 9mm_3-corte 3') ||

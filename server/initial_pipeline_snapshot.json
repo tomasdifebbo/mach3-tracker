@@ -4206,6 +4206,23 @@
         "tag": "MDF 15mm",
         "chapaIndex": "1"
       }
+    },
+    {
+      "name": "CAMBOTA compensado 10mm e6mm_1-Corte 1.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\HOGSMEAD\\CAMBOTA compensado 10mm e6mm_1-Corte 1.txt",
+      "size": 205696,
+      "mtime": 1794072922000,
+      "mtimeDate": "2026-11-07T17:35:22.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "HOGSMEAD",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "10mm",
+        "tag": "Compensado 10mm",
+        "chapaIndex": "1"
+      }
     }
   ],
   "gcodeFeitos": [
