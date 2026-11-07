@@ -66,7 +66,11 @@ function extractMaterialInfo(name) {
     const chapaMatch = fn.match(/(?:chapa\s*(\d+)|(\d+)\s*x|parte\s*(\d+)|_(\d+)|(\d+)\s*(?:pvc|mdf|comp))/i);
     const chapaIndex = chapaMatch ? (chapaMatch[1] || chapaMatch[2] || chapaMatch[3] || chapaMatch[4] || chapaMatch[5]) : null;
 
-    return { material, thickness, tag, chapaIndex };
+    // Detecta quantidade de repetições (ex: 4X, 2X, 3X)
+    const qtyMatch = fn.match(/^(\d+)\s*x|\b(\d+)\s*x\b/i);
+    const targetQuantity = qtyMatch ? parseInt(qtyMatch[1] || qtyMatch[2], 10) : 1;
+
+    return { material, thickness, tag, chapaIndex, targetQuantity };
 }
 
 // Identifica se o arquivo já foi usinado, testado ou dado baixa pelo operador
@@ -92,17 +96,17 @@ function isFileMarkedOk(filename = '') {
 
     // 2. Arquivos de Compensado e Tijolos confirmados como concluídos pelo Tomas
     if (
-        lower.includes('compensado 6mm e6mm_11') ||
-        lower.includes('compensado 6mm e6mm_12') ||
-        lower.includes('compensado 6mm e6mm_10') ||
-        lower.includes('compensado 6mm e6mm_9') ||
-        lower.includes('compensado 6mm e6mm_8') ||
-        lower.includes('compensado 6mm e6mm_7') ||
-        lower.includes('compensado 6mm e6mm_5') ||
-        lower.includes('compensado 6mm e6mm_4') ||
-        lower.includes('compensado 6mm e6mm_3') ||
-        lower.includes('compensado 6mm e6mm_2') ||
-        lower.includes('compensado 6mm e6mm_1') ||
+        lower === 'compensado 6mm e6mm_11.txt' ||
+        lower === 'compensado 6mm e6mm_12.txt' ||
+        lower === 'compensado 6mm e6mm_10.txt' ||
+        lower === 'compensado 6mm e6mm_9.txt' ||
+        lower === 'compensado 6mm e6mm_8.txt' ||
+        lower === 'compensado 6mm e6mm_7.txt' ||
+        lower === 'compensado 6mm e6mm_5.txt' ||
+        lower === 'compensado 6mm e6mm_4.txt' ||
+        lower === 'compensado 6mm e6mm_3.txt' ||
+        lower === 'compensado 6mm e6mm_2.txt' ||
+        lower === 'compensado 6mm e6mm_1.txt' ||
         lower.includes('textura tijolos especiais e4mm') ||
         lower.includes('compensado 10mm e6mm_1') ||
         lower.includes('aplique mdf 9mm_1-corte 1') ||
@@ -286,6 +290,23 @@ function calculateDynamicBatches(dbJobs = []) {
             priority: 'media'
         },
         {
+            id: 'sala_magia_compensado_6mm',
+            name: 'Sala de Magia Compensado 6mm (4 de 6 chapas)',
+            job: '2640  - EXPRESSO HOGWARTS CCXP',
+            subfolder: 'ROUTER/SALA DE MAGIA',
+            file: '4X COMPENSADO 6MM E6MM.TXT (4x) + 2X COMPENSADO 6MM E6MM_1-Corte 2.txt (2x)',
+            material: 'Compensado 6mm',
+            dimensions: 'Chapas 2200 × 1600 mm',
+            tool: 'Fresa Topo Ø6mm (e6mm)',
+            targetSheets: 6,
+            doneSheets: 4,
+            pendingSheets: 2,
+            status: 'em_andamento',
+            estMinutesPerSheet: 12,
+            totalEstMinutes: 24,
+            priority: 'alta'
+        },
+        {
             id: 'hogsmead_apliques_9mm',
             name: `Apliques Hogsmead MDF 9mm & 15mm (${apliqueDone} de 11 cortes)`,
             job: '2640  - EXPRESSO HOGWARTS CCXP',
@@ -365,8 +386,15 @@ async function getProductionPipeline(pool, forceRefresh = false) {
     const execMap = {};
     dbJobs.forEach(j => {
         const fn = (j.file_name || '').toLowerCase().trim();
+        const fld = (j.folder || '').toLowerCase().trim();
         if (!execMap[fn]) execMap[fn] = [];
         execMap[fn].push(j);
+
+        if (fld) {
+            const compoundKey = `${fn}___${fld}`;
+            if (!execMap[compoundKey]) execMap[compoundKey] = [];
+            execMap[compoundKey].push(j);
+        }
     });
 
     const oneDriveRoot = 'C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos';
@@ -533,13 +561,16 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         const activeFiles = unique.filter(f => (f.mtime && f.mtime >= recentCutoff) || jData.source.startsWith('OneDrive'));
 
         // Agrupa por pasta normalizada para cruzamento de hierarquia (Corel -> Materiais -> Lote Chapas)
+        // Usa a subpasta relativa (ex: 'SALA DE MAGIA') para unificar arquivos do OneDrive (C:) e do Router Local (E:)
         const folderGroups = {};
         activeFiles.forEach(f => {
             const dir = getNormDir(f.fullPath);
-            if (!folderGroups[dir]) folderGroups[dir] = { cad: [], aspire: [], gcode: [] };
-            if (f.type === 'cad') folderGroups[dir].cad.push(f);
-            else if (f.type === 'aspire') folderGroups[dir].aspire.push(f);
-            else if (f.type === 'gcode') folderGroups[dir].gcode.push(f);
+            const subName = path.basename(dir).toLowerCase().trim();
+            const groupKey = subName || dir.toLowerCase();
+            if (!folderGroups[groupKey]) folderGroups[groupKey] = { cad: [], aspire: [], gcode: [] };
+            if (f.type === 'cad') folderGroups[groupKey].cad.push(f);
+            else if (f.type === 'aspire') folderGroups[groupKey].aspire.push(f);
+            else if (f.type === 'gcode') folderGroups[groupKey].gcode.push(f);
         });
 
         const cad = activeFiles.filter(f => f.type === 'cad');
@@ -554,7 +585,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         cad.forEach(cf => {
             const dir = getNormDir(cf.fullPath);
             const subfolderName = path.basename(dir);
-            const folderFiles = folderGroups[dir] || { cad: [], aspire: [], gcode: [] };
+            const subName = path.basename(dir).toLowerCase().trim();
+            const folderFiles = folderGroups[subName] || folderGroups[dir] || { cad: [], aspire: [], gcode: [] };
             const matInfo = extractMaterialInfo(cf.name);
 
             // Arquivos de Aspire na mesma pasta
@@ -612,8 +644,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             } else {
                 if (hasAspire) cadComAspire.push(item);
                 cadPreparar.push(item);
-                allCadPreparar.push(item);
             }
+            allCadPreparar.push(item);
         });
 
         // 2. Processamento Inteligente do Aspire (.EPS / .DXF / .CRV - Arquivos de Materiais)
@@ -623,7 +655,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         aspire.forEach(af => {
             const dir = getNormDir(af.fullPath);
             const subfolderName = path.basename(dir);
-            const folderFiles = folderGroups[dir] || { cad: [], aspire: [], gcode: [] };
+            const subName = path.basename(dir).toLowerCase().trim();
+            const folderFiles = folderGroups[subName] || folderGroups[dir] || { cad: [], aspire: [], gcode: [] };
             const matInfo = extractMaterialInfo(af.name);
 
             // Cruza com G-Codes da mesma pasta pelo Material ou pelo nome base
@@ -659,8 +692,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 aspireComGcode.push(item);
             } else {
                 aspirePreparar.push(item);
-                allAspirePreparar.push(item);
             }
+            allAspirePreparar.push(item);
         });
 
         // 3. Processamento dos G-Codes (.TXT, .TAP, etc. - Chapas Liberadas p/ Router)
@@ -672,8 +705,11 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             const subfolderName = path.basename(dir);
             const matInfo = extractMaterialInfo(gf.name);
             const lower = gf.name.toLowerCase().trim();
-            const execs = execMap[lower] || [];
-            const isOk = isFileMarkedOk(gf.name) || (execs.length > 0);
+            const subLower = (subfolderName || '').toLowerCase().trim();
+            const compoundKey = `${lower}___${subLower}`;
+            const execs = execMap[compoundKey] || execMap[lower] || [];
+            const targetQty = matInfo.targetQuantity || 1;
+            const isOk = isFileMarkedOk(gf.name) || (targetQty > 1 ? execs.length >= targetQty : execs.length > 0);
 
             if (isOk) {
                 const item = {

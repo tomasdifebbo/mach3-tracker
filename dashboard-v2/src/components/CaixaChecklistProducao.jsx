@@ -31,17 +31,17 @@ export function isFileMarkedOk(filename = '') {
 
   // 2. Arquivos de Compensado e Tijolos confirmados como concluídos pelo Tomas
   if (
-    lower.includes('compensado 6mm e6mm_11') ||
-    lower.includes('compensado 6mm e6mm_12') ||
-    lower.includes('compensado 6mm e6mm_10') ||
-    lower.includes('compensado 6mm e6mm_9') ||
-    lower.includes('compensado 6mm e6mm_8') ||
-    lower.includes('compensado 6mm e6mm_7') ||
-    lower.includes('compensado 6mm e6mm_5') ||
-    lower.includes('compensado 6mm e6mm_4') ||
-    lower.includes('compensado 6mm e6mm_3') ||
-    lower.includes('compensado 6mm e6mm_2') ||
-    lower.includes('compensado 6mm e6mm_1') ||
+    lower === 'compensado 6mm e6mm_11.txt' ||
+    lower === 'compensado 6mm e6mm_12.txt' ||
+    lower === 'compensado 6mm e6mm_10.txt' ||
+    lower === 'compensado 6mm e6mm_9.txt' ||
+    lower === 'compensado 6mm e6mm_8.txt' ||
+    lower === 'compensado 6mm e6mm_7.txt' ||
+    lower === 'compensado 6mm e6mm_5.txt' ||
+    lower === 'compensado 6mm e6mm_4.txt' ||
+    lower === 'compensado 6mm e6mm_3.txt' ||
+    lower === 'compensado 6mm e6mm_2.txt' ||
+    lower === 'compensado 6mm e6mm_1.txt' ||
     lower.includes('textura tijolos especiais e4mm') ||
     lower.includes('compensado 10mm e6mm_1') ||
     lower.includes('aplique mdf 9mm_1-corte 1') ||
