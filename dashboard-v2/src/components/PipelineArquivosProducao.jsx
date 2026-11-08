@@ -77,7 +77,9 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
   const isFileChecked = (f) => {
     if (!f) return false;
     const k = getFileKey(f);
-    return Boolean(fileChecklist[k] || fileChecklist[f.name] || f.isManuallyDone);
+    // Se o arquivo está RODANDO AGORA na máquina, NUNCA pode ser considerado concluído/checked
+    if (f.isCurrentlyRunning) return false;
+    return Boolean(fileChecklist[k] || (f.fullPath && fileChecklist[f.fullPath]) || f.isManuallyDone);
   };
 
   // Carrega e sincroniza arquivos concluídos do PostgreSQL de forma definitiva
@@ -96,10 +98,8 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                 operator: item.operator_name || 'Tomas'
               };
               merged[k] = entry;
-              if (item.file_name) merged[item.file_name] = entry;
             } else {
               delete merged[k];
-              if (item.file_name) delete merged[item.file_name];
             }
           });
           try {
