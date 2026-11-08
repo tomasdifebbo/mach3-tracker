@@ -1,5 +1,7 @@
 import logging
 import os
+from pathlib import Path
+import subprocess
 import queue
 import sys
 import threading
@@ -875,30 +877,65 @@ class FolderAssistantApp:
 
         def _handle_click():
             logging.info(f"Clique no balão de notificação: folder_path={folder_path}, job_name={job_name}")
-            opened = False
-            # 1. Abre a pasta do arquivo no Windows Explorer
+            target_to_open = None
+
+            # 1. Testa folder_path recebido
             if folder_path:
                 try:
                     p = Path(folder_path)
                     if p.exists():
-                        target_dir = p if p.is_dir() else p.parent
-                        os.startfile(str(target_dir))
-                        opened = True
+                        target_to_open = p if p.is_dir() else p.parent
+                    elif p.parent.exists():
+                        target_to_open = p.parent
                 except Exception as e:
-                    logging.warning(f"Erro ao abrir pasta {folder_path}: {e}")
+                    logging.warning(f"Erro ao testar folder_path '{folder_path}': {e}")
 
-            if not opened and job_name:
+            # 2. Se ainda não achou, busca caminhos do job selecionado ou informado
+            if not target_to_open and job_name:
                 job = self._get_job(job_name)
                 if job:
-                    target = job.get("oficina_path") or job.get("dest_path") or job.get("source_path")
-                    if target and Path(target).exists():
-                        try:
-                            os.startfile(str(target))
-                            opened = True
-                        except Exception:
-                            pass
+                    for k in ("dest_path", "oficina_path", "source_path"):
+                        val = job.get(k)
+                        if val:
+                            try:
+                                jp = Path(val)
+                                if jp.exists():
+                                    target_to_open = jp if jp.is_dir() else jp.parent
+                                    break
+                            except Exception:
+                                pass
 
-            # 2. Seleciona o job na lista do painel e restaura a janela
+            # 3. Fallback: tenta diretório de destino padrão ou origem configurado
+            if not target_to_open:
+                try:
+                    cfg_local = load_config()
+                    for fallback_key in ("dest_dir", "source_dir"):
+                        fdir = cfg_local.get(fallback_key)
+                        if fdir:
+                            fp = Path(fdir)
+                            if fp.exists():
+                                target_to_open = fp
+                                break
+                except Exception as e:
+                    logging.warning(f"Erro ao buscar fallback de pasta: {e}")
+
+            # 4. Abre a pasta encontrada no Windows Explorer
+            if target_to_open:
+                target_str = str(target_to_open)
+                try:
+                    os.startfile(target_str)
+                    logging.info(f"Pasta aberta com sucesso no Explorer (os.startfile): {target_str}")
+                except Exception as e:
+                    logging.warning(f"os.startfile falhou para '{target_str}' ({e}), tentando subprocess...")
+                    try:
+                        subprocess.Popen(["explorer.exe", target_str])
+                        logging.info(f"Pasta aberta com sucesso via explorer.exe: {target_str}")
+                    except Exception as e2:
+                        logging.error(f"Falha total ao abrir pasta no Explorer '{target_str}': {e2}")
+            else:
+                logging.warning(f"Nenhum caminho válido encontrado para abrir: folder_path={folder_path}, job={job_name}")
+
+            # 5. Seleciona o job na lista do painel e restaura a janela
             if job_name:
                 self.selected_job_name = job_name
             self._restore_from_mini_or_minimized()

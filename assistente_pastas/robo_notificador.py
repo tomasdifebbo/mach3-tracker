@@ -290,19 +290,20 @@ class RoboNotificador:
     def _on_click(self, event):
         if self.state == "talk":
             # Clicou no X (fechar sem abrir pasta)
-            if 244 <= event.x <= 272 and 10 <= event.y <= 36:
+            if 244 <= event.x <= 276 and 8 <= event.y <= 38:
                 if self.state not in ("out_trans", "out_slide"):
                     self._goto("out_trans")
                 return
 
-            # Clicou em cima do balão de notificação -> abre a pasta do arquivo!
-            if 8 <= event.x <= 280 and 10 <= event.y <= 160:
+            # Clicou em cima do balão de notificação ou seus textos/botões -> abre a pasta do arquivo!
+            if 4 <= event.x <= 295 and 6 <= event.y <= 165:
                 if self.on_click:
                     try:
                         self.on_click()
                     except Exception as err:
-                        pass
-        
+                        import logging
+                        logging.warning(f"Erro ao executar on_click do robô: {err}")
+
         if self.state not in ("out_trans", "out_slide"):
             self._goto("out_trans")
 
