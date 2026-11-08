@@ -566,7 +566,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     const key = (gf.fullPath || `${gf.jobName || ''}_${gf.name}`).toLowerCase().trim();
                     const execs = execMap[dedupKey] || execMap[lower] || [];
                     const completedExecs = execs.filter(j => j.end_time != null || Number(j.duration_minutes) > 0 || (Date.now() - new Date(j.start_time).getTime() > 3600000));
-                    const activeExec = execs.find(j => j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000));
+                    const activeExec = (execMap[dedupKey] || []).find(j => j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000)) ||
+                        (execMap[lower] || []).find(j => !j.folder && j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000));
                     const isCurrentlyRunning = Boolean(activeExec);
                     const matInfo = gf.matInfo?.tag ? gf.matInfo : extractMaterialInfo(gf.name);
                     const targetQty = matInfo.targetQuantity || 1;
@@ -880,6 +881,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         // 3. Processamento dos G-Codes (.TXT, .TAP, etc. - Chapas Liberadas p/ Router)
         const gcodeProntos = [];
         const gcodeFeitos = [];
+        const seenJobGcodes = new Set();
 
         gcode.forEach(gf => {
             const dir = getNormDir(gf.fullPath);
@@ -889,9 +891,13 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             const gfKey = (gf.fullPath || `${jName}_${gf.name}`).toLowerCase().trim();
             const subLower = (subfolderName || '').toLowerCase().trim();
             const compoundKey = `${lower}___${subLower}`;
+            if (seenJobGcodes.has(compoundKey)) return;
+            seenJobGcodes.add(compoundKey);
+
             const execs = execMap[compoundKey] || execMap[lower] || [];
             const completedExecs = execs.filter(j => j.end_time != null || Number(j.duration_minutes) > 0 || (Date.now() - new Date(j.start_time).getTime() > 3600000));
-            const activeExec = execs.find(j => j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000));
+            const activeExec = (execMap[compoundKey] || []).find(j => j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000)) ||
+                (execMap[lower] || []).find(j => !j.folder && j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000));
             const isCurrentlyRunning = Boolean(activeExec);
             const targetQty = matInfo.targetQuantity || 1;
             const isDbDone = Boolean(completedFilesMap[lower] || completedFilesMap[gfKey] || completedFilesMap[compoundKey]);
