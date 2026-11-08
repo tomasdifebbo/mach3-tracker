@@ -419,7 +419,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
     let completedFilesMap = {};
     try {
         const { rows } = await pool.query(`
-            SELECT file_key, file_name, stage, subfolder, job_name, done, operator_name, completed_at
+            SELECT file_key, file_name, stage, subfolder, job_name, done, operator_name,
+                   (completed_at AT TIME ZONE 'UTC') AS completed_at
             FROM pipeline_completed_files
             WHERE done = TRUE
         `);
@@ -430,6 +431,42 @@ async function getProductionPipeline(pool, forceRefresh = false) {
     } catch (e) {
         console.error('Error fetching pipeline_completed_files in getProductionPipeline:', e.message);
     }
+
+    // Detecção real de "RODANDO AGORA": execução sem fim registrado, iniciada há menos de 12h,
+    // e que seja a execução mais recente daquela máquina (se a máquina já começou outro arquivo, a anterior não está mais rodando).
+    // Substitui o antigo limite fixo de 1h, que fazia blocos longos de isopor/PVC "sumirem" da fila durante o corte.
+    const latestJobIdByRouter = {};
+    dbJobs.forEach(j => {
+        const r = (j.router_name || '').toLowerCase().trim();
+        const st = new Date(j.start_time).getTime();
+        if (!latestJobIdByRouter[r] || st > latestJobIdByRouter[r].st) latestJobIdByRouter[r] = { id: j.id, st };
+    });
+    const isJobActive = (j) => {
+        if (!j || j.end_time != null || j.duration_minutes) return false;
+        const st = new Date(j.start_time).getTime();
+        if (!st || Date.now() - st > 12 * 3600 * 1000) return false;
+        const latest = latestJobIdByRouter[(j.router_name || '').toLowerCase().trim()];
+        return Boolean(latest && latest.id === j.id);
+    };
+    // Só conta execuções feitas DEPOIS que o arquivo foi salvo (margem de 2 min). Um .txt salvo de novo pelo Aspire
+    // é um corte novo, e um nome genérico (ex: "mdf 15mm e4mm.txt") usado em outro projeto antigo não pode dar baixa nele.
+    const execsAfterFile = (execs, fileObj) => {
+        const fm = fileObj?.mtime || (fileObj?.mtimeDate ? new Date(fileObj.mtimeDate).getTime() : 0);
+        if (!fm) return execs;
+        return execs.filter(j => new Date(j.start_time).getTime() >= fm - 120000);
+    };
+    // Execuções de um G-Code: aceita qualquer execução cuja pasta registrada no Mach3 seja uma das pastas-pai do arquivo
+    // (subpasta, "cod", ou nome do projeto). Execuções com o mesmo nome em OUTRAS pastas só contam se forem posteriores ao arquivo.
+    const getFileExecs = (fileObj, lower) => {
+        const all = execMap[lower] || [];
+        const ancestors = new Set(
+            String(fileObj?.fullPath || '').split(/[\\/]/).slice(0, -1).map(s => s.toLowerCase().trim()).filter(Boolean)
+        );
+        if (fileObj?.subfolderName) ancestors.add(String(fileObj.subfolderName).toLowerCase().trim());
+        const sameFolder = all.filter(j => j.folder && ancestors.has(String(j.folder).toLowerCase().trim()));
+        if (sameFolder.length > 0) return sameFolder;
+        return execsAfterFile(all, fileObj);
+    };
 
     const execMap = {};
     dbJobs.forEach(j => {
@@ -596,10 +633,10 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     seenGcodeNames.add(dedupKey);
                     seenGcodeNames.add(lower);
 
-                    const execs = execMap[dedupKey] || execMap[lower] || [];
-                    const completedExecs = execs.filter(j => j.end_time != null || Number(j.duration_minutes) > 0 || (Date.now() - new Date(j.start_time).getTime() > 3600000));
-                    const activeExec = (execMap[dedupKey] || []).find(j => j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000)) ||
-                        (execMap[lower] || []).find(j => !j.folder && j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000));
+                    const execs = getFileExecs(gf, lower);
+                    const completedExecs = execs.filter(j => !isJobActive(j));
+                    const activeExec = (execMap[dedupKey] || []).find(isJobActive) ||
+                        (execMap[lower] || []).find(j => !j.folder && isJobActive(j));
                     const isCurrentlyRunning = Boolean(activeExec);
                     const matInfo = gf.matInfo?.tag ? gf.matInfo : extractMaterialInfo(gf.name);
                     const targetQty = matInfo.targetQuantity || 1;
@@ -642,7 +679,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     seenGcodeNames.add(lower);
 
                     const matInfo = extractMaterialInfo(j.file_name);
-                    const isRunning = j.end_time == null && !j.duration_minutes && (Date.now() - st < 3600000);
+                    const isRunning = isJobActive(j);
                     const isDbDone = Boolean(completedFilesMap[lower]);
                     if (isRunning && !isDbDone) {
                         gcodeProntos.unshift({
@@ -858,7 +895,10 @@ async function getProductionPipeline(pool, forceRefresh = false) {
 
             // Se não achou na mesma pasta, busca globalmente por palavra-chave específica (ex: JANELAS (1).eps -> MDF 3MM E4 MM JANELAS_1-Corte 2.txt)
             if (matchingGcodes.length === 0) {
-                const cleanKeyword = base.replace(/\b(\d+|mdf|comp|compensado|mm|chapa|corte|parte)\b/gi, '').trim();
+                const cleanKeyword = base
+                    .replace(/\b(?:e|b)?\d+(?:[.,]\d+)?\s*mm\b/gi, '')
+                    .replace(/\b(\d+|mdf|comp|compensado|mm|chapa|corte|parte|pvc|isopor|eps)\b/gi, '')
+                    .replace(/\s+/g, ' ').trim();
                 if (cleanKeyword.length >= 4) {
                     matchingGcodes = globalGcodes.filter(g => {
                         const gLower = g.name.toLowerCase();
@@ -920,10 +960,10 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             if (seenJobGcodes.has(compoundKey)) return;
             seenJobGcodes.add(compoundKey);
 
-            const execs = execMap[compoundKey] || execMap[lower] || [];
-            const completedExecs = execs.filter(j => j.end_time != null || Number(j.duration_minutes) > 0 || (Date.now() - new Date(j.start_time).getTime() > 3600000));
-            const activeExec = (execMap[compoundKey] || []).find(j => j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000)) ||
-                (execMap[lower] || []).find(j => !j.folder && j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000));
+            const execs = getFileExecs({ ...gf, subfolderName }, lower);
+            const completedExecs = execs.filter(j => !isJobActive(j));
+            const activeExec = (execMap[compoundKey] || []).find(isJobActive) ||
+                (execMap[lower] || []).find(j => !j.folder && isJobActive(j));
             const isCurrentlyRunning = Boolean(activeExec);
             const targetQty = matInfo.targetQuantity || 1;
             const dbCompRec = isFileCompletedInDb(gf, jName, subfolderName, completedFilesMap);
