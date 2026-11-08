@@ -5,7 +5,7 @@ const CAD_EXTS = ['.cdr']; // Apenas arquivos .CDR do CorelDRAW
 const ASPIRE_EXTS = ['.eps', '.dxf']; // Apenas arquivos vetoriais (.EPS/.DXF) para abrir e preparar no Aspire (.crv3d e .crv são backups e não devem ser exibidos)
 const GCODE_EXTS = ['.txt', '.nc', '.tap', '.gcode', '.cnc'];
 
-function scanDirRecursive(dir, maxDepth = 6, depth = 0) {
+function scanDirRecursive(dir, maxDepth = 8, depth = 0) {
     let files = [];
     if (depth > maxDepth || !fs.existsSync(dir)) return files;
     try {
@@ -13,7 +13,7 @@ function scanDirRecursive(dir, maxDepth = 6, depth = 0) {
         for (const ent of entries) {
             if (ent.name.startsWith('.') || ent.name === 'Thumbs.db') continue;
             const lowerName = ent.name.toLowerCase();
-            if (lowerName.startsWith('cópia_de_segurança') || lowerName.startsWith('copia_de_seguranca') || lowerName.startsWith('backup_of_') || lowerName.startsWith('@') || lowerName.endsWith('.crv3d') || lowerName.endsWith('.crv')) continue;
+            if (lowerName.startsWith('cópia_de_segurança') || lowerName.startsWith('copia_de_seguranca') || lowerName.startsWith('backup_of_') || lowerName.startsWith('manual_') || lowerName.startsWith('@') || lowerName.endsWith('.crv3d') || lowerName.endsWith('.crv')) continue;
             const full = path.join(dir, ent.name);
             if (ent.isDirectory()) {
                 files = files.concat(scanDirRecursive(full, maxDepth, depth + 1));
@@ -451,7 +451,27 @@ async function getProductionPipeline(pool, forceRefresh = false) {
     const jobMap = {};
     let scannedFromDisk = false;
 
-    // 1. Scan OneDrive 3 - OFICINA (if accessible)
+    // Helper: verifica se o arquivo foi dado baixa no banco, respeitando a data de modificação (se o arquivo foi salvo/modificado DEPOIS da baixa, ele volta a ficar pendente!)
+    function isFileCompletedInDb(fileObj, jobName, subfolderName, compMap) {
+        const lower = (fileObj.name || '').toLowerCase().trim();
+        const fullKey = (fileObj.fullPath || `${jobName || ''}_${fileObj.name}`).toLowerCase().trim();
+        const subLower = (subfolderName || '').toLowerCase().trim();
+        const compoundKey = `${lower}___${subLower}`;
+        const subSlashKey = `${subLower}/${lower}`;
+
+        const rec = compMap[fullKey] || compMap[compoundKey] || compMap[subSlashKey] || compMap[lower];
+        if (!rec) return null;
+
+        // Se o arquivo no disco foi modificado/criado DEPOIS do horário em que foi dado baixa no banco (+60s de margem), é um arquivo NOVO/ATUALIZADO!
+        const fileMtime = fileObj.mtime || (fileObj.mtimeDate ? new Date(fileObj.mtimeDate).getTime() : 0);
+        const compTime = rec.completed_at ? new Date(rec.completed_at).getTime() : 0;
+        if (fileMtime && compTime && fileMtime > compTime + 60000) {
+            return null;
+        }
+        return rec;
+    }
+
+    // 1. Scan OneDrive (3 - OFICINA, Nova pasta, e subpastas CNC/ROUTER)
     if (fs.existsSync(oneDriveRoot)) {
         try {
             const list = fs.readdirSync(oneDriveRoot, { withFileTypes: true });
@@ -460,15 +480,26 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 const jobDir = path.join(oneDriveRoot, d.name);
                 try {
                     const sub = fs.readdirSync(jobDir, { withFileTypes: true });
-                    const oficina = sub.find(e => e.isDirectory() && /3\s*-\s*OFICINA/i.test(e.name));
-                    if (oficina) {
-                        const oficinaPath = path.join(jobDir, oficina.name);
-                        const files = scanDirRecursive(oficinaPath);
+                    let collectedFiles = [];
+                    let primaryPath = jobDir;
+                    for (const s of sub) {
+                        if (!s.isDirectory() || s.name.startsWith('.')) continue;
+                        if (/3\s*-\s*OFICINA|nova\s*pasta|router|cnc/i.test(s.name)) {
+                            const sPath = path.join(jobDir, s.name);
+                            if (/3\s*-\s*OFICINA/i.test(s.name)) primaryPath = sPath;
+                            collectedFiles = collectedFiles.concat(scanDirRecursive(sPath));
+                        } else if (/2\s*-\s*CRIATIVO/i.test(s.name)) {
+                            const criativoPath = path.join(jobDir, s.name);
+                            const criativoFiles = scanDirRecursive(criativoPath).filter(f => /cnc|router/i.test(f.fullPath));
+                            collectedFiles = collectedFiles.concat(criativoFiles);
+                        }
+                    }
+                    if (collectedFiles.length > 0) {
                         jobMap[d.name] = {
                             name: d.name,
                             source: 'OneDrive (3 - OFICINA)',
-                            path: oficinaPath,
-                            files: files
+                            path: primaryPath,
+                            files: collectedFiles
                         };
                         scannedFromDisk = true;
                     }
@@ -477,20 +508,21 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         } catch (e) {}
     }
 
-    // 2. Scan Local E:\arquivos 2024\ARQUIVOS 2026\router and active folders (if accessible)
+    // 2. Scan Local E:\arquivos 2024\ARQUIVOS 2026\router and active folders (todas as subpastas de projetos)
     if (fs.existsSync(localRouterRoot)) {
         try {
             const list = fs.readdirSync(localRouterRoot, { withFileTypes: true });
             for (const d of list) {
-                if (!d.isDirectory() || d.name === 'node_modules' || d.name === '.git') continue;
+                if (!d.isDirectory() || d.name === 'node_modules' || d.name === '.git' || d.name.toLowerCase() === 'impressao 3d') continue;
                 const jobName = d.name;
                 const targetDir = path.join(localRouterRoot, jobName);
                 if (jobName === 'router') {
                     const routerSubs = fs.readdirSync(targetDir, { withFileTypes: true });
                     for (const rSub of routerSubs) {
-                        if (!rSub.isDirectory() || !rSub.name.startsWith('26')) continue;
+                        if (!rSub.isDirectory() || rSub.name.startsWith('.')) continue;
                         const subPath = path.join(targetDir, rSub.name);
                         const subFiles = scanDirRecursive(subPath);
+                        if (subFiles.length === 0) continue;
                         const matchedKey = Object.keys(jobMap).find(k => k.toLowerCase().includes(rSub.name.toLowerCase()) || rSub.name.toLowerCase().includes(k.toLowerCase()));
                         if (matchedKey) {
                             jobMap[matchedKey].files.push(...subFiles);
@@ -504,8 +536,9 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                         }
                         scannedFromDisk = true;
                     }
-                } else if (jobName.startsWith('26')) {
+                } else {
                     const files = scanDirRecursive(targetDir);
+                    if (files.length === 0) continue;
                     const matchedKey = Object.keys(jobMap).find(k => k.toLowerCase().includes(jobName.toLowerCase()) || jobName.toLowerCase().includes(k.toLowerCase()));
                     if (matchedKey) {
                         jobMap[matchedKey].files.push(...files);
@@ -563,7 +596,6 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     seenGcodeNames.add(dedupKey);
                     seenGcodeNames.add(lower);
 
-                    const key = (gf.fullPath || `${gf.jobName || ''}_${gf.name}`).toLowerCase().trim();
                     const execs = execMap[dedupKey] || execMap[lower] || [];
                     const completedExecs = execs.filter(j => j.end_time != null || Number(j.duration_minutes) > 0 || (Date.now() - new Date(j.start_time).getTime() > 3600000));
                     const activeExec = (execMap[dedupKey] || []).find(j => j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000)) ||
@@ -571,7 +603,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     const isCurrentlyRunning = Boolean(activeExec);
                     const matInfo = gf.matInfo?.tag ? gf.matInfo : extractMaterialInfo(gf.name);
                     const targetQty = matInfo.targetQuantity || 1;
-                    const isDbDone = Boolean(completedFilesMap[lower] || completedFilesMap[key] || completedFilesMap[dedupKey]);
+                    const dbCompRec = isFileCompletedInDb(gf, gf.jobName, gf.subfolderName, completedFilesMap);
+                    const isDbDone = Boolean(dbCompRec);
                     const isOk = isFileMarkedOk(gf.name) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0) || isDbDone;
 
                     if (isOk && !isCurrentlyRunning) {
@@ -580,9 +613,9 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                             matInfo,
                             execCount: execs.length > 0 ? execs.length : 1,
                             lastExec: execs[0] || {
-                                operator_name: (completedFilesMap[lower] || completedFilesMap[key])?.operator_name || 'Tomas',
+                                operator_name: dbCompRec?.operator_name || 'Tomas',
                                 machine_name: 'Router 2',
-                                start_time: (completedFilesMap[lower] || completedFilesMap[key])?.completed_at || gf.mtimeDate || new Date().toISOString(),
+                                start_time: dbCompRec?.completed_at || gf.mtimeDate || new Date().toISOString(),
                                 duration_minutes: 15
                             },
                             totalDurationMinutes: execs.length > 0 ? execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) : 15,
@@ -633,22 +666,18 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 gcodeProntos.sort((a, b) => (b.isCurrentlyRunning ? 1 : 0) - (a.isCurrentlyRunning ? 1 : 0) || (b.mtime || 0) - (a.mtime || 0));
 
                 const cadPrepararList = (snap.cadPreparar || []).map(cf => {
-                    const lower = (cf.name || '').toLowerCase().trim();
-                    const key = (cf.fullPath || `${cf.jobName || ''}_${cf.name}`).toLowerCase().trim();
                     return {
                         ...cf,
-                        isManuallyDone: Boolean(completedFilesMap[lower] || completedFilesMap[key])
+                        isManuallyDone: Boolean(isFileCompletedInDb(cf, cf.jobName, cf.subfolderName, completedFilesMap))
                     };
                 });
 
                 const aspirePrepararList = (snap.aspirePreparar || [])
                     .filter(af => af.ext !== '.crv3d' && af.ext !== '.crv' && !(af.name || '').toLowerCase().endsWith('.crv3d') && !(af.name || '').toLowerCase().endsWith('.crv'))
                     .map(af => {
-                        const lower = (af.name || '').toLowerCase().trim();
-                        const key = (af.fullPath || `${af.jobName || ''}_${af.name}`).toLowerCase().trim();
                         return {
                             ...af,
-                            isManuallyDone: Boolean(completedFilesMap[lower] || completedFilesMap[key])
+                            isManuallyDone: Boolean(isFileCompletedInDb(af, af.jobName, af.subfolderName, completedFilesMap))
                         };
                     });
 
@@ -699,20 +728,22 @@ async function getProductionPipeline(pool, forceRefresh = false) {
     }
 
     for (const [jName, jData] of Object.entries(jobMap)) {
-        // Deduplicate files by filename + size
+        // Deduplicate files by subfolder + filename, keeping the newest mtime first
         const unique = [];
         const seen = new Set();
-        jData.files.forEach(f => {
-            const k = f.name.toLowerCase() + '_' + f.size;
+        const sortedFiles = [...(jData.files || [])].sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
+        sortedFiles.forEach(f => {
+            const subDir = path.basename(getNormDir(f.fullPath)).toLowerCase().trim();
+            const k = `${subDir}___${f.name.toLowerCase().trim()}`;
             if (!seen.has(k)) {
                 seen.add(k);
                 unique.push(f);
             }
         });
 
-        // Filtrar apenas arquivos liberados recentemente (a partir de 01/10/2026 ou OneDrive)
+        // Filtrar apenas arquivos liberados recentemente (a partir de 01/10/2026)
         const recentCutoff = new Date('2026-10-01T00:00:00Z').getTime();
-        const activeFiles = unique.filter(f => (f.mtime && f.mtime >= recentCutoff) || jData.source.startsWith('OneDrive'));
+        const activeFiles = unique.filter(f => f.mtime && f.mtime >= recentCutoff);
 
         // Agrupa por pasta normalizada para cruzamento de hierarquia (Corel -> Materiais -> Lote Chapas)
         // Usa a subpasta relativa (ex: 'SALA DE MAGIA') para unificar arquivos do OneDrive (C:) e do Router Local (E:)
@@ -780,9 +811,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     : `Separado em ${matchingAspire.length} arquivos Aspire`;
             }
 
-            const cfLower = (cf.name || '').toLowerCase().trim();
-            const cfKey = (cf.fullPath || `${jName}_${cf.name}`).toLowerCase().trim();
-            const isManuallyDone = Boolean(completedFilesMap[cfLower] || completedFilesMap[cfKey]);
+            const isManuallyDone = Boolean(isFileCompletedInDb(cf, jName, subfolderName, completedFilesMap));
 
             const item = {
                 ...cf,
@@ -853,9 +882,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 ? `Lote Pronto: ${chapasCount} chapas geradas` 
                 : 'Aguardando Gerar Chapas no Aspire';
 
-            const afLower = (af.name || '').toLowerCase().trim();
-            const afKey = (af.fullPath || `${jName}_${af.name}`).toLowerCase().trim();
-            const isManuallyDone = Boolean(completedFilesMap[afLower] || completedFilesMap[afKey]);
+            const isManuallyDone = Boolean(isFileCompletedInDb(af, jName, subfolderName, completedFilesMap));
 
             const item = {
                 ...af,
@@ -888,7 +915,6 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             const subfolderName = path.basename(dir);
             const matInfo = extractMaterialInfo(gf.name);
             const lower = gf.name.toLowerCase().trim();
-            const gfKey = (gf.fullPath || `${jName}_${gf.name}`).toLowerCase().trim();
             const subLower = (subfolderName || '').toLowerCase().trim();
             const compoundKey = `${lower}___${subLower}`;
             if (seenJobGcodes.has(compoundKey)) return;
@@ -900,7 +926,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 (execMap[lower] || []).find(j => !j.folder && j.end_time == null && !j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 3600000));
             const isCurrentlyRunning = Boolean(activeExec);
             const targetQty = matInfo.targetQuantity || 1;
-            const isDbDone = Boolean(completedFilesMap[lower] || completedFilesMap[gfKey] || completedFilesMap[compoundKey]);
+            const dbCompRec = isFileCompletedInDb(gf, jName, subfolderName, completedFilesMap);
+            const isDbDone = Boolean(dbCompRec);
             const isOk = isFileMarkedOk(gf.name) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0) || isDbDone;
 
             if (isOk && !isCurrentlyRunning) {
@@ -911,9 +938,9 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     matInfo,
                     execCount: execs.length > 0 ? execs.length : 1,
                     lastExec: execs[0] || {
-                        operator_name: (completedFilesMap[lower] || completedFilesMap[gfKey] || completedFilesMap[compoundKey])?.operator_name || 'Tomas',
+                        operator_name: dbCompRec?.operator_name || 'Tomas',
                         machine_name: 'Router 2',
-                        start_time: (completedFilesMap[lower] || completedFilesMap[gfKey] || completedFilesMap[compoundKey])?.completed_at || gf.mtimeDate || new Date().toISOString(),
+                        start_time: dbCompRec?.completed_at || gf.mtimeDate || new Date().toISOString(),
                         duration_minutes: 15
                     },
                     totalDurationMinutes: execs.length > 0 ? execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) : 15,
