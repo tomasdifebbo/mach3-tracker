@@ -42,6 +42,123 @@ function scanDirRecursive(dir, maxDepth = 8, depth = 0) {
     return files;
 }
 
+// Cache em memória para parser ultrarrápido de arquivos G-Code
+const gcodeMetadataCache = new Map();
+
+function getGCodeMetadata(filePath, mtime = 0) {
+    if (!filePath || !fs.existsSync(filePath)) return null;
+    const cacheKey = `${filePath}_${mtime}`;
+    if (gcodeMetadataCache.has(cacheKey)) {
+        return gcodeMetadataCache.get(cacheKey);
+    }
+
+    try {
+        const text = fs.readFileSync(filePath, 'utf8');
+        const lines = text.split(/\r?\n/);
+        let curX = 0, curY = 0, curZ = 0;
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
+        let hasCoords = false;
+        let curFeed = 3000;
+        const rapidFeed = 8000;
+        let mode = 0; // 0 = G0, 1 = G1/G2/G3
+        let cutTimeMin = 0;
+        let rapidTimeMin = 0;
+        let cutDistMm = 0;
+        const feedsSet = new Set();
+        const spindlesSet = new Set();
+        let materialSize = null;
+
+        const numRe = /([XYZFS])([-+]?\d*\.?\d+)/gi;
+        const gRe = /G0*([0123])(?=[A-Z\s]|$)/i;
+        const matSizeRe = /X=\s*([\d.]+),\s*Y=\s*([\d.]+),\s*Z=\s*([\d.]+)/i;
+
+        for (let i = 0; i < lines.length; i++) {
+            const raw = lines[i].trim();
+            if (!raw) continue;
+            if (raw.startsWith('(') || raw.startsWith(';') || raw.startsWith('%')) {
+                const matM = raw.match(matSizeRe);
+                if (matM) {
+                    materialSize = {
+                        width: parseFloat(matM[1]),
+                        height: parseFloat(matM[2]),
+                        thickness: parseFloat(matM[3])
+                    };
+                }
+                continue;
+            }
+
+            const gMatch = raw.match(gRe);
+            if (gMatch) {
+                mode = parseInt(gMatch[1], 10) === 0 ? 0 : 1;
+            }
+
+            let nx = curX, ny = curY, nz = curZ;
+            let moved = false;
+            numRe.lastIndex = 0;
+            let m;
+            while ((m = numRe.exec(raw)) !== null) {
+                const axis = m[1].toUpperCase();
+                const val = parseFloat(m[2]);
+                if (isNaN(val)) continue;
+                if (axis === 'X') { nx = val; moved = true; }
+                else if (axis === 'Y') { ny = val; moved = true; }
+                else if (axis === 'Z') { nz = val; moved = true; }
+                else if (axis === 'F' && val > 0) { curFeed = val; feedsSet.add(Math.round(val)); }
+                else if (axis === 'S' && val > 0) { spindlesSet.add(Math.round(val)); }
+            }
+
+            if (moved) {
+                const dx = nx - curX;
+                const dy = ny - curY;
+                const dz = nz - curZ;
+                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                if (dist > 0) {
+                    if (mode === 0) {
+                        rapidTimeMin += dist / rapidFeed;
+                    } else {
+                        const effFeed = curFeed > 0 ? curFeed : 2500;
+                        cutTimeMin += (dist / effFeed) * 1.12; // desaceleração e curvas Mach3
+                        cutDistMm += dist;
+                        if (nx !== curX || ny !== curY) {
+                            hasCoords = true;
+                            if (nx < minX) minX = nx;
+                            if (nx > maxX) maxX = nx;
+                            if (ny < minY) minY = ny;
+                            if (ny > maxY) maxY = ny;
+                        }
+                        if (nz < minZ) minZ = nz;
+                        if (nz > maxZ) maxZ = nz;
+                    }
+                }
+                curX = nx; curY = ny; curZ = nz;
+            }
+        }
+
+        const widthMm = hasCoords ? Math.round(maxX - minX) : (materialSize ? Math.round(materialSize.width) : 0);
+        const heightMm = hasCoords ? Math.round(maxY - minY) : (materialSize ? Math.round(materialSize.height) : 0);
+        const depthMm = minZ !== Infinity && maxZ !== -Infinity ? Math.round(Math.abs(maxZ - minZ)) : (materialSize ? Math.round(materialSize.thickness) : 0);
+        const cutMeters = Math.round(cutDistMm / 1000);
+        const estimatedMinutes = Math.max(0.5, parseFloat((cutTimeMin + rapidTimeMin).toFixed(1)));
+
+        const result = {
+            widthMm,
+            heightMm,
+            depthMm,
+            cutMeters,
+            estimatedMinutes,
+            cutTimeMin: parseFloat(cutTimeMin.toFixed(1)),
+            rapidTimeMin: parseFloat(rapidTimeMin.toFixed(1)),
+            feeds: Array.from(feedsSet).sort((a, b) => b - a).slice(0, 2),
+            spindles: Array.from(spindlesSet).sort((a, b) => b - a).slice(0, 1),
+            materialSize
+        };
+        gcodeMetadataCache.set(cacheKey, result);
+        return result;
+    } catch (e) {
+        return null;
+    }
+}
+
 // Extrai inteligentemente material, espessura e quantidade do nome do arquivo (sem a extensão .eps/.cdr/.txt)
 function extractMaterialInfo(name) {
     const fn = path.parse(name || '').name.toLowerCase();
@@ -728,9 +845,17 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     const isOk = (!reopenRec && isFileMarkedOk(gf.name)) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0) || isDbDone;
 
                     if (isOk && !isCurrentlyRunning) {
+                        const dur = execs.length > 0 ? execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) : 15;
                         gcodeFeitos.push({
                             ...gf,
                             matInfo,
+                            estimatedMinutes: gf.estimatedMinutes || dur,
+                            cutMeters: gf.cutMeters || null,
+                            widthMm: gf.widthMm || null,
+                            heightMm: gf.heightMm || null,
+                            depthMm: gf.depthMm || null,
+                            feeds: gf.feeds || null,
+                            spindles: gf.spindles || null,
                             execCount: execs.length > 0 ? execs.length : 1,
                             lastExec: execs[0] || {
                                 operator_name: dbCompRec?.operator_name || 'Tomas',
@@ -738,13 +863,22 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                                 start_time: dbCompRec?.completed_at || gf.mtimeDate || new Date().toISOString(),
                                 duration_minutes: 15
                             },
-                            totalDurationMinutes: execs.length > 0 ? execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) : 15,
+                            totalDurationMinutes: dur,
                             isManuallyDone: isDbDone
                         });
                     } else {
+                        const meta = getGCodeMetadata(gf.fullPath, gf.mtime) || {};
+                        const estMinutes = meta.estimatedMinutes || (gf.name.toLowerCase().includes('isopor') ? 90 : 15);
                         gcodeProntos.push({
                             ...gf,
                             matInfo,
+                            estimatedMinutes: estMinutes,
+                            cutMeters: meta.cutMeters !== undefined ? meta.cutMeters : (gf.cutMeters || null),
+                            widthMm: meta.widthMm || gf.widthMm || null,
+                            heightMm: meta.heightMm || gf.heightMm || null,
+                            depthMm: meta.depthMm || gf.depthMm || null,
+                            feeds: meta.feeds || gf.feeds || null,
+                            spindles: meta.spindles || gf.spindles || null,
                             isCurrentlyRunning,
                             isReopened: Boolean(reopenRec),
                             runningMachine: activeExec?.router_name || null,
@@ -1114,11 +1248,19 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             const isOk = (!reopenRec && isFileMarkedOk(gf.name)) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0) || isDbDone;
 
             if (isOk && !isCurrentlyRunning) {
+                const dur = execs.length > 0 ? execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) : 15;
                 const item = {
                     ...gf,
                     jobName: jName,
                     subfolderName,
                     matInfo,
+                    estimatedMinutes: gf.estimatedMinutes || dur,
+                    cutMeters: gf.cutMeters || null,
+                    widthMm: gf.widthMm || null,
+                    heightMm: gf.heightMm || null,
+                    depthMm: gf.depthMm || null,
+                    feeds: gf.feeds || null,
+                    spindles: gf.spindles || null,
                     execCount: execs.length > 0 ? execs.length : 1,
                     lastExec: execs[0] || {
                         operator_name: dbCompRec?.operator_name || 'Tomas',
@@ -1126,17 +1268,26 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                         start_time: dbCompRec?.completed_at || gf.mtimeDate || new Date().toISOString(),
                         duration_minutes: 15
                     },
-                    totalDurationMinutes: execs.length > 0 ? execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) : 15,
+                    totalDurationMinutes: dur,
                     isManuallyDone: isDbDone
                 };
                 gcodeFeitos.push(item);
                 allGcodeFeitos.push(item);
             } else {
+                const meta = getGCodeMetadata(gf.fullPath, gf.mtime) || {};
+                const estMinutes = meta.estimatedMinutes || gf.estimatedMinutes || (gf.name.toLowerCase().includes('isopor') ? 90 : 15);
                 const item = {
                     ...gf,
                     jobName: jName,
                     subfolderName,
                     matInfo,
+                    estimatedMinutes: estMinutes,
+                    cutMeters: meta.cutMeters !== undefined ? meta.cutMeters : (gf.cutMeters || null),
+                    widthMm: meta.widthMm || gf.widthMm || null,
+                    heightMm: meta.heightMm || gf.heightMm || null,
+                    depthMm: meta.depthMm || gf.depthMm || null,
+                    feeds: meta.feeds || gf.feeds || null,
+                    spindles: meta.spindles || gf.spindles || null,
                     isCurrentlyRunning,
                     isReopened: Boolean(reopenRec),
                     runningMachine: activeExec?.router_name || null,

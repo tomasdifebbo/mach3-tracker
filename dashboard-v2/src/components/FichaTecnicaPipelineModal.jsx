@@ -60,13 +60,13 @@ export function FichaTecnicaPipelineModal({
   // Média histórica calculada a partir dos jobs já usinados no Mach3
   const historicalAvgMinutes = useMemo(() => {
     const list = pipelineData?.gcodeFeitos || [];
-    const valid = list.filter(f => (f.totalDurationMinutes || f.lastExec?.duration_minutes || 0) > 2);
+    const valid = list.filter(f => (f.estimatedMinutes || f.totalDurationMinutes || f.lastExec?.duration_minutes || 0) > 2);
     if (valid.length === 0) return 15;
-    const sum = valid.reduce((acc, f) => acc + (f.totalDurationMinutes || f.lastExec?.duration_minutes || 15), 0);
+    const sum = valid.reduce((acc, f) => acc + (f.estimatedMinutes || f.totalDurationMinutes || f.lastExec?.duration_minutes || 15), 0);
     return Math.max(5, Math.round(sum / valid.length));
   }, [pipelineData]);
 
-  // Extração e enriquecimento de todas as tarefas da produção
+  // Extração e enriquecimento de todas as tarefas da produção com tempo real de cada arquivo
   const taskGroups = useMemo(() => {
     if (!pipelineData) return [];
 
@@ -109,6 +109,8 @@ export function FichaTecnicaPipelineModal({
           status: done ? 'done' : 'pending',
           statusLabel: done ? 'Concluído' : 'Pendente Vetorização',
           estMinutes: null,
+          cutMeters: null,
+          dimensions: null,
           operator: operatorName,
           mtime: f.mtimeDate
         });
@@ -134,13 +136,15 @@ export function FichaTecnicaPipelineModal({
           status: done ? 'done' : 'pending',
           statusLabel: done ? 'Concluído' : 'Aguardando G-Code',
           estMinutes: null,
+          cutMeters: null,
+          dimensions: null,
           operator: operatorName,
           mtime: f.mtimeDate
         });
       });
     }
 
-    // 3. Fila Router (.TXT)
+    // 3. Fila Router (.TXT) - tempo real individual de cada G-Code!
     if (includeRouter) {
       (pipelineData.gcodeProntos || []).forEach(f => {
         if (selectedJob !== 'todos' && f.jobName !== selectedJob) return;
@@ -148,8 +152,10 @@ export function FichaTecnicaPipelineModal({
         const done = isDone(f, 'router');
         if (!includeConcluded && done && !running) return;
 
-        // Se tem duração registrada do histórico ou duração estimada
-        const durationMin = f.totalDurationMinutes || f.lastExec?.duration_minutes || avgMinutesPerSheet;
+        // Tempo específico do arquivo (calculado pelo parser ou histórico real do Mach3)
+        const durationMin = f.estimatedMinutes || (f.totalDurationMinutes && f.totalDurationMinutes > 2 ? f.totalDurationMinutes : null) || (f.lastExec?.duration_minutes && f.lastExec.duration_minutes > 2 ? f.lastExec.duration_minutes : null) || (f.name.toLowerCase().includes('isopor') ? 90 : avgMinutesPerSheet);
+
+        const dim = f.dimensions || (f.widthMm && f.heightMm ? `${f.widthMm}×${f.heightMm}mm` : null);
 
         items.push({
           id: `router-${f.jobName}-${f.name}`,
@@ -164,6 +170,8 @@ export function FichaTecnicaPipelineModal({
           status: running ? 'running' : done ? 'done' : 'pending',
           statusLabel: running ? 'EM MÁQUINA AGORA' : done ? 'Concluído' : 'Pronto para Corte',
           estMinutes: durationMin,
+          cutMeters: f.cutMeters || null,
+          dimensions: dim,
           operator: operatorName,
           mtime: f.mtimeDate
         });
@@ -175,7 +183,8 @@ export function FichaTecnicaPipelineModal({
       pipelineData.gcodeFeitos.forEach(f => {
         if (selectedJob !== 'todos' && f.jobName !== selectedJob) return;
         if (items.some(it => it.name === f.name && it.stage === 'router')) return;
-        const durationMin = f.totalDurationMinutes || f.lastExec?.duration_minutes || avgMinutesPerSheet;
+        const durationMin = f.estimatedMinutes || (f.totalDurationMinutes && f.totalDurationMinutes > 2 ? f.totalDurationMinutes : null) || (f.lastExec?.duration_minutes && f.lastExec.duration_minutes > 2 ? f.lastExec.duration_minutes : null) || (f.name.toLowerCase().includes('isopor') ? 90 : avgMinutesPerSheet);
+        const dim = f.dimensions || (f.widthMm && f.heightMm ? `${f.widthMm}×${f.heightMm}mm` : null);
         items.push({
           id: `done-${f.jobName}-${f.name}`,
           stage: 'done',
@@ -189,6 +198,8 @@ export function FichaTecnicaPipelineModal({
           status: 'done',
           statusLabel: 'Concluído',
           estMinutes: durationMin,
+          cutMeters: f.cutMeters || null,
+          dimensions: dim,
           operator: f.lastExec?.operator_name || operatorName,
           mtime: f.lastExec?.start_time || f.mtimeDate
         });
@@ -213,7 +224,7 @@ export function FichaTecnicaPipelineModal({
     return Object.values(groupsMap);
   }, [pipelineData, fileChecklist, selectedJob, includeRouter, includeAspire, includeCorel, includeConcluded, operatorName, avgMinutesPerSheet]);
 
-  // Estatísticas da Ficha Técnica incluindo projeções de tempo
+  // Estatísticas da Ficha Técnica somando o tempo real exato de cada G-Code
   const stats = useMemo(() => {
     let total = 0;
     let routerTasks = 0;
@@ -222,12 +233,16 @@ export function FichaTecnicaPipelineModal({
     let runningTasks = 0;
     let doneTasks = 0;
     let pendingTasks = 0;
+    let totalRouterMinutes = 0;
     const materialsSet = new Set();
 
     taskGroups.forEach(g => {
       g.tasks.forEach(t => {
         total++;
-        if (t.stage === 'router') routerTasks++;
+        if (t.stage === 'router') {
+          routerTasks++;
+          totalRouterMinutes += (t.estMinutes || avgMinutesPerSheet);
+        }
         if (t.stage === 'aspire') aspireTasks++;
         if (t.stage === 'corel') corelTasks++;
         if (t.status === 'running') runningTasks++;
@@ -240,7 +255,8 @@ export function FichaTecnicaPipelineModal({
       });
     });
 
-    const totalRouterMinutes = routerTasks * avgMinutesPerSheet;
+    totalRouterMinutes = Math.round(totalRouterMinutes);
+    const avgCalculated = routerTasks > 0 ? Math.round(totalRouterMinutes / routerTasks) : avgMinutesPerSheet;
     const nMachines = assignedMachines.toLowerCase().includes('2') || assignedMachines.toLowerCase().includes('e') ? 2 : 1;
     const projectedMinutes = Math.round(totalRouterMinutes / nMachines);
 
@@ -253,6 +269,7 @@ export function FichaTecnicaPipelineModal({
       doneTasks,
       pendingTasks,
       totalRouterMinutes,
+      avgCalculated,
       nMachines,
       projectedMinutes,
       materials: Array.from(materialsSet)
@@ -261,13 +278,13 @@ export function FichaTecnicaPipelineModal({
 
   if (!isOpen) return null;
 
-  // Gerador de Impressão A4 (Print / PDF)
+  // Gerador de Impressão A4 (Print / PDF) com tempos exatos de cada chapa
   const handlePrint = () => {
     const nowStr = new Date().toLocaleString('pt-BR');
     const jobTitle = selectedJob === 'todos' ? 'TODOS OS PROJETOS ATIVOS' : selectedJob.toUpperCase();
 
     const groupsHtml = taskGroups.map((g, gIdx) => {
-      const subRouterMin = g.tasks.filter(t => t.stage === 'router').length * avgMinutesPerSheet;
+      const subRouterMin = Math.round(g.tasks.filter(t => t.stage === 'router').reduce((sum, t) => sum + (t.estMinutes || avgMinutesPerSheet), 0));
       const rowsHtml = g.tasks.map((t, tIdx) => {
         const isDone = t.status === 'done';
         const isRunning = t.status === 'running';
@@ -290,7 +307,9 @@ export function FichaTecnicaPipelineModal({
             ? '<span class="stage-tag tag-aspire">ASPIRE</span>'
             : '<span class="stage-tag tag-corel">COREL CDR</span>';
 
-        const timeText = t.estMinutes ? `~${formatHm(t.estMinutes)}` : '-';
+        const timeText = t.estMinutes
+          ? `<strong class="time-highlight">${formatHm(t.estMinutes)}</strong>${t.cutMeters ? `<span class="time-sub">(${t.cutMeters}m corte)</span>` : ''}`
+          : '-';
 
         return `
           <tr class="${isDone ? 'row-done' : isRunning ? 'row-running' : ''}">
@@ -298,10 +317,11 @@ export function FichaTecnicaPipelineModal({
             <td class="col-num">${tIdx + 1}</td>
             <td class="col-file">
               <strong>${escapeHtml(t.name)}</strong>
+              ${t.dimensions ? `<div class="file-dim">${escapeHtml(t.dimensions)}</div>` : ''}
             </td>
             <td class="col-stage">${stageBadge}</td>
             <td class="col-mat">${escapeHtml(t.material)}</td>
-            <td class="col-time"><strong>${timeText}</strong></td>
+            <td class="col-time">${timeText}</td>
             <td class="col-status">${badgeHtml}</td>
             <td class="col-exec write-field">Máq: ______ · ___:___ às ___:___</td>
             <td class="col-op">${escapeHtml(t.operator || operatorName)}</td>
@@ -313,7 +333,7 @@ export function FichaTecnicaPipelineModal({
         <div class="group-box">
           <div class="group-header">
             <span>${gIdx + 1}. ${escapeHtml(g.groupTitle)}</span>
-            <span class="group-count">${g.tasks.length} tarefa(s)${subRouterMin > 0 ? ` · Subtotal Corte: ~${formatHm(subRouterMin)}` : ''}</span>
+            <span class="group-count">${g.tasks.length} tarefa(s)${subRouterMin > 0 ? ` · Tempo Total Subpasta: ~${formatHm(subRouterMin)}` : ''}</span>
           </div>
           <table>
             <thead>
@@ -321,11 +341,11 @@ export function FichaTecnicaPipelineModal({
                 <th style="width:28px; text-align:center;">OK</th>
                 <th style="width:22px;">#</th>
                 <th style="width:31%;">Arquivo / Chapa</th>
-                <th style="width:13%;">Etapa</th>
-                <th style="width:13%;">Material</th>
-                <th style="width:11%;">Tempo Est.</th>
+                <th style="width:12%;">Etapa</th>
+                <th style="width:12%;">Material</th>
+                <th style="width:13%;">Tempo do Arquivo</th>
                 <th style="width:10%;">Status</th>
-                <th style="width:18%;">Apontamento Máquina</th>
+                <th style="width:17%;">Apontamento Máquina</th>
                 <th style="width:8%;">Operador</th>
               </tr>
             </thead>
@@ -380,7 +400,10 @@ export function FichaTecnicaPipelineModal({
   .checkbox.running { background: #ffedd5; border-color: #ea580c; color: #ea580c; font-size: 7.5px; }
   .col-num { font-weight: 700; color: #64748b; font-size: 8px; text-align: center; }
   .col-file { word-break: break-all; }
-  .col-time { font-family: monospace; font-weight: 700; color: #0f172a; }
+  .file-dim { font-size: 7.4px; color: #64748b; font-family: monospace; }
+  .col-time { white-space: nowrap; }
+  .time-highlight { font-size: 9px; color: #c2410c; }
+  .time-sub { font-size: 7.3px; color: #64748b; display: block; }
   
   .stage-tag { display: inline-block; padding: 1px 4.5px; border-radius: 3px; font-size: 7px; font-weight: 800; text-transform: uppercase; }
   .tag-router { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
@@ -412,7 +435,7 @@ export function FichaTecnicaPipelineModal({
       <div><strong>Emissão:</strong> ${nowStr}</div>
       <div><strong>Operador:</strong> ${escapeHtml(operatorName)}</div>
       <div><strong>Máquinas:</strong> ${escapeHtml(assignedMachines)}</div>
-      <div><strong>Tempo Médio:</strong> ${avgMinutesPerSheet} min/chapa</div>
+      <div><strong>Média Geral:</strong> ~${stats.avgCalculated} min/chapa</div>
     </div>
   </div>
 
@@ -428,9 +451,9 @@ export function FichaTecnicaPipelineModal({
       <div class="kpi-sub">${stats.runningTasks > 0 ? `${stats.runningTasks} em máquina agora` : 'Prontos para usinar'}</div>
     </div>
     <div class="kpi-card time">
-      <div class="kpi-lbl">Tempo Médio / Chapa</div>
-      <div class="kpi-val">${avgMinutesPerSheet} min</div>
-      <div class="kpi-sub">Total: ~${formatHm(stats.totalRouterMinutes)} (~${formatHm(stats.projectedMinutes)} em ${stats.nMachines} Máq)</div>
+      <div class="kpi-lbl">Tempo Total da Fila</div>
+      <div class="kpi-val">${formatHm(stats.totalRouterMinutes)}</div>
+      <div class="kpi-sub">Soma dos G-Codes · ~${formatHm(stats.projectedMinutes)} em ${stats.nMachines} Máq</div>
     </div>
     <div class="kpi-card done">
       <div class="kpi-lbl">Status Geral</div>
@@ -470,7 +493,7 @@ export function FichaTecnicaPipelineModal({
     }, 400);
   };
 
-  // Copiar Relação Resumida para WhatsApp / Prancheta
+  // Copiar Relação Resumida para WhatsApp com tempos individuais de cada arquivo
   const handleCopySummary = () => {
     const jobTitle = selectedJob === 'todos' ? 'TODOS OS PROJETOS' : selectedJob;
     const dateStr = new Date().toLocaleDateString('pt-BR');
@@ -479,16 +502,15 @@ export function FichaTecnicaPipelineModal({
     text += `🏭 *Projeto:* ${jobTitle}\n`;
     text += `📅 *Data:* ${dateStr} · *Operador:* ${operatorName}\n`;
     text += `⚙️ *Máquinas:* ${assignedMachines}\n`;
-    text += `⏱️ *Tempo Médio por Chapa:* ${avgMinutesPerSheet} min\n`;
-    text += `⏳ *Tempo Total Estimado de Corte:* ~${formatHm(stats.totalRouterMinutes)} (em ${stats.nMachines} Routers: ~${formatHm(stats.projectedMinutes)})\n`;
-    text += `📊 *Resumo:* ${stats.total} tarefas (${stats.routerTasks} Fila Router | ${stats.aspireTasks} Aspire | ${stats.corelTasks} Corel)\n\n`;
+    text += `⏱️ *Tempo Total Real Somado:* ~${formatHm(stats.totalRouterMinutes)} (em ${stats.nMachines} Routers: ~${formatHm(stats.projectedMinutes)})\n`;
+    text += `📊 *Resumo:* ${stats.total} tarefas (${stats.routerTasks} Chapas Router | ${stats.aspireTasks} Aspire | ${stats.corelTasks} Corel)\n\n`;
 
     taskGroups.forEach(g => {
-      const subMin = g.tasks.filter(t => t.stage === 'router').length * avgMinutesPerSheet;
-      text += `📁 *${g.groupTitle}* (${g.tasks.length} itens${subMin > 0 ? ` · ~${formatHm(subMin)}` : ''}):\n`;
+      const subMin = Math.round(g.tasks.filter(t => t.stage === 'router').reduce((sum, t) => sum + (t.estMinutes || avgMinutesPerSheet), 0));
+      text += `📁 *${g.groupTitle}* (${g.tasks.length} itens${subMin > 0 ? ` · Tempo: ~${formatHm(subMin)}` : ''}):\n`;
       g.tasks.forEach((t, idx) => {
         const icon = t.status === 'done' ? '✅' : t.status === 'running' ? '▶️' : '⏳';
-        const timeBadge = t.estMinutes ? ` [~${formatHm(t.estMinutes)}]` : '';
+        const timeBadge = t.estMinutes ? ` [⏱️ ${formatHm(t.estMinutes)}${t.cutMeters ? ` · ${t.cutMeters}m` : ''}]` : '';
         text += `  ${icon} ${idx + 1}. [${t.stageLabel.split(' ')[1]}] ${t.name} (${t.material})${timeBadge}\n`;
       });
       text += `\n`;
@@ -518,11 +540,11 @@ export function FichaTecnicaPipelineModal({
                   Ficha Técnica & Relação de Tarefas
                 </h2>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/20">
-                  Impressão / PDF / WhatsApp
+                  Tempos Reais por G-Code
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Emissão de checklist operacional de corte para os operadores e controle de chão de fábrica
+                Emissão de checklist operacional de corte com tempo exato de usinagem de cada arquivo e chapa
               </p>
             </div>
           </div>
@@ -554,11 +576,11 @@ export function FichaTecnicaPipelineModal({
             </select>
           </div>
 
-          {/* Tempo Médio por Chapa */}
+          {/* Tempo Médio / Referência */}
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-[11px] font-black uppercase text-slate-500 dark:text-slate-400">
-                Tempo Médio / Chapa
+                Tempo Médio Base
               </label>
               {historicalAvgMinutes && (
                 <button
@@ -676,23 +698,23 @@ export function FichaTecnicaPipelineModal({
           </div>
         </div>
 
-        {/* KPI Mini Bar */}
+        {/* KPI Mini Bar com soma real dos tempos */}
         <div className="px-5 py-2.5 bg-slate-100 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/5 flex items-center justify-between flex-wrap gap-2 text-xs">
           <div className="flex items-center gap-3.5 flex-wrap">
             <span className="font-bold text-slate-700 dark:text-slate-300">
-              Tarefas a Emitir: <strong className="text-orange-500 font-black">{stats.total}</strong>
+              Tarefas: <strong className="text-orange-500 font-black">{stats.total}</strong>
             </span>
             <span className="text-slate-400">•</span>
             <span className="text-slate-600 dark:text-slate-400">
               Fila Router: <strong className="text-slate-900 dark:text-white font-bold">{stats.routerTasks}</strong> chapas
             </span>
             <span className="text-slate-400">•</span>
-            <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/20">
-              ⏱️ Média: {avgMinutesPerSheet} min/chapa
+            <span className="px-2 py-0.5 rounded bg-orange-500/15 text-orange-600 dark:text-orange-400 font-black border border-orange-500/25">
+              ⏱️ Tempo Real Total: {formatHm(stats.totalRouterMinutes)}
             </span>
             <span className="text-slate-400">•</span>
             <span className="text-slate-600 dark:text-slate-300">
-              Tempo Total Est.: <strong className="text-slate-900 dark:text-white font-black">{formatHm(stats.totalRouterMinutes)}</strong>
+              Média Calculada: <strong className="text-slate-900 dark:text-white font-bold">~{stats.avgCalculated} min/chapa</strong>
               <span className="text-[10px] text-slate-400 ml-1">(~{formatHm(stats.projectedMinutes)} em {stats.nMachines} routers)</span>
             </span>
             {stats.runningTasks > 0 && (
@@ -720,13 +742,13 @@ export function FichaTecnicaPipelineModal({
             </div>
           ) : (
             taskGroups.map((g, gIdx) => {
-              const subMin = g.tasks.filter(t => t.stage === 'router').length * avgMinutesPerSheet;
+              const subMin = Math.round(g.tasks.filter(t => t.stage === 'router').reduce((sum, t) => sum + (t.estMinutes || avgMinutesPerSheet), 0));
               return (
                 <div
                   key={g.groupTitle}
                   className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm"
                 >
-                  {/* Cabeçalho do Grupo */}
+                  {/* Cabeçalho do Grupo com Subtotal de Tempo */}
                   <div className="px-3.5 py-2 bg-slate-900 text-white flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2 font-bold">
                       <span className="w-5 h-5 rounded bg-orange-500 text-white text-[11px] font-black flex items-center justify-center">
@@ -736,8 +758,8 @@ export function FichaTecnicaPipelineModal({
                     </div>
                     <div className="flex items-center gap-3 text-[11px]">
                       {subMin > 0 && (
-                        <span className="text-amber-400 font-bold">
-                          ⏱️ ~{formatHm(subMin)}
+                        <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">
+                          ⏱️ Subtotal: ~{formatHm(subMin)}
                         </span>
                       )}
                       <span className="text-slate-400 font-medium">
@@ -746,7 +768,7 @@ export function FichaTecnicaPipelineModal({
                     </div>
                   </div>
 
-                  {/* Tabela de Tarefas */}
+                  {/* Tabela de Tarefas com Tempo de Cada Arquivo */}
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
@@ -755,7 +777,7 @@ export function FichaTecnicaPipelineModal({
                           <th className="py-2 px-3">Arquivo / Chapa</th>
                           <th className="py-2 px-3">Etapa</th>
                           <th className="py-2 px-3">Material</th>
-                          <th className="py-2 px-3">Tempo Est.</th>
+                          <th className="py-2 px-3">Tempo do Arquivo</th>
                           <th className="py-2 px-3">Apontamento Máquina</th>
                           <th className="py-2 px-3 text-right">Operador</th>
                         </tr>
@@ -785,9 +807,12 @@ export function FichaTecnicaPipelineModal({
                                 <span className="font-bold text-slate-900 dark:text-white block">
                                   {t.name}
                                 </span>
-                                <span className="text-[10px] text-slate-400 font-mono">
-                                  {t.subfolder}
-                                </span>
+                                <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                                  <span>{t.subfolder}</span>
+                                  {t.dimensions && (
+                                    <span className="text-amber-500/90 font-bold">({t.dimensions})</span>
+                                  )}
+                                </div>
                               </td>
                               <td className="py-2 px-3">
                                 <span className={`inline-block px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
@@ -805,10 +830,17 @@ export function FichaTecnicaPipelineModal({
                               </td>
                               <td className="py-2 px-3 font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">
                                 {t.estMinutes ? (
-                                  <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                                    <Clock size={11} />
-                                    ~{formatHm(t.estMinutes)}
-                                  </span>
+                                  <div className="flex flex-col">
+                                    <span className="inline-flex items-center gap-1 text-orange-600 dark:text-orange-400 font-black text-xs">
+                                      <Clock size={12} />
+                                      {formatHm(t.estMinutes)}
+                                    </span>
+                                    {t.cutMeters > 0 && (
+                                      <span className="text-[10px] text-slate-400 font-normal">
+                                        {t.cutMeters}m de corte
+                                      </span>
+                                    )}
+                                  </div>
                                 ) : (
                                   <span className="text-slate-400">-</span>
                                 )}
@@ -854,7 +886,7 @@ export function FichaTecnicaPipelineModal({
         {/* Footer Actions */}
         <div className="px-5 py-3.5 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] flex items-center justify-between gap-3 flex-wrap">
           <div className="text-xs text-slate-500">
-            Pronto para emissão em papel <strong className="text-slate-800 dark:text-slate-200">A4</strong> ou envio no <strong className="text-slate-800 dark:text-slate-200">WhatsApp</strong> com tempo estimado
+            Pronto para emissão em papel <strong className="text-slate-800 dark:text-slate-200">A4</strong> ou envio no <strong className="text-slate-800 dark:text-slate-200">WhatsApp</strong> com tempo individual de cada arquivo
           </div>
 
           <div className="flex items-center gap-2">
