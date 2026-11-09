@@ -375,10 +375,12 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
     });
   }, [filteredCad, fileChecklist, cadCheckFilter]);
 
+  const isAspireDone = (f) => Boolean(isFileChecked(f) || (f.chapasCount > 0) || f.hasCrv || f.hasGcode);
+
   const aspireCounts = useMemo(() => {
     let concluidos = 0;
     filteredAspire.forEach(f => {
-      if (isFileChecked(f) || (f.chapasCount > 0)) concluidos++;
+      if (isAspireDone(f)) concluidos++;
     });
     return {
       total: filteredAspire.length,
@@ -389,7 +391,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
 
   const displayedAspire = useMemo(() => {
     return filteredAspire.filter(f => {
-      const isChecked = isFileChecked(f) || (f.chapasCount > 0);
+      const isChecked = isAspireDone(f);
       if (aspireCheckFilter === 'pendentes') return !isChecked;
       if (aspireCheckFilter === 'concluidos') return isChecked;
       return true;

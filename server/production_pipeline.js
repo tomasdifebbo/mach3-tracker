@@ -2,7 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 const CAD_EXTS = ['.cdr']; // Apenas arquivos .CDR do CorelDRAW
-const ASPIRE_EXTS = ['.eps', '.dxf']; // Apenas arquivos vetoriais (.EPS/.DXF) para abrir e preparar no Aspire (.crv3d e .crv são backups e não devem ser exibidos)
+const ASPIRE_EXTS = ['.eps', '.dxf']; // Arquivos vetoriais (.EPS/.DXF) para abrir e preparar no Aspire
+const ASPIRE_CRV_EXTS = ['.crv3d', '.crv']; // Arquivos nativos de projeto do Aspire/VCarve
 const GCODE_EXTS = ['.txt', '.nc', '.tap', '.gcode', '.cnc'];
 
 function scanDirRecursive(dir, maxDepth = 8, depth = 0) {
@@ -13,16 +14,17 @@ function scanDirRecursive(dir, maxDepth = 8, depth = 0) {
         for (const ent of entries) {
             if (ent.name.startsWith('.') || ent.name === 'Thumbs.db') continue;
             const lowerName = ent.name.toLowerCase();
-            if (lowerName.startsWith('cópia_de_segurança') || lowerName.startsWith('copia_de_seguranca') || lowerName.startsWith('backup_of_') || lowerName.startsWith('manual_') || lowerName.startsWith('@') || lowerName.endsWith('.crv3d') || lowerName.endsWith('.crv')) continue;
+            if (lowerName.startsWith('cópia_de_segurança') || lowerName.startsWith('copia_de_seguranca') || lowerName.startsWith('backup_of_') || lowerName.startsWith('manual_') || lowerName.startsWith('@')) continue;
             const full = path.join(dir, ent.name);
             if (ent.isDirectory()) {
                 files = files.concat(scanDirRecursive(full, maxDepth, depth + 1));
             } else if (ent.isFile()) {
                 const ext = path.extname(ent.name).toLowerCase();
-                if (CAD_EXTS.includes(ext) || ASPIRE_EXTS.includes(ext) || GCODE_EXTS.includes(ext)) {
+                if (CAD_EXTS.includes(ext) || ASPIRE_EXTS.includes(ext) || ASPIRE_CRV_EXTS.includes(ext) || GCODE_EXTS.includes(ext)) {
                     const stat = fs.statSync(full);
                     let type = 'cad';
                     if (ASPIRE_EXTS.includes(ext)) type = 'aspire';
+                    else if (ASPIRE_CRV_EXTS.includes(ext)) type = 'crv';
                     else if (GCODE_EXTS.includes(ext)) type = 'gcode';
                     files.push({
                         name: ent.name,
@@ -881,9 +883,10 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             const dir = getNormDir(f.fullPath);
             const subName = path.basename(dir).toLowerCase().trim();
             const groupKey = subName || dir.toLowerCase();
-            if (!folderGroups[groupKey]) folderGroups[groupKey] = { cad: [], aspire: [], gcode: [] };
+            if (!folderGroups[groupKey]) folderGroups[groupKey] = { cad: [], aspire: [], crv: [], gcode: [] };
             if (f.type === 'cad') folderGroups[groupKey].cad.push(f);
             else if (f.type === 'aspire') folderGroups[groupKey].aspire.push(f);
+            else if (f.type === 'crv') folderGroups[groupKey].crv.push(f);
             else if (f.type === 'gcode') folderGroups[groupKey].gcode.push(f);
         });
 
@@ -973,7 +976,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             const dir = getNormDir(af.fullPath);
             const subfolderName = path.basename(dir);
             const subName = path.basename(dir).toLowerCase().trim();
-            const folderFiles = folderGroups[subName] || folderGroups[dir] || { cad: [], aspire: [], gcode: [] };
+            const folderFiles = folderGroups[subName] || folderGroups[dir] || { cad: [], aspire: [], crv: [], gcode: [] };
             let matInfo = extractMaterialInfo(af.name);
 
             // Cruza com G-Codes da mesma pasta pelo Material ou pelo nome base
@@ -984,6 +987,33 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 const gBase = path.parse(g.name).name.toLowerCase().replace(/[-_()]/g, ' ').replace(/\s+/g, ' ').trim();
                 return gBase.includes(base) || base.includes(gBase);
             });
+
+            // Cruza por tokens/palavras-chave (ex: "moldura 52 unidadesRAMPA B.eps" -> "rampa" e "b")
+            if (matchingGcodes.length === 0) {
+                const cleanName = path.parse(af.name).name
+                    .replace(/([a-z])([A-Z])/g, '$1 $2')
+                    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+                    .replace(/[-_()]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .toLowerCase();
+                const tokens = cleanName.split(' ').filter(t => t.length >= 2 || /^[a-z0-9]$/i.test(t)).filter(t => !['52', 'unidades', 'moldura', 'fundo', 'em', 'pecas', 'detalhe'].includes(t));
+                if (tokens.length > 0) {
+                    matchingGcodes = folderFiles.gcode.filter(g => {
+                        const gl = g.name.toLowerCase().replace(/[-_()]/g, ' ');
+                        return tokens.every(t => gl.includes(t) || (t === 'b' && (gl.includes('r.b') || gl.includes('rb'))));
+                    });
+                }
+            }
+
+            // Se ainda não achou e a subpasta tem poucos G-Codes (ex: ARCO COM PILAR INTERNO com mdf15mm 6mm.txt), vincula os G-Codes da subpasta
+            if (matchingGcodes.length === 0 && folderFiles.gcode.length > 0 && folderFiles.gcode.length <= 5) {
+                const sameMat = folderFiles.gcode.filter(g => {
+                    const gm = extractMaterialInfo(g.name);
+                    return !matInfo.tag || !gm.tag || matInfo.tag === gm.tag;
+                });
+                if (sameMat.length > 0) matchingGcodes = sameMat;
+            }
 
             // Se não achou na mesma pasta, busca globalmente por palavra-chave específica (ex: JANELAS (1).eps -> MDF 3MM E4 MM JANELAS_1-Corte 2.txt)
             if (matchingGcodes.length === 0) {
@@ -1000,18 +1030,37 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 }
             }
 
-            // Se o arquivo .eps não tinha o material escrito no nome (ex: JANELAS (1).eps), herda o material do G-Code gerado (ex: MDF 3MM)
-            if (!matInfo.tag && matchingGcodes.length > 0) {
-                const inherited = extractMaterialInfo(matchingGcodes[0].name);
-                if (inherited.tag) matInfo = inherited;
+            // Cruza também com arquivos de projeto do Aspire (.crv3d e .crv) salvos na mesma pasta
+            const matchingCrv = (folderFiles.crv || []).filter(c => {
+                const cl = path.parse(c.name).name.toLowerCase().replace(/[-_()]/g, ' ');
+                const cMat = extractMaterialInfo(c.name);
+                if (matInfo.tag && cMat.tag && matInfo.tag === cMat.tag) return true;
+                const cleanName = path.parse(af.name).name.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+                const tokens = cleanName.split(' ').filter(t => t.length >= 2 || /^[a-z0-9]$/i.test(t)).filter(t => !['52', 'unidades', 'moldura', 'fundo', 'em', 'pecas', 'detalhe'].includes(t));
+                return tokens.length > 0 && tokens.every(t => cl.includes(t));
+            });
+
+            // Se o arquivo .eps não tinha o material escrito no nome, herda do G-Code ou do CRV gerado
+            if (!matInfo.tag) {
+                if (matchingGcodes.length > 0) {
+                    const inherited = extractMaterialInfo(matchingGcodes[0].name);
+                    if (inherited.tag) matInfo = inherited;
+                } else if (matchingCrv.length > 0) {
+                    const inherited = extractMaterialInfo(matchingCrv[0].name);
+                    if (inherited.tag) matInfo = inherited;
+                }
             }
 
             const hasGcode = matchingGcodes.length > 0;
-            const chapasCount = matchingGcodes.length;
+            const hasCrv = matchingCrv.length > 0;
+            const isReady = hasGcode || hasCrv;
+            const chapasCount = matchingGcodes.length || (hasCrv ? 1 : 0);
 
-            let stageStatus = hasGcode ? 'lote_liberado' : 'aguardando_lote_aspire';
+            let stageStatus = isReady ? 'lote_liberado' : 'aguardando_lote_aspire';
             let statusLabel = hasGcode 
                 ? `Lote Pronto: ${chapasCount} chapas geradas` 
+                : hasCrv
+                ? `Salvo no Aspire (${matchingCrv[0].name})`
                 : 'Aguardando Gerar Chapas no Aspire';
 
             const isManuallyDone = Boolean(isFileCompletedInDb(af, jName, subfolderName, completedFilesMap));
@@ -1024,6 +1073,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 stageStatus,
                 statusLabel,
                 hasGcode,
+                hasCrv,
+                crvName: matchingCrv[0]?.name || null,
                 chapasCount,
                 chapasList: matchingGcodes.map(g => g.name),
                 isManuallyDone
