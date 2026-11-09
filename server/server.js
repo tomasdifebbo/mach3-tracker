@@ -4224,6 +4224,31 @@ app.post('/api/pipeline/bulk-completed', async (req, res) => {
     }
 });
 
+// Reabrir arquivo para usinagem ("rodar novamente"), limpando conclusões antigas e forçando o retorno à fila
+app.post('/api/pipeline/reopen-file', async (req, res) => {
+    try {
+        const { file_key, reason } = req.body;
+        if (!file_key) return res.status(400).json({ error: 'file_key é obrigatório' });
+        const key = file_key.trim();
+        await pool.query(`
+            INSERT INTO pipeline_reopen_files (file_key, reopened_at, reason)
+            VALUES ($1, CURRENT_TIMESTAMP, $2)
+            ON CONFLICT (file_key)
+            DO UPDATE SET reopened_at = CURRENT_TIMESTAMP, reason = EXCLUDED.reason
+        `, [key, reason || 'Reaberto pelo operador']);
+
+        await pool.query(`
+            UPDATE pipeline_completed_files SET done = FALSE WHERE file_key = $1 OR file_name = $1
+        `, [key]);
+
+        invalidatePipelineCache();
+        res.json({ success: true, file_key: key });
+    } catch (err) {
+        console.error('Erro em POST /api/pipeline/reopen-file:', err);
+        res.status(500).json({ error: 'Erro ao reabrir arquivo no pipeline' });
+    }
+});
+
 // Catch-all: Route all other non-API requests to the React SPA
 app.get('*', (req, res) => {
     const indexPath = fs.existsSync(path.join(__dirname, 'public', 'index.html'))

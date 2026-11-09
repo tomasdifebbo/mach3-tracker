@@ -432,6 +432,37 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         console.error('Error fetching pipeline_completed_files in getProductionPipeline:', e.message);
     }
 
+    // 1.2 Obter arquivos que foram reabertos para rodar novamente ("rodar novamente")
+    let reopenFilesMap = {};
+    try {
+        const { rows: reopenRows } = await pool.query(`
+            SELECT file_key, (reopened_at AT TIME ZONE 'UTC') AS reopened_at, reason
+            FROM pipeline_reopen_files
+        `);
+        reopenRows.forEach(r => {
+            if (r.file_key) reopenFilesMap[r.file_key.toLowerCase().trim()] = r;
+        });
+    } catch (e) {
+        console.error('Error fetching pipeline_reopen_files in getProductionPipeline:', e.message);
+    }
+
+    const getFileReopenRec = (fileObj, subfolderName) => {
+        if (!fileObj || !reopenFilesMap) return null;
+        const lower = (fileObj.name || '').toLowerCase().trim();
+        const fullKeyWin = (fileObj.fullPath || '').toLowerCase().trim();
+        const fullKeyFwd = fullKeyWin.replace(/\\/g, '/');
+        const sub = (subfolderName || fileObj.subfolderName || '').toLowerCase().trim();
+        const compoundKey = `${lower}___${sub}`;
+        const subSlashKey = `${sub}/${lower}`;
+
+        return reopenFilesMap[fullKeyWin] ||
+               reopenFilesMap[fullKeyFwd] ||
+               reopenFilesMap[compoundKey] ||
+               reopenFilesMap[subSlashKey] ||
+               reopenFilesMap[lower] ||
+               null;
+    };
+
     // Detecção real de "RODANDO AGORA": execução sem fim registrado, iniciada há menos de 12h,
     // e que seja a execução mais recente daquela máquina (se a máquina já começou outro arquivo, a anterior não está mais rodando).
     // Substitui o antigo limite fixo de 1h, que fazia blocos longos de isopor/PVC "sumirem" da fila durante o corte.
@@ -464,8 +495,16 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         );
         if (fileObj?.subfolderName) ancestors.add(String(fileObj.subfolderName).toLowerCase().trim());
         const sameFolder = all.filter(j => j.folder && ancestors.has(String(j.folder).toLowerCase().trim()));
-        if (sameFolder.length > 0) return sameFolder;
-        return execsAfterFile(all, fileObj);
+        let matched = (sameFolder.length > 0) ? sameFolder : execsAfterFile(all, fileObj);
+
+        // Se o arquivo foi reaberto para rodar novamente, descartar execuções de corte anteriores ao momento da reabertura!
+        const reopenRec = getFileReopenRec(fileObj, fileObj?.subfolderName);
+        if (reopenRec && reopenRec.reopened_at) {
+            const rTime = new Date(reopenRec.reopened_at).getTime();
+            matched = matched.filter(j => new Date(j.start_time).getTime() > rTime);
+        }
+
+        return matched;
     };
 
     const execMap = {};
@@ -505,6 +544,16 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         if (fileMtime && compTime && fileMtime > compTime + 60000) {
             return null;
         }
+
+        // Se o arquivo foi reaberto ("rodar novamente") DEPOIS da baixa manual no banco, anula a baixa!
+        const reopenRec = getFileReopenRec(fileObj, subfolderName);
+        if (reopenRec && reopenRec.reopened_at) {
+            const reopenTime = new Date(reopenRec.reopened_at).getTime();
+            if (compTime && compTime <= reopenTime) {
+                return null;
+            }
+        }
+
         return rec;
     }
 
@@ -642,7 +691,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     const targetQty = matInfo.targetQuantity || 1;
                     const dbCompRec = isFileCompletedInDb(gf, gf.jobName, gf.subfolderName, completedFilesMap);
                     const isDbDone = Boolean(dbCompRec);
-                    const isOk = isFileMarkedOk(gf.name) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0) || isDbDone;
+                    const reopenRec = getFileReopenRec(gf, gf.subfolderName);
+                    const isOk = (!reopenRec && isFileMarkedOk(gf.name)) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0) || isDbDone;
 
                     if (isOk && !isCurrentlyRunning) {
                         gcodeFeitos.push({
@@ -663,6 +713,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                             ...gf,
                             matInfo,
                             isCurrentlyRunning,
+                            isReopened: Boolean(reopenRec),
                             runningMachine: activeExec?.router_name || null,
                             runningStartTime: activeExec?.start_time || null
                         });
@@ -968,7 +1019,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             const targetQty = matInfo.targetQuantity || 1;
             const dbCompRec = isFileCompletedInDb(gf, jName, subfolderName, completedFilesMap);
             const isDbDone = Boolean(dbCompRec);
-            const isOk = isFileMarkedOk(gf.name) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0) || isDbDone;
+            const reopenRec = getFileReopenRec(gf, subfolderName);
+            const isOk = (!reopenRec && isFileMarkedOk(gf.name)) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0) || isDbDone;
 
             if (isOk && !isCurrentlyRunning) {
                 const item = {
@@ -995,6 +1047,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     subfolderName,
                     matInfo,
                     isCurrentlyRunning,
+                    isReopened: Boolean(reopenRec),
                     runningMachine: activeExec?.router_name || null,
                     runningStartTime: activeExec?.start_time || null
                 };
