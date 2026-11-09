@@ -67,6 +67,21 @@ export function FichaTecnicaPipelineModal({
       return false;
     };
 
+    const resolveTaskDuration = (f) => {
+      if (f.estimatedMinutes && Number(f.estimatedMinutes) > 0) {
+        return Number(f.estimatedMinutes);
+      }
+      if (f.cutMeters && Number(f.cutMeters) > 0) {
+        const isMdf = (f.matInfo?.material || '').toUpperCase().includes('MDF') || (f.name || '').toUpperCase().includes('MDF');
+        const speed = isMdf ? 1800 : 2500;
+        return Math.max(1, parseFloat(((Number(f.cutMeters) * 1000 / speed) * 1.15).toFixed(1)));
+      }
+      if (f.totalDurationMinutes && Number(f.totalDurationMinutes) > 2) return Number(f.totalDurationMinutes);
+      if (f.lastExec?.duration_minutes && Number(f.lastExec.duration_minutes) > 2) return Number(f.lastExec.duration_minutes);
+      if ((f.name || '').toLowerCase().includes('isopor')) return 90;
+      return null;
+    };
+
     const items = [];
 
     // 1. Corel (.CDR)
@@ -132,7 +147,7 @@ export function FichaTecnicaPipelineModal({
         if (!includeConcluded && done && !running) return;
 
         // Duração exata do corte calculada via percurso G-Code ou histórico Mach3
-        const durationMin = f.estimatedMinutes || (f.totalDurationMinutes && f.totalDurationMinutes > 2 ? f.totalDurationMinutes : null) || (f.lastExec?.duration_minutes && f.lastExec.duration_minutes > 2 ? f.lastExec.duration_minutes : null) || (f.name.toLowerCase().includes('isopor') ? 90 : 15);
+        const durationMin = resolveTaskDuration(f);
 
         const dim = f.dimensions || (f.widthMm && f.heightMm ? `${f.widthMm}×${f.heightMm}mm` : null);
 
@@ -162,7 +177,7 @@ export function FichaTecnicaPipelineModal({
       pipelineData.gcodeFeitos.forEach(f => {
         if (selectedJob !== 'todos' && f.jobName !== selectedJob) return;
         if (items.some(it => it.name === f.name && it.stage === 'router')) return;
-        const durationMin = f.estimatedMinutes || (f.totalDurationMinutes && f.totalDurationMinutes > 2 ? f.totalDurationMinutes : null) || (f.lastExec?.duration_minutes && f.lastExec.duration_minutes > 2 ? f.lastExec.duration_minutes : null) || (f.name.toLowerCase().includes('isopor') ? 90 : 15);
+        const durationMin = resolveTaskDuration(f);
         const dim = f.dimensions || (f.widthMm && f.heightMm ? `${f.widthMm}×${f.heightMm}mm` : null);
         items.push({
           id: `done-${f.jobName}-${f.name}`,

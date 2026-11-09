@@ -1157,7 +1157,10 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                 </span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-500 border border-amber-500/25 flex items-center gap-1">
                   <Clock size={11} />
-                  Duração Total da Fila: {formatHm(displayedGcodes.reduce((sum, f) => sum + (f.estimatedMinutes || 15), 0))} ({displayedGcodes.length} chapas)
+                  Duração Total da Fila: {formatHm(displayedGcodes.reduce((sum, f) => {
+                    const est = f.estimatedMinutes || (f.cutMeters ? Math.max(1, Math.round((f.cutMeters * 1000 / 1800) * 1.15)) : (f.name?.toLowerCase().includes('isopor') ? 90 : 0));
+                    return sum + est;
+                  }, 0))} ({displayedGcodes.length} chapas)
                 </span>
                 <p className="text-xs text-slate-600 dark:text-slate-300">
                   ⚡ <strong>Baixa Automática:</strong> Conforme os arquivos rodam nas Routers (Mach3), o sistema detecta a conclusão automaticamente sem precisar de OK manual.
@@ -1294,13 +1297,15 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                             )}
                           </td>
                           <td className="py-2 px-3 font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">
-                            {f.estimatedMinutes ? (
+                            {f.estimatedMinutes || f.cutMeters ? (
                               <div className="flex flex-col">
-                                <span className="text-orange-500 font-black">~{formatHm(f.estimatedMinutes)}</span>
+                                <span className="text-orange-500 font-black">
+                                  ~{formatHm(f.estimatedMinutes || Math.max(1, Math.round((f.cutMeters * 1000 / 1800) * 1.15)))}
+                                </span>
                                 {f.cutMeters > 0 && <span className="text-[9px] text-slate-400 font-normal">{f.cutMeters}m corte</span>}
                               </div>
                             ) : (
-                              <span className="text-slate-400">~15 min</span>
+                              <span className="text-slate-400 italic text-[10px]">-</span>
                             )}
                           </td>
                           <td className="py-2 px-3 font-mono text-slate-500 text-[11px]">

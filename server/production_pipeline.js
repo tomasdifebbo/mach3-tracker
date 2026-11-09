@@ -845,7 +845,9 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     const isOk = (!reopenRec && isFileMarkedOk(gf.name)) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0) || isDbDone;
 
                     if (isOk && !isCurrentlyRunning) {
-                        const dur = execs.length > 0 ? execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) : 15;
+                        const dur = execs.length > 0 
+                            ? execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) 
+                            : (gf.estimatedMinutes || (gf.cutMeters ? Math.max(1, Math.round((gf.cutMeters * 1000 / 1800) * 1.15)) : 15));
                         gcodeFeitos.push({
                             ...gf,
                             matInfo,
@@ -861,18 +863,18 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                                 operator_name: dbCompRec?.operator_name || 'Tomas',
                                 machine_name: 'Router 2',
                                 start_time: dbCompRec?.completed_at || gf.mtimeDate || new Date().toISOString(),
-                                duration_minutes: 15
+                                duration_minutes: gf.estimatedMinutes || dur
                             },
                             totalDurationMinutes: dur,
                             isManuallyDone: isDbDone
                         });
                     } else {
                         const meta = getGCodeMetadata(gf.fullPath, gf.mtime) || {};
-                        const estMinutes = meta.estimatedMinutes || (gf.name.toLowerCase().includes('isopor') ? 90 : 15);
+                        const estMinutes = meta.estimatedMinutes || gf.estimatedMinutes || (gf.cutMeters ? Math.max(1, Math.round((gf.cutMeters * 1000 / (matInfo?.material === 'MDF' ? 1800 : 2500)) * 1.15)) : (gf.name.toLowerCase().includes('isopor') ? 90 : null));
                         gcodeProntos.push({
                             ...gf,
                             matInfo,
-                            estimatedMinutes: estMinutes,
+                            estimatedMinutes: estMinutes || gf.estimatedMinutes || null,
                             cutMeters: meta.cutMeters !== undefined ? meta.cutMeters : (gf.cutMeters || null),
                             widthMm: meta.widthMm || gf.widthMm || null,
                             heightMm: meta.heightMm || gf.heightMm || null,
@@ -1248,7 +1250,9 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             const isOk = (!reopenRec && isFileMarkedOk(gf.name)) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0) || isDbDone;
 
             if (isOk && !isCurrentlyRunning) {
-                const dur = execs.length > 0 ? execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) : 15;
+                const dur = execs.length > 0 
+                    ? execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) 
+                    : (gf.estimatedMinutes || (gf.cutMeters ? Math.max(1, Math.round((gf.cutMeters * 1000 / 1800) * 1.15)) : 15));
                 const item = {
                     ...gf,
                     jobName: jName,
@@ -1266,7 +1270,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                         operator_name: dbCompRec?.operator_name || 'Tomas',
                         machine_name: 'Router 2',
                         start_time: dbCompRec?.completed_at || gf.mtimeDate || new Date().toISOString(),
-                        duration_minutes: 15
+                        duration_minutes: gf.estimatedMinutes || dur
                     },
                     totalDurationMinutes: dur,
                     isManuallyDone: isDbDone
@@ -1275,13 +1279,13 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 allGcodeFeitos.push(item);
             } else {
                 const meta = getGCodeMetadata(gf.fullPath, gf.mtime) || {};
-                const estMinutes = meta.estimatedMinutes || gf.estimatedMinutes || (gf.name.toLowerCase().includes('isopor') ? 90 : 15);
+                const estMinutes = meta.estimatedMinutes || gf.estimatedMinutes || (gf.cutMeters ? Math.max(1, Math.round((gf.cutMeters * 1000 / (matInfo?.material === 'MDF' ? 1800 : 2500)) * 1.15)) : (gf.name.toLowerCase().includes('isopor') ? 90 : null));
                 const item = {
                     ...gf,
                     jobName: jName,
                     subfolderName,
                     matInfo,
-                    estimatedMinutes: estMinutes,
+                    estimatedMinutes: estMinutes || gf.estimatedMinutes || null,
                     cutMeters: meta.cutMeters !== undefined ? meta.cutMeters : (gf.cutMeters || null),
                     widthMm: meta.widthMm || gf.widthMm || null,
                     heightMm: meta.heightMm || gf.heightMm || null,
