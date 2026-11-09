@@ -572,11 +572,10 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
           <div>
             <div className="flex items-center gap-1.5">
               <p className="text-[10px] font-bold uppercase tracking-wider text-orange-500">3. Chapas na Fila</p>
-              <span className="text-[9px] font-bold text-orange-400 bg-orange-500/10 px-1 rounded border border-orange-500/20">~15m/chapa</span>
             </div>
             <div className="flex items-baseline gap-1.5 mt-0.5">
               <span className="text-xl font-black text-slate-900 dark:text-white">{summary.totalGcodePronto}</span>
-              <span className="text-[11px] text-slate-500">G-Codes (~{formatHm((summary.totalGcodePronto || 0) * 15)})</span>
+              <span className="text-[11px] text-slate-500">G-Codes na Fila</span>
             </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0">
@@ -1158,7 +1157,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                 </span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-500 border border-amber-500/25 flex items-center gap-1">
                   <Clock size={11} />
-                  Total Fila: ~{formatHm(displayedGcodes.reduce((sum, f) => sum + (f.estimatedMinutes || 15), 0))} ({displayedGcodes.length} chapas)
+                  Duração Total da Fila: {formatHm(displayedGcodes.reduce((sum, f) => sum + (f.estimatedMinutes || 15), 0))} ({displayedGcodes.length} chapas)
                 </span>
                 <p className="text-xs text-slate-600 dark:text-slate-300">
                   ⚡ <strong>Baixa Automática:</strong> Conforme os arquivos rodam nas Routers (Mach3), o sistema detecta a conclusão automaticamente sem precisar de OK manual.
@@ -1224,7 +1223,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                     <th className="py-2.5 px-3">Arquivo de Chapa (G-Code)</th>
                     <th className="py-2.5 px-3">Subpasta / O.S.</th>
                     <th className="py-2.5 px-3">Material Identificado</th>
-                    <th className="py-2.5 px-3">Tempo Est.</th>
+                    <th className="py-2.5 px-3">Duração do Corte</th>
                     <th className="py-2.5 px-3">Tamanho</th>
                     <th className="py-2.5 px-3">Status na Oficina</th>
                     <th className="py-2.5 px-3 text-right">Ação</th>
