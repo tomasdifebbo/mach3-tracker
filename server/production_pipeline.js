@@ -507,6 +507,38 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         return matched;
     };
 
+    // Localiza a execução ativa de um arquivo na Router CNC (Mach3), associando por pasta, subpasta, ancestrais ou nome
+    const findActiveExec = (fileObj, lower) => {
+        const list = execMap[lower] || [];
+        if (!list.length) return null;
+        const ancestors = new Set(
+            String(fileObj?.fullPath || '').split(/[\\/]/).slice(0, -1).map(s => s.toLowerCase().trim().replace(/\s+/g, ' ')).filter(Boolean)
+        );
+        if (fileObj?.subfolderName) ancestors.add(String(fileObj.subfolderName).toLowerCase().trim().replace(/\s+/g, ' '));
+        if (fileObj?.jobName) ancestors.add(String(fileObj.jobName).toLowerCase().trim().replace(/\s+/g, ' '));
+
+        // 1. Execução ativa cuja pasta no Mach3 seja ou contenha uma das pastas ancestrais (ex: 'ENTRADA ARCO A' contém 'arco a')
+        const matchAncestor = list.find(j => {
+            if (!isJobActive(j) || !j.folder) return false;
+            const jf = String(j.folder).toLowerCase().trim().replace(/\s+/g, ' ');
+            const sub = String(fileObj?.subfolderName || '').toLowerCase().trim().replace(/\s+/g, ' ');
+            if (sub && sub.length >= 3) {
+                if (jf.includes('arco a') && !sub.includes('arco a')) return false;
+                if (jf.includes('arco b') && !sub.includes('arco b')) return false;
+                if (jf.includes(sub) || sub.includes(jf)) return true;
+            }
+            if (ancestors.has(jf)) return true;
+            return false;
+        });
+        if (matchAncestor) return matchAncestor;
+
+        // 2. Execução ativa sem pasta informada no Mach3
+        const matchNoFolder = list.find(j => isJobActive(j) && !j.folder);
+        if (matchNoFolder) return matchNoFolder;
+
+        return null;
+    };
+
     const execMap = {};
     dbJobs.forEach(j => {
         const fn = (j.file_name || '').toLowerCase().trim();
@@ -684,8 +716,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
 
                     const execs = getFileExecs(gf, lower);
                     const completedExecs = execs.filter(j => !isJobActive(j));
-                    const activeExec = (execMap[dedupKey] || []).find(isJobActive) ||
-                        (execMap[lower] || []).find(j => !j.folder && isJobActive(j));
+                    const activeExec = findActiveExec(gf, lower);
                     const isCurrentlyRunning = Boolean(activeExec);
                     const matInfo = gf.matInfo?.tag ? gf.matInfo : extractMaterialInfo(gf.name);
                     const targetQty = matInfo.targetQuantity || 1;
@@ -720,35 +751,45 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     }
                 });
 
-                // Auto-injetar qualquer arquivo que esteja rodando ou tenha rodado nas últimas 48h no Mach3 e ainda não constava no snapshot
+                // Auto-injetar qualquer arquivo que esteja rodando agora ou tenha rodado recentemente no Mach3
                 const recentJobCutoff = Date.now() - 48 * 3600 * 1000;
                 dbJobs.forEach(j => {
-                    const st = new Date(j.start_time).getTime();
-                    if (!st || st < recentJobCutoff) return;
-                    const lower = (j.file_name || '').toLowerCase().trim();
-                    if (!lower || seenGcodeNames.has(lower)) return;
-                    seenGcodeNames.add(lower);
-
-                    const matInfo = extractMaterialInfo(j.file_name);
                     const isRunning = isJobActive(j);
-                    const isDbDone = Boolean(completedFilesMap[lower]);
-                    if (isRunning && !isDbDone) {
-                        gcodeProntos.unshift({
-                            name: j.file_name,
-                            ext: path.extname(j.file_name).toLowerCase() || '.txt',
-                            type: 'gcode',
-                            fullPath: `${j.folder || 'Router'}\\${j.file_name}`,
-                            size: 0,
-                            mtime: st,
-                            mtimeDate: j.start_time,
-                            jobName: j.folder || 'Fila Router Mach3',
-                            subfolderName: j.folder || 'Mach3',
-                            matInfo,
-                            isCurrentlyRunning: true,
-                            runningMachine: j.router_name || 'Router CNC',
-                            runningStartTime: j.start_time
-                        });
+                    const st = new Date(j.start_time).getTime();
+                    if (!st || (!isRunning && st < recentJobCutoff)) return;
+                    const lower = (j.file_name || '').toLowerCase().trim();
+                    if (!lower) return;
+
+                    // Se está rodando AGORA na máquina, garante que esteja na Fila Router (.TXT) no topo
+                    if (isRunning) {
+                        const alreadyInProntos = gcodeProntos.some(p => p.isCurrentlyRunning && p.name.toLowerCase().trim() === lower);
+                        if (!alreadyInProntos) {
+                            // Se estava em gcodeFeitos por engano, remove
+                            const fIdx = gcodeFeitos.findIndex(f => f.name.toLowerCase().trim() === lower);
+                            if (fIdx !== -1) gcodeFeitos.splice(fIdx, 1);
+
+                            const matInfo = extractMaterialInfo(j.file_name);
+                            gcodeProntos.unshift({
+                                name: j.file_name,
+                                ext: path.extname(j.file_name).toLowerCase() || '.txt',
+                                type: 'gcode',
+                                fullPath: `${j.folder || 'Router'}\\${j.file_name}`,
+                                size: 0,
+                                mtime: st,
+                                mtimeDate: j.start_time,
+                                jobName: j.folder || 'Fila Router Mach3',
+                                subfolderName: j.folder || 'Mach3',
+                                matInfo,
+                                isCurrentlyRunning: true,
+                                runningMachine: j.router_name || 'Router CNC',
+                                runningStartTime: j.start_time
+                            });
+                        }
+                        return;
                     }
+
+                    if (seenGcodeNames.has(lower)) return;
+                    seenGcodeNames.add(lower);
                 });
 
                 gcodeProntos.sort((a, b) => (b.isCurrentlyRunning ? 1 : 0) - (a.isCurrentlyRunning ? 1 : 0) || (b.mtime || 0) - (a.mtime || 0));
@@ -1013,8 +1054,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
 
             const execs = getFileExecs({ ...gf, subfolderName }, lower);
             const completedExecs = execs.filter(j => !isJobActive(j));
-            const activeExec = (execMap[compoundKey] || []).find(isJobActive) ||
-                (execMap[lower] || []).find(j => !j.folder && isJobActive(j));
+            const activeExec = findActiveExec({ ...gf, subfolderName }, lower);
             const isCurrentlyRunning = Boolean(activeExec);
             const targetQty = matInfo.targetQuantity || 1;
             const dbCompRec = isFileCompletedInDb(gf, jName, subfolderName, completedFilesMap);

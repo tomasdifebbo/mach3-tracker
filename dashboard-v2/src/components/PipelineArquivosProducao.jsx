@@ -396,10 +396,15 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
     });
   }, [filteredAspire, fileChecklist, aspireCheckFilter]);
 
+  const isFileDone = (f) => {
+    if (!f || f.isCurrentlyRunning) return false;
+    return Boolean(isFileChecked(f) || f.isExecuted || isFileMarkedOk(f.name));
+  };
+
   const routerCounts = useMemo(() => {
     let concluidos = 0;
     filteredGcodes.forEach(f => {
-      if (isFileChecked(f) || f.isExecuted || isFileMarkedOk(f.name)) concluidos++;
+      if (isFileDone(f)) concluidos++;
     });
     return {
       total: filteredGcodes.length,
@@ -410,12 +415,17 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
 
   const displayedGcodes = useMemo(() => {
     return filteredGcodes.filter(f => {
-      const isChecked = isFileChecked(f) || f.isExecuted || isFileMarkedOk(f.name);
+      if (f.isCurrentlyRunning) return true; // Arquivos rodando agora SEMPRE aparecem na fila!
+      const isChecked = isFileDone(f);
       if (routerCheckFilter === 'pendentes') return !isChecked;
       if (routerCheckFilter === 'concluidos') return isChecked;
       return true;
     });
   }, [filteredGcodes, fileChecklist, routerCheckFilter]);
+
+  const runningGcodes = useMemo(() => {
+    return filteredGcodes.filter(f => f.isCurrentlyRunning);
+  }, [filteredGcodes]);
 
   // Filtered Jobs
   const filteredJobs = useMemo(() => {
@@ -1153,6 +1163,24 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
               </div>
             </div>
 
+            {/* Banner de status ativo quando houver máquina cortando agora */}
+            {runningGcodes.length > 0 && (
+              <div className="mx-3 my-2.5 p-2.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
+                  </span>
+                  <span className="text-xs font-black text-cyan-400 uppercase tracking-wider">
+                    {runningGcodes.length === 1 ? '⚡ 1 Router Trabalhando Agora' : `⚡ ${runningGcodes.length} Routers Trabalhando Agora`}:
+                  </span>
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    {runningGcodes.map(r => `${r.runningMachine || 'Router'}: ${r.name}`).join(' | ')}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-text-muted uppercase text-[9px] font-black tracking-wider border-b border-slate-200 dark:border-white/5">
@@ -1183,15 +1211,15 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                   ) : (
                     displayedGcodes.map((f, idx) => {
                       const key = getFileKey(f);
-                      const isChecked = isFileChecked(f) || f.isExecuted || isFileMarkedOk(f.name);
+                      const isChecked = isFileDone(f);
                       return (
                         <tr 
                           key={key || idx} 
                           className={`transition-colors ${
-                            isChecked 
+                            f.isCurrentlyRunning
+                              ? 'bg-cyan-500/[0.12] dark:bg-cyan-500/[0.18] border-l-4 border-l-cyan-400 shadow-sm'
+                              : isChecked 
                               ? 'bg-emerald-500/[0.04] dark:bg-emerald-500/[0.07]' 
-                              : f.isCurrentlyRunning
-                              ? 'bg-cyan-500/[0.08] dark:bg-cyan-500/[0.12] border-l-2 border-l-cyan-400'
                               : 'hover:bg-slate-50 dark:hover:bg-white/[0.02]'
                           }`}
                         >
@@ -1235,15 +1263,15 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                             {formatBytes(f.size)}
                           </td>
                           <td className="py-2 px-3">
-                            {isChecked ? (
+                            {f.isCurrentlyRunning ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 shadow-sm animate-pulse">
+                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+                                ⚡ RODANDO AGORA ({f.runningMachine || 'Mach3'})
+                              </span>
+                            ) : isChecked ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
                                 <Check size={11} className="stroke-[3]" />
                                 OK (Chapa Usinada)
-                              </span>
-                            ) : f.isCurrentlyRunning ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 shadow-sm">
-                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
-                                ⚡ RODANDO AGORA ({f.runningMachine || 'Mach3'})
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-orange-500/10 text-orange-500 border border-orange-500/20">

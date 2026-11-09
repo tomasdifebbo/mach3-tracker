@@ -6,7 +6,8 @@ const { getProductionPipeline, invalidatePipelineCache } = require('./production
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
+    max: 2
 });
 
 let lastSignature = '';
