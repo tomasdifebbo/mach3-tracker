@@ -4,10 +4,11 @@ import {
   Search, Filter, Copy, Check, ExternalLink, ArrowRight, HardDrive,
   Cpu, Wrench, Sparkles, ChevronDown, ChevronRight, FolderCheck,
   FileSpreadsheet, Zap, Flame, ShieldAlert, Award, PlayCircle, Compass,
-  FolderTree, Box, CheckSquare, Square
+  FolderTree, Box, CheckSquare, Square, ClipboardList
 } from 'lucide-react';
 import { api } from '../services/api';
 import { CaixaChecklistProducao, isFileMarkedOk } from './CaixaChecklistProducao';
+import { FichaTecnicaPipelineModal } from './FichaTecnicaPipelineModal';
 
 function formatBytes(bytes) {
   if (!bytes || bytes <= 0) return '0 B';
@@ -56,6 +57,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
   const [selectedExt, setSelectedExt] = useState('todas');
   const [copiedPath, setCopiedPath] = useState(null);
   const [expandedJobs, setExpandedJobs] = useState({});
+  const [isFichaModalOpen, setIsFichaModalOpen] = useState(false);
 
   // Checklist interativo para o operador dar OK nos arquivos concluídos
   const [fileChecklist, setFileChecklist] = useState(() => {
@@ -485,14 +487,25 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
           </div>
         </div>
 
-        <button
-          onClick={() => fetchPipeline(true)}
-          disabled={loading}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-orange-500 hover:text-orange-500 transition-all shrink-0 disabled:opacity-50"
-        >
-          <RefreshCw size={12} className={loading ? 'animate-spin text-orange-500' : ''} />
-          <span className="hidden sm:inline">{loading ? 'Escaneando...' : 'Atualizar'}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsFichaModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-sm transition-all shrink-0 active:scale-95 cursor-pointer"
+            title="Emitir Ficha Técnica com relação das tarefas (Impressão / PDF / WhatsApp)"
+          >
+            <ClipboardList size={14} />
+            <span>Gerar Ficha Técnica</span>
+          </button>
+
+          <button
+            onClick={() => fetchPipeline(true)}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-orange-500 hover:text-orange-500 transition-all shrink-0 disabled:opacity-50"
+          >
+            <RefreshCw size={12} className={loading ? 'animate-spin text-orange-500' : ''} />
+            <span className="hidden sm:inline">{loading ? 'Escaneando...' : 'Atualizar'}</span>
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards Row - 5 cards covering all stages */}
@@ -1452,6 +1465,15 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
           </div>
         </div>
       )}
+      {/* Modal Gerador de Ficha Técnica da Produção */}
+      <FichaTecnicaPipelineModal
+        isOpen={isFichaModalOpen}
+        onClose={() => setIsFichaModalOpen(false)}
+        pipelineData={pipelineData}
+        fileChecklist={fileChecklist}
+        initialJob={selectedJob}
+        uniqueJobNames={uniqueJobNames}
+      />
     </div>
   );
 }
