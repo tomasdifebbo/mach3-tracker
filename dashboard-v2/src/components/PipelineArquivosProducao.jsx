@@ -1023,7 +1023,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                   ) : (
                     displayedAspire.map((f, idx) => {
                       const key = getFileKey(f);
-                      const isChecked = isFileChecked(f) || (f.chapasCount > 0);
+                      const isChecked = isAspireDone(f);
                       return (
                         <tr 
                           key={key || idx} 
@@ -1074,6 +1074,10 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                               <span className="font-black text-emerald-400 text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
                                 {f.chapasCount} chapas liberadas
                               </span>
+                            ) : f.hasCrv ? (
+                              <span className="font-bold text-sky-400 text-[11px] bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/20">
+                                Aspire Salvo (.CRV3D)
+                              </span>
                             ) : (
                               <span className="text-slate-400 text-[11px] italic">Nenhuma chapa ainda</span>
                             )}
@@ -1082,7 +1086,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                             {isChecked ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
                                 <Check size={11} className="stroke-[3]" />
-                                OK (Lote Aspire Salvo)
+                                {f.statusLabel || 'OK (Lote Aspire Salvo)'}
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
