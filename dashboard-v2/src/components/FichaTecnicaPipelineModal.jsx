@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import {
   X, Printer, ClipboardList, CheckSquare, Square, Share2, Check,
-  Clock, Layers, Cpu, Wrench, AlertCircle, Sparkles, Filter, ChevronDown
+  Clock, Layers, Cpu, Wrench, AlertCircle, Sparkles, Filter, ChevronDown,
+  Timer
 } from 'lucide-react';
 
 function escapeHtml(str) {
@@ -14,21 +15,19 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+function formatHm(mins) {
+  const m = Math.round(Number(mins) || 0);
+  if (m < 60) return `${m}min`;
+  const h = Math.floor(m / 60);
+  const rem = m % 60;
+  return rem > 0 ? `${h}h ${String(rem).padStart(2, '0')}min` : `${h}h 00min`;
+}
+
 function formatBrtDate(isoStr) {
   if (!isoStr) return '-';
   try {
     const d = new Date(isoStr);
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  } catch (e) {
-    return isoStr;
-  }
-}
-
-function formatBrtDateTime(isoStr) {
-  if (!isoStr) return '-';
-  try {
-    const d = new Date(isoStr);
-    return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   } catch (e) {
     return isoStr;
   }
@@ -51,11 +50,21 @@ export function FichaTecnicaPipelineModal({
   const [assignedMachines, setAssignedMachines] = useState('Router 1 e Router 2');
   const [notes, setNotes] = useState('Verificar fixação na mesa a vácuo/parafusos, conferir zeramento em Z na base e sentido do veio do material.');
   const [copied, setCopied] = useState(false);
+  const [avgMinutesPerSheet, setAvgMinutesPerSheet] = useState(15);
 
   // Sincroniza initialJob se abrir para um job específico
   React.useEffect(() => {
     if (initialJob) setSelectedJob(initialJob);
   }, [initialJob, isOpen]);
+
+  // Média histórica calculada a partir dos jobs já usinados no Mach3
+  const historicalAvgMinutes = useMemo(() => {
+    const list = pipelineData?.gcodeFeitos || [];
+    const valid = list.filter(f => (f.totalDurationMinutes || f.lastExec?.duration_minutes || 0) > 2);
+    if (valid.length === 0) return 15;
+    const sum = valid.reduce((acc, f) => acc + (f.totalDurationMinutes || f.lastExec?.duration_minutes || 15), 0);
+    return Math.max(5, Math.round(sum / valid.length));
+  }, [pipelineData]);
 
   // Extração e enriquecimento de todas as tarefas da produção
   const taskGroups = useMemo(() => {
@@ -99,6 +108,7 @@ export function FichaTecnicaPipelineModal({
           material: f.matInfo?.tag || 'Desenho Vetorial / Corte',
           status: done ? 'done' : 'pending',
           statusLabel: done ? 'Concluído' : 'Pendente Vetorização',
+          estMinutes: null,
           operator: operatorName,
           mtime: f.mtimeDate
         });
@@ -123,6 +133,7 @@ export function FichaTecnicaPipelineModal({
           material: f.matInfo?.tag || (f.ext === '.crv3d' ? 'Arquivo 3D Aspire' : 'Usinagem / Percurso'),
           status: done ? 'done' : 'pending',
           statusLabel: done ? 'Concluído' : 'Aguardando G-Code',
+          estMinutes: null,
           operator: operatorName,
           mtime: f.mtimeDate
         });
@@ -136,6 +147,10 @@ export function FichaTecnicaPipelineModal({
         const running = isFileRunning(f.name, f.jobName);
         const done = isDone(f, 'router');
         if (!includeConcluded && done && !running) return;
+
+        // Se tem duração registrada do histórico ou duração estimada
+        const durationMin = f.totalDurationMinutes || f.lastExec?.duration_minutes || avgMinutesPerSheet;
+
         items.push({
           id: `router-${f.jobName}-${f.name}`,
           stage: 'router',
@@ -148,6 +163,7 @@ export function FichaTecnicaPipelineModal({
           material: f.matInfo?.tag || (f.name.toLowerCase().includes('isopor') ? 'ISOPOR' : 'MDF / ACM'),
           status: running ? 'running' : done ? 'done' : 'pending',
           statusLabel: running ? 'EM MÁQUINA AGORA' : done ? 'Concluído' : 'Pronto para Corte',
+          estMinutes: durationMin,
           operator: operatorName,
           mtime: f.mtimeDate
         });
@@ -158,8 +174,8 @@ export function FichaTecnicaPipelineModal({
     if (includeConcluded && pipelineData.gcodeFeitos) {
       pipelineData.gcodeFeitos.forEach(f => {
         if (selectedJob !== 'todos' && f.jobName !== selectedJob) return;
-        // Evita duplicatas se já adicionado acima
         if (items.some(it => it.name === f.name && it.stage === 'router')) return;
+        const durationMin = f.totalDurationMinutes || f.lastExec?.duration_minutes || avgMinutesPerSheet;
         items.push({
           id: `done-${f.jobName}-${f.name}`,
           stage: 'done',
@@ -172,6 +188,7 @@ export function FichaTecnicaPipelineModal({
           material: f.matInfo?.tag || 'Usinado',
           status: 'done',
           statusLabel: 'Concluído',
+          estMinutes: durationMin,
           operator: f.lastExec?.operator_name || operatorName,
           mtime: f.lastExec?.start_time || f.mtimeDate
         });
@@ -194,9 +211,9 @@ export function FichaTecnicaPipelineModal({
     });
 
     return Object.values(groupsMap);
-  }, [pipelineData, fileChecklist, selectedJob, includeRouter, includeAspire, includeCorel, includeConcluded, operatorName]);
+  }, [pipelineData, fileChecklist, selectedJob, includeRouter, includeAspire, includeCorel, includeConcluded, operatorName, avgMinutesPerSheet]);
 
-  // Estatísticas da Ficha Técnica
+  // Estatísticas da Ficha Técnica incluindo projeções de tempo
   const stats = useMemo(() => {
     let total = 0;
     let routerTasks = 0;
@@ -223,6 +240,10 @@ export function FichaTecnicaPipelineModal({
       });
     });
 
+    const totalRouterMinutes = routerTasks * avgMinutesPerSheet;
+    const nMachines = assignedMachines.toLowerCase().includes('2') || assignedMachines.toLowerCase().includes('e') ? 2 : 1;
+    const projectedMinutes = Math.round(totalRouterMinutes / nMachines);
+
     return {
       total,
       routerTasks,
@@ -231,9 +252,12 @@ export function FichaTecnicaPipelineModal({
       runningTasks,
       doneTasks,
       pendingTasks,
+      totalRouterMinutes,
+      nMachines,
+      projectedMinutes,
       materials: Array.from(materialsSet)
     };
-  }, [taskGroups]);
+  }, [taskGroups, avgMinutesPerSheet, assignedMachines]);
 
   if (!isOpen) return null;
 
@@ -243,6 +267,7 @@ export function FichaTecnicaPipelineModal({
     const jobTitle = selectedJob === 'todos' ? 'TODOS OS PROJETOS ATIVOS' : selectedJob.toUpperCase();
 
     const groupsHtml = taskGroups.map((g, gIdx) => {
+      const subRouterMin = g.tasks.filter(t => t.stage === 'router').length * avgMinutesPerSheet;
       const rowsHtml = g.tasks.map((t, tIdx) => {
         const isDone = t.status === 'done';
         const isRunning = t.status === 'running';
@@ -265,6 +290,8 @@ export function FichaTecnicaPipelineModal({
             ? '<span class="stage-tag tag-aspire">ASPIRE</span>'
             : '<span class="stage-tag tag-corel">COREL CDR</span>';
 
+        const timeText = t.estMinutes ? `~${formatHm(t.estMinutes)}` : '-';
+
         return `
           <tr class="${isDone ? 'row-done' : isRunning ? 'row-running' : ''}">
             <td class="col-check">${checkHtml}</td>
@@ -274,6 +301,7 @@ export function FichaTecnicaPipelineModal({
             </td>
             <td class="col-stage">${stageBadge}</td>
             <td class="col-mat">${escapeHtml(t.material)}</td>
+            <td class="col-time"><strong>${timeText}</strong></td>
             <td class="col-status">${badgeHtml}</td>
             <td class="col-exec write-field">Máq: ______ · ___:___ às ___:___</td>
             <td class="col-op">${escapeHtml(t.operator || operatorName)}</td>
@@ -285,19 +313,20 @@ export function FichaTecnicaPipelineModal({
         <div class="group-box">
           <div class="group-header">
             <span>${gIdx + 1}. ${escapeHtml(g.groupTitle)}</span>
-            <span class="group-count">${g.tasks.length} tarefa(s)</span>
+            <span class="group-count">${g.tasks.length} tarefa(s)${subRouterMin > 0 ? ` · Subtotal Corte: ~${formatHm(subRouterMin)}` : ''}</span>
           </div>
           <table>
             <thead>
               <tr>
-                <th style="width:30px; text-align:center;">OK</th>
-                <th style="width:25px;">#</th>
-                <th style="width:34%;">Arquivo / Chapa</th>
-                <th style="width:14%;">Etapa</th>
-                <th style="width:14%;">Material</th>
-                <th style="width:11%;">Status</th>
+                <th style="width:28px; text-align:center;">OK</th>
+                <th style="width:22px;">#</th>
+                <th style="width:31%;">Arquivo / Chapa</th>
+                <th style="width:13%;">Etapa</th>
+                <th style="width:13%;">Material</th>
+                <th style="width:11%;">Tempo Est.</th>
+                <th style="width:10%;">Status</th>
                 <th style="width:18%;">Apontamento Máquina</th>
-                <th style="width:9%;">Operador</th>
+                <th style="width:8%;">Operador</th>
               </tr>
             </thead>
             <tbody>
@@ -316,32 +345,32 @@ export function FichaTecnicaPipelineModal({
 <style>
   @page { size: A4 portrait; margin: 8mm 9mm; }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif; color: #0f172a; background: #fff; font-size: 9px; line-height: 1.25; }
+  body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif; color: #0f172a; background: #fff; font-size: 8.8px; line-height: 1.25; }
   .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2.5px solid #ea580c; padding-bottom: 6px; margin-bottom: 8px; }
   .brand-badge { display: inline-block; background: #ea580c; color: #fff; font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; padding: 2px 7px; border-radius: 4px; margin-bottom: 3px; }
   .title { font-size: 15px; font-weight: 900; color: #0f172a; letter-spacing: -0.3px; }
   .subtitle { font-size: 9px; color: #475569; margin-top: 2px; font-weight: 600; }
-  .meta-box { text-align: right; font-size: 8.5px; color: #334155; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 9px; line-height: 1.35; }
+  .meta-box { text-align: right; font-size: 8.4px; color: #334155; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 9px; line-height: 1.35; }
   
   .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
   .kpi-card { border: 1px solid #cbd5e1; border-radius: 5px; padding: 5px 8px; background: #f8fafc; }
   .kpi-card.router { background: #fff7ed; border-color: #fdba74; }
-  .kpi-card.aspire { background: #ecfeff; border-color: #a5f3fc; }
+  .kpi-card.time { background: #fefce8; border-color: #fde047; }
   .kpi-card.done { background: #ecfdf5; border-color: #6ee7b7; }
-  .kpi-lbl { font-size: 7.5px; font-weight: 800; text-transform: uppercase; color: #64748b; }
+  .kpi-lbl { font-size: 7.2px; font-weight: 800; text-transform: uppercase; color: #64748b; }
   .kpi-card.router .kpi-lbl { color: #c2410c; }
-  .kpi-card.aspire .kpi-lbl { color: #0891b2; }
+  .kpi-card.time .kpi-lbl { color: #a16207; }
   .kpi-card.done .kpi-lbl { color: #047857; }
   .kpi-val { font-size: 13px; font-weight: 900; color: #0f172a; margin-top: 1px; }
   .kpi-sub { font-size: 7.5px; color: #475569; }
 
-  .group-box { margin-bottom: 10px; page-break-inside: avoid; }
+  .group-box { margin-bottom: 9px; page-break-inside: avoid; }
   .group-header { display: flex; justify-content: space-between; align-items: center; background: #0f172a; color: #fff; padding: 4.5px 8px; border-radius: 4px 4px 0 0; font-weight: 800; font-size: 8.8px; text-transform: uppercase; }
   .group-count { font-size: 7.5px; color: #cbd5e1; font-weight: 600; }
 
   table { width: 100%; border-collapse: collapse; }
   th { background: #f1f5f9; color: #334155; font-size: 7.5px; font-weight: 800; text-transform: uppercase; padding: 3.5px 5px; border: 1px solid #cbd5e1; text-align: left; }
-  td { padding: 3.2px 5px; border: 1px solid #cbd5e1; vertical-align: middle; font-size: 8.5px; }
+  td { padding: 3.2px 5px; border: 1px solid #cbd5e1; vertical-align: middle; font-size: 8.4px; }
   tr.row-done { background: #f0fdf4; }
   tr.row-running { background: #fffbeb; }
 
@@ -351,6 +380,7 @@ export function FichaTecnicaPipelineModal({
   .checkbox.running { background: #ffedd5; border-color: #ea580c; color: #ea580c; font-size: 7.5px; }
   .col-num { font-weight: 700; color: #64748b; font-size: 8px; text-align: center; }
   .col-file { word-break: break-all; }
+  .col-time { font-family: monospace; font-weight: 700; color: #0f172a; }
   
   .stage-tag { display: inline-block; padding: 1px 4.5px; border-radius: 3px; font-size: 7px; font-weight: 800; text-transform: uppercase; }
   .tag-router { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
@@ -367,7 +397,7 @@ export function FichaTecnicaPipelineModal({
   .notes-box { margin-top: 8px; border: 1px solid #cbd5e1; border-radius: 5px; padding: 6px 9px; background: #f8fafc; font-size: 8.2px; }
   .notes-title { font-weight: 800; text-transform: uppercase; color: #334155; font-size: 7.8px; margin-bottom: 2px; }
 
-  .footer-sigs { margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; page-break-inside: avoid; }
+  .footer-sigs { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; page-break-inside: avoid; }
   .sig-block { text-align: center; padding-top: 14px; border-top: 1px solid #64748b; font-size: 7.8px; font-weight: 700; color: #475569; text-transform: uppercase; }
 </style>
 </head>
@@ -382,6 +412,7 @@ export function FichaTecnicaPipelineModal({
       <div><strong>Emissão:</strong> ${nowStr}</div>
       <div><strong>Operador:</strong> ${escapeHtml(operatorName)}</div>
       <div><strong>Máquinas:</strong> ${escapeHtml(assignedMachines)}</div>
+      <div><strong>Tempo Médio:</strong> ${avgMinutesPerSheet} min/chapa</div>
     </div>
   </div>
 
@@ -396,10 +427,10 @@ export function FichaTecnicaPipelineModal({
       <div class="kpi-val">${stats.routerTasks} chapas</div>
       <div class="kpi-sub">${stats.runningTasks > 0 ? `${stats.runningTasks} em máquina agora` : 'Prontos para usinar'}</div>
     </div>
-    <div class="kpi-card aspire">
-      <div class="kpi-lbl">Aspire / Corel</div>
-      <div class="kpi-val">${stats.aspireTasks + stats.corelTasks} arquivos</div>
-      <div class="kpi-sub">${stats.aspireTasks} p/ percurso · ${stats.corelTasks} vetores</div>
+    <div class="kpi-card time">
+      <div class="kpi-lbl">Tempo Médio / Chapa</div>
+      <div class="kpi-val">${avgMinutesPerSheet} min</div>
+      <div class="kpi-sub">Total: ~${formatHm(stats.totalRouterMinutes)} (~${formatHm(stats.projectedMinutes)} em ${stats.nMachines} Máq)</div>
     </div>
     <div class="kpi-card done">
       <div class="kpi-lbl">Status Geral</div>
@@ -448,13 +479,17 @@ export function FichaTecnicaPipelineModal({
     text += `🏭 *Projeto:* ${jobTitle}\n`;
     text += `📅 *Data:* ${dateStr} · *Operador:* ${operatorName}\n`;
     text += `⚙️ *Máquinas:* ${assignedMachines}\n`;
+    text += `⏱️ *Tempo Médio por Chapa:* ${avgMinutesPerSheet} min\n`;
+    text += `⏳ *Tempo Total Estimado de Corte:* ~${formatHm(stats.totalRouterMinutes)} (em ${stats.nMachines} Routers: ~${formatHm(stats.projectedMinutes)})\n`;
     text += `📊 *Resumo:* ${stats.total} tarefas (${stats.routerTasks} Fila Router | ${stats.aspireTasks} Aspire | ${stats.corelTasks} Corel)\n\n`;
 
     taskGroups.forEach(g => {
-      text += `📁 *${g.groupTitle}* (${g.tasks.length} itens):\n`;
+      const subMin = g.tasks.filter(t => t.stage === 'router').length * avgMinutesPerSheet;
+      text += `📁 *${g.groupTitle}* (${g.tasks.length} itens${subMin > 0 ? ` · ~${formatHm(subMin)}` : ''}):\n`;
       g.tasks.forEach((t, idx) => {
         const icon = t.status === 'done' ? '✅' : t.status === 'running' ? '▶️' : '⏳';
-        text += `  ${icon} ${idx + 1}. [${t.stageLabel.split(' ')[1]}] ${t.name} (${t.material})\n`;
+        const timeBadge = t.estMinutes ? ` [~${formatHm(t.estMinutes)}]` : '';
+        text += `  ${icon} ${idx + 1}. [${t.stageLabel.split(' ')[1]}] ${t.name} (${t.material})${timeBadge}\n`;
       });
       text += `\n`;
     });
@@ -501,11 +536,11 @@ export function FichaTecnicaPipelineModal({
         </div>
 
         {/* Controls & Filters Bar */}
-        <div className="p-4 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#12141a] grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="p-4 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-[#12141a] grid grid-cols-1 md:grid-cols-4 gap-3">
           {/* Seletor de Job / Projeto */}
           <div>
             <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">
-              Projeto / Ordem de Serviço
+              Projeto / O.S.
             </label>
             <select
               value={selectedJob}
@@ -519,6 +554,54 @@ export function FichaTecnicaPipelineModal({
             </select>
           </div>
 
+          {/* Tempo Médio por Chapa */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[11px] font-black uppercase text-slate-500 dark:text-slate-400">
+                Tempo Médio / Chapa
+              </label>
+              {historicalAvgMinutes && (
+                <button
+                  type="button"
+                  onClick={() => setAvgMinutesPerSheet(historicalAvgMinutes)}
+                  className="text-[10px] text-orange-500 hover:underline font-bold"
+                  title="Usar média calculada do histórico de usinagem"
+                >
+                  Histórico: {historicalAvgMinutes}m
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="relative flex-1">
+                <input
+                  type="number"
+                  min="1"
+                  max="180"
+                  value={avgMinutesPerSheet}
+                  onChange={e => setAvgMinutesPerSheet(Math.max(1, parseInt(e.target.value) || 15))}
+                  className="w-full text-xs font-black px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500"
+                />
+                <span className="absolute right-2 top-1.5 text-[10px] text-slate-400 font-bold">min</span>
+              </div>
+              <div className="flex items-center gap-1">
+                {[10, 15, 20, 30].map(m => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setAvgMinutesPerSheet(m)}
+                    className={`px-1.5 py-1 rounded text-[10px] font-black transition-all ${
+                      avgMinutesPerSheet === m
+                        ? 'bg-orange-500 text-white shadow-sm'
+                        : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                    }`}
+                  >
+                    {m}m
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* Operador & Máquinas */}
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -530,7 +613,7 @@ export function FichaTecnicaPipelineModal({
                 value={operatorName}
                 onChange={e => setOperatorName(e.target.value)}
                 placeholder="Ex: Tomas"
-                className="w-full text-xs font-bold px-3 py-2 rounded-lg border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500"
+                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500"
               />
             </div>
             <div>
@@ -542,7 +625,7 @@ export function FichaTecnicaPipelineModal({
                 value={assignedMachines}
                 onChange={e => setAssignedMachines(e.target.value)}
                 placeholder="Ex: Router 1 e 2"
-                className="w-full text-xs font-bold px-3 py-2 rounded-lg border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500"
+                className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500"
               />
             </div>
           </div>
@@ -553,16 +636,16 @@ export function FichaTecnicaPipelineModal({
               Etapas na Ficha
             </label>
             <div className="flex items-center gap-2 flex-wrap pt-0.5">
-              <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+              <label className="flex items-center gap-1 text-[11px] cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={includeRouter}
                   onChange={e => setIncludeRouter(e.target.checked)}
                   className="rounded text-orange-500 focus:ring-0"
                 />
-                <span className="font-bold text-orange-600 dark:text-orange-400">Router (.TXT)</span>
+                <span className="font-bold text-orange-600 dark:text-orange-400">Router</span>
               </label>
-              <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+              <label className="flex items-center gap-1 text-[11px] cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={includeAspire}
@@ -571,7 +654,7 @@ export function FichaTecnicaPipelineModal({
                 />
                 <span className="font-bold text-cyan-600 dark:text-cyan-400">Aspire</span>
               </label>
-              <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+              <label className="flex items-center gap-1 text-[11px] cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={includeCorel}
@@ -580,7 +663,7 @@ export function FichaTecnicaPipelineModal({
                 />
                 <span className="font-bold text-amber-600 dark:text-amber-400">Corel</span>
               </label>
-              <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none">
+              <label className="flex items-center gap-1 text-[11px] cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={includeConcluded}
@@ -595,7 +678,7 @@ export function FichaTecnicaPipelineModal({
 
         {/* KPI Mini Bar */}
         <div className="px-5 py-2.5 bg-slate-100 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/5 flex items-center justify-between flex-wrap gap-2 text-xs">
-          <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-3.5 flex-wrap">
             <span className="font-bold text-slate-700 dark:text-slate-300">
               Tarefas a Emitir: <strong className="text-orange-500 font-black">{stats.total}</strong>
             </span>
@@ -604,8 +687,13 @@ export function FichaTecnicaPipelineModal({
               Fila Router: <strong className="text-slate-900 dark:text-white font-bold">{stats.routerTasks}</strong> chapas
             </span>
             <span className="text-slate-400">•</span>
-            <span className="text-slate-600 dark:text-slate-400">
-              Aspire / Corel: <strong className="text-slate-900 dark:text-white font-bold">{stats.aspireTasks + stats.corelTasks}</strong>
+            <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/20">
+              ⏱️ Média: {avgMinutesPerSheet} min/chapa
+            </span>
+            <span className="text-slate-400">•</span>
+            <span className="text-slate-600 dark:text-slate-300">
+              Tempo Total Est.: <strong className="text-slate-900 dark:text-white font-black">{formatHm(stats.totalRouterMinutes)}</strong>
+              <span className="text-[10px] text-slate-400 ml-1">(~{formatHm(stats.projectedMinutes)} em {stats.nMachines} routers)</span>
             </span>
             {stats.runningTasks > 0 && (
               <>
@@ -631,100 +719,121 @@ export function FichaTecnicaPipelineModal({
               <p className="text-xs mt-1">Experimente marcar mais etapas acima ou selecionar outro projeto.</p>
             </div>
           ) : (
-            taskGroups.map((g, gIdx) => (
-              <div
-                key={g.groupTitle}
-                className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm"
-              >
-                {/* Cabeçalho do Grupo */}
-                <div className="px-3.5 py-2 bg-slate-900 text-white flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 font-bold">
-                    <span className="w-5 h-5 rounded bg-orange-500 text-white text-[11px] font-black flex items-center justify-center">
-                      {gIdx + 1}
-                    </span>
-                    <span>{g.groupTitle}</span>
+            taskGroups.map((g, gIdx) => {
+              const subMin = g.tasks.filter(t => t.stage === 'router').length * avgMinutesPerSheet;
+              return (
+                <div
+                  key={g.groupTitle}
+                  className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm"
+                >
+                  {/* Cabeçalho do Grupo */}
+                  <div className="px-3.5 py-2 bg-slate-900 text-white flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 font-bold">
+                      <span className="w-5 h-5 rounded bg-orange-500 text-white text-[11px] font-black flex items-center justify-center">
+                        {gIdx + 1}
+                      </span>
+                      <span>{g.groupTitle}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-[11px]">
+                      {subMin > 0 && (
+                        <span className="text-amber-400 font-bold">
+                          ⏱️ ~{formatHm(subMin)}
+                        </span>
+                      )}
+                      <span className="text-slate-400 font-medium">
+                        {g.tasks.length} {g.tasks.length === 1 ? 'tarefa' : 'tarefas'}
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-[11px] text-slate-400 font-medium">
-                    {g.tasks.length} {g.tasks.length === 1 ? 'tarefa' : 'tarefas'}
-                  </span>
-                </div>
 
-                {/* Tabela de Tarefas */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.01] text-[10px] font-black uppercase text-slate-500">
-                        <th className="py-2 px-3 w-10 text-center">Status</th>
-                        <th className="py-2 px-3">Arquivo / Chapa</th>
-                        <th className="py-2 px-3">Etapa</th>
-                        <th className="py-2 px-3">Material</th>
-                        <th className="py-2 px-3">Apontamento Máquina</th>
-                        <th className="py-2 px-3 text-right">Operador</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                      {g.tasks.map((t) => {
-                        const isDone = t.status === 'done';
-                        const isRunning = t.status === 'running';
+                  {/* Tabela de Tarefas */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.01] text-[10px] font-black uppercase text-slate-500">
+                          <th className="py-2 px-3 w-10 text-center">Status</th>
+                          <th className="py-2 px-3">Arquivo / Chapa</th>
+                          <th className="py-2 px-3">Etapa</th>
+                          <th className="py-2 px-3">Material</th>
+                          <th className="py-2 px-3">Tempo Est.</th>
+                          <th className="py-2 px-3">Apontamento Máquina</th>
+                          <th className="py-2 px-3 text-right">Operador</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                        {g.tasks.map((t) => {
+                          const isDone = t.status === 'done';
+                          const isRunning = t.status === 'running';
 
-                        return (
-                          <tr
-                            key={t.id}
-                            className={`hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors ${
-                              isRunning ? 'bg-amber-500/10' : isDone ? 'bg-emerald-500/5 opacity-80' : ''
-                            }`}
-                          >
-                            <td className="py-2 px-3 text-center">
-                              {isDone ? (
-                                <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-emerald-500 text-white text-xs font-bold">✓</span>
-                              ) : isRunning ? (
-                                <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-orange-500 text-white text-[10px] font-bold animate-pulse">▶</span>
-                              ) : (
-                                <span className="inline-flex items-center justify-center w-5 h-5 rounded border-2 border-slate-300 dark:border-white/20 text-transparent">○</span>
-                              )}
-                            </td>
-                            <td className="py-2 px-3">
-                              <span className="font-bold text-slate-900 dark:text-white block">
-                                {t.name}
-                              </span>
-                              <span className="text-[10px] text-slate-400 font-mono">
-                                {t.subfolder}
-                              </span>
-                            </td>
-                            <td className="py-2 px-3">
-                              <span className={`inline-block px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
-                                t.stage === 'router'
-                                  ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/30'
-                                  : t.stage === 'aspire'
-                                    ? 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30'
-                                    : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                              }`}>
-                                {t.stageLabel}
-                              </span>
-                            </td>
-                            <td className="py-2 px-3 font-medium text-slate-600 dark:text-slate-300">
-                              {t.material}
-                            </td>
-                            <td className="py-2 px-3 font-mono text-[11px] text-slate-400">
-                              {isRunning ? (
-                                <span className="text-orange-500 font-bold">RODANDO EM MÁQUINA</span>
-                              ) : isDone ? (
-                                <span className="text-emerald-500 font-bold">EXECUTADO</span>
-                              ) : (
-                                <span>Máq: ______ · Início: ___:___ Fim: ___:___</span>
-                              )}
-                            </td>
-                            <td className="py-2 px-3 text-right font-medium text-slate-700 dark:text-slate-300">
-                              {t.operator || operatorName}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                          return (
+                            <tr
+                              key={t.id}
+                              className={`hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors ${
+                                isRunning ? 'bg-amber-500/10' : isDone ? 'bg-emerald-500/5 opacity-80' : ''
+                              }`}
+                            >
+                              <td className="py-2 px-3 text-center">
+                                {isDone ? (
+                                  <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-emerald-500 text-white text-xs font-bold">✓</span>
+                                ) : isRunning ? (
+                                  <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-orange-500 text-white text-[10px] font-bold animate-pulse">▶</span>
+                                ) : (
+                                  <span className="inline-flex items-center justify-center w-5 h-5 rounded border-2 border-slate-300 dark:border-white/20 text-transparent">○</span>
+                                )}
+                              </td>
+                              <td className="py-2 px-3">
+                                <span className="font-bold text-slate-900 dark:text-white block">
+                                  {t.name}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-mono">
+                                  {t.subfolder}
+                                </span>
+                              </td>
+                              <td className="py-2 px-3">
+                                <span className={`inline-block px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                  t.stage === 'router'
+                                    ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/30'
+                                    : t.stage === 'aspire'
+                                      ? 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30'
+                                      : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                                }`}>
+                                  {t.stageLabel}
+                                </span>
+                              </td>
+                              <td className="py-2 px-3 font-medium text-slate-600 dark:text-slate-300">
+                                {t.material}
+                              </td>
+                              <td className="py-2 px-3 font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                {t.estMinutes ? (
+                                  <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                                    <Clock size={11} />
+                                    ~{formatHm(t.estMinutes)}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">-</span>
+                                )}
+                              </td>
+                              <td className="py-2 px-3 font-mono text-[11px] text-slate-400">
+                                {isRunning ? (
+                                  <span className="text-orange-500 font-bold">RODANDO EM MÁQUINA</span>
+                                ) : isDone ? (
+                                  <span className="text-emerald-500 font-bold">EXECUTADO</span>
+                                ) : (
+                                  <span>Máq: ______ · Início: ___:___ Fim: ___:___</span>
+                                )}
+                              </td>
+                              <td className="py-2 px-3 text-right font-medium text-slate-700 dark:text-slate-300">
+                                {t.operator || operatorName}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
 
           {/* Campo de Instruções / Observações */}
@@ -745,7 +854,7 @@ export function FichaTecnicaPipelineModal({
         {/* Footer Actions */}
         <div className="px-5 py-3.5 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] flex items-center justify-between gap-3 flex-wrap">
           <div className="text-xs text-slate-500">
-            Pronto para emissão em papel <strong className="text-slate-800 dark:text-slate-200">A4</strong> ou envio no <strong className="text-slate-800 dark:text-slate-200">WhatsApp</strong> da equipe
+            Pronto para emissão em papel <strong className="text-slate-800 dark:text-slate-200">A4</strong> ou envio no <strong className="text-slate-800 dark:text-slate-200">WhatsApp</strong> com tempo estimado
           </div>
 
           <div className="flex items-center gap-2">

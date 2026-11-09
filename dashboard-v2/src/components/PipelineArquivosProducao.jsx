@@ -32,6 +32,14 @@ function formatDate(isoStr) {
   }
 }
 
+function formatHm(mins) {
+  const m = Math.round(Number(mins) || 0);
+  if (m < 60) return `${m}min`;
+  const h = Math.floor(m / 60);
+  const rem = m % 60;
+  return rem > 0 ? `${h}h ${String(rem).padStart(2, '0')}min` : `${h}h 00min`;
+}
+
 function renderMaterialBadge(tag) {
   if (!tag) return null;
   const lower = tag.toLowerCase();
@@ -562,10 +570,13 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
           }`}
         >
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-orange-500">3. Chapas na Fila</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-orange-500">3. Chapas na Fila</p>
+              <span className="text-[9px] font-bold text-orange-400 bg-orange-500/10 px-1 rounded border border-orange-500/20">~15m/chapa</span>
+            </div>
             <div className="flex items-baseline gap-1.5 mt-0.5">
               <span className="text-xl font-black text-slate-900 dark:text-white">{summary.totalGcodePronto}</span>
-              <span className="text-[11px] text-slate-500">G-Codes (.txt)</span>
+              <span className="text-[11px] text-slate-500">G-Codes (~{formatHm((summary.totalGcodePronto || 0) * 15)})</span>
             </div>
           </div>
           <div className="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0">
@@ -1141,9 +1152,13 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
         {activeTab === 'fila_router' && (
           <div className="bg-white dark:bg-white/[0.03] rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm">
             <div className="p-3 bg-orange-500/5 border-b border-slate-200 dark:border-white/5 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-orange-500/20 text-orange-400 border border-orange-500/30">
                   Fila Router: G-Codes (.TXT)
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-500 border border-amber-500/25 flex items-center gap-1">
+                  <Clock size={11} />
+                  Média: ~15 min / chapa · Total Fila: ~{formatHm(displayedGcodes.length * 15)}
                 </span>
                 <p className="text-xs text-slate-600 dark:text-slate-300">
                   ⚡ <strong>Baixa Automática:</strong> Conforme os arquivos rodam nas Routers (Mach3), o sistema detecta a conclusão automaticamente sem precisar de OK manual.
@@ -1209,6 +1224,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                     <th className="py-2.5 px-3">Arquivo de Chapa (G-Code)</th>
                     <th className="py-2.5 px-3">Subpasta / O.S.</th>
                     <th className="py-2.5 px-3">Material Identificado</th>
+                    <th className="py-2.5 px-3">Tempo Est.</th>
                     <th className="py-2.5 px-3">Tamanho</th>
                     <th className="py-2.5 px-3">Status na Oficina</th>
                     <th className="py-2.5 px-3 text-right">Ação</th>
@@ -1217,7 +1233,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                   {displayedGcodes.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-slate-400">
+                      <td colSpan={9} className="py-8 text-center text-slate-400">
                         {routerCheckFilter === 'pendentes' ? (
                           <div className="flex flex-col items-center gap-1.5 py-4">
                             <CheckCircle2 size={32} className="text-emerald-500 opacity-80" />
@@ -1277,6 +1293,9 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                             {renderMaterialBadge(f.matInfo?.tag) || (
                               <span className="text-[10px] text-slate-400 italic">-</span>
                             )}
+                          </td>
+                          <td className="py-2 px-3 font-mono text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                            ~15 min
                           </td>
                           <td className="py-2 px-3 font-mono text-slate-500 text-[11px]">
                             {formatBytes(f.size)}
