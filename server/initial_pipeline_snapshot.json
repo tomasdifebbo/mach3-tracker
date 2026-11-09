@@ -2,9 +2,9 @@
   "summary": {
     "totalJobs": 101,
     "totalCadPreparar": 31,
-    "totalAspirePreparar": 38,
-    "totalGcodePronto": 25,
-    "totalConcluidos": 707
+    "totalAspirePreparar": 26,
+    "totalGcodePronto": 37,
+    "totalConcluidos": 716
   },
   "specialBatches": [
     {
@@ -183,58 +183,41 @@
       "name": "2640  - EXPRESSO HOGWARTS CCXP",
       "source": "OneDrive (3 - OFICINA)",
       "path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA",
-      "totalFiles": 287,
+      "totalFiles": 333,
       "cadCount": 39,
       "cadPrepararCount": 16,
       "cadComGcodeCount": 23,
       "cadComAspireCount": 3,
-      "aspireCount": 37,
-      "aspirePrepararCount": 13,
-      "aspireComGcodeCount": 24,
-      "gcodeCount": 203,
-      "gcodeProntoCount": 23,
-      "gcodeFeitoCount": 180,
-      "progressPercent": 65
+      "aspireCount": 38,
+      "aspirePrepararCount": 6,
+      "aspireComGcodeCount": 32,
+      "gcodeCount": 224,
+      "gcodeProntoCount": 36,
+      "gcodeFeitoCount": 188,
+      "progressPercent": 62
     },
     {
       "name": "2667A - EXPO CULTURA",
       "source": "OneDrive (3 - OFICINA)",
       "path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2667A - EXPO CULTURA\\3 - OFICINA",
-      "totalFiles": 30,
+      "totalFiles": 37,
       "cadCount": 4,
       "cadPrepararCount": 4,
       "cadComGcodeCount": 0,
       "cadComAspireCount": 0,
       "aspireCount": 9,
-      "aspirePrepararCount": 4,
-      "aspireComGcodeCount": 5,
+      "aspirePrepararCount": 3,
+      "aspireComGcodeCount": 6,
       "gcodeCount": 17,
       "gcodeProntoCount": 0,
       "gcodeFeitoCount": 17,
       "progressPercent": 57
     },
     {
-      "name": "2640 - Expresso hogwarts",
-      "source": "Router Local",
-      "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts",
-      "totalFiles": 86,
-      "cadCount": 7,
-      "cadPrepararCount": 1,
-      "cadComGcodeCount": 6,
-      "cadComAspireCount": 0,
-      "aspireCount": 13,
-      "aspirePrepararCount": 5,
-      "aspireComGcodeCount": 8,
-      "gcodeCount": 56,
-      "gcodeProntoCount": 2,
-      "gcodeFeitoCount": 54,
-      "progressPercent": 71
-    },
-    {
       "name": "2662A - capaacete senna",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2662A - capaacete senna",
-      "totalFiles": 252,
+      "totalFiles": 257,
       "cadCount": 4,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 4,
@@ -246,6 +229,23 @@
       "gcodeProntoCount": 0,
       "gcodeFeitoCount": 237,
       "progressPercent": 94
+    },
+    {
+      "name": "2640 - Expresso hogwarts",
+      "source": "Router Local",
+      "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts",
+      "totalFiles": 97,
+      "cadCount": 7,
+      "cadPrepararCount": 1,
+      "cadComGcodeCount": 6,
+      "cadComAspireCount": 0,
+      "aspireCount": 13,
+      "aspirePrepararCount": 2,
+      "aspireComGcodeCount": 11,
+      "gcodeCount": 56,
+      "gcodeProntoCount": 1,
+      "gcodeFeitoCount": 55,
+      "progressPercent": 72
     },
     {
       "name": "2662A - CAPACETE",
@@ -268,7 +268,7 @@
       "name": "2667A - EXPO ENTRADA",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2667A - EXPO ENTRADA",
-      "totalFiles": 20,
+      "totalFiles": 25,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -285,7 +285,7 @@
       "name": "2666 - CAIXAS",
       "source": "OneDrive (3 - OFICINA)",
       "path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2666 - CAIXAS\\3 - OFICINA",
-      "totalFiles": 13,
+      "totalFiles": 14,
       "cadCount": 3,
       "cadPrepararCount": 1,
       "cadComGcodeCount": 2,
@@ -302,7 +302,7 @@
       "name": "2631D - 1 BANCO + 2 LUMINÁRIAS",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2631D - 1 BANCO + 2 LUMINÁRIAS",
-      "totalFiles": 23,
+      "totalFiles": 26,
       "cadCount": 1,
       "cadPrepararCount": 1,
       "cadComGcodeCount": 0,
@@ -314,23 +314,6 @@
       "gcodeProntoCount": 0,
       "gcodeFeitoCount": 0,
       "progressPercent": 0
-    },
-    {
-      "name": "2652A - Submarino termas",
-      "source": "Router Local",
-      "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2652A - Submarino termas",
-      "totalFiles": 30,
-      "cadCount": 1,
-      "cadPrepararCount": 1,
-      "cadComGcodeCount": 0,
-      "cadComAspireCount": 0,
-      "aspireCount": 1,
-      "aspirePrepararCount": 1,
-      "aspireComGcodeCount": 0,
-      "gcodeCount": 2,
-      "gcodeProntoCount": 0,
-      "gcodeFeitoCount": 2,
-      "progressPercent": 50
     },
     {
       "name": "2654A - adesivo michelangelo",
@@ -353,7 +336,7 @@
       "name": "chaves outubro",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\chaves outubro",
-      "totalFiles": 18,
+      "totalFiles": 21,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -401,10 +384,27 @@
       "progressPercent": 0
     },
     {
+      "name": "2652A - Submarino termas",
+      "source": "Router Local",
+      "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2652A - Submarino termas",
+      "totalFiles": 39,
+      "cadCount": 1,
+      "cadPrepararCount": 1,
+      "cadComGcodeCount": 0,
+      "cadComAspireCount": 0,
+      "aspireCount": 1,
+      "aspirePrepararCount": 0,
+      "aspireComGcodeCount": 1,
+      "gcodeCount": 2,
+      "gcodeProntoCount": 0,
+      "gcodeFeitoCount": 2,
+      "progressPercent": 50
+    },
+    {
       "name": "castelo ra tim bum",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\castelo ra tim bum",
-      "totalFiles": 284,
+      "totalFiles": 309,
       "cadCount": 1,
       "cadPrepararCount": 1,
       "cadComGcodeCount": 0,
@@ -455,7 +455,7 @@
       "name": "2361C - PARAQUEDAS",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2361C - PARAQUEDAS",
-      "totalFiles": 7,
+      "totalFiles": 8,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -472,7 +472,7 @@
       "name": "2541 - NAVE AKM - BRADESCO",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2541 - NAVE AKM - BRADESCO",
-      "totalFiles": 19,
+      "totalFiles": 20,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -489,7 +489,7 @@
       "name": "2543 - One Piece",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2543 - One Piece",
-      "totalFiles": 440,
+      "totalFiles": 450,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -523,7 +523,7 @@
       "name": "2545B - ÓCULOS DE SOL 3,50M",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2545B - ÓCULOS DE SOL 3,50M",
-      "totalFiles": 15,
+      "totalFiles": 16,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -574,7 +574,7 @@
       "name": "2547 - VACA EM PÉ",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2547 - VACA EM PÉ",
-      "totalFiles": 9,
+      "totalFiles": 10,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -625,7 +625,7 @@
       "name": "2558 - QG ANIMAL",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2558 - QG ANIMAL",
-      "totalFiles": 41,
+      "totalFiles": 42,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -642,7 +642,7 @@
       "name": "2562 - CENÁRIO STEEL BALL RUN",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2562 - CENÁRIO STEEL BALL RUN",
-      "totalFiles": 34,
+      "totalFiles": 37,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -659,7 +659,7 @@
       "name": "2565 - capacete pdv",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2565 - capacete pdv",
-      "totalFiles": 7,
+      "totalFiles": 8,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -676,7 +676,7 @@
       "name": "2568a - PAINEL NESTLE - MIND PLAN E COM LTDA",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2568a - PAINEL NESTLE - MIND PLAN E COM LTDA",
-      "totalFiles": 29,
+      "totalFiles": 30,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -693,7 +693,7 @@
       "name": "2569 lacoste",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2569 lacoste",
-      "totalFiles": 88,
+      "totalFiles": 91,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -812,7 +812,7 @@
       "name": "2591 - PIRACANJUBA",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2591 - PIRACANJUBA",
-      "totalFiles": 31,
+      "totalFiles": 33,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -999,7 +999,7 @@
       "name": "2615A - pequeno principe",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2615A - pequeno principe",
-      "totalFiles": 37,
+      "totalFiles": 41,
       "cadCount": 13,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 13,
@@ -1084,7 +1084,7 @@
       "name": "2625 - LOCOMOTIVA BRADESCO",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2625 - LOCOMOTIVA BRADESCO",
-      "totalFiles": 59,
+      "totalFiles": 62,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -1118,7 +1118,7 @@
       "name": "2629A - ROYAL ENFIELD",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2629A - ROYAL ENFIELD",
-      "totalFiles": 18,
+      "totalFiles": 21,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -1135,7 +1135,7 @@
       "name": "2631A - ORNAMENTOS TELHADOS MAIORES",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2631A - ORNAMENTOS TELHADOS MAIORES",
-      "totalFiles": 12,
+      "totalFiles": 13,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -1152,7 +1152,7 @@
       "name": "2631A - telhado oriental",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2631A - telhado oriental",
-      "totalFiles": 41,
+      "totalFiles": 45,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -1186,7 +1186,7 @@
       "name": "2635A - Circo de Soleil",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2635A - Circo de Soleil",
-      "totalFiles": 21,
+      "totalFiles": 26,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -1237,7 +1237,7 @@
       "name": "2639A - GLOBO TERRESTRE COM AROS E MOCKUPS VÒLIA",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2639A - GLOBO TERRESTRE COM AROS E MOCKUPS VÒLIA",
-      "totalFiles": 22,
+      "totalFiles": 24,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -1254,7 +1254,7 @@
       "name": "2644A - QUIOSQUE DINO PARK",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2644A - QUIOSQUE DINO PARK",
-      "totalFiles": 24,
+      "totalFiles": 25,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -1305,7 +1305,7 @@
       "name": "2648B - BOCA LETREIRO",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2648B - BOCA LETREIRO",
-      "totalFiles": 11,
+      "totalFiles": 12,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -1509,7 +1509,7 @@
       "name": "2654A michelangelo base",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2654A michelangelo base",
-      "totalFiles": 2,
+      "totalFiles": 3,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -1628,7 +1628,7 @@
       "name": "2667A - EXPO tv CULTURA",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2667A - EXPO tv CULTURA",
-      "totalFiles": 9,
+      "totalFiles": 10,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -1679,7 +1679,7 @@
       "name": "BATENTE PORTA SMURFS",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\BATENTE PORTA SMURFS",
-      "totalFiles": 70,
+      "totalFiles": 76,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -1798,7 +1798,7 @@
       "name": "manutençao laser",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\manutençao laser",
-      "totalFiles": 2,
+      "totalFiles": 3,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -1849,7 +1849,7 @@
       "name": "TARTARUGA",
       "source": "Router Local",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\TARTARUGA",
-      "totalFiles": 206,
+      "totalFiles": 222,
       "cadCount": 0,
       "cadPrepararCount": 0,
       "cadComGcodeCount": 0,
@@ -1916,10 +1916,10 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Liberado (42 chapas p/ Router)",
+      "statusLabel": "Lote Liberado (63 chapas p/ Router)",
       "hasAspire": true,
       "hasGcode": true,
-      "chapasCount": 42,
+      "chapasCount": 63,
       "detectedMaterials": [
         "MDF 9mm"
       ],
@@ -1943,14 +1943,14 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Liberado (42 chapas p/ Router)",
+      "statusLabel": "Lote Liberado (63 chapas p/ Router)",
       "hasAspire": true,
       "hasGcode": true,
-      "chapasCount": 42,
+      "chapasCount": 63,
       "detectedMaterials": [
         "MDF 9mm"
       ],
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "ESCADA D.cdr",
@@ -1970,10 +1970,10 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Liberado (42 chapas p/ Router)",
+      "statusLabel": "Lote Liberado (63 chapas p/ Router)",
       "hasAspire": true,
       "hasGcode": true,
-      "chapasCount": 42,
+      "chapasCount": 63,
       "detectedMaterials": [
         "MDF 9mm"
       ],
@@ -1997,10 +1997,10 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Liberado (42 chapas p/ Router)",
+      "statusLabel": "Lote Liberado (63 chapas p/ Router)",
       "hasAspire": true,
       "hasGcode": true,
-      "chapasCount": 42,
+      "chapasCount": 63,
       "detectedMaterials": [
         "MDF 9mm"
       ],
@@ -2024,10 +2024,10 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Liberado (42 chapas p/ Router)",
+      "statusLabel": "Lote Liberado (63 chapas p/ Router)",
       "hasAspire": true,
       "hasGcode": true,
-      "chapasCount": 42,
+      "chapasCount": 63,
       "detectedMaterials": [
         "MDF 9mm"
       ],
@@ -2051,10 +2051,10 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Liberado (42 chapas p/ Router)",
+      "statusLabel": "Lote Liberado (63 chapas p/ Router)",
       "hasAspire": true,
       "hasGcode": true,
-      "chapasCount": 42,
+      "chapasCount": 63,
       "detectedMaterials": [
         "MDF 9mm"
       ],
@@ -2078,10 +2078,10 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Liberado (42 chapas p/ Router)",
+      "statusLabel": "Lote Liberado (63 chapas p/ Router)",
       "hasAspire": true,
       "hasGcode": true,
-      "chapasCount": 42,
+      "chapasCount": 63,
       "detectedMaterials": [
         "MDF 9mm"
       ],
@@ -2133,10 +2133,10 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Liberado (42 chapas p/ Router)",
+      "statusLabel": "Lote Liberado (63 chapas p/ Router)",
       "hasAspire": true,
       "hasGcode": true,
-      "chapasCount": 42,
+      "chapasCount": 63,
       "detectedMaterials": [
         "MDF 9mm"
       ],
@@ -4024,13 +4024,13 @@
   ],
   "aspirePreparar": [
     {
-      "name": "MDF 9MM RAMPA C.eps",
+      "name": "MDF 9MM RAMPA D.eps",
       "ext": ".eps",
       "type": "aspire",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM RAMPA C.eps",
-      "size": 7910218,
-      "mtime": 1794245030082.4014,
-      "mtimeDate": "2026-11-09T17:23:50.082Z",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM RAMPA D.eps",
+      "size": 17212661,
+      "mtime": 1794248967869.875,
+      "mtimeDate": "2026-11-09T18:29:27.870Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
       "subfolderName": "SALA ESCADAS",
       "matInfo": {
@@ -4041,10 +4041,39 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 42 chapas geradas",
+      "statusLabel": "Lote Pronto: 61 chapas geradas",
       "hasGcode": true,
-      "chapasCount": 42,
+      "hasCrv": true,
+      "crvName": "MDF 9MM RAMPA D.crv3d",
+      "chapasCount": 61,
       "chapasList": [
+        "MDF 9MM E6MM rampa C_5-° chapa.txt",
+        "MDF 9MM E6MM rampa C_4-° chapa.txt",
+        "MDF 9MM E6MM rampa C_3-° chapa.txt",
+        "MDF 9MM E6MM rampa C_2-° chapa.txt",
+        "MDF 9MM E6MM rampa C_1-° chapa.txt",
+        "MDF 9MM E6MM rampa D_14-° chapa.txt",
+        "MDF 9MM E6MM rampa D_13-° chapa.txt",
+        "MDF 9MM E6MM rampa D_12-° chapa.txt",
+        "MDF 9MM E6MM rampa D_11-° chapa.txt",
+        "MDF 9MM E6MM rampa D_10-° chapa.txt",
+        "MDF 9MM E6MM rampa D_9-° chapa.txt",
+        "MDF 9MM E6MM rampa D_8-° chapa.txt",
+        "MDF 9MM E6MM rampa D_7-° chapa.txt",
+        "MDF 9MM E6MM rampa D_6-° chapa.txt",
+        "MDF 9MM E6MM rampa D_5-° chapa.txt",
+        "MDF 9MM E6MM rampa D_4-° chapa.txt",
+        "MDF 9MM E6MM rampa D_3-° chapa.txt",
+        "MDF 9MM E6MM rampa D_2-° chapa.txt",
+        "MDF 9MM E6MM rampa D_1-° chapa.txt",
+        "MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
+        "MDF 9MM E6MM rampa (R.B.)_7-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_6-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_5-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_4-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_3-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_2-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_1-° chapa OK.txt",
         "MDF 9MM E6MM ESCADA D_7-° chapa.txt",
         "MDF 9MM E6MM ESCADA D_6-° chapa.txt",
         "MDF 9MM E6MM ESCADA D_5-° chapa.txt",
@@ -4055,14 +4084,6 @@
         "MDF 9MM E6MM ESCADA C_3-° chapa.txt",
         "MDF 9MM E6MM ESCADA C_2-° chapa.txt",
         "MDF 9MM E6MM ESCADA C_1-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_6-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_7-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_5-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_4-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_3-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_2-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_1-° chapa.txt",
         "MDF 9MM E6MM PARTE B_13-Corte 7 OK.txt",
         "MDF 9MM E6MM PARTE B_12-Corte 6 OK.txt",
         "MDF 9MM E6MM PARTE B_11-° chapa OK.txt",
@@ -4082,9 +4103,97 @@
         "MDF 9MM E6MM PARTE A_6-° chapa OK.txt",
         "MDF 9MM E6MM PARTE A_5-° chapa ok.txt",
         "MDF 9MM E6MM PARTE A_4-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_3-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_2-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_1-° chapa OK.txt",
+        "MDF 9MM E6MM ESCADA  A_3-° chapa OK.txt",
+        "MDF 9MM E6MM ESCADA AA_2-° chapa OK.txt",
+        "MDF 9MM E6MM  ESCADA A_1-° chapa OK.txt",
+        "MDF 9MM RAMPA A1_2-°CHAPA OK.txt",
+        "MDF 9MM RAMPA A1_1-°CHAPA ok.txt"
+      ],
+      "isManuallyDone": false
+    },
+    {
+      "name": "MDF 9MM RAMPA C.eps",
+      "ext": ".eps",
+      "type": "aspire",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM RAMPA C.eps",
+      "size": 7910218,
+      "mtime": 1794245030082.4014,
+      "mtimeDate": "2026-11-09T17:23:50.082Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": null,
+        "targetQuantity": 1
+      },
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 61 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "MDF 9MM RAMPA D.crv3d",
+      "chapasCount": 61,
+      "chapasList": [
+        "MDF 9MM E6MM rampa C_5-° chapa.txt",
+        "MDF 9MM E6MM rampa C_4-° chapa.txt",
+        "MDF 9MM E6MM rampa C_3-° chapa.txt",
+        "MDF 9MM E6MM rampa C_2-° chapa.txt",
+        "MDF 9MM E6MM rampa C_1-° chapa.txt",
+        "MDF 9MM E6MM rampa D_14-° chapa.txt",
+        "MDF 9MM E6MM rampa D_13-° chapa.txt",
+        "MDF 9MM E6MM rampa D_12-° chapa.txt",
+        "MDF 9MM E6MM rampa D_11-° chapa.txt",
+        "MDF 9MM E6MM rampa D_10-° chapa.txt",
+        "MDF 9MM E6MM rampa D_9-° chapa.txt",
+        "MDF 9MM E6MM rampa D_8-° chapa.txt",
+        "MDF 9MM E6MM rampa D_7-° chapa.txt",
+        "MDF 9MM E6MM rampa D_6-° chapa.txt",
+        "MDF 9MM E6MM rampa D_5-° chapa.txt",
+        "MDF 9MM E6MM rampa D_4-° chapa.txt",
+        "MDF 9MM E6MM rampa D_3-° chapa.txt",
+        "MDF 9MM E6MM rampa D_2-° chapa.txt",
+        "MDF 9MM E6MM rampa D_1-° chapa.txt",
+        "MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
+        "MDF 9MM E6MM rampa (R.B.)_7-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_6-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_5-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_4-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_3-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_2-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_1-° chapa OK.txt",
+        "MDF 9MM E6MM ESCADA D_7-° chapa.txt",
+        "MDF 9MM E6MM ESCADA D_6-° chapa.txt",
+        "MDF 9MM E6MM ESCADA D_5-° chapa.txt",
+        "MDF 9MM E6MM ESCADA D_4-° chapa.txt",
+        "MDF 9MM E6MM ESCADA D_3-° chapa.txt",
+        "MDF 9MM E6MM ESCADA D_2-° chapa.txt",
+        "MDF 9MM E6MM ESCADA D_1-° chapa.txt",
+        "MDF 9MM E6MM ESCADA C_3-° chapa.txt",
+        "MDF 9MM E6MM ESCADA C_2-° chapa.txt",
+        "MDF 9MM E6MM ESCADA C_1-° chapa.txt",
+        "MDF 9MM E6MM PARTE B_13-Corte 7 OK.txt",
+        "MDF 9MM E6MM PARTE B_12-Corte 6 OK.txt",
+        "MDF 9MM E6MM PARTE B_11-° chapa OK.txt",
+        "MDF 9MM E6MM PARTE B_10-° chapa OK.txt",
+        "MDF 9MM E6MM PARTE B_9-° chapa OK.txt",
+        "MDF 9MM E6MM PARTE B_8-° chapa OK.txt",
+        "MDF 9MM E6MM PARTE B_7-° chapa OK.txt",
+        "MDF 9MM E6MM PARTE B_6-° chapa OK.txt",
+        "MDF 9MM E6MM PARTE B_5-° chapa OK.txt",
+        "MDF 9MM E6MM PARTE B_4-° chapa OK.txt",
+        "MDF 9MM E6MM PARTE B_3-° chapa OK.txt",
+        "MDF 9MM E6MM PARTE B_2-° chapa OK.txt",
+        "MDF 9MM E6MM PARTE B_1-° chapa OK.txt",
+        "MDF 9MM E6MM PARTE A_9-° chapa OK.txt",
+        "MDF 9MM E6MM PARTE A_8-° chapa OK.txt",
+        "MDF 9MM E6MM PARTE A_7-° chapa OK.txt",
+        "MDF 9MM E6MM PARTE A_6-° chapa OK.txt",
+        "MDF 9MM E6MM PARTE A_5-° chapa ok.txt",
+        "MDF 9MM E6MM PARTE A_4-° chapa OK.txt",
+        "MDF 9MM E6MM ESCADA  A_3-° chapa OK.txt",
+        "MDF 9MM E6MM ESCADA AA_2-° chapa OK.txt",
+        "MDF 9MM E6MM  ESCADA A_1-° chapa OK.txt",
         "MDF 9MM RAMPA A1_2-°CHAPA OK.txt",
         "MDF 9MM RAMPA A1_1-°CHAPA ok.txt"
       ],
@@ -4108,10 +4217,39 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 42 chapas geradas",
+      "statusLabel": "Lote Pronto: 61 chapas geradas",
       "hasGcode": true,
-      "chapasCount": 42,
+      "hasCrv": true,
+      "crvName": "MDF 9MM RAMPA D.crv3d",
+      "chapasCount": 61,
       "chapasList": [
+        "MDF 9MM E6MM rampa C_5-° chapa.txt",
+        "MDF 9MM E6MM rampa C_4-° chapa.txt",
+        "MDF 9MM E6MM rampa C_3-° chapa.txt",
+        "MDF 9MM E6MM rampa C_2-° chapa.txt",
+        "MDF 9MM E6MM rampa C_1-° chapa.txt",
+        "MDF 9MM E6MM rampa D_14-° chapa.txt",
+        "MDF 9MM E6MM rampa D_13-° chapa.txt",
+        "MDF 9MM E6MM rampa D_12-° chapa.txt",
+        "MDF 9MM E6MM rampa D_11-° chapa.txt",
+        "MDF 9MM E6MM rampa D_10-° chapa.txt",
+        "MDF 9MM E6MM rampa D_9-° chapa.txt",
+        "MDF 9MM E6MM rampa D_8-° chapa.txt",
+        "MDF 9MM E6MM rampa D_7-° chapa.txt",
+        "MDF 9MM E6MM rampa D_6-° chapa.txt",
+        "MDF 9MM E6MM rampa D_5-° chapa.txt",
+        "MDF 9MM E6MM rampa D_4-° chapa.txt",
+        "MDF 9MM E6MM rampa D_3-° chapa.txt",
+        "MDF 9MM E6MM rampa D_2-° chapa.txt",
+        "MDF 9MM E6MM rampa D_1-° chapa.txt",
+        "MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
+        "MDF 9MM E6MM rampa (R.B.)_7-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_6-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_5-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_4-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_3-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_2-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_1-° chapa OK.txt",
         "MDF 9MM E6MM ESCADA D_7-° chapa.txt",
         "MDF 9MM E6MM ESCADA D_6-° chapa.txt",
         "MDF 9MM E6MM ESCADA D_5-° chapa.txt",
@@ -4122,14 +4260,6 @@
         "MDF 9MM E6MM ESCADA C_3-° chapa.txt",
         "MDF 9MM E6MM ESCADA C_2-° chapa.txt",
         "MDF 9MM E6MM ESCADA C_1-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_6-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_7-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_5-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_4-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_3-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_2-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_1-° chapa.txt",
         "MDF 9MM E6MM PARTE B_13-Corte 7 OK.txt",
         "MDF 9MM E6MM PARTE B_12-Corte 6 OK.txt",
         "MDF 9MM E6MM PARTE B_11-° chapa OK.txt",
@@ -4149,9 +4279,9 @@
         "MDF 9MM E6MM PARTE A_6-° chapa OK.txt",
         "MDF 9MM E6MM PARTE A_5-° chapa ok.txt",
         "MDF 9MM E6MM PARTE A_4-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_3-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_2-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_1-° chapa OK.txt",
+        "MDF 9MM E6MM ESCADA  A_3-° chapa OK.txt",
+        "MDF 9MM E6MM ESCADA AA_2-° chapa OK.txt",
+        "MDF 9MM E6MM  ESCADA A_1-° chapa OK.txt",
         "MDF 9MM RAMPA A1_2-°CHAPA OK.txt",
         "MDF 9MM RAMPA A1_1-°CHAPA ok.txt"
       ],
@@ -4175,10 +4305,39 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 42 chapas geradas",
+      "statusLabel": "Lote Pronto: 61 chapas geradas",
       "hasGcode": true,
-      "chapasCount": 42,
+      "hasCrv": true,
+      "crvName": "MDF 9MM RAMPA D.crv3d",
+      "chapasCount": 61,
       "chapasList": [
+        "MDF 9MM E6MM rampa C_5-° chapa.txt",
+        "MDF 9MM E6MM rampa C_4-° chapa.txt",
+        "MDF 9MM E6MM rampa C_3-° chapa.txt",
+        "MDF 9MM E6MM rampa C_2-° chapa.txt",
+        "MDF 9MM E6MM rampa C_1-° chapa.txt",
+        "MDF 9MM E6MM rampa D_14-° chapa.txt",
+        "MDF 9MM E6MM rampa D_13-° chapa.txt",
+        "MDF 9MM E6MM rampa D_12-° chapa.txt",
+        "MDF 9MM E6MM rampa D_11-° chapa.txt",
+        "MDF 9MM E6MM rampa D_10-° chapa.txt",
+        "MDF 9MM E6MM rampa D_9-° chapa.txt",
+        "MDF 9MM E6MM rampa D_8-° chapa.txt",
+        "MDF 9MM E6MM rampa D_7-° chapa.txt",
+        "MDF 9MM E6MM rampa D_6-° chapa.txt",
+        "MDF 9MM E6MM rampa D_5-° chapa.txt",
+        "MDF 9MM E6MM rampa D_4-° chapa.txt",
+        "MDF 9MM E6MM rampa D_3-° chapa.txt",
+        "MDF 9MM E6MM rampa D_2-° chapa.txt",
+        "MDF 9MM E6MM rampa D_1-° chapa.txt",
+        "MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
+        "MDF 9MM E6MM rampa (R.B.)_7-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_6-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_5-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_4-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_3-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_2-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_1-° chapa OK.txt",
         "MDF 9MM E6MM ESCADA D_7-° chapa.txt",
         "MDF 9MM E6MM ESCADA D_6-° chapa.txt",
         "MDF 9MM E6MM ESCADA D_5-° chapa.txt",
@@ -4189,14 +4348,6 @@
         "MDF 9MM E6MM ESCADA C_3-° chapa.txt",
         "MDF 9MM E6MM ESCADA C_2-° chapa.txt",
         "MDF 9MM E6MM ESCADA C_1-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_6-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_7-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_5-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_4-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_3-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_2-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_1-° chapa.txt",
         "MDF 9MM E6MM PARTE B_13-Corte 7 OK.txt",
         "MDF 9MM E6MM PARTE B_12-Corte 6 OK.txt",
         "MDF 9MM E6MM PARTE B_11-° chapa OK.txt",
@@ -4216,9 +4367,9 @@
         "MDF 9MM E6MM PARTE A_6-° chapa OK.txt",
         "MDF 9MM E6MM PARTE A_5-° chapa ok.txt",
         "MDF 9MM E6MM PARTE A_4-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_3-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_2-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_1-° chapa OK.txt",
+        "MDF 9MM E6MM ESCADA  A_3-° chapa OK.txt",
+        "MDF 9MM E6MM ESCADA AA_2-° chapa OK.txt",
+        "MDF 9MM E6MM  ESCADA A_1-° chapa OK.txt",
         "MDF 9MM RAMPA A1_2-°CHAPA OK.txt",
         "MDF 9MM RAMPA A1_1-°CHAPA ok.txt"
       ],
@@ -4242,10 +4393,39 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 42 chapas geradas",
+      "statusLabel": "Lote Pronto: 61 chapas geradas",
       "hasGcode": true,
-      "chapasCount": 42,
+      "hasCrv": true,
+      "crvName": "MDF 9MM RAMPA D.crv3d",
+      "chapasCount": 61,
       "chapasList": [
+        "MDF 9MM E6MM rampa C_5-° chapa.txt",
+        "MDF 9MM E6MM rampa C_4-° chapa.txt",
+        "MDF 9MM E6MM rampa C_3-° chapa.txt",
+        "MDF 9MM E6MM rampa C_2-° chapa.txt",
+        "MDF 9MM E6MM rampa C_1-° chapa.txt",
+        "MDF 9MM E6MM rampa D_14-° chapa.txt",
+        "MDF 9MM E6MM rampa D_13-° chapa.txt",
+        "MDF 9MM E6MM rampa D_12-° chapa.txt",
+        "MDF 9MM E6MM rampa D_11-° chapa.txt",
+        "MDF 9MM E6MM rampa D_10-° chapa.txt",
+        "MDF 9MM E6MM rampa D_9-° chapa.txt",
+        "MDF 9MM E6MM rampa D_8-° chapa.txt",
+        "MDF 9MM E6MM rampa D_7-° chapa.txt",
+        "MDF 9MM E6MM rampa D_6-° chapa.txt",
+        "MDF 9MM E6MM rampa D_5-° chapa.txt",
+        "MDF 9MM E6MM rampa D_4-° chapa.txt",
+        "MDF 9MM E6MM rampa D_3-° chapa.txt",
+        "MDF 9MM E6MM rampa D_2-° chapa.txt",
+        "MDF 9MM E6MM rampa D_1-° chapa.txt",
+        "MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
+        "MDF 9MM E6MM rampa (R.B.)_7-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_6-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_5-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_4-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_3-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_2-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_1-° chapa OK.txt",
         "MDF 9MM E6MM ESCADA D_7-° chapa.txt",
         "MDF 9MM E6MM ESCADA D_6-° chapa.txt",
         "MDF 9MM E6MM ESCADA D_5-° chapa.txt",
@@ -4256,14 +4436,6 @@
         "MDF 9MM E6MM ESCADA C_3-° chapa.txt",
         "MDF 9MM E6MM ESCADA C_2-° chapa.txt",
         "MDF 9MM E6MM ESCADA C_1-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_6-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_7-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_5-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_4-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_3-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_2-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_1-° chapa.txt",
         "MDF 9MM E6MM PARTE B_13-Corte 7 OK.txt",
         "MDF 9MM E6MM PARTE B_12-Corte 6 OK.txt",
         "MDF 9MM E6MM PARTE B_11-° chapa OK.txt",
@@ -4283,9 +4455,9 @@
         "MDF 9MM E6MM PARTE A_6-° chapa OK.txt",
         "MDF 9MM E6MM PARTE A_5-° chapa ok.txt",
         "MDF 9MM E6MM PARTE A_4-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_3-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_2-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_1-° chapa OK.txt",
+        "MDF 9MM E6MM ESCADA  A_3-° chapa OK.txt",
+        "MDF 9MM E6MM ESCADA AA_2-° chapa OK.txt",
+        "MDF 9MM E6MM  ESCADA A_1-° chapa OK.txt",
         "MDF 9MM RAMPA A1_2-°CHAPA OK.txt",
         "MDF 9MM RAMPA A1_1-°CHAPA ok.txt"
       ],
@@ -4309,10 +4481,39 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 42 chapas geradas",
+      "statusLabel": "Lote Pronto: 61 chapas geradas",
       "hasGcode": true,
-      "chapasCount": 42,
+      "hasCrv": true,
+      "crvName": "MDF 9MM RAMPA D.crv3d",
+      "chapasCount": 61,
       "chapasList": [
+        "MDF 9MM E6MM rampa C_5-° chapa.txt",
+        "MDF 9MM E6MM rampa C_4-° chapa.txt",
+        "MDF 9MM E6MM rampa C_3-° chapa.txt",
+        "MDF 9MM E6MM rampa C_2-° chapa.txt",
+        "MDF 9MM E6MM rampa C_1-° chapa.txt",
+        "MDF 9MM E6MM rampa D_14-° chapa.txt",
+        "MDF 9MM E6MM rampa D_13-° chapa.txt",
+        "MDF 9MM E6MM rampa D_12-° chapa.txt",
+        "MDF 9MM E6MM rampa D_11-° chapa.txt",
+        "MDF 9MM E6MM rampa D_10-° chapa.txt",
+        "MDF 9MM E6MM rampa D_9-° chapa.txt",
+        "MDF 9MM E6MM rampa D_8-° chapa.txt",
+        "MDF 9MM E6MM rampa D_7-° chapa.txt",
+        "MDF 9MM E6MM rampa D_6-° chapa.txt",
+        "MDF 9MM E6MM rampa D_5-° chapa.txt",
+        "MDF 9MM E6MM rampa D_4-° chapa.txt",
+        "MDF 9MM E6MM rampa D_3-° chapa.txt",
+        "MDF 9MM E6MM rampa D_2-° chapa.txt",
+        "MDF 9MM E6MM rampa D_1-° chapa.txt",
+        "MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
+        "MDF 9MM E6MM rampa (R.B.)_7-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_6-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_5-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_4-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_3-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_2-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_1-° chapa OK.txt",
         "MDF 9MM E6MM ESCADA D_7-° chapa.txt",
         "MDF 9MM E6MM ESCADA D_6-° chapa.txt",
         "MDF 9MM E6MM ESCADA D_5-° chapa.txt",
@@ -4323,14 +4524,6 @@
         "MDF 9MM E6MM ESCADA C_3-° chapa.txt",
         "MDF 9MM E6MM ESCADA C_2-° chapa.txt",
         "MDF 9MM E6MM ESCADA C_1-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_6-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_7-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_5-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_4-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_3-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_2-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_1-° chapa.txt",
         "MDF 9MM E6MM PARTE B_13-Corte 7 OK.txt",
         "MDF 9MM E6MM PARTE B_12-Corte 6 OK.txt",
         "MDF 9MM E6MM PARTE B_11-° chapa OK.txt",
@@ -4350,9 +4543,9 @@
         "MDF 9MM E6MM PARTE A_6-° chapa OK.txt",
         "MDF 9MM E6MM PARTE A_5-° chapa ok.txt",
         "MDF 9MM E6MM PARTE A_4-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_3-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_2-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_1-° chapa OK.txt",
+        "MDF 9MM E6MM ESCADA  A_3-° chapa OK.txt",
+        "MDF 9MM E6MM ESCADA AA_2-° chapa OK.txt",
+        "MDF 9MM E6MM  ESCADA A_1-° chapa OK.txt",
         "MDF 9MM RAMPA A1_2-°CHAPA OK.txt",
         "MDF 9MM RAMPA A1_1-°CHAPA ok.txt"
       ],
@@ -4376,10 +4569,39 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 42 chapas geradas",
+      "statusLabel": "Lote Pronto: 61 chapas geradas",
       "hasGcode": true,
-      "chapasCount": 42,
+      "hasCrv": true,
+      "crvName": "MDF 9MM RAMPA D.crv3d",
+      "chapasCount": 61,
       "chapasList": [
+        "MDF 9MM E6MM rampa C_5-° chapa.txt",
+        "MDF 9MM E6MM rampa C_4-° chapa.txt",
+        "MDF 9MM E6MM rampa C_3-° chapa.txt",
+        "MDF 9MM E6MM rampa C_2-° chapa.txt",
+        "MDF 9MM E6MM rampa C_1-° chapa.txt",
+        "MDF 9MM E6MM rampa D_14-° chapa.txt",
+        "MDF 9MM E6MM rampa D_13-° chapa.txt",
+        "MDF 9MM E6MM rampa D_12-° chapa.txt",
+        "MDF 9MM E6MM rampa D_11-° chapa.txt",
+        "MDF 9MM E6MM rampa D_10-° chapa.txt",
+        "MDF 9MM E6MM rampa D_9-° chapa.txt",
+        "MDF 9MM E6MM rampa D_8-° chapa.txt",
+        "MDF 9MM E6MM rampa D_7-° chapa.txt",
+        "MDF 9MM E6MM rampa D_6-° chapa.txt",
+        "MDF 9MM E6MM rampa D_5-° chapa.txt",
+        "MDF 9MM E6MM rampa D_4-° chapa.txt",
+        "MDF 9MM E6MM rampa D_3-° chapa.txt",
+        "MDF 9MM E6MM rampa D_2-° chapa.txt",
+        "MDF 9MM E6MM rampa D_1-° chapa.txt",
+        "MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
+        "MDF 9MM E6MM rampa (R.B.)_7-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_6-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_5-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_4-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_3-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_2-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_1-° chapa OK.txt",
         "MDF 9MM E6MM ESCADA D_7-° chapa.txt",
         "MDF 9MM E6MM ESCADA D_6-° chapa.txt",
         "MDF 9MM E6MM ESCADA D_5-° chapa.txt",
@@ -4390,14 +4612,6 @@
         "MDF 9MM E6MM ESCADA C_3-° chapa.txt",
         "MDF 9MM E6MM ESCADA C_2-° chapa.txt",
         "MDF 9MM E6MM ESCADA C_1-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_6-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_7-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_5-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_4-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_3-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_2-° chapa.txt",
-        "MDF 9MM E6MM rampa (R.B.)_1-° chapa.txt",
         "MDF 9MM E6MM PARTE B_13-Corte 7 OK.txt",
         "MDF 9MM E6MM PARTE B_12-Corte 6 OK.txt",
         "MDF 9MM E6MM PARTE B_11-° chapa OK.txt",
@@ -4417,9 +4631,9 @@
         "MDF 9MM E6MM PARTE A_6-° chapa OK.txt",
         "MDF 9MM E6MM PARTE A_5-° chapa ok.txt",
         "MDF 9MM E6MM PARTE A_4-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_3-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_2-° chapa OK.txt",
-        "MDF 9MM E6MM PARTE A_1-° chapa OK.txt",
+        "MDF 9MM E6MM ESCADA  A_3-° chapa OK.txt",
+        "MDF 9MM E6MM ESCADA AA_2-° chapa OK.txt",
+        "MDF 9MM E6MM  ESCADA A_1-° chapa OK.txt",
         "MDF 9MM RAMPA A1_2-°CHAPA OK.txt",
         "MDF 9MM RAMPA A1_1-°CHAPA ok.txt"
       ],
@@ -4436,17 +4650,28 @@
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
       "subfolderName": "SALA ESCADAS",
       "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
-        "chapaIndex": null,
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "8",
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": [],
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 8 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "moldura 200 unidadesRAMPA B.crv3d",
+      "chapasCount": 8,
+      "chapasList": [
+        "MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
+        "MDF 9MM E6MM rampa (R.B.)_7-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_6-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_5-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_4-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_3-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_2-° chapa OK.txt",
+        "MDF 9MM E6MM rampa (R.B.)_1-° chapa OK.txt"
+      ],
       "isManuallyDone": false
     },
     {
@@ -4469,6 +4694,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 2 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "mdf 9mm.crv3d",
       "chapasCount": 2,
       "chapasList": [
         "mdf 9mm e4mm_2-° chapa.txt",
@@ -4496,6 +4723,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 1 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 1,
       "chapasList": [
         "mdf 15mm e4mm.txt"
@@ -4522,6 +4751,8 @@
       "stageStatus": "aguardando_lote_aspire",
       "statusLabel": "Aguardando Gerar Chapas no Aspire",
       "hasGcode": false,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 0,
       "chapasList": [],
       "isManuallyDone": true
@@ -4546,6 +4777,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 1 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 1,
       "chapasList": [
         "MDF 3MM E4 MM JANELAS_1-Corte 2.txt"
@@ -4572,6 +4805,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 5 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "MDF 9MM.crv3d",
       "chapasCount": 5,
       "chapasList": [
         "MDF 9MM e4mm_5-°CHAPA.txt",
@@ -4602,6 +4837,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 2 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "CAMBOTA APLIQUE COMPENSADO 10MM.crv3d",
       "chapasCount": 2,
       "chapasList": [
         "CAMBOTA compensado 10mm_1-Corte 1.txt",
@@ -4629,6 +4866,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 2 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 2,
       "chapasList": [
         "2X COMPENSADO 6MM E6MM_1-Corte 2.txt",
@@ -4653,10 +4892,12 @@
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Salvo no Aspire (MDF 15MM.crv3d)",
       "hasGcode": false,
-      "chapasCount": 0,
+      "hasCrv": true,
+      "crvName": "MDF 15MM.crv3d",
+      "chapasCount": 1,
       "chapasList": [],
       "isManuallyDone": true
     },
@@ -4680,6 +4921,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 10 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "MDF 9MM.crv3d",
       "chapasCount": 10,
       "chapasList": [
         "APLIQUE MDF 9MM_6-Corte 10.txt",
@@ -4715,6 +4958,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 11 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "MDF 9MM.crv3d",
       "chapasCount": 11,
       "chapasList": [
         "MDF 9MM E4MM 3 JANELAS CORTE 2_1-Corte 4.txt",
@@ -4743,16 +4988,21 @@
       "subfolderName": "TEXTURA_PAREDE_TIJOLOS MDF 9 TESTE",
       "matInfo": {
         "material": null,
-        "thickness": null,
-        "tag": null,
-        "chapaIndex": null,
+        "thickness": "4mm",
+        "tag": "4mm",
+        "chapaIndex": "1",
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": [],
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 2 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
+      "chapasCount": 2,
+      "chapasList": [
+        "TEXTURA TIJOLOS especiais E4MM_1-2-Corte 3.txt",
+        "teste tijolo final mdf 9mm  descida 3mm fresa e4mm.txt"
+      ],
       "isManuallyDone": true
     },
     {
@@ -4767,16 +5017,21 @@
       "subfolderName": "TEXTURA_PAREDE_TIJOLOS MDF 9 TESTE",
       "matInfo": {
         "material": null,
-        "thickness": null,
-        "tag": null,
-        "chapaIndex": null,
+        "thickness": "4mm",
+        "tag": "4mm",
+        "chapaIndex": "1",
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": [],
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 2 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
+      "chapasCount": 2,
+      "chapasList": [
+        "TEXTURA TIJOLOS especiais E4MM_1-2-Corte 3.txt",
+        "teste tijolo final mdf 9mm  descida 3mm fresa e4mm.txt"
+      ],
       "isManuallyDone": true
     },
     {
@@ -4799,6 +5054,8 @@
       "stageStatus": "aguardando_lote_aspire",
       "statusLabel": "Aguardando Gerar Chapas no Aspire",
       "hasGcode": false,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 0,
       "chapasList": [],
       "isManuallyDone": true
@@ -4815,16 +5072,21 @@
       "subfolderName": "TEXTURA_PAREDE_TIJOLOS MDF 9 TESTE",
       "matInfo": {
         "material": null,
-        "thickness": null,
-        "tag": null,
-        "chapaIndex": null,
+        "thickness": "4mm",
+        "tag": "4mm",
+        "chapaIndex": "1",
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": [],
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 2 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
+      "chapasCount": 2,
+      "chapasList": [
+        "TEXTURA TIJOLOS especiais E4MM_1-2-Corte 3.txt",
+        "teste tijolo final mdf 9mm  descida 3mm fresa e4mm.txt"
+      ],
       "isManuallyDone": true
     },
     {
@@ -4847,6 +5109,8 @@
       "stageStatus": "aguardando_lote_aspire",
       "statusLabel": "Aguardando Gerar Chapas no Aspire",
       "hasGcode": false,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 0,
       "chapasList": [],
       "isManuallyDone": true
@@ -4871,6 +5135,8 @@
       "stageStatus": "aguardando_lote_aspire",
       "statusLabel": "Aguardando Gerar Chapas no Aspire",
       "hasGcode": false,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 0,
       "chapasList": [],
       "isManuallyDone": true
@@ -4895,6 +5161,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 12 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "compensado certo 6mm.crv3d",
       "chapasCount": 12,
       "chapasList": [
         "A compensado 6mm e6mm_12-°CHAPA.txt",
@@ -4932,6 +5200,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 7 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "lateral compensado 6mm.crv3d",
       "chapasCount": 7,
       "chapasList": [
         "2 compensado 6mm fundo raio  e6mm_1-Corte 2.txt",
@@ -4964,6 +5234,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 4 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "MDF 9MM.crv3d",
       "chapasCount": 4,
       "chapasList": [
         "corte mdf9mm e4mm_1.txt",
@@ -4993,6 +5265,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 3 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "compensado de 6mm.crv3d",
       "chapasCount": 3,
       "chapasList": [
         "2X CHAPA 3 compensado 6mm e6mm.txt",
@@ -5021,6 +5295,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 22 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "MDF 9MM E 15MM.crv3d",
       "chapasCount": 22,
       "chapasList": [
         "MDF 9MM E4MM_1-Corte 29.txt",
@@ -5068,6 +5344,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 22 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "MDF 9MM E 15MM.crv3d",
       "chapasCount": 22,
       "chapasList": [
         "MDF 9MM E4MM_1-Corte 29.txt",
@@ -5115,6 +5393,8 @@
       "stageStatus": "aguardando_lote_aspire",
       "statusLabel": "Aguardando Gerar Chapas no Aspire",
       "hasGcode": false,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 0,
       "chapasList": [],
       "isManuallyDone": true
@@ -5139,6 +5419,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 5 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 5,
       "chapasList": [
         "compensado e6mm_5-Corte 5.txt",
@@ -5169,6 +5451,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 3 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "MDF 15MM.crv3d",
       "chapasCount": 3,
       "chapasList": [
         "CHAPA 3 MDF 15MM E4MM.txt",
@@ -5197,6 +5481,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 11 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "MDF 9MM.crv3d",
       "chapasCount": 11,
       "chapasList": [
         "MDF 9MM E4MM 3 JANELAS CORTE 2_1-Corte 4.txt",
@@ -5233,6 +5519,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 7 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "MDF 9MM detalhe porta.crv3d",
       "chapasCount": 7,
       "chapasList": [
         "detalhe porta.txt",
@@ -5265,6 +5553,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 6 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "MDF 9MM detalhe porta.crv3d",
       "chapasCount": 6,
       "chapasList": [
         "mdf 9mm e6mm.txt",
@@ -5287,17 +5577,21 @@
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
       "subfolderName": "ARCO COM PILAR INTERNO",
       "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
+        "material": "MDF",
+        "thickness": "15mm",
+        "tag": "MDF 15mm",
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": [],
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 1 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
+      "chapasCount": 1,
+      "chapasList": [
+        "mdf15mm 6mm.txt"
+      ],
       "isManuallyDone": true
     },
     {
@@ -5311,17 +5605,21 @@
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
       "subfolderName": "ARCO COM PILAR INTERNO",
       "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
+        "material": "MDF",
+        "thickness": "15mm",
+        "tag": "MDF 15mm",
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": [],
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 1 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
+      "chapasCount": 1,
+      "chapasList": [
+        "mdf15mm 6mm.txt"
+      ],
       "isManuallyDone": false
     },
     {
@@ -5335,17 +5633,21 @@
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
       "subfolderName": "ARCO COM PILAR INTERNO",
       "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
+        "material": "MDF",
+        "thickness": "15mm",
+        "tag": "MDF 15mm",
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": [],
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 1 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
+      "chapasCount": 1,
+      "chapasList": [
+        "mdf15mm 6mm.txt"
+      ],
       "isManuallyDone": false
     },
     {
@@ -5368,6 +5670,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 2 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 2,
       "chapasList": [
         "chapa 2 mdf 9mm e6mm.txt",
@@ -5395,6 +5699,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 2 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "CAMBOTA COMPENSADO 15MM.crv3d",
       "chapasCount": 2,
       "chapasList": [
         "CAMBOTA COMPENSADO 15MM contorno superior porta E6MM_2-Corte 5.txt",
@@ -5422,6 +5728,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 2 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "CAMBOTA COMPENSADO 15MM.crv3d",
       "chapasCount": 2,
       "chapasList": [
         "CAMBOTA COMPENSADO 15MM contorno superior porta E6MM_2-Corte 5.txt",
@@ -5449,6 +5757,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 1 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "compensado 15mm escada.crv3d",
       "chapasCount": 1,
       "chapasList": [
         "escada chapa 1_1-Corte 1.txt"
@@ -5472,10 +5782,12 @@
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Salvo no Aspire (tudo.crv3d)",
       "hasGcode": false,
-      "chapasCount": 0,
+      "hasCrv": true,
+      "crvName": "tudo.crv3d",
+      "chapasCount": 1,
       "chapasList": [],
       "isManuallyDone": true
     },
@@ -5499,6 +5811,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 3 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "mdf 9mm.crv3d",
       "chapasCount": 3,
       "chapasList": [
         "porta castelo chapa 2 MDF 9MM corte e6mm_1-Corte 3.txt",
@@ -5527,6 +5841,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 6 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "MDF 9MM detalhe porta.crv3d",
       "chapasCount": 6,
       "chapasList": [
         "mdf 9mm e6mm.txt",
@@ -5555,10 +5871,12 @@
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Salvo no Aspire (TESTEIRA ENTRADACOMPENSADO 10MM.crv3d)",
       "hasGcode": false,
-      "chapasCount": 0,
+      "hasCrv": true,
+      "crvName": "TESTEIRA ENTRADACOMPENSADO 10MM.crv3d",
+      "chapasCount": 1,
       "chapasList": [],
       "isManuallyDone": true
     },
@@ -5582,6 +5900,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 3 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "mdf 9mm.crv3d",
       "chapasCount": 3,
       "chapasList": [
         "porta castelo chapa 2 MDF 9MM corte e6mm_1-Corte 3.txt",
@@ -5610,6 +5930,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 1 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 1,
       "chapasList": [
         "detalhe porta mdf 6mm e6mm.txt"
@@ -5633,10 +5955,12 @@
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Salvo no Aspire (TESTEIRA ENTRADACOMPENSADO 10MM.crv3d)",
       "hasGcode": false,
-      "chapasCount": 0,
+      "hasCrv": true,
+      "crvName": "TESTEIRA ENTRADACOMPENSADO 10MM.crv3d",
+      "chapasCount": 1,
       "chapasList": [],
       "isManuallyDone": true
     },
@@ -5660,6 +5984,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 2 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "compensado 10mm.crv3d",
       "chapasCount": 2,
       "chapasList": [
         "compensado 10mm E6MM_1-Corte 2.txt",
@@ -5687,6 +6013,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 9 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "compensado 6mm.crv3d",
       "chapasCount": 9,
       "chapasList": [
         "compensado 6mm_9-Corte.txt",
@@ -5712,17 +6040,21 @@
       "jobName": "2640 - Expresso hogwarts",
       "subfolderName": "2640a PAREDE TIJOLO",
       "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": [],
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 1 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
+      "chapasCount": 1,
+      "chapasList": [
+        "mdf9mm teste tijolo descida 3mm e6mm.txt"
+      ],
       "isManuallyDone": true
     },
     {
@@ -5736,17 +6068,21 @@
       "jobName": "2640 - Expresso hogwarts",
       "subfolderName": "2640a PAREDE TIJOLO",
       "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": [],
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 1 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
+      "chapasCount": 1,
+      "chapasList": [
+        "mdf9mm teste tijolo descida 3mm e6mm.txt"
+      ],
       "isManuallyDone": true
     },
     {
@@ -5760,17 +6096,21 @@
       "jobName": "2640 - Expresso hogwarts",
       "subfolderName": "2640a PAREDE TIJOLO",
       "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": [],
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 1 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "PAREDE TIJOLO.crv3d",
+      "chapasCount": 1,
+      "chapasList": [
+        "mdf9mm teste tijolo descida 3mm e6mm.txt"
+      ],
       "isManuallyDone": true
     },
     {
@@ -5793,6 +6133,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 1 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 1,
       "chapasList": [
         "mdf9mm teste tijolo descida 3mm e6mm.txt"
@@ -5819,6 +6161,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 1 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 1,
       "chapasList": [
         "mdf9mm teste tijolo descida 3mm e6mm.txt"
@@ -5842,10 +6186,12 @@
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Salvo no Aspire (COMPENSADO bandeira.crv3d)",
       "hasGcode": false,
-      "chapasCount": 0,
+      "hasCrv": true,
+      "crvName": "COMPENSADO bandeira.crv3d",
+      "chapasCount": 1,
       "chapasList": [],
       "isManuallyDone": true
     },
@@ -5866,10 +6212,12 @@
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Salvo no Aspire (COMPENSADO bandeira.crv3d)",
       "hasGcode": false,
-      "chapasCount": 0,
+      "hasCrv": true,
+      "crvName": "COMPENSADO bandeira.crv3d",
+      "chapasCount": 1,
       "chapasList": [],
       "isManuallyDone": true
     },
@@ -5890,10 +6238,12 @@
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Salvo no Aspire (COMPENSADO bandeira.crv3d)",
       "hasGcode": false,
-      "chapasCount": 0,
+      "hasCrv": true,
+      "crvName": "COMPENSADO bandeira.crv3d",
+      "chapasCount": 1,
       "chapasList": [],
       "isManuallyDone": true
     },
@@ -5917,6 +6267,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 3 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "complemento mdf9mm.crv3d",
       "chapasCount": 3,
       "chapasList": [
         "painel atualizado mdf9mm e4mm.txt",
@@ -5945,6 +6297,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 1 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "mdf 15mm.crv3d",
       "chapasCount": 1,
       "chapasList": [
         "mdf15mm complementos tv cultura e4mm.txt"
@@ -5971,6 +6325,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 1 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "mdf15mm.crv3d",
       "chapasCount": 1,
       "chapasList": [
         "mdf15mm complementos tv cultura e4mm.txt"
@@ -5997,6 +6353,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 3 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "complemento mdf9mm.crv3d",
       "chapasCount": 3,
       "chapasList": [
         "painel atualizado mdf9mm e4mm.txt",
@@ -6025,6 +6383,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 3 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "complemento mdf9mm.crv3d",
       "chapasCount": 3,
       "chapasList": [
         "painel atualizado mdf9mm e4mm.txt",
@@ -6044,17 +6404,23 @@
       "jobName": "2667A - EXPO CULTURA",
       "subfolderName": "2667A - EXPO CULTURA - PAREDE XTUDO",
       "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": [],
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 3 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
+      "chapasCount": 3,
+      "chapasList": [
+        "painel atualizado mdf9mm e4mm.txt",
+        "mdf9mm xtudo e4mm.txt",
+        "mdf9mm e6mm.txt"
+      ],
       "isManuallyDone": true
     },
     {
@@ -6077,6 +6443,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 1 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 1,
       "chapasList": [
         "routers pequeno principe mdf9mm e4mm.txt"
@@ -6100,10 +6468,12 @@
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Salvo no Aspire (tafife atualizado mdf 66mm naval.crv3d)",
       "hasGcode": false,
-      "chapasCount": 0,
+      "hasCrv": true,
+      "crvName": "tafife atualizado mdf 66mm naval.crv3d",
+      "chapasCount": 1,
       "chapasList": [],
       "isManuallyDone": true
     },
@@ -6127,6 +6497,8 @@
       "stageStatus": "aguardando_lote_aspire",
       "statusLabel": "Aguardando Gerar Chapas no Aspire",
       "hasGcode": false,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 0,
       "chapasList": [],
       "isManuallyDone": true
@@ -6151,6 +6523,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 14 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "correçao meiomdf 9mm naval.crv3d",
       "chapasCount": 14,
       "chapasList": [
         "chapa 14 mdf9mm e4mm .txt",
@@ -6190,6 +6564,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 6 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 6,
       "chapasList": [
         "mdf9mm complementos tv cultura e4mm.txt",
@@ -6221,6 +6597,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 1 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "mdf 9mm.crv3d",
       "chapasCount": 1,
       "chapasList": [
         "teste raio atualizado mdf9mm e4mm.txt"
@@ -6247,6 +6625,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 5 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 5,
       "chapasList": [
         "CORREÇAO RECUO  BALCAO COMPENSADO 10MM E6MM.txt",
@@ -6277,6 +6657,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 2 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 2,
       "chapasList": [
         "chapa 2 mdf 3mm mascara carneiro  e4mm.txt",
@@ -6304,6 +6686,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 2 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 2,
       "chapasList": [
         "chapa 2 mdf 3mm mascara carneiro  e4mm.txt",
@@ -6331,6 +6715,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 5 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 5,
       "chapasList": [
         "CORREÇAO RECUO  BALCAO COMPENSADO 10MM E6MM.txt",
@@ -6361,6 +6747,8 @@
       "stageStatus": "aguardando_lote_aspire",
       "statusLabel": "Aguardando Gerar Chapas no Aspire",
       "hasGcode": false,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 0,
       "chapasList": [],
       "isManuallyDone": true
@@ -6385,6 +6773,8 @@
       "stageStatus": "aguardando_lote_aspire",
       "statusLabel": "Aguardando Gerar Chapas no Aspire",
       "hasGcode": false,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 0,
       "chapasList": [],
       "isManuallyDone": true
@@ -6409,6 +6799,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 14 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "correçao meiomdf 9mm naval.crv3d",
       "chapasCount": 14,
       "chapasList": [
         "chapa 14 mdf9mm e4mm .txt",
@@ -6448,6 +6840,8 @@
       "stageStatus": "aguardando_lote_aspire",
       "statusLabel": "Aguardando Gerar Chapas no Aspire",
       "hasGcode": false,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 0,
       "chapasList": [],
       "isManuallyDone": true
@@ -6472,6 +6866,8 @@
       "stageStatus": "aguardando_lote_aspire",
       "statusLabel": "Aguardando Gerar Chapas no Aspire",
       "hasGcode": false,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 0,
       "chapasList": [],
       "isManuallyDone": true
@@ -6496,6 +6892,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 6 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 6,
       "chapasList": [
         "CORREÇAO corte chapa 3 mdf 15mm e6mm.txt",
@@ -6527,6 +6925,8 @@
       "stageStatus": "aguardando_lote_aspire",
       "statusLabel": "Aguardando Gerar Chapas no Aspire",
       "hasGcode": false,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 0,
       "chapasList": [],
       "isManuallyDone": true
@@ -6551,6 +6951,8 @@
       "stageStatus": "aguardando_lote_aspire",
       "statusLabel": "Aguardando Gerar Chapas no Aspire",
       "hasGcode": false,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 0,
       "chapasList": [],
       "isManuallyDone": true
@@ -6575,6 +6977,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 2 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 2,
       "chapasList": [
         "mdf 9mm cambota 5mm.txt",
@@ -6602,6 +7006,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 5 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "acrilico 6mm -2.crv3d",
       "chapasCount": 5,
       "chapasList": [
         "corte acrilico 6mm peça 3 e6mm.txt",
@@ -6632,6 +7038,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 5 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "acrilico 6mm -2.crv3d",
       "chapasCount": 5,
       "chapasList": [
         "corte acrilico 6mm peça 3 e6mm.txt",
@@ -6662,6 +7070,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 5 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "acrilico 6mm -2.crv3d",
       "chapasCount": 5,
       "chapasList": [
         "corte acrilico 6mm peça 3 e6mm.txt",
@@ -6692,6 +7102,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 1 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "mdf 15mm.crv3d",
       "chapasCount": 1,
       "chapasList": [
         "mdf 15mm cambota reduzida.txt"
@@ -6718,6 +7130,8 @@
       "stageStatus": "aguardando_lote_aspire",
       "statusLabel": "Aguardando Gerar Chapas no Aspire",
       "hasGcode": false,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 0,
       "chapasList": [],
       "isManuallyDone": true
@@ -6742,6 +7156,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 1 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "mdf6mm.crv3d",
       "chapasCount": 1,
       "chapasList": [
         "mdf6mm e6mm.txt"
@@ -6765,10 +7181,12 @@
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Salvo no Aspire (escada compensado 6mm.crv3d)",
       "hasGcode": false,
-      "chapasCount": 0,
+      "hasCrv": true,
+      "crvName": "escada compensado 6mm.crv3d",
+      "chapasCount": 1,
       "chapasList": [],
       "isManuallyDone": true
     },
@@ -6789,10 +7207,12 @@
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Salvo no Aspire (corredor capacete.crv3d)",
       "hasGcode": false,
-      "chapasCount": 0,
+      "hasCrv": true,
+      "crvName": "corredor capacete.crv3d",
+      "chapasCount": 1,
       "chapasList": [],
       "isManuallyDone": true
     },
@@ -6816,6 +7236,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 2 chapas geradas",
       "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
       "chapasCount": 2,
       "chapasList": [
         "routers pequeno principe mdf9mm e4mm.txt",
@@ -6840,11 +7262,15 @@
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
-      "hasGcode": false,
-      "chapasCount": 0,
-      "chapasList": [],
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 1 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
+      "chapasCount": 1,
+      "chapasList": [
+        "CHANFRO.txt"
+      ],
       "isManuallyDone": true
     },
     {
@@ -6867,6 +7293,8 @@
       "stageStatus": "lote_liberado",
       "statusLabel": "Lote Pronto: 3 chapas geradas",
       "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "compensado 15 mm.crv3d",
       "chapasCount": 3,
       "chapasList": [
         "compensado 15mm -parte 3 e6mm.txt",
@@ -6892,10 +7320,12 @@
         "chapaIndex": "2",
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Salvo no Aspire (parte 3 COMPENSADO 15.crv3d)",
       "hasGcode": false,
-      "chapasCount": 0,
+      "hasCrv": true,
+      "crvName": "parte 3 COMPENSADO 15.crv3d",
+      "chapasCount": 1,
       "chapasList": [],
       "isManuallyDone": true
     },
@@ -6916,10 +7346,12 @@
         "chapaIndex": "1",
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Salvo no Aspire (parte 3 COMPENSADO 15.crv3d)",
       "hasGcode": false,
-      "chapasCount": 0,
+      "hasCrv": true,
+      "crvName": "parte 3 COMPENSADO 15.crv3d",
+      "chapasCount": 1,
       "chapasList": [],
       "isManuallyDone": true
     },
@@ -6940,15 +7372,545 @@
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_lote_aspire",
-      "statusLabel": "Aguardando Gerar Chapas no Aspire",
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Salvo no Aspire (mdf 15mm porta.crv3d)",
       "hasGcode": false,
-      "chapasCount": 0,
+      "hasCrv": true,
+      "crvName": "mdf 15mm porta.crv3d",
+      "chapasCount": 1,
       "chapasList": [],
       "isManuallyDone": true
     }
   ],
   "gcodeProntos": [
+    {
+      "name": "4 pvc100mm b12mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640 - entrada\\ENTRADA\\ISOPOR\\ARCO A\\4 pvc100mm b12mm.txt",
+      "size": 1011834,
+      "mtime": 1793464621372.1619,
+      "mtimeDate": "2026-10-31T16:37:01.372Z",
+      "jobName": "2640 - Expresso hogwarts",
+      "subfolderName": "ARCO A",
+      "matInfo": {
+        "material": "PVC",
+        "thickness": "100mm",
+        "tag": "PVC 100mm",
+        "chapaIndex": "4",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": true,
+      "isReopened": true,
+      "runningMachine": "Router 2",
+      "runningStartTime": "2026-11-09T20:36:07.000Z"
+    },
+    {
+      "name": "4 pvc100mm b12mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\ENTRADA\\ISOPOR\\ARCO A\\COD\\4 pvc100mm b12mm.txt",
+      "size": 1011822,
+      "mtime": 1793374957000,
+      "mtimeDate": "2026-10-30T15:42:37.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCO A",
+      "matInfo": {
+        "material": "PVC",
+        "thickness": "100mm",
+        "tag": "PVC 100mm",
+        "chapaIndex": "4",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": true,
+      "isReopened": true,
+      "runningMachine": "Router 2",
+      "runningStartTime": "2026-11-09T20:36:07.000Z"
+    },
+    {
+      "name": "modura escada mdf 15mm_2-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\modura escada mdf 15mm_2-° chapa.txt",
+      "size": 4463866,
+      "mtime": 1794255688147.1765,
+      "mtimeDate": "2026-11-09T20:21:28.147Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "15mm",
+        "tag": "MDF 15mm",
+        "chapaIndex": "2",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "modura escada mdf 15mm_1-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\modura escada mdf 15mm_1-° chapa.txt",
+      "size": 2102893,
+      "mtime": 1794255687657.7874,
+      "mtimeDate": "2026-11-09T20:21:27.658Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "15mm",
+        "tag": "MDF 15mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa C_5-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa C_5-° chapa.txt",
+      "size": 64339,
+      "mtime": 1794254577758.0835,
+      "mtimeDate": "2026-11-09T20:02:57.758Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "5",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa C_4-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa C_4-° chapa.txt",
+      "size": 86957,
+      "mtime": 1794254577737.1672,
+      "mtimeDate": "2026-11-09T20:02:57.737Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "4",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa C_3-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa C_3-° chapa.txt",
+      "size": 109321,
+      "mtime": 1794254577706.5337,
+      "mtimeDate": "2026-11-09T20:02:57.707Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "3",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa C_2-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa C_2-° chapa.txt",
+      "size": 65254,
+      "mtime": 1794254577662.073,
+      "mtimeDate": "2026-11-09T20:02:57.662Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "2",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa C_1-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa C_1-° chapa.txt",
+      "size": 66378,
+      "mtime": 1794254577634.9614,
+      "mtimeDate": "2026-11-09T20:02:57.635Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa D_14-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa D_14-° chapa.txt",
+      "size": 43402,
+      "mtime": 1794252259452.584,
+      "mtimeDate": "2026-11-09T19:24:19.453Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "14",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa D_13-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa D_13-° chapa.txt",
+      "size": 85303,
+      "mtime": 1794252259433.5388,
+      "mtimeDate": "2026-11-09T19:24:19.434Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "13",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa D_12-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa D_12-° chapa.txt",
+      "size": 86068,
+      "mtime": 1794252259411.4402,
+      "mtimeDate": "2026-11-09T19:24:19.411Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "12",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa D_11-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa D_11-° chapa.txt",
+      "size": 87774,
+      "mtime": 1794252259387.1057,
+      "mtimeDate": "2026-11-09T19:24:19.387Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "11",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa D_10-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa D_10-° chapa.txt",
+      "size": 63850,
+      "mtime": 1794252259362.6255,
+      "mtimeDate": "2026-11-09T19:24:19.363Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "10",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa D_9-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa D_9-° chapa.txt",
+      "size": 63348,
+      "mtime": 1794252259340.9124,
+      "mtimeDate": "2026-11-09T19:24:19.341Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "9",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa D_8-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa D_8-° chapa.txt",
+      "size": 60192,
+      "mtime": 1794252259318.7827,
+      "mtimeDate": "2026-11-09T19:24:19.319Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "8",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa D_7-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa D_7-° chapa.txt",
+      "size": 63690,
+      "mtime": 1794252259297.8071,
+      "mtimeDate": "2026-11-09T19:24:19.298Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "7",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa D_6-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa D_6-° chapa.txt",
+      "size": 73851,
+      "mtime": 1794252259273.8948,
+      "mtimeDate": "2026-11-09T19:24:19.274Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "6",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa D_5-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa D_5-° chapa.txt",
+      "size": 60892,
+      "mtime": 1794252259247.9954,
+      "mtimeDate": "2026-11-09T19:24:19.248Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "5",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa D_4-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa D_4-° chapa.txt",
+      "size": 65390,
+      "mtime": 1794252259221.5635,
+      "mtimeDate": "2026-11-09T19:24:19.222Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "4",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa D_3-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa D_3-° chapa.txt",
+      "size": 65582,
+      "mtime": 1794252259183.5967,
+      "mtimeDate": "2026-11-09T19:24:19.184Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "3",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa D_2-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa D_2-° chapa.txt",
+      "size": 66996,
+      "mtime": 1794252259155.641,
+      "mtimeDate": "2026-11-09T19:24:19.156Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "2",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa D_1-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa D_1-° chapa.txt",
+      "size": 99634,
+      "mtime": 1794252259131.733,
+      "mtimeDate": "2026-11-09T19:24:19.132Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
+      "size": 52981,
+      "mtime": 1794247558082.8418,
+      "mtimeDate": "2026-11-09T18:05:58.083Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "8",
+        "targetQuantity": 1
+      },
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
     {
       "name": "MDF 9MM E6MM ESCADA D_7-° chapa.txt",
       "ext": ".txt",
@@ -7170,240 +8132,20 @@
       "runningStartTime": null
     },
     {
-      "name": "MDF 9MM E6MM rampa (R.B.)_6-° chapa.txt",
+      "name": "1 pvc100mm b10mm.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa (R.B.)_6-° chapa.txt",
-      "size": 82671,
-      "mtime": 1794241268276.4453,
-      "mtimeDate": "2026-11-09T16:21:08.276Z",
+      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\FACHADA PHOTO OPP\\ISOPOR\\COLUNAS\\1 pvc100mm b10mm.txt",
+      "size": 1373660,
+      "mtime": 1793856875000,
+      "mtimeDate": "2026-11-05T05:34:35.000Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "SALA ESCADAS",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": "6",
-        "targetQuantity": 1
-      },
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "MDF 9MM E6MM rampa (R.B.)_7-° chapa.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa (R.B.)_7-° chapa.txt",
-      "size": 74810,
-      "mtime": 1794241183226.0996,
-      "mtimeDate": "2026-11-09T16:19:43.226Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "SALA ESCADAS",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": "7",
-        "targetQuantity": 1
-      },
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa (R.B.)_8-° chapa.txt",
-      "size": 52981,
-      "mtime": 1794235552062.7075,
-      "mtimeDate": "2026-11-09T14:45:52.063Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "SALA ESCADAS",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": "8",
-        "targetQuantity": 1
-      },
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "MDF 9MM E6MM rampa (R.B.)_5-° chapa.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa (R.B.)_5-° chapa.txt",
-      "size": 89121,
-      "mtime": 1794235552009.1284,
-      "mtimeDate": "2026-11-09T14:45:52.009Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "SALA ESCADAS",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": "5",
-        "targetQuantity": 1
-      },
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "MDF 9MM E6MM rampa (R.B.)_4-° chapa.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa (R.B.)_4-° chapa.txt",
-      "size": 82265,
-      "mtime": 1794235551988.3796,
-      "mtimeDate": "2026-11-09T14:45:51.988Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "SALA ESCADAS",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": "4",
-        "targetQuantity": 1
-      },
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "MDF 9MM E6MM rampa (R.B.)_3-° chapa.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa (R.B.)_3-° chapa.txt",
-      "size": 82385,
-      "mtime": 1794235551947.1804,
-      "mtimeDate": "2026-11-09T14:45:51.947Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "SALA ESCADAS",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": "3",
-        "targetQuantity": 1
-      },
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "MDF 9MM E6MM rampa (R.B.)_2-° chapa.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa (R.B.)_2-° chapa.txt",
-      "size": 95575,
-      "mtime": 1794235551925.6062,
-      "mtimeDate": "2026-11-09T14:45:51.926Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "SALA ESCADAS",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": "2",
-        "targetQuantity": 1
-      },
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "MDF 9MM E6MM rampa (R.B.)_1-° chapa.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa (R.B.)_1-° chapa.txt",
-      "size": 51676,
-      "mtime": 1794235551874.2083,
-      "mtimeDate": "2026-11-09T14:45:51.874Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "SALA ESCADAS",
-      "matInfo": {
-        "material": "MDF",
-        "thickness": "9mm",
-        "tag": "MDF 9mm",
-        "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "1 PVC+ 100mm B10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\FACHADA CASAS\\ISOPOR\\1 PVC+ 100mm B10mm.txt",
-      "size": 374429,
-      "mtime": 1793650456000,
-      "mtimeDate": "2026-11-02T20:14:16.000Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ISOPOR",
+      "subfolderName": "COLUNAS",
       "matInfo": {
         "material": "PVC",
         "thickness": "100mm",
         "tag": "PVC 100mm",
         "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "1 PVC+ 100mm B10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA CASTELO\\1 PVC+ 100mm B10mm.txt",
-      "size": 358251,
-      "mtime": 1793650456000,
-      "mtimeDate": "2026-11-02T20:14:16.000Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "FACHADA CASTELO",
-      "matInfo": {
-        "material": "PVC",
-        "thickness": "100mm",
-        "tag": "PVC 100mm",
-        "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "4 pvc100mm b12mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640 - entrada\\ENTRADA\\ISOPOR\\ARCO A\\4 pvc100mm b12mm.txt",
-      "size": 1011834,
-      "mtime": 1793464621372.1619,
-      "mtimeDate": "2026-10-31T16:37:01.372Z",
-      "jobName": "2640 - Expresso hogwarts",
-      "subfolderName": "ARCO A",
-      "matInfo": {
-        "material": "PVC",
-        "thickness": "100mm",
-        "tag": "PVC 100mm",
-        "chapaIndex": "4",
         "targetQuantity": 1
       },
       "isCurrentlyRunning": false,
@@ -7412,37 +8154,15 @@
       "runningStartTime": null
     },
     {
-      "name": "3 pvc100mm b12mm.txt",
+      "name": "2 pvc100mm b10mm.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640 - entrada\\ENTRADA\\ISOPOR\\ARCO A\\3 pvc100mm b12mm.txt",
-      "size": 729592,
-      "mtime": 1793460369334.6348,
-      "mtimeDate": "2026-10-31T15:26:09.335Z",
-      "jobName": "2640 - Expresso hogwarts",
-      "subfolderName": "ARCO A",
-      "matInfo": {
-        "material": "PVC",
-        "thickness": "100mm",
-        "tag": "PVC 100mm",
-        "chapaIndex": "3",
-        "targetQuantity": 1
-      },
-      "isCurrentlyRunning": false,
-      "isReopened": true,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "2 pvc100mm b12mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\ENTRADA\\ISOPOR\\ARCO A\\COD\\2 pvc100mm b12mm.txt",
-      "size": 725817,
-      "mtime": 1793374997000,
-      "mtimeDate": "2026-10-30T15:43:17.000Z",
+      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\FACHADA PHOTO OPP\\ISOPOR\\COLUNAS\\2 pvc100mm b10mm.txt",
+      "size": 1315876,
+      "mtime": 1793856836000,
+      "mtimeDate": "2026-11-05T05:33:56.000Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCO A",
+      "subfolderName": "COLUNAS",
       "matInfo": {
         "material": "PVC",
         "thickness": "100mm",
@@ -7456,42 +8176,20 @@
       "runningStartTime": null
     },
     {
-      "name": "3 pvc100mm b12mm.txt",
+      "name": "3 pvc100mm b10mm.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\ENTRADA\\ISOPOR\\ARCO A\\COD\\3 pvc100mm b12mm.txt",
-      "size": 729580,
-      "mtime": 1793374977000,
-      "mtimeDate": "2026-10-30T15:42:57.000Z",
+      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\FACHADA PHOTO OPP\\ISOPOR\\COLUNAS\\3 pvc100mm b10mm.txt",
+      "size": 1672372,
+      "mtime": 1793856811000,
+      "mtimeDate": "2026-11-05T05:33:31.000Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCO A",
+      "subfolderName": "COLUNAS",
       "matInfo": {
         "material": "PVC",
         "thickness": "100mm",
         "tag": "PVC 100mm",
         "chapaIndex": "3",
-        "targetQuantity": 1
-      },
-      "isCurrentlyRunning": false,
-      "isReopened": true,
-      "runningMachine": null,
-      "runningStartTime": null
-    },
-    {
-      "name": "4 pvc100mm b12mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\ENTRADA\\ISOPOR\\ARCO A\\COD\\4 pvc100mm b12mm.txt",
-      "size": 1011822,
-      "mtime": 1793374957000,
-      "mtimeDate": "2026-10-30T15:42:37.000Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCO A",
-      "matInfo": {
-        "material": "PVC",
-        "thickness": "100mm",
-        "tag": "PVC 100mm",
-        "chapaIndex": "4",
         "targetQuantity": 1
       },
       "isCurrentlyRunning": false,
@@ -7501,6 +8199,211 @@
     }
   ],
   "gcodeFeitos": [
+    {
+      "name": "MDF 9MM E6MM rampa (R.B.)_7-° chapa OK.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa (R.B.)_7-° chapa OK.txt",
+      "size": 74809,
+      "mtime": 1794247558064.9934,
+      "mtimeDate": "2026-11-09T18:05:58.065Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "7",
+        "targetQuantity": 1
+      },
+      "execCount": 1,
+      "lastExec": {
+        "operator_name": "Tomas",
+        "machine_name": "Router 2",
+        "start_time": "2026-11-09T18:05:58.065Z",
+        "duration_minutes": 15
+      },
+      "totalDurationMinutes": 15,
+      "isManuallyDone": false
+    },
+    {
+      "name": "MDF 9MM E6MM rampa (R.B.)_6-° chapa OK.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa (R.B.)_6-° chapa OK.txt",
+      "size": 82670,
+      "mtime": 1794247558039.9548,
+      "mtimeDate": "2026-11-09T18:05:58.040Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "6",
+        "targetQuantity": 1
+      },
+      "execCount": 1,
+      "lastExec": {
+        "id": "10430",
+        "file_name": "MDF 9MM E6MM rampa (R.B.)_6-° chapa OK.txt",
+        "folder": "SALA ESCADAS",
+        "router_name": "Router Central",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T20:27:53.000Z",
+        "end_time": "2026-11-09T20:36:29.000Z",
+        "duration_minutes": 8.6
+      },
+      "totalDurationMinutes": 8.6,
+      "isManuallyDone": false
+    },
+    {
+      "name": "MDF 9MM E6MM rampa (R.B.)_5-° chapa OK.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa (R.B.)_5-° chapa OK.txt",
+      "size": 89120,
+      "mtime": 1794247558021.7334,
+      "mtimeDate": "2026-11-09T18:05:58.022Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "5",
+        "targetQuantity": 1
+      },
+      "execCount": 1,
+      "lastExec": {
+        "operator_name": "Tomas",
+        "machine_name": "Router 2",
+        "start_time": "2026-11-09T18:05:58.022Z",
+        "duration_minutes": 15
+      },
+      "totalDurationMinutes": 15,
+      "isManuallyDone": false
+    },
+    {
+      "name": "MDF 9MM E6MM rampa (R.B.)_4-° chapa OK.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa (R.B.)_4-° chapa OK.txt",
+      "size": 82264,
+      "mtime": 1794247557999.7363,
+      "mtimeDate": "2026-11-09T18:05:58.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "4",
+        "targetQuantity": 1
+      },
+      "execCount": 1,
+      "lastExec": {
+        "id": "10424",
+        "file_name": "MDF 9MM E6MM rampa (R.B.)_4-° chapa OK.txt",
+        "folder": "SALA ESCADAS",
+        "router_name": "Router Central",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T19:51:06.000Z",
+        "end_time": "2026-11-09T20:00:01.000Z",
+        "duration_minutes": 8.91667
+      },
+      "totalDurationMinutes": 8.91667,
+      "isManuallyDone": false
+    },
+    {
+      "name": "MDF 9MM E6MM rampa (R.B.)_3-° chapa OK.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa (R.B.)_3-° chapa OK.txt",
+      "size": 82384,
+      "mtime": 1794247557980.9058,
+      "mtimeDate": "2026-11-09T18:05:57.981Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "3",
+        "targetQuantity": 1
+      },
+      "execCount": 1,
+      "lastExec": {
+        "id": "10420",
+        "file_name": "MDF 9MM E6MM rampa (R.B.)_3-° chapa OK.txt",
+        "folder": "SALA ESCADAS",
+        "router_name": "Router Central",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T19:08:42.000Z",
+        "end_time": "2026-11-09T19:17:45.000Z",
+        "duration_minutes": 9.05
+      },
+      "totalDurationMinutes": 9.05,
+      "isManuallyDone": false
+    },
+    {
+      "name": "MDF 9MM E6MM rampa (R.B.)_2-° chapa OK.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa (R.B.)_2-° chapa OK.txt",
+      "size": 95574,
+      "mtime": 1794247557955.8423,
+      "mtimeDate": "2026-11-09T18:05:57.956Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "2",
+        "targetQuantity": 1
+      },
+      "execCount": 1,
+      "lastExec": {
+        "id": "10417",
+        "file_name": "MDF 9MM E6MM rampa (R.B.)_2-° chapa OK.txt",
+        "folder": "SALA ESCADAS",
+        "router_name": "Router Central",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T18:22:24.000Z",
+        "end_time": "2026-11-09T18:32:14.000Z",
+        "duration_minutes": 9.83333
+      },
+      "totalDurationMinutes": 9.83333,
+      "isManuallyDone": false
+    },
+    {
+      "name": "MDF 9MM E6MM rampa (R.B.)_1-° chapa OK.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM rampa (R.B.)_1-° chapa OK.txt",
+      "size": 51675,
+      "mtime": 1794247557923.6616,
+      "mtimeDate": "2026-11-09T18:05:57.924Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "SALA ESCADAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "execCount": 1,
+      "lastExec": {
+        "operator_name": "Tomas",
+        "machine_name": "Router 2",
+        "start_time": "2026-11-09T18:05:57.924Z",
+        "duration_minutes": 15
+      },
+      "totalDurationMinutes": 15,
+      "isManuallyDone": false
+    },
     {
       "name": "MDF 9MM E6MM PARTE B_13-Corte 7 OK.txt",
       "ext": ".txt",
@@ -8083,10 +8986,10 @@
       "isManuallyDone": false
     },
     {
-      "name": "MDF 9MM E6MM PARTE A_3-° chapa OK.txt",
+      "name": "MDF 9MM E6MM ESCADA  A_3-° chapa OK.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM PARTE A_3-° chapa OK.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM ESCADA  A_3-° chapa OK.txt",
       "size": 58643,
       "mtime": 1794223594238.8352,
       "mtimeDate": "2026-11-09T11:26:34.239Z",
@@ -8110,10 +9013,10 @@
       "isManuallyDone": false
     },
     {
-      "name": "MDF 9MM E6MM PARTE A_2-° chapa OK.txt",
+      "name": "MDF 9MM E6MM ESCADA AA_2-° chapa OK.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM PARTE A_2-° chapa OK.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM ESCADA AA_2-° chapa OK.txt",
       "size": 46589,
       "mtime": 1794223594210.2793,
       "mtimeDate": "2026-11-09T11:26:34.210Z",
@@ -8137,10 +9040,10 @@
       "isManuallyDone": false
     },
     {
-      "name": "MDF 9MM E6MM PARTE A_1-° chapa OK.txt",
+      "name": "MDF 9MM E6MM  ESCADA A_1-° chapa OK.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM PARTE A_1-° chapa OK.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA ESCADAS\\MDF 9MM E6MM  ESCADA A_1-° chapa OK.txt",
       "size": 46683,
       "mtime": 1794223594175.283,
       "mtimeDate": "2026-11-09T11:26:34.175Z",
@@ -10322,99 +11225,6 @@
       "name": "1 pvc100mm b10mm.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\FACHADA PHOTO OPP\\ISOPOR\\COLUNAS\\1 pvc100mm b10mm.txt",
-      "size": 1373660,
-      "mtime": 1793856875000,
-      "mtimeDate": "2026-11-05T05:34:35.000Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "COLUNAS",
-      "matInfo": {
-        "material": "PVC",
-        "thickness": "100mm",
-        "tag": "PVC 100mm",
-        "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "execCount": 3,
-      "lastExec": {
-        "id": "10396",
-        "file_name": "1 pvc100mm b10mm.txt",
-        "folder": "ARCO A",
-        "router_name": "Router 2",
-        "operator_name": "Italo",
-        "start_time": "2026-11-09T14:53:32.000Z",
-        "end_time": "2026-11-09T16:37:20.000Z",
-        "duration_minutes": 103.8
-      },
-      "totalDurationMinutes": 316.983,
-      "isManuallyDone": true
-    },
-    {
-      "name": "2 pvc100mm b10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\FACHADA PHOTO OPP\\ISOPOR\\COLUNAS\\2 pvc100mm b10mm.txt",
-      "size": 1315876,
-      "mtime": 1793856836000,
-      "mtimeDate": "2026-11-05T05:33:56.000Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "COLUNAS",
-      "matInfo": {
-        "material": "PVC",
-        "thickness": "100mm",
-        "tag": "PVC 100mm",
-        "chapaIndex": "2",
-        "targetQuantity": 1
-      },
-      "execCount": 3,
-      "lastExec": {
-        "id": "10381",
-        "file_name": "2 pvc100mm b10mm.txt",
-        "folder": "ARCO B",
-        "router_name": "Router 2",
-        "operator_name": "Italo",
-        "start_time": "2026-11-09T13:40:09.000Z",
-        "end_time": "2026-11-09T14:46:43.000Z",
-        "duration_minutes": 66.5667
-      },
-      "totalDurationMinutes": 292.4797,
-      "isManuallyDone": false
-    },
-    {
-      "name": "3 pvc100mm b10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\FACHADA PHOTO OPP\\ISOPOR\\COLUNAS\\3 pvc100mm b10mm.txt",
-      "size": 1672372,
-      "mtime": 1793856811000,
-      "mtimeDate": "2026-11-05T05:33:31.000Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "COLUNAS",
-      "matInfo": {
-        "material": "PVC",
-        "thickness": "100mm",
-        "tag": "PVC 100mm",
-        "chapaIndex": "3",
-        "targetQuantity": 1
-      },
-      "execCount": 1,
-      "lastExec": {
-        "id": "7995",
-        "file_name": "3 pvc100mm b10mm.txt",
-        "folder": "3 - OFICINA",
-        "router_name": "Router 2",
-        "operator_name": "brenno",
-        "start_time": "2026-07-07T11:30:35.000Z",
-        "end_time": "2026-07-07T11:54:58.000Z",
-        "duration_minutes": 24.3833
-      },
-      "totalDurationMinutes": 24.3833,
-      "isManuallyDone": false
-    },
-    {
-      "name": "1 pvc100mm b10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
       "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\FACHADA PHOTO OPP\\ISOPOR\\ARCO B\\1 pvc100mm b10mm.txt",
       "size": 1170563,
       "mtime": 1793856765000,
@@ -10440,7 +11250,7 @@
         "duration_minutes": 109.15
       },
       "totalDurationMinutes": 109.15,
-      "isManuallyDone": true
+      "isManuallyDone": false
     },
     {
       "name": "2 pvc100mm b10mm.txt",
@@ -10502,7 +11312,7 @@
         "duration_minutes": 103.8
       },
       "totalDurationMinutes": 207.833,
-      "isManuallyDone": true
+      "isManuallyDone": false
     },
     {
       "name": "2 pvc100mm b10mm.txt",
@@ -12619,6 +13429,60 @@
       "isManuallyDone": false
     },
     {
+      "name": "1 PVC+ 100mm B10mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\FACHADA CASAS\\ISOPOR\\1 PVC+ 100mm B10mm.txt",
+      "size": 374429,
+      "mtime": 1793650456000,
+      "mtimeDate": "2026-11-02T20:14:16.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ISOPOR",
+      "matInfo": {
+        "material": "PVC",
+        "thickness": "100mm",
+        "tag": "PVC 100mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "execCount": 1,
+      "lastExec": {
+        "operator_name": "Tomas",
+        "machine_name": "Router 2",
+        "start_time": "2026-11-09T17:52:15.261Z",
+        "duration_minutes": 15
+      },
+      "totalDurationMinutes": 15,
+      "isManuallyDone": true
+    },
+    {
+      "name": "1 PVC+ 100mm B10mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA CASTELO\\1 PVC+ 100mm B10mm.txt",
+      "size": 358251,
+      "mtime": 1793650456000,
+      "mtimeDate": "2026-11-02T20:14:16.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "FACHADA CASTELO",
+      "matInfo": {
+        "material": "PVC",
+        "thickness": "100mm",
+        "tag": "PVC 100mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "execCount": 1,
+      "lastExec": {
+        "operator_name": "Tomas",
+        "machine_name": "Router 2",
+        "start_time": "2026-11-09T18:30:49.083Z",
+        "duration_minutes": 15
+      },
+      "totalDurationMinutes": 15,
+      "isManuallyDone": true
+    },
+    {
       "name": "detalhe porta.txt",
       "ext": ".txt",
       "type": "gcode",
@@ -13034,19 +13898,50 @@
         "chapaIndex": "1",
         "targetQuantity": 1
       },
-      "execCount": 2,
+      "execCount": 3,
       "lastExec": {
-        "id": "9816",
+        "id": "10412",
         "file_name": "1 pvc100mm b12mm.txt",
-        "folder": "ORNAMENTO COLUNAS",
-        "router_name": "Router Central",
-        "operator_name": "tomas",
-        "start_time": "2026-11-01T13:35:36.000Z",
-        "end_time": "2026-11-01T14:07:26.000Z",
-        "duration_minutes": 31.8333
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T17:41:06.000Z",
+        "end_time": "2026-11-09T19:02:45.000Z",
+        "duration_minutes": 81.65
       },
-      "totalDurationMinutes": 107.66659999999999,
+      "totalDurationMinutes": 189.3166,
       "isManuallyDone": true
+    },
+    {
+      "name": "3 pvc100mm b12mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640 - entrada\\ENTRADA\\ISOPOR\\ARCO A\\3 pvc100mm b12mm.txt",
+      "size": 729592,
+      "mtime": 1793460369334.6348,
+      "mtimeDate": "2026-10-31T15:26:09.335Z",
+      "jobName": "2640 - Expresso hogwarts",
+      "subfolderName": "ARCO A",
+      "matInfo": {
+        "material": "PVC",
+        "thickness": "100mm",
+        "tag": "PVC 100mm",
+        "chapaIndex": "3",
+        "targetQuantity": 1
+      },
+      "execCount": 1,
+      "lastExec": {
+        "id": "10422",
+        "file_name": "3 pvc100mm b12mm.txt",
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T19:38:45.000Z",
+        "end_time": "2026-11-09T20:31:24.000Z",
+        "duration_minutes": 52.65
+      },
+      "totalDurationMinutes": 52.65,
+      "isManuallyDone": false
     },
     {
       "name": "escada chapa 1_1-Corte 1.txt",
@@ -13228,7 +14123,7 @@
         "duration_minutes": 52.5333
       },
       "totalDurationMinutes": 52.5333,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "1 pvc100mm b12mm.txt",
@@ -13249,12 +14144,16 @@
       },
       "execCount": 1,
       "lastExec": {
-        "operator_name": "Tomas",
-        "machine_name": "Router 2",
-        "start_time": "2026-11-09T16:46:33.911Z",
-        "duration_minutes": 15
+        "id": "10412",
+        "file_name": "1 pvc100mm b12mm.txt",
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T17:41:06.000Z",
+        "end_time": "2026-11-09T19:02:45.000Z",
+        "duration_minutes": 81.65
       },
-      "totalDurationMinutes": 15,
+      "totalDurationMinutes": 81.65,
       "isManuallyDone": true
     },
     {
@@ -13491,18 +14390,18 @@
         "chapaIndex": "3",
         "targetQuantity": 1
       },
-      "execCount": 2,
+      "execCount": 3,
       "lastExec": {
-        "id": "9804",
+        "id": "10422",
         "file_name": "3 pvc100mm b12mm.txt",
-        "folder": "cod",
-        "router_name": "Router Central",
-        "operator_name": "tomas",
-        "start_time": "2026-10-31T19:31:47.000Z",
-        "end_time": "2026-10-31T20:16:39.000Z",
-        "duration_minutes": 44.8667
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T19:38:45.000Z",
+        "end_time": "2026-11-09T20:31:24.000Z",
+        "duration_minutes": 52.65
       },
-      "totalDurationMinutes": 98.36670000000001,
+      "totalDurationMinutes": 151.01670000000001,
       "isManuallyDone": false
     },
     {
@@ -13596,7 +14495,7 @@
         "duration_minutes": 44.6
       },
       "totalDurationMinutes": 111.08330000000001,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "2 pvc100mm b12mm.txt",
@@ -13627,7 +14526,7 @@
         "duration_minutes": 44.6
       },
       "totalDurationMinutes": 44.6,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "5 pvc100mm b12mm.txt",
@@ -13708,18 +14607,18 @@
         "chapaIndex": "1",
         "targetQuantity": 1
       },
-      "execCount": 5,
+      "execCount": 6,
       "lastExec": {
-        "id": "9816",
+        "id": "10412",
         "file_name": "1 pvc100mm b12mm.txt",
-        "folder": "ORNAMENTO COLUNAS",
-        "router_name": "Router Central",
-        "operator_name": "tomas",
-        "start_time": "2026-11-01T13:35:36.000Z",
-        "end_time": "2026-11-01T14:07:26.000Z",
-        "duration_minutes": 31.8333
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T17:41:06.000Z",
+        "end_time": "2026-11-09T19:02:45.000Z",
+        "duration_minutes": 81.65
       },
-      "totalDurationMinutes": 217.16659999999996,
+      "totalDurationMinutes": 298.8166,
       "isManuallyDone": true
     },
     {
@@ -13751,7 +14650,7 @@
         "duration_minutes": 66.4833
       },
       "totalDurationMinutes": 66.4833,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "2 pvc100mm b12mm.txt",
@@ -13782,7 +14681,7 @@
         "duration_minutes": 66.4833
       },
       "totalDurationMinutes": 66.4833,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "3 pvc100mm b12mm.txt",
@@ -13832,16 +14731,16 @@
         "chapaIndex": "4",
         "targetQuantity": 1
       },
-      "execCount": 1,
+      "execCount": 2,
       "lastExec": {
-        "id": "9792",
+        "id": "10432",
         "file_name": "4 pvc100mm b12mm.txt",
-        "folder": "ARCOA  A   - ENTRADA HOGWARTS",
-        "router_name": "Router Central",
-        "operator_name": "tomas",
-        "start_time": "2026-10-31T16:37:16.000Z",
-        "end_time": "2026-10-31T18:11:06.000Z",
-        "duration_minutes": 93.8333
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T20:36:07.000Z",
+        "end_time": null,
+        "duration_minutes": null
       },
       "totalDurationMinutes": 93.8333,
       "isManuallyDone": false
@@ -13863,18 +14762,76 @@
         "chapaIndex": "4",
         "targetQuantity": 1
       },
-      "execCount": 1,
+      "execCount": 2,
       "lastExec": {
-        "id": "9792",
+        "id": "10432",
         "file_name": "4 pvc100mm b12mm.txt",
-        "folder": "ARCOA  A   - ENTRADA HOGWARTS",
-        "router_name": "Router Central",
-        "operator_name": "tomas",
-        "start_time": "2026-10-31T16:37:16.000Z",
-        "end_time": "2026-10-31T18:11:06.000Z",
-        "duration_minutes": 93.8333
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T20:36:07.000Z",
+        "end_time": null,
+        "duration_minutes": null
       },
       "totalDurationMinutes": 93.8333,
+      "isManuallyDone": false
+    },
+    {
+      "name": "2 pvc100mm b12mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\ENTRADA\\ISOPOR\\ARCO A\\COD\\2 pvc100mm b12mm.txt",
+      "size": 725817,
+      "mtime": 1793374997000,
+      "mtimeDate": "2026-10-30T15:43:17.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCO A",
+      "matInfo": {
+        "material": "PVC",
+        "thickness": "100mm",
+        "tag": "PVC 100mm",
+        "chapaIndex": "2",
+        "targetQuantity": 1
+      },
+      "execCount": 1,
+      "lastExec": {
+        "operator_name": "Tomas",
+        "machine_name": "Router 2",
+        "start_time": "2026-11-09T17:51:14.018Z",
+        "duration_minutes": 15
+      },
+      "totalDurationMinutes": 15,
+      "isManuallyDone": true
+    },
+    {
+      "name": "3 pvc100mm b12mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\ENTRADA\\ISOPOR\\ARCO A\\COD\\3 pvc100mm b12mm.txt",
+      "size": 729580,
+      "mtime": 1793374977000,
+      "mtimeDate": "2026-10-30T15:42:57.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCO A",
+      "matInfo": {
+        "material": "PVC",
+        "thickness": "100mm",
+        "tag": "PVC 100mm",
+        "chapaIndex": "3",
+        "targetQuantity": 1
+      },
+      "execCount": 1,
+      "lastExec": {
+        "id": "10422",
+        "file_name": "3 pvc100mm b12mm.txt",
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T19:38:45.000Z",
+        "end_time": "2026-11-09T20:31:24.000Z",
+        "duration_minutes": 52.65
+      },
+      "totalDurationMinutes": 52.65,
       "isManuallyDone": false
     },
     {
@@ -13896,12 +14853,16 @@
       },
       "execCount": 1,
       "lastExec": {
-        "operator_name": "Tomas",
-        "machine_name": "Router 2",
-        "start_time": "2026-11-09T16:46:33.911Z",
-        "duration_minutes": 15
+        "id": "10412",
+        "file_name": "1 pvc100mm b12mm.txt",
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T17:41:06.000Z",
+        "end_time": "2026-11-09T19:02:45.000Z",
+        "duration_minutes": 81.65
       },
-      "totalDurationMinutes": 15,
+      "totalDurationMinutes": 81.65,
       "isManuallyDone": true
     },
     {
@@ -15231,7 +16192,7 @@
         "duration_minutes": 25.9667
       },
       "totalDurationMinutes": 155.9167,
-      "isManuallyDone": true
+      "isManuallyDone": false
     },
     {
       "name": "CORREÇAO RECUO  BALCAO COMPENSADO 10MM E6MM.txt",
@@ -15355,7 +16316,7 @@
         "duration_minutes": 25.9667
       },
       "totalDurationMinutes": 155.9167,
-      "isManuallyDone": true
+      "isManuallyDone": false
     },
     {
       "name": "2 pvc100mm b10mm.txt",
@@ -16618,7 +17579,7 @@
         "duration_minutes": 26.9167
       },
       "totalDurationMinutes": 26.9167,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "1 pvc100mm b12mm.txt",
@@ -16711,7 +17672,7 @@
         "duration_minutes": 52.5333
       },
       "totalDurationMinutes": 216.01659999999998,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "1 pvc100mm b12mm.txt",
@@ -16730,18 +17691,18 @@
         "chapaIndex": "1",
         "targetQuantity": 1
       },
-      "execCount": 7,
+      "execCount": 8,
       "lastExec": {
-        "id": "9816",
+        "id": "10412",
         "file_name": "1 pvc100mm b12mm.txt",
-        "folder": "ORNAMENTO COLUNAS",
-        "router_name": "Router Central",
-        "operator_name": "tomas",
-        "start_time": "2026-11-01T13:35:36.000Z",
-        "end_time": "2026-11-01T14:07:26.000Z",
-        "duration_minutes": 31.8333
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T17:41:06.000Z",
+        "end_time": "2026-11-09T19:02:45.000Z",
+        "duration_minutes": 81.65
       },
-      "totalDurationMinutes": 280.15,
+      "totalDurationMinutes": 361.8,
       "isManuallyDone": true
     },
     {
@@ -16761,18 +17722,18 @@
         "chapaIndex": "1",
         "targetQuantity": 1
       },
-      "execCount": 7,
+      "execCount": 8,
       "lastExec": {
-        "id": "9816",
+        "id": "10412",
         "file_name": "1 pvc100mm b12mm.txt",
-        "folder": "ORNAMENTO COLUNAS",
-        "router_name": "Router Central",
-        "operator_name": "tomas",
-        "start_time": "2026-11-01T13:35:36.000Z",
-        "end_time": "2026-11-01T14:07:26.000Z",
-        "duration_minutes": 31.8333
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T17:41:06.000Z",
+        "end_time": "2026-11-09T19:02:45.000Z",
+        "duration_minutes": 81.65
       },
-      "totalDurationMinutes": 280.15,
+      "totalDurationMinutes": 361.8,
       "isManuallyDone": true
     },
     {
@@ -16792,18 +17753,18 @@
         "chapaIndex": "1",
         "targetQuantity": 1
       },
-      "execCount": 7,
+      "execCount": 8,
       "lastExec": {
-        "id": "9816",
+        "id": "10412",
         "file_name": "1 pvc100mm b12mm.txt",
-        "folder": "ORNAMENTO COLUNAS",
-        "router_name": "Router Central",
-        "operator_name": "tomas",
-        "start_time": "2026-11-01T13:35:36.000Z",
-        "end_time": "2026-11-01T14:07:26.000Z",
-        "duration_minutes": 31.8333
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T17:41:06.000Z",
+        "end_time": "2026-11-09T19:02:45.000Z",
+        "duration_minutes": 81.65
       },
-      "totalDurationMinutes": 280.15,
+      "totalDurationMinutes": 361.8,
       "isManuallyDone": true
     },
     {
@@ -16835,7 +17796,7 @@
         "duration_minutes": 66.4833
       },
       "totalDurationMinutes": 66.4833,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "2 pvc100mm b12mm.txt",
@@ -16866,7 +17827,7 @@
         "duration_minutes": 52.5333
       },
       "totalDurationMinutes": 216.01659999999998,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "3 pvc100mm b12mm.txt",
@@ -16916,18 +17877,18 @@
         "chapaIndex": "3",
         "targetQuantity": 1
       },
-      "execCount": 4,
+      "execCount": 5,
       "lastExec": {
-        "id": "9804",
+        "id": "10422",
         "file_name": "3 pvc100mm b12mm.txt",
-        "folder": "cod",
-        "router_name": "Router Central",
-        "operator_name": "tomas",
-        "start_time": "2026-10-31T19:31:47.000Z",
-        "end_time": "2026-10-31T20:16:39.000Z",
-        "duration_minutes": 44.8667
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T19:38:45.000Z",
+        "end_time": "2026-11-09T20:31:24.000Z",
+        "duration_minutes": 52.65
       },
-      "totalDurationMinutes": 162.4334,
+      "totalDurationMinutes": 215.0834,
       "isManuallyDone": false
     },
     {
@@ -16947,18 +17908,18 @@
         "chapaIndex": "1",
         "targetQuantity": 1
       },
-      "execCount": 7,
+      "execCount": 8,
       "lastExec": {
-        "id": "9816",
+        "id": "10412",
         "file_name": "1 pvc100mm b12mm.txt",
-        "folder": "ORNAMENTO COLUNAS",
-        "router_name": "Router Central",
-        "operator_name": "tomas",
-        "start_time": "2026-11-01T13:35:36.000Z",
-        "end_time": "2026-11-01T14:07:26.000Z",
-        "duration_minutes": 31.8333
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T17:41:06.000Z",
+        "end_time": "2026-11-09T19:02:45.000Z",
+        "duration_minutes": 81.65
       },
-      "totalDurationMinutes": 280.15,
+      "totalDurationMinutes": 361.8,
       "isManuallyDone": true
     },
     {
@@ -16978,18 +17939,18 @@
         "chapaIndex": "1",
         "targetQuantity": 1
       },
-      "execCount": 7,
+      "execCount": 8,
       "lastExec": {
-        "id": "9816",
+        "id": "10412",
         "file_name": "1 pvc100mm b12mm.txt",
-        "folder": "ORNAMENTO COLUNAS",
-        "router_name": "Router Central",
-        "operator_name": "tomas",
-        "start_time": "2026-11-01T13:35:36.000Z",
-        "end_time": "2026-11-01T14:07:26.000Z",
-        "duration_minutes": 31.8333
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T17:41:06.000Z",
+        "end_time": "2026-11-09T19:02:45.000Z",
+        "duration_minutes": 81.65
       },
-      "totalDurationMinutes": 280.15,
+      "totalDurationMinutes": 361.8,
       "isManuallyDone": true
     },
     {
@@ -17040,18 +18001,18 @@
         "chapaIndex": "3",
         "targetQuantity": 1
       },
-      "execCount": 4,
+      "execCount": 5,
       "lastExec": {
-        "id": "9804",
+        "id": "10422",
         "file_name": "3 pvc100mm b12mm.txt",
-        "folder": "cod",
-        "router_name": "Router Central",
-        "operator_name": "tomas",
-        "start_time": "2026-10-31T19:31:47.000Z",
-        "end_time": "2026-10-31T20:16:39.000Z",
-        "duration_minutes": 44.8667
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T19:38:45.000Z",
+        "end_time": "2026-11-09T20:31:24.000Z",
+        "duration_minutes": 52.65
       },
-      "totalDurationMinutes": 162.4334,
+      "totalDurationMinutes": 215.0834,
       "isManuallyDone": false
     },
     {
@@ -17083,7 +18044,7 @@
         "duration_minutes": 66.4833
       },
       "totalDurationMinutes": 66.4833,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "2 pvc100mm b12mm.txt",
@@ -17114,7 +18075,7 @@
         "duration_minutes": 52.5333
       },
       "totalDurationMinutes": 216.01659999999998,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "mdf 15mm e4mm.txt",
@@ -18828,11 +19789,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "9032",
+        "id": "7658",
         "file_name": "compensado 15mm chapa 8.txt",
         "folder": "2615A - pequeno principe base",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-10-05T16:32:13.000Z",
         "end_time": "2026-10-05T16:40:19.000Z",
         "duration_minutes": 8.1
@@ -18890,11 +19851,11 @@
       },
       "execCount": 4,
       "lastExec": {
-        "id": "7644",
+        "id": "9027",
         "file_name": "compensado 15mm chapa 6 2X.txt",
         "folder": "2615A - pequeno principe base",
         "router_name": "Router 2",
-        "operator_name": "Italo",
+        "operator_name": "brenno",
         "start_time": "2026-10-05T14:40:04.000Z",
         "end_time": "2026-10-05T14:47:49.000Z",
         "duration_minutes": 7.75
@@ -18921,11 +19882,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7635",
+        "id": "9022",
         "file_name": "compensado 15mm chapa 5.txt",
         "folder": "2615A - pequeno principe base",
         "router_name": "Router 2",
-        "operator_name": "Italo",
+        "operator_name": "brenno",
         "start_time": "2026-10-05T13:52:16.000Z",
         "end_time": "2026-10-05T14:02:27.000Z",
         "duration_minutes": 10.1833
@@ -23923,11 +24884,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7606",
+        "id": "9008",
         "file_name": "55 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T21:07:18.000Z",
         "end_time": "2026-10-04T21:42:44.000Z",
         "duration_minutes": 35.4333
@@ -23954,11 +24915,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7606",
+        "id": "9008",
         "file_name": "55 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T21:07:18.000Z",
         "end_time": "2026-10-04T21:42:44.000Z",
         "duration_minutes": 35.4333
@@ -23985,11 +24946,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7606",
+        "id": "9008",
         "file_name": "55 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T21:07:18.000Z",
         "end_time": "2026-10-04T21:42:44.000Z",
         "duration_minutes": 35.4333
@@ -24109,11 +25070,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "9005",
+        "id": "7599",
         "file_name": "50 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T19:58:51.000Z",
         "end_time": "2026-10-04T20:29:06.000Z",
         "duration_minutes": 30.25
@@ -24233,11 +25194,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7591",
+        "id": "9001",
         "file_name": "46 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T19:03:10.000Z",
         "end_time": "2026-10-04T19:33:55.000Z",
         "duration_minutes": 30.75
@@ -24295,11 +25256,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8999",
+        "id": "7587",
         "file_name": "44 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T18:24:36.000Z",
         "end_time": "2026-10-04T19:00:41.000Z",
         "duration_minutes": 36.0833
@@ -24419,7 +25380,7 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7577",
+        "id": "8994",
         "file_name": "40 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -24512,7 +25473,7 @@
       },
       "execCount": 3,
       "lastExec": {
-        "id": "7571",
+        "id": "8992",
         "file_name": "37 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -24791,7 +25752,7 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8981",
+        "id": "7549",
         "file_name": "28 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -25070,11 +26031,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8970",
+        "id": "7407",
         "file_name": "19 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-03T23:26:03.000Z",
         "end_time": "2026-10-04T00:07:00.000Z",
         "duration_minutes": 40.95
@@ -25279,11 +26240,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7393",
+        "id": "8964",
         "file_name": "12 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-03T21:32:24.000Z",
         "end_time": "2026-10-03T22:12:23.000Z",
         "duration_minutes": 39.9833
@@ -25434,14 +26395,14 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7379",
+        "id": "8958",
         "file_name": "7 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-03T16:21:45.000Z",
-        "end_time": "2026-10-03T17:11:13.000Z",
-        "duration_minutes": 49.4667
+        "end_time": "2026-10-03T16:42:28.200Z",
+        "duration_minutes": 20.72
       },
       "totalDurationMinutes": 70.1867,
       "isManuallyDone": false
@@ -25496,11 +26457,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8957",
+        "id": "7377",
         "file_name": "5 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-03T15:47:41.000Z",
         "end_time": "2026-10-03T16:21:45.000Z",
         "duration_minutes": 34.0667
@@ -25599,7 +26560,7 @@
         "duration_minutes": 41.3833
       },
       "totalDurationMinutes": 82.7666,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "1 pvc100mm b12mm.txt",
@@ -26147,7 +27108,7 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8981",
+        "id": "7549",
         "file_name": "28 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -26178,7 +27139,7 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8981",
+        "id": "7549",
         "file_name": "28 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -26271,7 +27232,7 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7577",
+        "id": "8994",
         "file_name": "40 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -26302,7 +27263,7 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7577",
+        "id": "8994",
         "file_name": "40 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -26705,7 +27666,7 @@
       },
       "execCount": 3,
       "lastExec": {
-        "id": "7571",
+        "id": "8992",
         "file_name": "37 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -26736,7 +27697,7 @@
       },
       "execCount": 3,
       "lastExec": {
-        "id": "7571",
+        "id": "8992",
         "file_name": "37 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -26891,11 +27852,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "9005",
+        "id": "7599",
         "file_name": "50 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T19:58:51.000Z",
         "end_time": "2026-10-04T20:29:06.000Z",
         "duration_minutes": 30.25
@@ -26922,11 +27883,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "9005",
+        "id": "7599",
         "file_name": "50 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T19:58:51.000Z",
         "end_time": "2026-10-04T20:29:06.000Z",
         "duration_minutes": 30.25
@@ -27139,11 +28100,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8999",
+        "id": "7587",
         "file_name": "44 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T18:24:36.000Z",
         "end_time": "2026-10-04T19:00:41.000Z",
         "duration_minutes": 36.0833
@@ -27170,11 +28131,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8999",
+        "id": "7587",
         "file_name": "44 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T18:24:36.000Z",
         "end_time": "2026-10-04T19:00:41.000Z",
         "duration_minutes": 36.0833
@@ -27263,11 +28224,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7591",
+        "id": "9001",
         "file_name": "46 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T19:03:10.000Z",
         "end_time": "2026-10-04T19:33:55.000Z",
         "duration_minutes": 30.75
@@ -27294,11 +28255,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7591",
+        "id": "9001",
         "file_name": "46 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-04T19:03:10.000Z",
         "end_time": "2026-10-04T19:33:55.000Z",
         "duration_minutes": 30.75
@@ -27728,11 +28689,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8970",
+        "id": "7407",
         "file_name": "19 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-03T23:26:03.000Z",
         "end_time": "2026-10-04T00:07:00.000Z",
         "duration_minutes": 40.95
@@ -27852,11 +28813,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7399",
+        "id": "8966",
         "file_name": "15 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-03T22:16:47.000Z",
         "end_time": "2026-10-03T22:46:51.000Z",
         "duration_minutes": 30.0667
@@ -27883,11 +28844,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7399",
+        "id": "8966",
         "file_name": "15 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-03T22:16:47.000Z",
         "end_time": "2026-10-03T22:46:51.000Z",
         "duration_minutes": 30.0667
@@ -28007,11 +28968,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7393",
+        "id": "8964",
         "file_name": "12 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-03T21:32:24.000Z",
         "end_time": "2026-10-03T22:12:23.000Z",
         "duration_minutes": 39.9833
@@ -28158,14 +29119,14 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7379",
+        "id": "8958",
         "file_name": "7 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-03T16:21:45.000Z",
-        "end_time": "2026-10-03T17:11:13.000Z",
-        "duration_minutes": 49.4667
+        "end_time": "2026-10-03T16:42:28.200Z",
+        "duration_minutes": 20.72
       },
       "totalDurationMinutes": 70.1867,
       "isManuallyDone": false
@@ -28220,11 +29181,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8957",
+        "id": "7377",
         "file_name": "5 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-03T15:47:41.000Z",
         "end_time": "2026-10-03T16:21:45.000Z",
         "duration_minutes": 34.0667
@@ -28323,7 +29284,7 @@
         "duration_minutes": 41.3833
       },
       "totalDurationMinutes": 82.7666,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "1 pvc100mm b12mm.txt",
@@ -28468,11 +29429,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7393",
+        "id": "8964",
         "file_name": "12 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-03T21:32:24.000Z",
         "end_time": "2026-10-03T22:12:23.000Z",
         "duration_minutes": 39.9833
@@ -28530,11 +29491,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7399",
+        "id": "8966",
         "file_name": "15 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-03T22:16:47.000Z",
         "end_time": "2026-10-03T22:46:51.000Z",
         "duration_minutes": 30.0667
@@ -28654,11 +29615,11 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "8970",
+        "id": "7407",
         "file_name": "19 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-03T23:26:03.000Z",
         "end_time": "2026-10-04T00:07:00.000Z",
         "duration_minutes": 40.95
@@ -28726,7 +29687,7 @@
         "duration_minutes": 112.75
       },
       "totalDurationMinutes": 112.75,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "1 pvc100mm b6mm.txt",
@@ -28902,14 +29863,14 @@
       },
       "execCount": 2,
       "lastExec": {
-        "id": "7379",
+        "id": "8958",
         "file_name": "7 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-03T16:21:45.000Z",
-        "end_time": "2026-10-03T17:11:13.000Z",
-        "duration_minutes": 49.4667
+        "end_time": "2026-10-03T16:42:28.200Z",
+        "duration_minutes": 20.72
       },
       "totalDurationMinutes": 70.1867,
       "isManuallyDone": false
@@ -28943,7 +29904,7 @@
         "duration_minutes": 66.4833
       },
       "totalDurationMinutes": 66.4833,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "4 pvc100mm b12mm.txt",
@@ -28962,16 +29923,16 @@
         "chapaIndex": "4",
         "targetQuantity": 1
       },
-      "execCount": 3,
+      "execCount": 4,
       "lastExec": {
-        "id": "9792",
+        "id": "10432",
         "file_name": "4 pvc100mm b12mm.txt",
-        "folder": "ARCOA  A   - ENTRADA HOGWARTS",
-        "router_name": "Router Central",
-        "operator_name": "tomas",
-        "start_time": "2026-10-31T16:37:16.000Z",
-        "end_time": "2026-10-31T18:11:06.000Z",
-        "duration_minutes": 93.8333
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T20:36:07.000Z",
+        "end_time": null,
+        "duration_minutes": null
       },
       "totalDurationMinutes": 144.4667,
       "isManuallyDone": false
@@ -29086,18 +30047,18 @@
         "chapaIndex": "1",
         "targetQuantity": 1
       },
-      "execCount": 8,
+      "execCount": 9,
       "lastExec": {
-        "id": "9816",
+        "id": "10412",
         "file_name": "1 pvc100mm b12mm.txt",
-        "folder": "ORNAMENTO COLUNAS",
-        "router_name": "Router Central",
-        "operator_name": "tomas",
-        "start_time": "2026-11-01T13:35:36.000Z",
-        "end_time": "2026-11-01T14:07:26.000Z",
-        "duration_minutes": 31.8333
+        "folder": "ARCO A",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-09T17:41:06.000Z",
+        "end_time": "2026-11-09T19:02:45.000Z",
+        "duration_minutes": 81.65
       },
-      "totalDurationMinutes": 310.29999999999995,
+      "totalDurationMinutes": 391.95,
       "isManuallyDone": true
     },
     {
@@ -29150,7 +30111,7 @@
       },
       "execCount": 3,
       "lastExec": {
-        "id": "6743",
+        "id": "8945",
         "file_name": "chanfro vbit arredondada.txt",
         "folder": "2640A - porta castelo",
         "router_name": "Router 2",
@@ -29163,5 +30124,5 @@
       "isManuallyDone": false
     }
   ],
-  "updatedAt": "2026-11-09T17:34:46.611Z"
+  "updatedAt": "2026-11-09T20:44:41.446Z"
 }
