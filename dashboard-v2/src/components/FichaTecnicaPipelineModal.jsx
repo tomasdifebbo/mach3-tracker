@@ -3,6 +3,7 @@ import {
   X, Printer, ClipboardList, CheckSquare, Square, Share2, Check,
   Clock, Layers, Cpu, Wrench, AlertCircle, Sparkles, Filter, ChevronDown
 } from 'lucide-react';
+import { isFileMarkedOk } from './CaixaChecklistProducao';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -59,11 +60,51 @@ export function FichaTecnicaPipelineModal({
       });
     };
 
+    const isFileChecked = (f) => {
+      if (!f) return false;
+      if (f.isCurrentlyRunning || isFileRunning(f.name, f.jobName)) return false;
+      if (f.isManuallyDone) return true;
+      const k1 = f.fullPath;
+      const k2 = `${f.jobName || ''}_${f.name}`;
+      const k3 = `${f.jobName || ''}|${f.subfolderName || ''}|${f.name}`;
+      const k4 = `${f.name || ''}`;
+      return Boolean(
+        (k1 && fileChecklist[k1]?.done !== false && fileChecklist[k1]) ||
+        (fileChecklist[k2]?.done !== false && fileChecklist[k2]) ||
+        (fileChecklist[k3]?.done !== false && fileChecklist[k3]) ||
+        (fileChecklist[k4]?.done !== false && fileChecklist[k4])
+      );
+    };
+
     const isDone = (f, stage) => {
-      const k = `${f.jobName || ''}|${f.subfolderName || ''}|${f.name}`;
-      if (fileChecklist[k]?.done) return true;
+      if (f.isCurrentlyRunning || isFileRunning(f.name, f.jobName)) return false;
+      if (isFileChecked(f)) return true;
       if (f.isExecuted) return true;
-      if (stage === 'router' && f.isOk) return true;
+      if (isFileMarkedOk(f.name)) return true;
+
+      if (stage === 'corel') {
+        return Boolean(
+          f.hasGcode || 
+          f.hasAspire || 
+          (f.chapasCount > 0) || 
+          f.stageStatus === 'lote_liberado' || 
+          f.stageStatus === 'materiais_gerados'
+        );
+      }
+
+      if (stage === 'aspire') {
+        return Boolean(
+          f.hasGcode || 
+          (f.chapasCount > 0) || 
+          f.hasCrv || 
+          f.stageStatus === 'lote_liberado'
+        );
+      }
+
+      if (stage === 'router') {
+        return Boolean(f.isOk);
+      }
+
       return false;
     };
 
@@ -87,7 +128,7 @@ export function FichaTecnicaPipelineModal({
     // 1. Corel (.CDR)
     if (includeCorel) {
       (pipelineData.cadPreparar || []).forEach(f => {
-        if (selectedJob !== 'todos' && f.jobName !== selectedJob) return;
+        if (selectedJob !== 'todos' && f.jobName !== selectedJob && f.jobName?.replace(/\s+/g, ' ') !== selectedJob?.replace(/\s+/g, ' ')) return;
         const done = isDone(f, 'corel');
         if (!includeConcluded && done) return;
         items.push({
@@ -114,7 +155,8 @@ export function FichaTecnicaPipelineModal({
     // 2. Aspire (.EPS, .DXF, .CRV3D)
     if (includeAspire) {
       (pipelineData.aspirePreparar || []).forEach(f => {
-        if (selectedJob !== 'todos' && f.jobName !== selectedJob) return;
+        if (f.ext === '.crv3d' || f.ext === '.crv' || (f.name || '').toLowerCase().endsWith('.crv3d') || (f.name || '').toLowerCase().endsWith('.crv')) return;
+        if (selectedJob !== 'todos' && f.jobName !== selectedJob && f.jobName?.replace(/\s+/g, ' ') !== selectedJob?.replace(/\s+/g, ' ')) return;
         const done = isDone(f, 'aspire');
         if (!includeConcluded && done) return;
         items.push({
@@ -141,8 +183,8 @@ export function FichaTecnicaPipelineModal({
     // 3. Fila Router (.TXT) - tempo real individual de cada G-Code!
     if (includeRouter) {
       (pipelineData.gcodeProntos || []).forEach(f => {
-        if (selectedJob !== 'todos' && f.jobName !== selectedJob) return;
-        const running = isFileRunning(f.name, f.jobName);
+        if (selectedJob !== 'todos' && f.jobName !== selectedJob && f.jobName?.replace(/\s+/g, ' ') !== selectedJob?.replace(/\s+/g, ' ')) return;
+        const running = isFileRunning(f.name, f.jobName) || f.isCurrentlyRunning;
         const done = isDone(f, 'router');
         if (!includeConcluded && done && !running) return;
 
@@ -175,7 +217,7 @@ export function FichaTecnicaPipelineModal({
     // 4. Já Concluídos (se marcado explicitamente para puxar histórico)
     if (includeConcluded && pipelineData.gcodeFeitos) {
       pipelineData.gcodeFeitos.forEach(f => {
-        if (selectedJob !== 'todos' && f.jobName !== selectedJob) return;
+        if (selectedJob !== 'todos' && f.jobName !== selectedJob && f.jobName?.replace(/\s+/g, ' ') !== selectedJob?.replace(/\s+/g, ' ')) return;
         if (items.some(it => it.name === f.name && it.stage === 'router')) return;
         const durationMin = resolveTaskDuration(f);
         const dim = f.dimensions || (f.widthMm && f.heightMm ? `${f.widthMm}×${f.heightMm}mm` : null);
@@ -638,7 +680,7 @@ export function FichaTecnicaPipelineModal({
                   onChange={e => setIncludeConcluded(e.target.checked)}
                   className="rounded text-emerald-500 focus:ring-0"
                 />
-                <span className="font-medium text-slate-600 dark:text-slate-300">Concluídos</span>
+                <span className="font-medium text-slate-600 dark:text-slate-300">Incluir Concluídos</span>
               </label>
             </div>
           </div>
