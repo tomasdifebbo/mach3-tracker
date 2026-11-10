@@ -8,6 +8,7 @@ import math
 import re
 import threading
 import socket
+import unicodedata
 
 # Configura stdout com line buffering para evitar prints travados em background
 if hasattr(sys.stdout, 'reconfigure'):
@@ -60,52 +61,213 @@ def update_materials():
     except Exception as e:
         print(f"[!] Erro ao carregar materiais: {e}")
 
-def find_material_match(filename):
-    if not cached_materials: return None
-    
-    # Normaliza o nome do arquivo e extrai as primeiras palavras
-    clean_name = filename.lower()
-    # Remove a extensão para não interferir na segunda palavra
-    name_no_ext = clean_name.rsplit('.', 1)[0]
-    words = re.split(r'[ _\-]', name_no_ext)
-    words = [w.strip() for w in words if w.strip()]
-    
-    if not words: return None
-    
-    # Pega as primeiras palavras e a combinação delas
-    w1 = words[0]
-    w2 = words[1] if len(words) > 1 else ""
-    w3 = words[2] if len(words) > 2 else ""
-    phrase_2 = f"{w1} {w2}".strip()
-    phrase_3 = f"{w1} {w2} {w3}".strip()
-    
-    # Ordena os materiais pelo tamanho do nome (do mais longo para o mais curto)
-    sorted_mats = sorted(cached_materials, key=lambda x: len(x['name']), reverse=True)
-    
-    # 1ª Passada: Busca por combinação exata (3 palavras, 2 palavras)
-    for mat in sorted_mats:
-        mat_name = mat['name'].lower()
-        if mat_name == phrase_3 or mat_name == phrase_2:
-            return mat
-            
-    # 2ª Passada: Busca se o nome do material contém as palavras chave
-    for mat in sorted_mats:
-        mat_name = mat['name'].lower()
-        # Verifica 3 palavras presentes
-        if w1 in mat_name and w2 and w2 in mat_name and w3 and w3 in mat_name:
-            return mat
-        # Verifica 2 palavras presentes
-        if w1 in mat_name and w2 and w2 in mat_name:
-            return mat
+TYPE_ALIASES = {
+    'mdf': ['mdf'],
+    'compensado': ['compensado', 'comp', 'compens', 'compensad'],
+    'pvc': ['pvc'],
+    'pvb': ['pvb'],
+    'acm': ['acm', 'aluminio composto'],
+    'acrilico': ['acrilico', 'acril'],
+    'policarbonato': ['policarbonato', 'policarb'],
+    'psai': ['psai'],
+    'ps': ['ps'],
+    'isopor': ['isopor', 'eps'],
+    'inox': ['inox']
+}
 
-    # 3ª Passada: Busca por palavra individual (3ª, 2ª ou 1ª)
-    for mat in sorted_mats:
-        mat_name = mat['name'].lower()
-        if mat_name == w3 or mat_name == w2 or mat_name == w1 or mat_name.startswith(w1 + " "):
-            return mat
-                
+def strip_accents(s):
+    if not s: return ''
+    nfkd = unicodedata.normalize('NFKD', str(s))
+    return ''.join([c for c in nfkd if not unicodedata.combining(c)])
+
+def normalize_text(s):
+    s = strip_accents(s).lower()
+    s = re.sub(r'\.[a-z0-9]{2,5}$', '', s, flags=re.I)
+    s = re.sub(r'[_\-+().,;]', ' ', s)
+    s = re.sub(r'(\d),(\d)', r'\1.\2', s)
+    s = re.sub(r'\s+', ' ', s)
+    return s.strip()
+
+def py_levenshtein(a, b):
+    if a == b: return 0
+    m, n = len(a), len(b)
+    if not m: return n
+    if not n: return m
+    prev = list(range(n + 1))
+    for i in range(1, m + 1):
+        cur = [i] + [0] * n
+        for j in range(1, n + 1):
+            cost = 0 if a[i - 1] == b[j - 1] else 1
+            cur[j] = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost)
+        prev = cur
+    return prev[n]
+
+def split_tokens(text):
+    norm = normalize_text(text)
+    norm = re.sub(r'([a-z])(\d)', r'\1 \2', norm)
+    norm = re.sub(r'(\d)([a-z])', r'\1 \2', norm)
+    norm = re.sub(r'(\d)\s*mm\b', r'\1mm', norm)
+    return [t for t in norm.split(' ') if t]
+
+def match_type_word(word):
+    if not word or re.match(r'^\d', word): return None
+    for mtype, aliases in TYPE_ALIASES.items():
+        for alias in aliases:
+            if word == alias: return mtype
+    if len(word) >= 5:
+        for mtype, aliases in TYPE_ALIASES.items():
+            for alias in aliases:
+                if len(alias) < 5: continue
+                max_dist = 2 if len(alias) >= 8 else 1
+                if py_levenshtein(word, alias) <= max_dist: return mtype
+                if word.startswith(alias) and len(alias) >= 6: return mtype
     return None
 
+def parse_material_text(text):
+    tokens = split_tokens(text)
+    for i in range(len(tokens)):
+        mtype = match_type_word(tokens[i])
+        if not mtype: continue
+        thickness = None
+        for j in range(i + 1, min(len(tokens), i + 4)):
+            t = tokens[j]
+            m_num = re.match(r'^(\d+(?:\.\d+)?)(?:mm|m)?$', t)
+            if m_num:
+                thickness = float(m_num.group(1))
+                break
+            if re.match(r'^[eb]\d', t) or match_type_word(t):
+                break
+        naval = bool(re.search(r'\bnaval\b', normalize_text(text)))
+        return {'type': mtype, 'thickness': thickness, 'naval': naval}
+    return None
+
+import unicodedata
+import re
+
+TYPE_ALIASES = {
+    'mdf': ['mdf'],
+    'compensado': ['compensado', 'comp', 'compens', 'compensad'],
+    'pvc': ['pvc'],
+    'pvb': ['pvb'],
+    'acm': ['acm', 'aluminio composto'],
+    'acrilico': ['acrilico', 'acril'],
+    'policarbonato': ['policarbonato', 'policarb'],
+    'psai': ['psai'],
+    'ps': ['ps'],
+    'isopor': ['isopor', 'eps'],
+    'inox': ['inox']
+}
+
+def strip_accents(s):
+    if not s: return ''
+    nfkd = unicodedata.normalize('NFKD', str(s))
+    return ''.join([c for c in nfkd if not unicodedata.combining(c)])
+
+def normalize_text(s):
+    s = strip_accents(s).lower()
+    s = re.sub(r'\.[a-z0-9]{2,5}$', '', s, flags=re.I)
+    s = re.sub(r'[_\-+().,;]', ' ', s)
+    s = re.sub(r'(\d),(\d)', r'\1.\2', s)
+    s = re.sub(r'\s+', ' ', s)
+    return s.strip()
+
+def py_levenshtein(a, b):
+    if a == b: return 0
+    m, n = len(a), len(b)
+    if not m: return n
+    if not n: return m
+    prev = list(range(n + 1))
+    for i in range(1, m + 1):
+        cur = [i] + [0] * n
+        for j in range(1, n + 1):
+            cost = 0 if a[i - 1] == b[j - 1] else 1
+            cur[j] = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost)
+        prev = cur
+    return prev[n]
+
+def split_tokens(text):
+    norm = normalize_text(text)
+    norm = re.sub(r'([a-z])(\d)', r'\1 \2', norm)
+    norm = re.sub(r'(\d)([a-z])', r'\1 \2', norm)
+    norm = re.sub(r'(\d)\s*mm\b', r'\1mm', norm)
+    return [t for t in norm.split(' ') if t]
+
+def match_type_word(word):
+    if not word or re.match(r'^\d', word): return None
+    for mtype, aliases in TYPE_ALIASES.items():
+        for alias in aliases:
+            if word == alias: return mtype
+    if len(word) >= 5:
+        for mtype, aliases in TYPE_ALIASES.items():
+            for alias in aliases:
+                if len(alias) < 5: continue
+                max_dist = 2 if len(alias) >= 8 else 1
+                if py_levenshtein(word, alias) <= max_dist: return mtype
+                if word.startswith(alias) and len(alias) >= 6: return mtype
+    return None
+
+def parse_material_text(text):
+    tokens = split_tokens(text)
+    for i in range(len(tokens)):
+        mtype = match_type_word(tokens[i])
+        if not mtype: continue
+        thickness = None
+        for j in range(i + 1, min(len(tokens), i + 4)):
+            t = tokens[j]
+            m_num = re.match(r'^(\d+(?:\.\d+)?)(?:mm|m)?$', t)
+            if m_num:
+                thickness = float(m_num.group(1))
+                break
+            if re.match(r'^[eb]\d', t) or match_type_word(t):
+                break
+        naval = bool(re.search(r'\bnaval\b', normalize_text(text)))
+        return {'type': mtype, 'thickness': thickness, 'naval': naval}
+    return None
+
+def find_material_match(filename):
+    if not cached_materials: return None
+    parsed = parse_material_text(filename)
+    if not parsed:
+        clean_name = filename.lower().rsplit('.', 1)[0]
+        words = [w.strip() for w in re.split(r'[ _\-]', clean_name) if w.strip()]
+        if not words: return None
+        for mat in sorted(cached_materials, key=lambda x: len(x.get('name', '')), reverse=True):
+            mname = mat.get('name', '').lower()
+            if words[0] in mname and (len(words) < 2 or words[1] in mname):
+                return mat
+        return None
+
+    candidates = []
+    for mat in cached_materials:
+        p = parse_material_text(mat.get('name', ''))
+        if p and p['type'] == parsed['type']:
+            candidates.append((mat, p))
+
+    if not candidates:
+        return None
+
+    best = None
+    best_score = -1
+    for mat, p in candidates:
+        score = 0
+        if parsed['thickness'] is not None and p['thickness'] is not None:
+            if abs(parsed['thickness'] - p['thickness']) < 0.01:
+                score += 100
+            else:
+                continue
+        elif parsed['thickness'] is not None and p['thickness'] is None:
+            score += 10
+        elif parsed['thickness'] is None and p['thickness'] is None:
+            score += 50
+        else:
+            score += 5
+        if parsed['naval'] == p['naval']:
+            score += 20
+        if score > best_score:
+            best_score = score
+            best = mat
+
+    return best if best_score > 0 else None
 def load_state():
     if os.path.exists(STATE_FILE):
         try:

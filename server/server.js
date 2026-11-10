@@ -12,6 +12,7 @@ const { Pool, types } = require('pg');
 types.setTypeParser(1114, (str) => (str ? new Date(str.replace(' ', 'T') + 'Z') : null));
 const { MercadoPagoConfig, Preference, Payment } = require('mercadopago');
 const webpush = require('web-push');
+const { detectMaterialForJob, calculateMaterialCost, matchMaterial } = require('./material_matcher');
 
 // Web Push (PWA Mobile Notifications)
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BN8bwwq0UAuYRpuqxnsQ1n2RTgUfZIK63XtNH_2zMdfJi5CseOo3ns9jHNctfGhTRZe-7rmB-rAglCjbkgikYZA';
@@ -2510,8 +2511,46 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
         initialQty = qtyMatch ? parseInt(qtyMatch[1], 10) : 1;
     }
 
+    let matId = req.body.material_id ? parseInt(req.body.material_id) : null;
+    let matName = req.body.material_name || null;
+    let matPrice = req.body.material_price !== undefined && req.body.material_price !== null ? parseFloat(req.body.material_price) : null;
+
+    if (!matId) {
+        try {
+            const userMaterials = (await pool.query('SELECT * FROM materials WHERE "userId" = $1', [userId])).rows;
+            const autoMat = detectMaterialForJob({
+                file_name: cleanFileName,
+                max_x: maxX,
+                max_y: maxY,
+                bounding_area_m2: boundArea,
+                quantity: initialQty
+            }, userMaterials);
+            if (autoMat) {
+                matId = autoMat.material_id;
+                if (!matName) matName = autoMat.material_name;
+                if (matPrice === null || isNaN(matPrice) || matPrice === 0) matPrice = autoMat.material_price;
+            }
+        } catch (e) {
+            console.error('Error auto-detecting material:', e);
+        }
+    } else if (matId && (matPrice === null || isNaN(matPrice))) {
+        try {
+            const matRow = (await pool.query('SELECT * FROM materials WHERE id = $1', [matId])).rows[0];
+            if (matRow) {
+                matPrice = calculateMaterialCost({
+                    max_x: maxX,
+                    max_y: maxY,
+                    bounding_area_m2: boundArea,
+                    quantity: initialQty
+                }, matRow);
+            }
+        } catch (e) {
+            console.error('Error calculating material cost:', e);
+        }
+    }
+
     const result = await pool.query('INSERT INTO jobs (file_name, folder, file_path, start_time, day, month, year, "userId", router_name, estimated_minutes, material_id, material_name, material_price, operator_name, max_x, max_y, bounding_area_m2, quantity) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING id', 
-        [cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, router_name || null, estMin, req.body.material_id || null, req.body.material_name || null, req.body.material_price || null, operatorName, maxX, maxY, boundArea, initialQty]);
+        [cleanFileName, cleanFolder, file_path || 'Desconhecido', dt.toISOString(), dt.getDate(), dt.getMonth() + 1, dt.getFullYear(), userId, router_name || null, estMin, matId, matName, matPrice, operatorName, maxX, maxY, boundArea, initialQty]);
     
     // Auto-sync Kanban card: todo -> doing
     autoSyncKanban(userId, cleanFileName, cleanFolder, router_name, 'doing', operatorName);
