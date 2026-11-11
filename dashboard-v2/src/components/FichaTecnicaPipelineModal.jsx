@@ -190,27 +190,64 @@ export function FichaTecnicaPipelineModal({
 
         // Duração exata do corte calculada via percurso G-Code ou histórico Mach3
         const durationMin = resolveTaskDuration(f);
-
         const dim = f.dimensions || (f.widthMm && f.heightMm ? `${f.widthMm}×${f.heightMm}mm` : null);
 
-        items.push({
-          id: `router-${f.jobName}-${f.name}`,
-          stage: 'router',
-          stageLabel: '3. FILA ROUTER (.TXT)',
-          stageColor: 'orange',
-          name: f.name,
-          jobName: f.jobName || 'Geral',
-          subfolder: f.subfolderName || 'Raiz',
-          ext: f.ext || '.txt',
-          material: f.matInfo?.tag || (f.name.toLowerCase().includes('isopor') ? 'ISOPOR' : 'MDF / ACM'),
-          status: running ? 'running' : done ? 'done' : 'pending',
-          statusLabel: running ? 'EM MÁQUINA AGORA' : done ? 'Concluído' : 'Pronto para Corte',
-          durationMinutes: durationMin,
-          cutMeters: f.cutMeters || null,
-          dimensions: dim,
-          operator: operatorName,
-          mtime: f.mtimeDate
-        });
+        const isTopoColunas = (f.subfolderName || '').toLowerCase().includes('topo isopor colunas') || (f.name || '').toLowerCase().includes('topo isopor colunas');
+        const targetQty = isTopoColunas ? 14 : (f.matInfo?.targetQuantity || 1);
+        const completedCount = f.execCount || 0;
+
+        if (targetQty > 1) {
+          for (let q = 1; q <= targetQty; q++) {
+            const pieceDone = q <= completedCount || done;
+            const pieceRunning = running && q === (completedCount + 1);
+            const pieceStatus = pieceDone ? 'done' : pieceRunning ? 'running' : 'pending';
+            const pieceStatusLabel = pieceDone ? 'Concluído' : pieceRunning ? 'EM MÁQUINA AGORA' : `Pendente (${q}/${targetQty})`;
+
+            items.push({
+              id: `router-${f.jobName}-${f.name}-p${q}`,
+              stage: 'router',
+              stageLabel: '3. FILA ROUTER (.TXT)',
+              stageColor: 'orange',
+              name: `${f.name} [Peça ${q} de ${targetQty}]`,
+              baseName: f.name,
+              itemIndex: q,
+              targetQuantity: targetQty,
+              jobName: f.jobName || 'Geral',
+              subfolder: f.subfolderName || 'Raiz',
+              ext: f.ext || '.txt',
+              material: f.matInfo?.tag || (f.name.toLowerCase().includes('isopor') ? 'ISOPOR 100mm' : 'MDF / ACM'),
+              status: pieceStatus,
+              statusLabel: pieceStatusLabel,
+              durationMinutes: durationMin,
+              cutMeters: f.cutMeters || null,
+              dimensions: dim,
+              operator: operatorName,
+              mtime: f.mtimeDate
+            });
+          }
+        } else {
+          items.push({
+            id: `router-${f.jobName}-${f.name}`,
+            stage: 'router',
+            stageLabel: '3. FILA ROUTER (.TXT)',
+            stageColor: 'orange',
+            name: f.name,
+            baseName: f.name,
+            itemIndex: 1,
+            targetQuantity: 1,
+            jobName: f.jobName || 'Geral',
+            subfolder: f.subfolderName || 'Raiz',
+            ext: f.ext || '.txt',
+            material: f.matInfo?.tag || (f.name.toLowerCase().includes('isopor') ? 'ISOPOR' : 'MDF / ACM'),
+            status: running ? 'running' : done ? 'done' : 'pending',
+            statusLabel: running ? 'EM MÁQUINA AGORA' : done ? 'Concluído' : 'Pronto para Corte',
+            durationMinutes: durationMin,
+            cutMeters: f.cutMeters || null,
+            dimensions: dim,
+            operator: operatorName,
+            mtime: f.mtimeDate
+          });
+        }
       });
     }
 
@@ -218,27 +255,60 @@ export function FichaTecnicaPipelineModal({
     if (includeConcluded && pipelineData.gcodeFeitos) {
       pipelineData.gcodeFeitos.forEach(f => {
         if (selectedJob !== 'todos' && f.jobName !== selectedJob && f.jobName?.replace(/\s+/g, ' ') !== selectedJob?.replace(/\s+/g, ' ')) return;
-        if (items.some(it => it.name === f.name && it.stage === 'router')) return;
+        if (items.some(it => (it.baseName || it.name) === f.name && it.stage === 'router')) return;
         const durationMin = resolveTaskDuration(f);
         const dim = f.dimensions || (f.widthMm && f.heightMm ? `${f.widthMm}×${f.heightMm}mm` : null);
-        items.push({
-          id: `done-${f.jobName}-${f.name}`,
-          stage: 'done',
-          stageLabel: 'HISTÓRICO CONCLUÍDO',
-          stageColor: 'emerald',
-          name: f.name,
-          jobName: f.jobName || 'Geral',
-          subfolder: f.subfolderName || 'Raiz',
-          ext: f.ext || '.txt',
-          material: f.matInfo?.tag || 'Usinado',
-          status: 'done',
-          statusLabel: 'Concluído',
-          durationMinutes: durationMin,
-          cutMeters: f.cutMeters || null,
-          dimensions: dim,
-          operator: f.lastExec?.operator_name || operatorName,
-          mtime: f.lastExec?.start_time || f.mtimeDate
-        });
+
+        const isTopoColunas = (f.subfolderName || '').toLowerCase().includes('topo isopor colunas') || (f.name || '').toLowerCase().includes('topo isopor colunas');
+        const targetQty = isTopoColunas ? 14 : (f.matInfo?.targetQuantity || 1);
+
+        if (targetQty > 1) {
+          for (let q = 1; q <= targetQty; q++) {
+            items.push({
+              id: `done-${f.jobName}-${f.name}-p${q}`,
+              stage: 'done',
+              stageLabel: 'HISTÓRICO CONCLUÍDO',
+              stageColor: 'emerald',
+              name: `${f.name} [Peça ${q} de ${targetQty}]`,
+              baseName: f.name,
+              itemIndex: q,
+              targetQuantity: targetQty,
+              jobName: f.jobName || 'Geral',
+              subfolder: f.subfolderName || 'Raiz',
+              ext: f.ext || '.txt',
+              material: f.matInfo?.tag || 'Usinado',
+              status: 'done',
+              statusLabel: 'Concluído',
+              durationMinutes: durationMin,
+              cutMeters: f.cutMeters || null,
+              dimensions: dim,
+              operator: f.lastExec?.operator_name || operatorName,
+              mtime: f.lastExec?.start_time || f.mtimeDate
+            });
+          }
+        } else {
+          items.push({
+            id: `done-${f.jobName}-${f.name}`,
+            stage: 'done',
+            stageLabel: 'HISTÓRICO CONCLUÍDO',
+            stageColor: 'emerald',
+            name: f.name,
+            baseName: f.name,
+            itemIndex: 1,
+            targetQuantity: 1,
+            jobName: f.jobName || 'Geral',
+            subfolder: f.subfolderName || 'Raiz',
+            ext: f.ext || '.txt',
+            material: f.matInfo?.tag || 'Usinado',
+            status: 'done',
+            statusLabel: 'Concluído',
+            durationMinutes: durationMin,
+            cutMeters: f.cutMeters || null,
+            dimensions: dim,
+            operator: f.lastExec?.operator_name || operatorName,
+            mtime: f.lastExec?.start_time || f.mtimeDate
+          });
+        }
       });
     }
 

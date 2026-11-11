@@ -1158,9 +1158,10 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-500 border border-amber-500/25 flex items-center gap-1">
                   <Clock size={11} />
                   Duração Total da Fila: {formatHm(displayedGcodes.reduce((sum, f) => {
+                    const qty = f.matInfo?.targetQuantity || (((f.subfolderName || '').toLowerCase().includes('topo isopor colunas') || (f.name || '').toLowerCase().includes('topo isopor colunas')) ? 14 : 1);
                     const est = f.estimatedMinutes || (f.cutMeters ? Math.max(1, Math.round((f.cutMeters * 1000 / 1800) * 1.15)) : (f.name?.toLowerCase().includes('isopor') ? 90 : 0));
-                    return sum + est;
-                  }, 0))} ({displayedGcodes.length} chapas)
+                    return sum + (est * qty);
+                  }, 0))} ({displayedGcodes.length} arquivos)
                 </span>
                 <p className="text-xs text-slate-600 dark:text-slate-300">
                   ⚡ <strong>Baixa Automática:</strong> Conforme os arquivos rodam nas Routers (Mach3), o sistema detecta a conclusão automaticamente sem precisar de OK manual.
@@ -1299,9 +1300,20 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                           <td className="py-2 px-3 font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">
                             {f.estimatedMinutes || f.cutMeters ? (
                               <div className="flex flex-col">
-                                <span className="text-orange-500 font-black">
-                                  ~{formatHm(f.estimatedMinutes || Math.max(1, Math.round((f.cutMeters * 1000 / 1800) * 1.15)))}
-                                </span>
+                                {(() => {
+                                  const qty = f.matInfo?.targetQuantity || (((f.subfolderName || '').toLowerCase().includes('topo isopor colunas') || (f.name || '').toLowerCase().includes('topo isopor colunas')) ? 14 : 1);
+                                  const singleDur = f.estimatedMinutes || Math.max(1, Math.round((f.cutMeters * 1000 / 1800) * 1.15));
+                                  return (
+                                    <span className="text-orange-500 font-black">
+                                      ~{formatHm(singleDur)}
+                                      {qty > 1 && (
+                                        <span className="text-amber-500 text-[10px] ml-1 font-semibold">
+                                          (×{qty} = ~{formatHm(singleDur * qty)})
+                                        </span>
+                                      )}
+                                    </span>
+                                  );
+                                })()}
                                 {f.cutMeters > 0 && <span className="text-[9px] text-slate-400 font-normal">{f.cutMeters}m corte</span>}
                               </div>
                             ) : (

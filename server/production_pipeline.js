@@ -160,10 +160,12 @@ function getGCodeMetadata(filePath, mtime = 0) {
 }
 
 // Extrai inteligentemente material, espessura e quantidade do nome do arquivo (sem a extensão .eps/.cdr/.txt)
-function extractMaterialInfo(name) {
+function extractMaterialInfo(name, folderPath = '') {
     const fn = path.parse(name || '').name.toLowerCase();
+    const folder = (folderPath || '').toLowerCase();
     let material = null;
-    if (fn.includes('mdf')) material = 'MDF';
+    if (folder.includes('topo isopor colunas') || fn.includes('topo isopor colunas')) material = 'Isopor EPS';
+    else if (fn.includes('mdf')) material = 'MDF';
     else if (fn.includes('compensado') || fn.includes('comp ') || fn.includes('cambota')) material = 'Compensado';
     else if (fn.includes('pvc')) material = 'PVC';
     else if (fn.includes('isopor') || fn.includes('eps')) material = 'Isopor EPS';
@@ -174,7 +176,7 @@ function extractMaterialInfo(name) {
     else if (fn.includes('acm') || fn.includes('aluminio') || fn.includes('alumínio')) material = 'ACM';
 
     const thickMatch = fn.match(/(\d+(?:[.,]\d+)?)\s*(?:mm|m\b)/i);
-    const thickness = thickMatch ? `${thickMatch[1].replace(',', '.')}mm` : null;
+    const thickness = thickMatch ? `${thickMatch[1].replace(',', '.')}mm` : (material === 'Isopor EPS' ? '100mm' : null);
 
     let tag = null;
     if (material && thickness) tag = `${material} ${thickness}`;
@@ -185,9 +187,17 @@ function extractMaterialInfo(name) {
     const chapaMatch = fn.match(/(?:chapa\s*(\d+)|(\d+)\s*x|parte\s*(\d+)|_(\d+)|(\d+)\s*(?:pvc|mdf|comp))/i);
     const chapaIndex = chapaMatch ? (chapaMatch[1] || chapaMatch[2] || chapaMatch[3] || chapaMatch[4] || chapaMatch[5]) : null;
 
-    // Detecta quantidade de repetições (ex: 4X, 2X, 3X)
-    const qtyMatch = fn.match(/^(\d+)\s*x|\b(\d+)\s*x\b/i);
-    const targetQuantity = qtyMatch ? parseInt(qtyMatch[1] || qtyMatch[2], 10) : 1;
+    // Detecta quantidade de repetições (ex: 4X, 2X, 3X, ou topo isopor colunas 14x)
+    let targetQuantity = 1;
+    if (folder.includes('topo isopor colunas') || fn.includes('topo isopor colunas')) {
+        targetQuantity = 14;
+        tag = 'PVC 100mm (14x)';
+    } else {
+        const qtyMatch = fn.match(/^(\d+)\s*x|\b(\d+)\s*x\b/i);
+        if (qtyMatch) {
+            targetQuantity = parseInt(qtyMatch[1] || qtyMatch[2], 10);
+        }
+    }
 
     return { material, thickness, tag, chapaIndex, targetQuantity };
 }
@@ -327,6 +337,15 @@ function calculateDynamicBatches(dbJobs = [], completedFilesMap = {}) {
     const arcosIsoporA_Done = dbJobs.some(j => (j.file_name || '').toLowerCase().includes('1 pvc100mm') && (j.folder || '').toLowerCase() === 'arco a') ? 2 : 0;
     const arcosIsoporDone = arcosIsoporA_Done + arcosIsoporA2Done + arcosIsoporA3Done;
     const arcosIsoporPending = Math.max(0, 6 - arcosIsoporDone);
+
+    // 11. Topo Isopor Colunas (Meta: 14 blocos de 100mm · ~55min cada)
+    const topoColunasRuns = dbJobs.filter(j => {
+        const fn = (j.file_name || '').toLowerCase();
+        const fld = (j.folder || '').toLowerCase();
+        return (fn.includes('pvc100mm') || fn.includes('1 pvc100mm b10mm')) && fld.includes('topo isopor colunas');
+    });
+    const topoColunasDone = topoColunasRuns.length;
+    const topoColunasPending = Math.max(0, 14 - topoColunasDone);
 
     const batches = [
         {
@@ -514,6 +533,23 @@ function calculateDynamicBatches(dbJobs = [], completedFilesMap = {}) {
             status: arcosIsoporPending === 0 ? 'concluido' : 'pronto_router',
             estMinutesPerSheet: 48,
             totalEstMinutes: arcosIsoporPending * 48,
+            priority: 'alta'
+        },
+        {
+            id: 'topo_isopor_colunas_14x',
+            name: `Topo Isopor Colunas 100mm (${topoColunasDone} de 14 blocos)`,
+            job: '2640  - EXPRESSO HOGWARTS CCXP',
+            subfolder: 'ROUTER/ENTRADA/TOPO ISOPOR COLUNAS',
+            file: '1 pvc100mm b10mm.txt (14x repetições)',
+            material: 'Isopor EPS / PVC 100mm',
+            dimensions: '1926 × 988 × 100 mm (14 blocos)',
+            tool: 'Ball Nose Ø10mm (b10mm)',
+            targetSheets: 14,
+            doneSheets: topoColunasDone,
+            pendingSheets: topoColunasPending,
+            status: topoColunasPending === 0 ? 'concluido' : 'pronto_router',
+            estMinutesPerSheet: 55,
+            totalEstMinutes: topoColunasPending * 55,
             priority: 'alta'
         }
     ];
@@ -875,7 +911,16 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     const completedExecs = execs.filter(j => !isJobActive(j));
                     const activeExec = findActiveExec(gf, lower);
                     const isCurrentlyRunning = Boolean(activeExec);
-                    const matInfo = gf.matInfo?.tag ? gf.matInfo : extractMaterialInfo(gf.name);
+                    let matInfo = gf.matInfo?.tag ? { ...gf.matInfo } : extractMaterialInfo(gf.name, gf.fullPath || gf.subfolderName);
+                    const isTopoColunas = (gf.subfolderName || '').toLowerCase().includes('topo isopor colunas') ||
+                                          (gf.fullPath || '').toLowerCase().includes('topo isopor colunas') ||
+                                          (gf.name || '').toLowerCase().includes('topo isopor colunas');
+                    if (isTopoColunas) {
+                        matInfo.targetQuantity = 14;
+                        matInfo.tag = 'PVC 100mm (14x)';
+                        matInfo.material = 'Isopor EPS';
+                        matInfo.thickness = '100mm';
+                    }
                     const targetQty = matInfo.targetQuantity || 1;
                     const dbCompRec = isFileCompletedInDb(gf, gf.jobName, gf.subfolderName, completedFilesMap);
                     const isDbDone = Boolean(dbCompRec);
@@ -912,6 +957,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                         gcodeProntos.push({
                             ...gf,
                             matInfo,
+                            execCount: completedExecs.length,
                             estimatedMinutes: estMinutes || gf.estimatedMinutes || null,
                             cutMeters: meta.cutMeters !== undefined ? meta.cutMeters : (gf.cutMeters || null),
                             widthMm: meta.widthMm || gf.widthMm || null,
@@ -1270,7 +1316,16 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         gcode.forEach(gf => {
             const dir = getNormDir(gf.fullPath);
             const subfolderName = path.basename(dir);
-            const matInfo = extractMaterialInfo(gf.name);
+            let matInfo = extractMaterialInfo(gf.name, gf.fullPath || subfolderName);
+            const isTopoColunas = (subfolderName || '').toLowerCase().includes('topo isopor colunas') ||
+                                  (gf.fullPath || '').toLowerCase().includes('topo isopor colunas') ||
+                                  (gf.name || '').toLowerCase().includes('topo isopor colunas');
+            if (isTopoColunas) {
+                matInfo.targetQuantity = 14;
+                matInfo.tag = 'PVC 100mm (14x)';
+                matInfo.material = 'Isopor EPS';
+                matInfo.thickness = '100mm';
+            }
             const lower = gf.name.toLowerCase().trim();
             const subLower = (subfolderName || '').toLowerCase().trim();
             const compoundKey = `${lower}___${subLower}`;
