@@ -630,7 +630,6 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         const latest = latestJobIdByRouter[(j.router_name || '').toLowerCase().trim()];
         return Boolean(latest && latest.id === j.id);
     };
-    const genericFolders = new Set(['', 'cod', 'cnc', 'router', 'gcode', 'corte', 'cortes', 'arquivos', 'arquivos 2026']);
 
     // Só conta execuções feitas DEPOIS que o arquivo foi salvo (margem de 2 min). Um .txt salvo de novo pelo Aspire
     // é um corte novo, e um nome genérico (ex: "mdf 15mm e4mm.txt") usado em outro projeto antigo não pode dar baixa nele.
@@ -640,7 +639,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         return execs.filter(j => new Date(j.start_time).getTime() >= fm - 120000);
     };
     // Execuções de um G-Code: aceita qualquer execução cuja pasta registrada no Mach3 seja uma das pastas-pai do arquivo
-    // (subpasta, "cod", ou nome do projeto). Execuções com o mesmo nome em OUTRAS pastas só contam se a pasta for genérica ou se for ancestral.
+    // (subpasta, "cod", ou nome do projeto). Execuções com o mesmo nome em OUTRAS pastas só contam se forem posteriores ao arquivo.
     const getFileExecs = (fileObj, lower) => {
         const all = execMap[lower] || [];
         const ancestors = new Set(
@@ -648,16 +647,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         );
         if (fileObj?.subfolderName) ancestors.add(String(fileObj.subfolderName).toLowerCase().trim());
         const sameFolder = all.filter(j => j.folder && ancestors.has(String(j.folder).toLowerCase().trim()));
-
-        // Fallback: se não achou pela pasta exata, só pode herdar execuções se a pasta gravada no Mach3 for vazia/genérica ('cod', 'cnc', etc)
-        // ou se estiver nos ancestrais do arquivo. NUNCA aceita execuções de subpastas irmãs explícitas (ex: 'COLUNAS', 'ARCO A', 'ARCO B' para 'ARCO A2')!
-        const candidateFallback = all.filter(j => {
-            if (!j.folder) return true;
-            const jf = String(j.folder).toLowerCase().trim();
-            return genericFolders.has(jf) || ancestors.has(jf);
-        });
-
-        let matched = (sameFolder.length > 0) ? sameFolder : execsAfterFile(candidateFallback, fileObj);
+        let matched = (sameFolder.length > 0) ? sameFolder : execsAfterFile(all, fileObj);
 
         // Se o arquivo foi reaberto para rodar novamente, descartar execuções de corte anteriores ao momento da reabertura!
         const reopenRec = getFileReopenRec(fileObj, fileObj?.subfolderName);
