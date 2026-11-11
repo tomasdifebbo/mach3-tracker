@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 require('dotenv').config();
 const { Pool, types } = require('pg');
 // Garante que colunas TIMESTAMP WITHOUT TIME ZONE (armazenadas em UTC) sejam interpretadas como UTC em qualquer SO (Windows/Linux)
