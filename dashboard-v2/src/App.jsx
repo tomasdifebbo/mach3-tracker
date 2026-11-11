@@ -69,6 +69,7 @@ function App() {
       console.error("Auth failed:", err);
       setIsLoggedIn(false);
       localStorage.removeItem('mach3_token');
+      setLoading(false);
     }
   };
 
@@ -206,12 +207,12 @@ function App() {
   }
 
   // Handle standard routes
-  if (!isLoggedIn) {
-    return <Login onLoginSuccess={() => setIsLoggedIn(true)} />;
+  if (!isLoggedIn || (!loading && !user)) {
+    return <Login onLoginSuccess={() => { setIsLoggedIn(true); loadUser(); }} />;
   }
 
   // Show Loading Screen while user data fetches (prevents brief dashboard flash on F5/Login)
-  if (loading || !user) {
+  if (loading && !user) {
     return (
       <div className="h-screen w-full bg-bg-main flex flex-col items-center justify-center gap-4 text-accent-cyan font-bold">
         <div className="w-10 h-10 border-4 border-accent-cyan/20 border-t-accent-cyan rounded-full animate-spin"></div>

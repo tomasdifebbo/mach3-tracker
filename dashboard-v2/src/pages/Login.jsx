@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { api } from '../services/api';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, LogIn, UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export function Login({ onLoginSuccess }) {
@@ -66,11 +65,7 @@ export function Login({ onLoginSuccess }) {
         <div className="absolute w-[600px] h-[600px] bg-accent-blue/10 rounded-full blur-[100px] -bottom-1/4 -right-1/4 animate-pulse duration-[5s]"></div>
       </div>
 
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 w-full max-w-[440px] px-6"
-      >
+      <div className="relative z-10 w-full max-w-[440px] px-6">
         <div className="glass p-10 rounded-[48px] border-white/5 border shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)]">
            <div className="text-center mb-10 space-y-4">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-white/5 border border-white/10 rounded-[20px] shadow-xl shadow-accent-cyan/10 p-2.5 overflow-hidden">
@@ -115,68 +110,56 @@ export function Login({ onLoginSuccess }) {
            )}
 
            <form onSubmit={handleSubmit} className="space-y-6">
-              <AnimatePresence mode="wait">
-                {error && (
-                  <motion.div 
-                    initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
-                    className="flex items-center gap-3 p-4 bg-accent-danger/10 border border-accent-danger/20 rounded-2xl text-accent-danger text-sm font-bold"
-                  >
-                    <AlertCircle size={18} /> {error}
-                  </motion.div>
-                )}
-                {success && (
-                  <motion.div 
-                    initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
-                    className="flex items-center gap-3 p-4 bg-accent-success/10 border border-accent-success/20 rounded-2xl text-accent-success text-sm font-bold"
-                  >
-                    <CheckCircle2 size={18} /> {success}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {error && (
+                <div className="flex items-center gap-3 p-4 bg-accent-danger/10 border border-accent-danger/20 rounded-2xl text-accent-danger text-sm font-bold">
+                  <AlertCircle size={18} /> {error}
+                </div>
+              )}
+              {success && (
+                <div className="flex items-center gap-3 p-4 bg-accent-success/10 border border-accent-success/20 rounded-2xl text-accent-success text-sm font-bold">
+                  <CheckCircle2 size={18} /> {success}
+                </div>
+              )}
 
-              <AnimatePresence mode="wait">
-                {mode !== 'reset' && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-2">E-mail Corporativo</label>
-                    <div className="relative group">
-                      <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-cyan transition-colors" />
-                      <input 
-                        type="email" 
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="ex@empresa.com" 
-                        className="w-full bg-white/5 border border-border px-11 py-4 rounded-2xl outline-none focus:border-accent-cyan/50 focus:bg-white/[0.08] transition-all text-white text-sm font-medium"
-                        required
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {mode !== 'reset' && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-text-muted px-2">E-mail Corporativo</label>
+                  <div className="relative group">
+                    <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-cyan transition-colors" />
+                    <input 
+                      type="email" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="ex@empresa.com" 
+                      className="w-full bg-white/5 border border-border px-11 py-4 rounded-2xl outline-none focus:border-accent-cyan/50 focus:bg-white/[0.08] transition-all text-white text-sm font-medium"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
 
-              <AnimatePresence mode="wait">
-                {(mode === 'login' || mode === 'register' || mode === 'reset') && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="space-y-2">
-                    <div className="flex items-center justify-between px-2">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Senha de Acesso</label>
-                      {mode === 'login' && (
-                        <button type="button" onClick={() => setMode('recover')} className="text-[10px] font-bold text-accent-cyan hover:underline">Esqueci minha senha</button>
-                      )}
-                    </div>
-                    <div className="relative group">
-                      <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-cyan transition-colors" />
-                      <input 
-                        type="password" 
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••" 
-                        className="w-full bg-white/5 border border-border px-11 py-4 rounded-2xl outline-none focus:border-accent-cyan/50 focus:bg-white/[0.08] transition-all text-white text-sm font-medium"
-                        required
-                        minLength={6}
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {(mode === 'login' || mode === 'register' || mode === 'reset') && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between px-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Senha de Acesso</label>
+                    {mode === 'login' && (
+                      <button type="button" onClick={() => setMode('recover')} className="text-[10px] font-bold text-accent-cyan hover:underline">Esqueci minha senha</button>
+                    )}
+                  </div>
+                  <div className="relative group">
+                    <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-accent-cyan transition-colors" />
+                    <input 
+                      type="password" 
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••" 
+                      className="w-full bg-white/5 border border-border px-11 py-4 rounded-2xl outline-none focus:border-accent-cyan/50 focus:bg-white/[0.08] transition-all text-white text-sm font-medium"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                </div>
+              )}
 
               {mode === 'register' && (
                 <p className="text-[10px] font-black text-accent-cyan bg-accent-cyan/10 px-4 py-2 rounded-xl text-center uppercase tracking-[0.1em]">
@@ -187,7 +170,7 @@ export function Login({ onLoginSuccess }) {
               <button 
                 type="submit" 
                 disabled={loading}
-                className="w-full py-4.5 bg-accent-cyan text-black font-black uppercase tracking-widest text-xs rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-accent-cyan/30 flex items-center justify-center gap-3"
+                className="w-full py-4.5 bg-accent-cyan text-black font-black uppercase tracking-widest text-xs rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-accent-cyan/30 flex items-center justify-center gap-3 cursor-pointer"
               >
                 {loading ? 'Processando...' : 
                  mode === 'login' ? <><LogIn size={18} /> Entrar no Dashboard</> : 
@@ -195,13 +178,27 @@ export function Login({ onLoginSuccess }) {
                  mode === 'recover' ? <><Mail size={18} /> Enviar Link de Recuperação</> :
                  <><Lock size={18} /> Salvar Nova Senha</>}
               </button>
+
+              {/* Botão de Acesso Rápido Casa do Trem */}
+              {mode === 'login' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('casadotrem@gmail.com');
+                    setPassword('admin');
+                  }}
+                  className="w-full py-2.5 rounded-xl border border-white/10 hover:border-accent-cyan/40 bg-white/[0.02] hover:bg-white/[0.06] text-slate-300 text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <span>⚡ Preencher Acesso Oficina (Casa do Trem)</span>
+                </button>
+              )}
            </form>
 
            <div className="mt-8 text-center text-[11px] text-text-muted font-medium opacity-50">
              © 2026 Mach3 Tracker Pro. Todos os direitos reservados.
            </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
