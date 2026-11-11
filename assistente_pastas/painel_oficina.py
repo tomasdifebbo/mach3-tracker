@@ -21,6 +21,7 @@ from config import (
 from engine import FolderAssistantEngine
 from icon_helper import ensure_app_icon
 from robo_notificador import RoboNotificador
+from kanban_watcher import KanbanWatcher
 
 LOCK_FILE = DATA_DIR / "instance.lock"
 SHOW_SIGNAL = DATA_DIR / "show_window.signal"
@@ -92,6 +93,8 @@ class FolderAssistantApp:
 
         # Start engine
         self.engine.start()
+        self.kanban_watcher = KanbanWatcher(on_task_callback=self._enqueue_kanban_task)
+        self.kanban_watcher.start()
         self.root.after(300, self._poll_loop)
 
     def _enqueue_notification(
@@ -102,6 +105,9 @@ class FolderAssistantApp:
         job_name: str | None = None,
     ) -> None:
         self.ui_queue.put(("notify", (title, message, folder_path, job_name)))
+
+    def _enqueue_kanban_task(self, task: dict) -> None:
+        self.ui_queue.put(("kanban_notify", task))
 
     def _setup_styles(self) -> None:
         style = ttk.Style(self.root)
@@ -227,6 +233,7 @@ class FolderAssistantApp:
 
         self._make_btn(controls_box, "⟳ Verificar Agora", self._on_scan_now).pack(side="left", padx=(0, 8))
         self._make_btn(controls_box, "🤖 Testar Robô", self._on_test_robo).pack(side="left", padx=(0, 8))
+        self._make_btn(controls_box, "📋 Testar Kanban", self._on_test_kanban_robo).pack(side="left", padx=(0, 8))
         self._make_btn(controls_box, "◱ Modo Mini-Barra", self._enter_mini_mode).pack(side="left", padx=(0, 8))
         self._make_btn(controls_box, "⚙ Configurações", self._open_settings_dialog).pack(side="left")
 
@@ -509,6 +516,8 @@ class FolderAssistantApp:
                         title, msg = payload
                         folder_path, job_name = None, None
                     self._show_toast_popup(title, msg, folder_path=folder_path, job_name=job_name)
+                elif kind == "kanban_notify":
+                    self._show_kanban_popup(payload)
                 elif kind == "msg":
                     title, msg, is_err = payload
                     if is_err:
@@ -862,6 +871,48 @@ class FolderAssistantApp:
             job_name=job_name,
         )
 
+    def _on_test_kanban_robo(self) -> None:
+        """Testa o Robô Notificador anunciando uma tarefa do Kanban (A Fazer)."""
+        test_task = {
+            "id": 9999,
+            "title": "2640 - Placas Entrada Photo Opp (O.S. Teste)",
+            "machine": "Router 2 (Corte CNC)",
+            "priority": "alta",
+            "operator": "Tomas",
+        }
+        self._show_kanban_popup(test_task)
+
+    def _show_kanban_popup(self, task: dict) -> None:
+        """Aciona o Robô Router para anunciar nova tarefa no Kanban (A Fazer)."""
+        cfg = load_config()
+        if not cfg.get("notify_kanban", True) or not cfg.get("notify_popup", True):
+            return
+
+        title = "Nova Tarefa no Kanban!"
+        prio = (task.get("priority") or "normal").upper()
+        maquina = task.get("machine") or "Router / Oficina"
+        task_title = (task.get("title") or "Nova O.S.").strip()
+        msg = f"{task_title}\n📌 Máquina: {maquina}\n⚡ Prioridade: {prio}"
+
+        def _on_kanban_click():
+            try:
+                import webbrowser
+                webbrowser.open("https://mach3tracker.up.railway.app/encarregado")
+                logging.info("Kanban aberto com sucesso no navegador")
+            except Exception as e:
+                logging.warning(f"Erro ao abrir Kanban no navegador: {e}")
+
+        try:
+            self.robo.show(
+                title=title,
+                message=msg,
+                on_click=_on_kanban_click,
+                play_sound=True,
+                action_label="📋 Clique no balão para abrir o Kanban",
+            )
+        except Exception:
+            logging.exception("Falha ao invocar robo para tarefa kanban")
+
     # ---------------- Corner Toast Notification & Mini Mode ----------------
     def _show_toast_popup(
         self,
@@ -1128,6 +1179,17 @@ class FolderAssistantApp:
             activebackground=BG_CARD,
         ).pack(anchor="w", pady=(0, 4))
 
+        v_kanban = tk.BooleanVar(value=bool(cfg.get("notify_kanban", True)))
+        tk.Checkbutton(
+            body,
+            text="Mostrar alerta visual (Robô Router) para novas tarefas no Kanban (A Fazer)",
+            variable=v_kanban,
+            bg=BG_CARD,
+            fg=FG_MAIN,
+            selectcolor=BG_MAIN,
+            activebackground=BG_CARD,
+        ).pack(anchor="w", pady=(0, 4))
+
         v_gcode = tk.BooleanVar(value=bool(cfg.get("patch_gcode_macros", True)))
         tk.Checkbutton(
             body,
@@ -1160,6 +1222,7 @@ class FolderAssistantApp:
             cfg["dest_dir"] = v_dst.get().strip()
             cfg["scan_interval_seconds"] = iv
             cfg["notify_popup"] = v_pop.get()
+            cfg["notify_kanban"] = v_kanban.get()
             cfg["patch_gcode_macros"] = v_gcode.get()
             cfg["target_spindle_speed"] = v_speed.get().strip() or "18000"
             save_config(cfg)
@@ -1184,6 +1247,8 @@ class FolderAssistantApp:
             self._enter_mini_mode()
         elif ans is False:
             self.engine.stop()
+            if hasattr(self, "kanban_watcher"):
+                self.kanban_watcher.stop()
             self.root.destroy()
 
 

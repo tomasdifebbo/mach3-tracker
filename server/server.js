@@ -3148,12 +3148,40 @@ app.get('/api/kanban', authenticateToken, async (req, res) => {
     }
 });
 
+// Endpoint público/leve para o Robô da Oficina (assistente_pastas) e apps detectarem novas tarefas em 'todo' (A Fazer)
+app.get('/api/kanban/todo-updates', async (req, res) => {
+    try {
+        const { since_id, since_time } = req.query;
+        let query = `
+            SELECT id, title, machine, operator, date, priority, column_id, "userId", estimated_minutes,
+                   created_at, updated_at
+            FROM kanban_tasks
+            WHERE column_id = 'todo'
+        `;
+        const params = [];
+        if (since_id && !isNaN(parseInt(since_id))) {
+            params.push(parseInt(since_id));
+            query += ` AND id > $${params.length}`;
+        }
+        if (since_time) {
+            params.push(new Date(since_time));
+            query += ` AND updated_at > $${params.length}`;
+        }
+        query += ` ORDER BY updated_at DESC, id DESC LIMIT 50`;
+        const { rows } = await pool.query(query, params);
+        res.json({ success: true, count: rows.length, tasks: rows });
+    } catch (err) {
+        console.error('Erro em GET /api/kanban/todo-updates:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/kanban', authenticateToken, async (req, res) => {
     const { title, machine, operator, date, priority, column_id, estimated_minutes } = req.body;
     const estMin = estimated_minutes ? parseFloat(estimated_minutes) : null;
     try {
         const r = await pool.query(
-            'INSERT INTO kanban_tasks (title, machine, operator, date, priority, column_id, "userId", estimated_minutes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            'INSERT INTO kanban_tasks (title, machine, operator, date, priority, column_id, "userId", estimated_minutes, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *',
             [title, machine || null, operator || null, date || null, priority || 'media', column_id || 'todo', req.user.id, estMin]
         );
         res.json(r.rows[0]);
@@ -3179,7 +3207,8 @@ app.patch('/api/kanban/:id', authenticateToken, async (req, res) => {
                  reschedule_reason = COALESCE($7, reschedule_reason),
                  rescheduled_date = COALESCE($8, rescheduled_date),
                  reschedule_count = COALESCE($9, reschedule_count),
-                 estimated_minutes = COALESCE($10, estimated_minutes)
+                 estimated_minutes = COALESCE($10, estimated_minutes),
+                 updated_at = CURRENT_TIMESTAMP
              WHERE id = $11 AND "userId" = $12 RETURNING *`,
             [title, machine, operator, date, priority, column_id, reschedule_reason, rescheduled_date, reschedule_count, estMin, req.params.id, req.user.id]
         );
@@ -3227,7 +3256,8 @@ app.post('/api/kanban/:id/reschedule', authenticateToken, async (req, res) => {
                  rescheduled_date = $1, 
                  reschedule_reason = $2, 
                  reschedule_count = $3, 
-                 column_id = 'todo' 
+                 column_id = 'todo',
+                 updated_at = CURRENT_TIMESTAMP
              WHERE id = $4 AND "userId" = $5 RETURNING *`,
             [dateVal, reason.trim(), newCount, req.params.id, req.user.id]
         );
