@@ -313,6 +313,21 @@ function calculateDynamicBatches(dbJobs = [], completedFilesMap = {}) {
     // 9. Parede Especial Photo Opp (33 cortes executados na madrugada de 07/11)
     const paredeEspDone = 33;
 
+    // 10. Arcos Isopor Photo Opp (Arco A, Arco A2, Arco A3 - 2 blocos de 100mm por arco = 6 blocos no total)
+    const arcosIsoporA2Done = dbJobs.filter(j => {
+        const fn = (j.file_name || '').toLowerCase();
+        const fld = (j.folder || '').toLowerCase();
+        return fn.includes('pvc100mm') && fld.includes('arco a2');
+    }).length;
+    const arcosIsoporA3Done = dbJobs.filter(j => {
+        const fn = (j.file_name || '').toLowerCase();
+        const fld = (j.folder || '').toLowerCase();
+        return fn.includes('pvc100mm') && fld.includes('arco a3');
+    }).length;
+    const arcosIsoporA_Done = dbJobs.some(j => (j.file_name || '').toLowerCase().includes('1 pvc100mm') && (j.folder || '').toLowerCase() === 'arco a') ? 2 : 0;
+    const arcosIsoporDone = arcosIsoporA_Done + arcosIsoporA2Done + arcosIsoporA3Done;
+    const arcosIsoporPending = Math.max(0, 6 - arcosIsoporDone);
+
     const batches = [
         {
             id: 'tijolos_9mm',
@@ -483,6 +498,23 @@ function calculateDynamicBatches(dbJobs = [], completedFilesMap = {}) {
             estMinutesPerSheet: 35,
             totalEstMinutes: 0,
             priority: 'concluido'
+        },
+        {
+            id: 'isopor_arcos_photo_opp',
+            name: `Arcos Isopor Photo Opp - Arco A, A2, A3 (${arcosIsoporDone} de 6 blocos)`,
+            job: '2640  - EXPRESSO HOGWARTS CCXP',
+            subfolder: 'FACHADA PHOTO OPP/ISOPOR (ARCO A, A2, A3)',
+            file: '1 pvc100mm b10mm.txt & 2 pvc100mm b10mm.txt (ARCO A, A2, A3)',
+            material: 'Isopor EPS / PVC 100mm',
+            dimensions: 'Blocos 100mm Usinagem 3D',
+            tool: 'Ball Nose Ø10mm (b10mm)',
+            targetSheets: 6,
+            doneSheets: arcosIsoporDone,
+            pendingSheets: arcosIsoporPending,
+            status: arcosIsoporPending === 0 ? 'concluido' : 'pronto_router',
+            estMinutesPerSheet: 48,
+            totalEstMinutes: arcosIsoporPending * 48,
+            priority: 'alta'
         }
     ];
 
@@ -598,6 +630,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         const latest = latestJobIdByRouter[(j.router_name || '').toLowerCase().trim()];
         return Boolean(latest && latest.id === j.id);
     };
+    const genericFolders = new Set(['', 'cod', 'cnc', 'router', 'gcode', 'corte', 'cortes', 'arquivos', 'arquivos 2026']);
+
     // Só conta execuções feitas DEPOIS que o arquivo foi salvo (margem de 2 min). Um .txt salvo de novo pelo Aspire
     // é um corte novo, e um nome genérico (ex: "mdf 15mm e4mm.txt") usado em outro projeto antigo não pode dar baixa nele.
     const execsAfterFile = (execs, fileObj) => {
@@ -606,7 +640,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         return execs.filter(j => new Date(j.start_time).getTime() >= fm - 120000);
     };
     // Execuções de um G-Code: aceita qualquer execução cuja pasta registrada no Mach3 seja uma das pastas-pai do arquivo
-    // (subpasta, "cod", ou nome do projeto). Execuções com o mesmo nome em OUTRAS pastas só contam se forem posteriores ao arquivo.
+    // (subpasta, "cod", ou nome do projeto). Execuções com o mesmo nome em OUTRAS pastas só contam se a pasta for genérica ou se for ancestral.
     const getFileExecs = (fileObj, lower) => {
         const all = execMap[lower] || [];
         const ancestors = new Set(
@@ -614,7 +648,16 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         );
         if (fileObj?.subfolderName) ancestors.add(String(fileObj.subfolderName).toLowerCase().trim());
         const sameFolder = all.filter(j => j.folder && ancestors.has(String(j.folder).toLowerCase().trim()));
-        let matched = (sameFolder.length > 0) ? sameFolder : execsAfterFile(all, fileObj);
+
+        // Fallback: se não achou pela pasta exata, só pode herdar execuções se a pasta gravada no Mach3 for vazia/genérica ('cod', 'cnc', etc)
+        // ou se estiver nos ancestrais do arquivo. NUNCA aceita execuções de subpastas irmãs explícitas (ex: 'COLUNAS', 'ARCO A', 'ARCO B' para 'ARCO A2')!
+        const candidateFallback = all.filter(j => {
+            if (!j.folder) return true;
+            const jf = String(j.folder).toLowerCase().trim();
+            return genericFolders.has(jf) || ancestors.has(jf);
+        });
+
+        let matched = (sameFolder.length > 0) ? sameFolder : execsAfterFile(candidateFallback, fileObj);
 
         // Se o arquivo foi reaberto para rodar novamente, descartar execuções de corte anteriores ao momento da reabertura!
         const reopenRec = getFileReopenRec(fileObj, fileObj?.subfolderName);
@@ -642,6 +685,11 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             const jf = String(j.folder).toLowerCase().trim().replace(/\s+/g, ' ');
             const sub = String(fileObj?.subfolderName || '').toLowerCase().trim().replace(/\s+/g, ' ');
             if (sub && sub.length >= 3) {
+                // Ensure sibling arcos with numbers don't cross match (e.g. 'arco a' vs 'arco a2' vs 'arco a3')
+                const numJf = jf.match(/\d+$/)?.[0] || '';
+                const numSub = sub.match(/\d+$/)?.[0] || '';
+                if (numJf !== numSub && (jf.includes('arco') || sub.includes('arco'))) return false;
+
                 if (jf.includes('arco a') && !sub.includes('arco a')) return false;
                 if (jf.includes('arco b') && !sub.includes('arco b')) return false;
                 if (jf.includes(sub) || sub.includes(jf)) return true;

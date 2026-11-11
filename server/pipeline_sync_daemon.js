@@ -16,6 +16,14 @@ pool.on('error', (err) => {
     console.error('[PipelineDaemon] Pool error (reconectando automaticamente):', err.message);
 });
 
+process.on('uncaughtException', (err) => {
+    console.error('[PipelineDaemon] Uncaught Exception (recuperando):', err.message);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[PipelineDaemon] Unhandled Rejection (recuperando):', reason ? (reason.message || reason) : 'desconhecido');
+});
+
 let lastSignature = '';
 let isSyncing = false;
 let pendingSync = false;
