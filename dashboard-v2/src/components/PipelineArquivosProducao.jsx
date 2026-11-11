@@ -4,7 +4,7 @@ import {
   Search, Filter, Copy, Check, ExternalLink, ArrowRight, HardDrive,
   Cpu, Wrench, Sparkles, ChevronDown, ChevronRight, FolderCheck,
   FileSpreadsheet, Zap, Flame, ShieldAlert, Award, PlayCircle, Compass,
-  FolderTree, Box, CheckSquare, Square, ClipboardList
+  FolderTree, Box, CheckSquare, Square, ClipboardList, RotateCcw
 } from 'lucide-react';
 import { api } from '../services/api';
 import { CaixaChecklistProducao, isFileMarkedOk } from './CaixaChecklistProducao';
@@ -89,6 +89,8 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
     const k = getFileKey(f);
     // Se o arquivo está RODANDO AGORA na máquina, NUNCA pode ser considerado concluído/checked
     if (f.isCurrentlyRunning) return false;
+    // Se o arquivo foi reaberto / solicitado rodar novamente, NUNCA deve ser considerado concluído por checklist antigo!
+    if (f.isReopened) return false;
     return Boolean(fileChecklist[k] || (f.fullPath && fileChecklist[f.fullPath]) || f.isManuallyDone);
   };
 
@@ -147,7 +149,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
 
   const toggleFileCheck = async (f, stage = '') => {
     const key = getFileKey(f);
-    const currentlyChecked = isFileChecked(f);
+    const currentlyChecked = stage === 'router' ? isFileDone(f) : (stage === 'aspire' ? isAspireDone(f) : isFileChecked(f));
     const willBeChecked = !currentlyChecked;
 
     setFileChecklist(prev => {
@@ -161,9 +163,15 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
         };
         next[key] = entry;
         next[f.name] = entry;
+        if (f.fullPath) next[f.fullPath] = entry;
       } else {
         delete next[key];
         delete next[f.name];
+        if (f.fullPath) delete next[f.fullPath];
+        if (f.subfolderName) {
+          delete next[`${f.name}___${f.subfolderName.toLowerCase()}`];
+          delete next[`${f.subfolderName.toLowerCase()}/${f.name.toLowerCase()}`];
+        }
       }
       try {
         localStorage.setItem('mach3_pipeline_file_checklist_v1', JSON.stringify(next));
@@ -171,7 +179,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       return next;
     });
 
-    // Salva permanentemente no PostgreSQL para que nunca mais volte para a fila
+    // Salva permanentemente no PostgreSQL para que nunca mais volte para a fila (ou retorne se desmarcado)
     try {
       await api.togglePipelineCompleted({
         file_key: key,
@@ -198,6 +206,13 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
         title: f.name,
         stageAtual: stage,
         nextStage: nextStageName
+      });
+      setTimeout(() => setStageToast(null), 3500);
+    } else {
+      setStageToast({
+        title: f.name,
+        stageAtual: stage,
+        nextStage: '↩️ Retornado para a Fila da Máquina com sucesso!'
       });
       setTimeout(() => setStageToast(null), 3500);
     }
@@ -410,30 +425,52 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
 
   const isFileDone = (f) => {
     if (!f || f.isCurrentlyRunning) return false;
+    if (f.isReopened) return false;
     return Boolean(isFileChecked(f) || f.isExecuted || isFileMarkedOk(f.name));
   };
 
   const routerCounts = useMemo(() => {
-    let concluidos = 0;
+    let concluidos = (pipelineData?.gcodeFeitos || []).length;
+    let pendentes = 0;
     filteredGcodes.forEach(f => {
       if (isFileDone(f)) concluidos++;
+      else pendentes++;
     });
     return {
-      total: filteredGcodes.length,
+      total: pendentes + concluidos,
       concluidos,
-      pendentes: Math.max(0, filteredGcodes.length - concluidos)
+      pendentes
     };
-  }, [filteredGcodes, fileChecklist]);
+  }, [filteredGcodes, pipelineData?.gcodeFeitos, fileChecklist]);
 
   const displayedGcodes = useMemo(() => {
+    if (routerCheckFilter === 'concluidos') {
+      const listDone = [...(pipelineData?.gcodeFeitos || [])];
+      (pipelineData?.gcodeProntos || []).forEach(gf => {
+        if (isFileDone(gf) && !listDone.some(d => d.name === gf.name && d.subfolderName === gf.subfolderName)) {
+          listDone.push({ ...gf, isManuallyDone: true });
+        }
+      });
+      return listDone.filter(f => {
+        if (selectedJob !== 'todos' && f.jobName !== selectedJob) return false;
+        if (selectedExt !== 'todas' && f.ext !== selectedExt) return false;
+        if (searchTerm) {
+          const s = searchTerm.toLowerCase();
+          return f.name.toLowerCase().includes(s) || 
+                 (f.jobName && f.jobName.toLowerCase().includes(s)) ||
+                 (f.subfolderName && f.subfolderName.toLowerCase().includes(s));
+        }
+        return true;
+      });
+    }
+
     return filteredGcodes.filter(f => {
       if (f.isCurrentlyRunning) return true; // Arquivos rodando agora SEMPRE aparecem na fila!
       const isChecked = isFileDone(f);
       if (routerCheckFilter === 'pendentes') return !isChecked;
-      if (routerCheckFilter === 'concluidos') return isChecked;
       return true;
     });
-  }, [filteredGcodes, fileChecklist, routerCheckFilter]);
+  }, [filteredGcodes, pipelineData?.gcodeFeitos, fileChecklist, routerCheckFilter, selectedJob, selectedExt, searchTerm]);
 
   const runningGcodes = useMemo(() => {
     return filteredGcodes.filter(f => f.isCurrentlyRunning);
@@ -1385,12 +1422,13 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                     <th className="py-2.5 px-3">Vezes</th>
                     <th className="py-2.5 px-3">Duração</th>
                     <th className="py-2.5 px-3">Data</th>
+                    <th className="py-2.5 px-3 text-right">Ação</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                   {filteredDone.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-slate-400">
+                      <td colSpan={9} className="py-8 text-center text-slate-400">
                         Nenhum arquivo executado encontrado.
                       </td>
                     </tr>
@@ -1427,6 +1465,17 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                         </td>
                         <td className="py-2 px-3 text-slate-400 text-[10px]">
                           {formatDate(d.lastExec?.start_time)}
+                        </td>
+                        <td className="py-2 px-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => toggleFileCheck(d, 'router')}
+                            className="px-2 py-1 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-500 dark:text-amber-400 border border-amber-500/30 text-[10px] font-bold inline-flex items-center gap-1 transition-all"
+                            title="Reabrir e devolver este arquivo para a Fila da Máquina"
+                          >
+                            <RotateCcw size={11} />
+                            <span>Devolver p/ Fila</span>
+                          </button>
                         </td>
                       </tr>
                     ))

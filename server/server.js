@@ -4216,6 +4216,44 @@ app.post('/api/pipeline/toggle-completed', async (req, res) => {
             RETURNING *;
         `;
         const result = await pool.query(query, [key, name, stage || null, subfolder || null, job_name || null, isDone, op]);
+
+        // Se desmarcou (reverteu), garante a reabertura no pipeline e atualiza variantes
+        if (!isDone) {
+            try {
+                await pool.query(`
+                    UPDATE pipeline_completed_files 
+                    SET done = FALSE, updated_at = CURRENT_TIMESTAMP
+                    WHERE LOWER(file_key) = LOWER($1) OR LOWER(file_name) = LOWER($2)
+                `, [key, name]);
+
+                await pool.query(`
+                    INSERT INTO pipeline_reopen_files (file_key, reopened_at, reason)
+                    VALUES ($1, CURRENT_TIMESTAMP, 'Reaberto pelo operador no Pipeline')
+                    ON CONFLICT (file_key) DO UPDATE SET reopened_at = CURRENT_TIMESTAMP
+                `, [key.toLowerCase().trim()]);
+
+                if (name && name.toLowerCase().trim() !== key.toLowerCase().trim()) {
+                    await pool.query(`
+                        INSERT INTO pipeline_reopen_files (file_key, reopened_at, reason)
+                        VALUES ($1, CURRENT_TIMESTAMP, 'Reaberto pelo operador no Pipeline')
+                        ON CONFLICT (file_key) DO UPDATE SET reopened_at = CURRENT_TIMESTAMP
+                    `, [name.toLowerCase().trim()]);
+                }
+            } catch (reopenErr) {
+                console.warn('Erro ao atualizar reabertura em toggle-completed:', reopenErr.message);
+            }
+        } else {
+            // Se marcou como feito, limpa de pipeline_reopen_files
+            try {
+                await pool.query(`
+                    DELETE FROM pipeline_reopen_files
+                    WHERE LOWER(file_key) = LOWER($1) OR LOWER(file_key) = LOWER($2)
+                `, [key, name]);
+            } catch (delErr) {
+                console.warn('Erro ao remover de pipeline_reopen_files:', delErr.message);
+            }
+        }
+
         invalidatePipelineCache();
         res.json({ success: true, item: result.rows[0] });
     } catch (err) {

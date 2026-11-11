@@ -3,8 +3,8 @@
     "totalJobs": 102,
     "totalCadPreparar": 35,
     "totalAspirePreparar": 31,
-    "totalGcodePronto": 25,
-    "totalConcluidos": 821
+    "totalGcodePronto": 30,
+    "totalConcluidos": 818
   },
   "specialBatches": [
     {
@@ -217,7 +217,7 @@
       "name": "2640  - EXPRESSO HOGWARTS CCXP",
       "source": "OneDrive (3 - OFICINA)",
       "path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA",
-      "totalFiles": 401,
+      "totalFiles": 403,
       "cadCount": 48,
       "cadPrepararCount": 20,
       "cadComGcodeCount": 28,
@@ -225,9 +225,9 @@
       "aspireCount": 48,
       "aspirePrepararCount": 11,
       "aspireComGcodeCount": 37,
-      "gcodeCount": 265,
-      "gcodeProntoCount": 25,
-      "gcodeFeitoCount": 240,
+      "gcodeCount": 267,
+      "gcodeProntoCount": 29,
+      "gcodeFeitoCount": 238,
       "progressPercent": 66
     },
     {
@@ -265,6 +265,23 @@
       "progressPercent": 94
     },
     {
+      "name": "2640 - Expresso hogwarts",
+      "source": "Router Local",
+      "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts",
+      "totalFiles": 98,
+      "cadCount": 7,
+      "cadPrepararCount": 1,
+      "cadComGcodeCount": 6,
+      "cadComAspireCount": 0,
+      "aspireCount": 13,
+      "aspirePrepararCount": 2,
+      "aspireComGcodeCount": 11,
+      "gcodeCount": 56,
+      "gcodeProntoCount": 1,
+      "gcodeFeitoCount": 55,
+      "progressPercent": 72
+    },
+    {
       "name": "2662A - CAPACETE",
       "source": "OneDrive (3 - OFICINA)",
       "path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2662A - CAPACETE\\3 - OFICINA",
@@ -280,23 +297,6 @@
       "gcodeProntoCount": 0,
       "gcodeFeitoCount": 106,
       "progressPercent": 97
-    },
-    {
-      "name": "2640 - Expresso hogwarts",
-      "source": "Router Local",
-      "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts",
-      "totalFiles": 98,
-      "cadCount": 7,
-      "cadPrepararCount": 1,
-      "cadComGcodeCount": 6,
-      "cadComAspireCount": 0,
-      "aspireCount": 13,
-      "aspirePrepararCount": 2,
-      "aspireComGcodeCount": 11,
-      "gcodeCount": 56,
-      "gcodeProntoCount": 0,
-      "gcodeFeitoCount": 56,
-      "progressPercent": 74
     },
     {
       "name": "2667A - EXPO ENTRADA",
@@ -8191,7 +8191,7 @@
         12000
       ],
       "isCurrentlyRunning": false,
-      "isReopened": false,
+      "isReopened": true,
       "runningMachine": null,
       "runningStartTime": null
     },
@@ -8845,6 +8845,72 @@
       "name": "1 pvc100mm b10mm.txt",
       "ext": ".txt",
       "type": "gcode",
+      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\FACHADA PHOTO OPP\\ISOPOR\\ARCO B\\1 pvc100mm b10mm.txt",
+      "size": 1170563,
+      "mtime": 1793856765000,
+      "mtimeDate": "2026-11-05T05:32:45.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCO B",
+      "matInfo": {
+        "material": "PVC",
+        "thickness": "100mm",
+        "tag": "PVC 100mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 126.2,
+      "cutMeters": 670,
+      "widthMm": 1929,
+      "heightMm": 916,
+      "depthMm": 100,
+      "feeds": [
+        6000
+      ],
+      "spindles": [
+        18000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": true,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "1 pvc100mm b10mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\FACHADA PHOTO OPP\\ISOPOR\\ARCO A\\1 pvc100mm b10mm.txt",
+      "size": 1205757,
+      "mtime": 1793856706000,
+      "mtimeDate": "2026-11-05T05:31:46.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCO A",
+      "matInfo": {
+        "material": "PVC",
+        "thickness": "100mm",
+        "tag": "PVC 100mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 119.7,
+      "cutMeters": 636,
+      "widthMm": 1929,
+      "heightMm": 922,
+      "depthMm": 100,
+      "feeds": [
+        6000
+      ],
+      "spindles": [
+        18000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": true,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "1 pvc100mm b10mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
       "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA PHOTO OPP\\ISOPOR\\ARCO A2\\1 pvc100mm b10mm.txt",
       "size": 1154767,
       "mtime": 1793856706000,
@@ -8884,6 +8950,39 @@
       "mtimeDate": "2026-11-05T05:31:46.000Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
       "subfolderName": "ARCO A3",
+      "matInfo": {
+        "material": "PVC",
+        "thickness": "100mm",
+        "tag": "PVC 100mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 119.7,
+      "cutMeters": 636,
+      "widthMm": 1929,
+      "heightMm": 922,
+      "depthMm": 100,
+      "feeds": [
+        6000
+      ],
+      "spindles": [
+        18000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": true,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "1 pvc100mm b10mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA PHOTO OPP\\ISOPOR\\ARCO A4\\1 pvc100mm b10mm.txt",
+      "size": 1154767,
+      "mtime": 1793856706000,
+      "mtimeDate": "2026-11-05T05:31:46.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCO A4",
       "matInfo": {
         "material": "PVC",
         "thickness": "100mm",
@@ -8972,6 +9071,72 @@
       "isReopened": true,
       "runningMachine": null,
       "runningStartTime": null
+    },
+    {
+      "name": "1 pvc100mm b10mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640 - GALHO\\ISOPOR\\cod\\1 pvc100mm b10mm.txt",
+      "size": 1068766,
+      "mtime": 1792688635898.6216,
+      "mtimeDate": "2026-10-22T17:03:55.899Z",
+      "jobName": "2640 - Expresso hogwarts",
+      "subfolderName": "ISOPOR",
+      "matInfo": {
+        "material": "PVC",
+        "thickness": "100mm",
+        "tag": "PVC 100mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 31.7,
+      "cutMeters": 165,
+      "widthMm": 1830,
+      "heightMm": 953,
+      "depthMm": 63,
+      "feeds": [
+        6000
+      ],
+      "spindles": [
+        18000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": true,
+      "runningMachine": null,
+      "runningStartTime": null
+    },
+    {
+      "name": "1 pvc100mm b10mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\2 - CRIATIVO\\GALHOS\\CNC\\ISOPOR\\cod\\1 pvc100mm b10mm.txt",
+      "size": 1068754,
+      "mtime": 1792652616000,
+      "mtimeDate": "2026-10-22T07:03:36.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ISOPOR",
+      "matInfo": {
+        "material": "PVC",
+        "thickness": "100mm",
+        "tag": "PVC 100mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 31.7,
+      "cutMeters": 165,
+      "widthMm": 1830,
+      "heightMm": 953,
+      "depthMm": 63,
+      "feeds": [
+        6000
+      ],
+      "spindles": [
+        18000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": true,
+      "runningMachine": null,
+      "runningStartTime": null
     }
   ],
   "gcodeFeitos": [
@@ -9005,7 +9170,7 @@
         "file_name": "mdf 9mm_2-° chapa.txt",
         "folder": "TORRES",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-11-11T20:09:02.000Z",
         "end_time": "2026-11-11T20:31:16.000Z",
         "duration_minutes": 22.2333
@@ -9043,7 +9208,7 @@
         "file_name": "compensado 10mm peçasa faltantes e4mm_1-° chapa.txt",
         "folder": "FACHADA PHOTO OPP",
         "router_name": "Router Central",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-11-11T19:33:35.000Z",
         "end_time": "2026-11-11T20:03:01.000Z",
         "duration_minutes": 29.4333
@@ -9081,7 +9246,7 @@
         "file_name": "mdf 9mm_11-° chapa.txt",
         "folder": "TORRES",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-11-11T19:08:32.000Z",
         "end_time": "2026-11-11T19:38:17.000Z",
         "duration_minutes": 29.75
@@ -9119,7 +9284,7 @@
         "file_name": "26 pvc 100mm correçao peça 1 b100.txt",
         "folder": "2675A - HELLO KITTY TOBÔ",
         "router_name": "Router Central",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-11-11T14:48:55.000Z",
         "end_time": "2026-11-11T16:15:39.000Z",
         "duration_minutes": 86.7333
@@ -9423,7 +9588,7 @@
         "file_name": "26PVC 100mm b10mm.txt",
         "folder": "2675A - HELLO KITTY TOBÔ",
         "router_name": "Router Central",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-11-11T12:25:43.000Z",
         "end_time": "2026-11-11T12:45:04.000Z",
         "duration_minutes": 19.35
@@ -9461,7 +9626,7 @@
         "file_name": "25PVC 100mm b10mm.txt",
         "folder": "2675A - HELLO KITTY TOBÔ",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-11-11T12:16:23.000Z",
         "end_time": "2026-11-11T12:48:36.000Z",
         "duration_minutes": 32.2167
@@ -9499,7 +9664,7 @@
         "file_name": "24PVC 100mm b10mm.txt",
         "folder": "2675A - HELLO KITTY TOBÔ",
         "router_name": "Router Central",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-11-11T11:47:52.000Z",
         "end_time": "2026-11-11T12:18:14.000Z",
         "duration_minutes": 30.3667
@@ -9537,7 +9702,7 @@
         "file_name": "23PVC 100mm b10mm.txt",
         "folder": "2675A - HELLO KITTY TOBÔ",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-11-11T11:43:01.000Z",
         "end_time": "2026-11-11T12:07:33.000Z",
         "duration_minutes": 24.5333
@@ -9575,7 +9740,7 @@
         "file_name": "22PVC 100mm b10mm.txt",
         "folder": "2675A - HELLO KITTY TOBÔ",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-11-11T08:19:42.000Z",
         "end_time": "2026-11-11T09:00:27.000Z",
         "duration_minutes": 40.75
@@ -10991,7 +11156,7 @@
         "file_name": "mdf 9mm suporte canos e6mm_2-° chapa OK.txt",
         "folder": "FACHADA CASTELO",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-11-11T14:53:54.000Z",
         "end_time": "2026-11-11T15:13:21.000Z",
         "duration_minutes": 19.45
@@ -11029,7 +11194,7 @@
         "file_name": "mdf 9mm e4mm_2-°chapa OK.txt",
         "folder": "GRANDE HALL",
         "router_name": "Router Central",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-11-11T21:03:08.000Z",
         "end_time": "2026-11-11T21:21:15.000Z",
         "duration_minutes": 18.1167
@@ -11067,7 +11232,7 @@
         "file_name": "mdf 9mm e4mm_1-°chapa OK.txt",
         "folder": "GRANDE HALL",
         "router_name": "Router Central",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-11-11T18:00:19.000Z",
         "end_time": "2026-11-11T18:32:14.000Z",
         "duration_minutes": 31.9167
@@ -11865,7 +12030,7 @@
         "file_name": "MDF 9MM E6MM rampa D_14-° chapa OK.txt",
         "folder": "SALA ESCADAS",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-11-11T17:32:38.000Z",
         "end_time": "2026-11-11T17:38:28.000Z",
         "duration_minutes": 5.83333
@@ -11903,7 +12068,7 @@
         "file_name": "MDF 9MM E6MM rampa D_13-° chapa OK.txt",
         "folder": "SALA ESCADAS",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "Italo",
         "start_time": "2026-11-11T17:08:18.000Z",
         "end_time": "2026-11-11T17:18:54.000Z",
         "duration_minutes": 10.6
@@ -16449,7 +16614,7 @@
         "duration_minutes": 72.3333
       },
       "totalDurationMinutes": 72.3333,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "2 pvc100mm b10mm.txt",
@@ -16487,7 +16652,7 @@
         "duration_minutes": 51.2833
       },
       "totalDurationMinutes": 51.2833,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "3 pvc100mm b10mm.txt",
@@ -16528,44 +16693,6 @@
       "isManuallyDone": false
     },
     {
-      "name": "1 pvc100mm b10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\FACHADA PHOTO OPP\\ISOPOR\\ARCO B\\1 pvc100mm b10mm.txt",
-      "size": 1170563,
-      "mtime": 1793856765000,
-      "mtimeDate": "2026-11-05T05:32:45.000Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCO B",
-      "matInfo": {
-        "material": "PVC",
-        "thickness": "100mm",
-        "tag": "PVC 100mm",
-        "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "estimatedMinutes": 109.15,
-      "cutMeters": null,
-      "widthMm": null,
-      "heightMm": null,
-      "depthMm": null,
-      "feeds": null,
-      "spindles": null,
-      "execCount": 1,
-      "lastExec": {
-        "id": "10331",
-        "file_name": "1 pvc100mm b10mm.txt",
-        "folder": "ARCO B",
-        "router_name": "Router 2",
-        "operator_name": "tomas",
-        "start_time": "2026-11-08T17:07:19.000Z",
-        "end_time": "2026-11-08T18:56:28.000Z",
-        "duration_minutes": 109.15
-      },
-      "totalDurationMinutes": 109.15,
-      "isManuallyDone": false
-    },
-    {
       "name": "2 pvc100mm b10mm.txt",
       "ext": ".txt",
       "type": "gcode",
@@ -16601,45 +16728,7 @@
         "duration_minutes": 66.5667
       },
       "totalDurationMinutes": 189.2467,
-      "isManuallyDone": false
-    },
-    {
-      "name": "1 pvc100mm b10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\3 - OFICINA\\ROUTER\\FACHADA PHOTO OPP\\ISOPOR\\ARCO A\\1 pvc100mm b10mm.txt",
-      "size": 1205757,
-      "mtime": 1793856706000,
-      "mtimeDate": "2026-11-05T05:31:46.000Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCO A",
-      "matInfo": {
-        "material": "PVC",
-        "thickness": "100mm",
-        "tag": "PVC 100mm",
-        "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "estimatedMinutes": 207.833,
-      "cutMeters": null,
-      "widthMm": null,
-      "heightMm": null,
-      "depthMm": null,
-      "feeds": null,
-      "spindles": null,
-      "execCount": 2,
-      "lastExec": {
-        "id": "10396",
-        "file_name": "1 pvc100mm b10mm.txt",
-        "folder": "ARCO A",
-        "router_name": "Router 2",
-        "operator_name": "Italo",
-        "start_time": "2026-11-09T14:53:32.000Z",
-        "end_time": "2026-11-09T16:37:20.000Z",
-        "duration_minutes": 103.8
-      },
-      "totalDurationMinutes": 207.833,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "2 pvc100mm b10mm.txt",
@@ -16677,7 +16766,45 @@
         "duration_minutes": 103.233
       },
       "totalDurationMinutes": 103.233,
-      "isManuallyDone": false
+      "isManuallyDone": true
+    },
+    {
+      "name": "2 pvc100mm b10mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA PHOTO OPP\\ISOPOR\\ARCO A4\\2 pvc100mm b10mm.txt",
+      "size": 1166916,
+      "mtime": 1793856627000,
+      "mtimeDate": "2026-11-05T05:30:27.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCO A4",
+      "matInfo": {
+        "material": "PVC",
+        "thickness": "100mm",
+        "tag": "PVC 100mm",
+        "chapaIndex": "2",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 343.76300000000003,
+      "cutMeters": null,
+      "widthMm": null,
+      "heightMm": null,
+      "depthMm": null,
+      "feeds": null,
+      "spindles": null,
+      "execCount": 4,
+      "lastExec": {
+        "id": "10451",
+        "file_name": "2 pvc100mm b10mm.txt",
+        "folder": "COLUNAS",
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-10T03:15:35.000Z",
+        "end_time": "2026-11-10T04:06:52.000Z",
+        "duration_minutes": 51.2833
+      },
+      "totalDurationMinutes": 343.76300000000003,
+      "isManuallyDone": true
     },
     {
       "name": "2X CHAPA 3 compensado 6mm e6mm.txt",
@@ -22563,45 +22690,7 @@
         "duration_minutes": 62.6333
       },
       "totalDurationMinutes": 62.6333,
-      "isManuallyDone": false
-    },
-    {
-      "name": "1 pvc100mm b10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640 - GALHO\\ISOPOR\\cod\\1 pvc100mm b10mm.txt",
-      "size": 1068766,
-      "mtime": 1792688635898.6216,
-      "mtimeDate": "2026-10-22T17:03:55.899Z",
-      "jobName": "2640 - Expresso hogwarts",
-      "subfolderName": "ISOPOR",
-      "matInfo": {
-        "material": "PVC",
-        "thickness": "100mm",
-        "tag": "PVC 100mm",
-        "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "estimatedMinutes": 155.9167,
-      "cutMeters": null,
-      "widthMm": null,
-      "heightMm": null,
-      "depthMm": null,
-      "feeds": null,
-      "spindles": null,
-      "execCount": 2,
-      "lastExec": {
-        "id": "9461",
-        "file_name": "1 pvc100mm b10mm.txt",
-        "folder": "cod",
-        "router_name": "Router 2",
-        "operator_name": "brenno",
-        "start_time": "2026-10-22T18:27:09.000Z",
-        "end_time": "2026-10-22T18:53:07.000Z",
-        "duration_minutes": 25.9667
-      },
-      "totalDurationMinutes": 155.9167,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "CORREÇAO RECUO  BALCAO COMPENSADO 10MM E6MM.txt",
@@ -22718,44 +22807,6 @@
       "isManuallyDone": false
     },
     {
-      "name": "1 pvc100mm b10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2640  - EXPRESSO HOGWARTS CCXP\\2 - CRIATIVO\\GALHOS\\CNC\\ISOPOR\\cod\\1 pvc100mm b10mm.txt",
-      "size": 1068754,
-      "mtime": 1792652616000,
-      "mtimeDate": "2026-10-22T07:03:36.000Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ISOPOR",
-      "matInfo": {
-        "material": "PVC",
-        "thickness": "100mm",
-        "tag": "PVC 100mm",
-        "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "estimatedMinutes": 155.9167,
-      "cutMeters": null,
-      "widthMm": null,
-      "heightMm": null,
-      "depthMm": null,
-      "feeds": null,
-      "spindles": null,
-      "execCount": 2,
-      "lastExec": {
-        "id": "9461",
-        "file_name": "1 pvc100mm b10mm.txt",
-        "folder": "cod",
-        "router_name": "Router 2",
-        "operator_name": "brenno",
-        "start_time": "2026-10-22T18:27:09.000Z",
-        "end_time": "2026-10-22T18:53:07.000Z",
-        "duration_minutes": 25.9667
-      },
-      "totalDurationMinutes": 155.9167,
-      "isManuallyDone": false
-    },
-    {
       "name": "2 pvc100mm b10mm.txt",
       "ext": ".txt",
       "type": "gcode",
@@ -22791,7 +22842,7 @@
         "duration_minutes": 62.6333
       },
       "totalDurationMinutes": 62.6333,
-      "isManuallyDone": false
+      "isManuallyDone": true
     },
     {
       "name": "chapa 10 mdf9mm naval e6mm 2x.txt",
@@ -39690,5 +39741,5 @@
       "isManuallyDone": false
     }
   ],
-  "updatedAt": "2026-11-11T21:27:53.023Z"
+  "updatedAt": "2026-11-11T21:59:32.455Z"
 }
