@@ -434,6 +434,9 @@ export const api = {
   bulkSyncPipelineCompleted: async (items) => {
     return api.post('/pipeline/bulk-completed', { items });
   },
+  savePipelineBatchQuantity: async (payload) => {
+    return api.post('/pipeline/batch-quantity', payload);
+  },
 
   deleteCustom: async (url) => {
     const resp = await fetch(`${API_URL}/api${url}`, { method: 'DELETE', headers: getAuthHeaders() });

@@ -17,6 +17,7 @@ function scanDirRecursive(dir, maxDepth = 8, depth = 0) {
             if (lowerName.startsWith('cópia_de_segurança') || lowerName.startsWith('copia_de_seguranca') || lowerName.startsWith('backup_of_') || lowerName.startsWith('manual_') || lowerName.startsWith('@')) continue;
             const full = path.join(dir, ent.name);
             if (ent.isDirectory()) {
+                if (lowerName.includes('backup') || lowerName.includes('cópia') || lowerName.includes('copia') || lowerName === 'lixeira' || lowerName.startsWith('@')) continue;
                 files = files.concat(scanDirRecursive(full, maxDepth, depth + 1));
             } else if (ent.isFile()) {
                 const ext = path.extname(ent.name).toLowerCase();
@@ -252,6 +253,24 @@ function isFileMarkedOk(filename = '') {
     }
 
     return false;
+}
+
+// Regra de Turno Noturno: Todas as operações entre 22:00 e 05:59 pertencem ao operador noturno (brenno)
+function isNightShiftHour(date) {
+    if (!date) return false;
+    try {
+        const d = (date instanceof Date) ? date : new Date(date);
+        const hourStr = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            hour: 'numeric',
+            hour12: false
+        }).format(d);
+        const hour = parseInt(hourStr, 10);
+        return hour >= 22 || hour < 6;
+    } catch (e) {
+        const h = (new Date(date)).getHours();
+        return h >= 22 || h < 6;
+    }
 }
 
 function calculateDynamicBatches(dbJobs = [], completedFilesMap = {}) {
@@ -597,7 +616,12 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             FROM jobs 
             ORDER BY start_time DESC
         `);
-        dbJobs = rows;
+        dbJobs = rows.map(j => {
+            if (isNightShiftHour(j.start_time)) {
+                return { ...j, operator_name: 'brenno' };
+            }
+            return j;
+        });
     } catch (e) {
         console.error('Error fetching jobs in getProductionPipeline:', e.message);
     }
@@ -613,7 +637,15 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         `);
         rows.forEach(r => {
             if (r.file_key) completedFilesMap[r.file_key.toLowerCase().trim()] = r;
-            if (r.file_name) completedFilesMap[r.file_name.toLowerCase().trim()] = r;
+            const subLower = (r.subfolder || '').toLowerCase().trim();
+            const fnLower = (r.file_name || '').toLowerCase().trim();
+            if (subLower && fnLower) {
+                completedFilesMap[`${fnLower}___${subLower}`] = r;
+                completedFilesMap[`${subLower}/${fnLower}`] = r;
+            }
+            if (fnLower && !subLower && (!r.file_key || (!r.file_key.includes('\\') && !r.file_key.includes('/')))) {
+                completedFilesMap[fnLower] = r;
+            }
         });
     } catch (e) {
         console.error('Error fetching pipeline_completed_files in getProductionPipeline:', e.message);
@@ -650,6 +682,38 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                null;
     };
 
+    // 1.3 Obter lotes e quantidades personalizadas definidas pelo operador (ex: rodar 14x)
+    let fileBatchesMap = {};
+    try {
+        const { rows: batchRows } = await pool.query(`
+            SELECT file_key, target_quantity FROM pipeline_file_batches
+        `);
+        batchRows.forEach(r => {
+            if (r.file_key && r.target_quantity) {
+                fileBatchesMap[r.file_key.toLowerCase().trim()] = parseInt(r.target_quantity, 10);
+            }
+        });
+    } catch (e) {
+        console.error('Error fetching pipeline_file_batches in getProductionPipeline:', e.message);
+    }
+
+    const getFileBatchQuantity = (fileObj, subfolderName) => {
+        if (!fileObj || !fileBatchesMap) return null;
+        const lower = (fileObj.name || '').toLowerCase().trim();
+        const fullKeyWin = (fileObj.fullPath || '').toLowerCase().trim();
+        const fullKeyFwd = fullKeyWin.replace(/\\/g, '/');
+        const sub = (subfolderName || fileObj.subfolderName || '').toLowerCase().trim();
+        const compoundKey = `${lower}___${sub}`;
+        const subSlashKey = `${sub}/${lower}`;
+
+        return fileBatchesMap[fullKeyWin] ||
+               fileBatchesMap[fullKeyFwd] ||
+               fileBatchesMap[compoundKey] ||
+               fileBatchesMap[subSlashKey] ||
+               fileBatchesMap[lower] ||
+               null;
+    };
+
     // Detecção real de "RODANDO AGORA": execução sem fim registrado, iniciada há menos de 12h,
     // e que seja a execução mais recente daquela máquina (se a máquina já começou outro arquivo, a anterior não está mais rodando).
     // Substitui o antigo limite fixo de 1h, que fazia blocos longos de isopor/PVC "sumirem" da fila durante o corte.
@@ -674,16 +738,95 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         if (!fm) return execs;
         return execs.filter(j => new Date(j.start_time).getTime() >= fm - 120000);
     };
-    // Execuções de um G-Code: aceita qualquer execução cuja pasta registrada no Mach3 seja uma das pastas-pai do arquivo
-    // (subpasta, "cod", ou nome do projeto). Execuções com o mesmo nome em OUTRAS pastas só contam se forem posteriores ao arquivo.
+
+    const GENERIC_FOLDER_NAMES = new Set([
+        '', 'desconhecido', 'router', 'router 2', 'router central', 
+        'laser ruida', 'lasercad', 'cnc', 'isopor', 'cod', '3 - oficina', 
+        'oficina', 'dados2 - jobs ativos', 'dados2', 'arquivos 2026', 
+        'arquivos 2024', 'arquivos 2025', 'arquivos', 'c:', 'd:', 'e:', 'users', 'atelier arte', 'atelier casa do trem ltda'
+    ]);
+
+    // Execuções de um G-Code: associa execuções registradas no Mach3 garantindo que pertençam
+    // à mesma subpasta ou ancestrais do arquivo, sem vazar cortes entre subpastas irmãs ou nomes genéricos.
     const getFileExecs = (fileObj, lower) => {
         const all = execMap[lower] || [];
-        const ancestors = new Set(
-            String(fileObj?.fullPath || '').split(/[\\/]/).slice(0, -1).map(s => s.toLowerCase().trim()).filter(Boolean)
+        if (!all.length) return [];
+
+        // Só conta execuções feitas DEPOIS que o arquivo foi salvo (margem de 2 min)
+        const execsCandidate = execsAfterFile(all, fileObj);
+        if (!execsCandidate.length) return [];
+
+        // Constrói conjunto de ancestrais significativos (ignora pastas genéricas como "ROUTER", "ISOPOR", "COD", "3 - OFICINA")
+        const fullAncestors = String(fileObj?.fullPath || '').split(/[\\/]/).slice(0, -1)
+            .map(s => s.toLowerCase().trim().replace(/\s+/g, ' '))
+            .filter(Boolean);
+        const meaningfulAncestors = new Set(
+            fullAncestors.filter(s => !GENERIC_FOLDER_NAMES.has(s))
         );
-        if (fileObj?.subfolderName) ancestors.add(String(fileObj.subfolderName).toLowerCase().trim());
-        const sameFolder = all.filter(j => j.folder && ancestors.has(String(j.folder).toLowerCase().trim()));
-        let matched = (sameFolder.length > 0) ? sameFolder : execsAfterFile(all, fileObj);
+
+        const sub = String(fileObj?.subfolderName || '').toLowerCase().trim().replace(/\s+/g, ' ');
+        if (sub && !GENERIC_FOLDER_NAMES.has(sub)) {
+            meaningfulAncestors.add(sub);
+        }
+        const job = String(fileObj?.jobName || '').toLowerCase().trim().replace(/\s+/g, ' ');
+        if (job && !GENERIC_FOLDER_NAMES.has(job)) {
+            meaningfulAncestors.add(job);
+        }
+
+        const ffp = String(fileObj?.fullPath || '').toLowerCase().replace(/\\/g, '/');
+
+        let matched = execsCandidate.filter(j => {
+            // 1. Caminho direto idêntico ou sufixo
+            const jfp = String(j.file_path || '').toLowerCase().replace(/\\/g, '/');
+            if (jfp && ffp && (jfp === ffp || jfp.endsWith(ffp) || ffp.endsWith(jfp))) return true;
+
+            const jf = String(j.folder || '').toLowerCase().trim().replace(/\s+/g, ' ');
+
+            // Se o Mach3 não registrou pasta ou gravou pasta genérica (ex: "ROUTER" ou "Desconhecido"):
+            if (!jf || GENERIC_FOLDER_NAMES.has(jf)) {
+                // Só casa se o próprio arquivo também não tem subpasta específica (arquivo solto na raiz)
+                return !sub || GENERIC_FOLDER_NAMES.has(sub);
+            }
+
+            // O Mach3 registrou uma subpasta específica (ex: 'TOPO ISOPOR COLUNAS', 'ARCO A', 'SUPORTE ARCO ISOPOR'):
+            if (sub && sub.length >= 3) {
+                // Previne colisões entre arcos numerados (ex: 'arco a' vs 'arco a2' vs 'arco a3' vs 'arco a4')
+                const numJf = jf.match(/\d+$/)?.[0] || '';
+                const numSub = sub.match(/\d+$/)?.[0] || '';
+                if (numJf !== numSub && (jf.includes('arco') || sub.includes('arco'))) return false;
+
+                if (jf.includes('arco a') && !sub.includes('arco a')) return false;
+                if (jf.includes('arco b') && !sub.includes('arco b')) return false;
+
+                // Casos especiais de topo isopor colunas
+                if (jf.includes('topo') && sub.includes('topo')) return true;
+                if (jf.includes('topo') && !sub.includes('topo')) return false;
+                if (!jf.includes('topo') && sub.includes('topo')) return false;
+
+                if (jf === sub || jf.includes(sub) || sub.includes(jf)) return true;
+            }
+
+            // Se a pasta do corte bate com um dos ancestrais significativos do arquivo
+            if (meaningfulAncestors.has(jf)) return true;
+
+            // Casamento pelo código do projeto (ex: '2662a' casa '2662A - CAPACETE' com '2662A - capaacete senna')
+            const codeFile = job.match(/^\s*(\d+[a-zA-Z]?)/)?.[1]?.toLowerCase();
+            const codeJob = jf.match(/^\s*(\d+[a-zA-Z]?)/)?.[1]?.toLowerCase();
+            if (codeFile && codeJob && codeFile === codeJob) {
+                if (sub && !GENERIC_FOLDER_NAMES.has(sub)) {
+                    if (jf.includes('topo') && !sub.includes('topo')) return false;
+                    if (!jf.includes('topo') && sub.includes('topo')) return false;
+                    if (jf.includes('arco') || sub.includes('arco')) {
+                        const numJf = jf.match(/\d+$/)?.[0] || '';
+                        const numSub = sub.match(/\d+$/)?.[0] || '';
+                        if (numJf !== numSub) return false;
+                    }
+                }
+                return true;
+            }
+
+            return false;
+        });
 
         // Se o arquivo foi reaberto para rodar novamente, descartar execuções de corte anteriores ao momento da reabertura!
         const reopenRec = getFileReopenRec(fileObj, fileObj?.subfolderName);
@@ -699,17 +842,29 @@ async function getProductionPipeline(pool, forceRefresh = false) {
     const findActiveExec = (fileObj, lower) => {
         const list = execMap[lower] || [];
         if (!list.length) return null;
-        const ancestors = new Set(
-            String(fileObj?.fullPath || '').split(/[\\/]/).slice(0, -1).map(s => s.toLowerCase().trim().replace(/\s+/g, ' ')).filter(Boolean)
+        const fullAncestors = String(fileObj?.fullPath || '').split(/[\\/]/).slice(0, -1)
+            .map(s => s.toLowerCase().trim().replace(/\s+/g, ' '))
+            .filter(Boolean);
+        const meaningfulAncestors = new Set(
+            fullAncestors.filter(s => !GENERIC_FOLDER_NAMES.has(s))
         );
-        if (fileObj?.subfolderName) ancestors.add(String(fileObj.subfolderName).toLowerCase().trim().replace(/\s+/g, ' '));
-        if (fileObj?.jobName) ancestors.add(String(fileObj.jobName).toLowerCase().trim().replace(/\s+/g, ' '));
+        if (fileObj?.subfolderName) {
+            const s = String(fileObj.subfolderName).toLowerCase().trim().replace(/\s+/g, ' ');
+            if (!GENERIC_FOLDER_NAMES.has(s)) meaningfulAncestors.add(s);
+        }
+        if (fileObj?.jobName) {
+            const jn = String(fileObj.jobName).toLowerCase().trim().replace(/\s+/g, ' ');
+            if (!GENERIC_FOLDER_NAMES.has(jn)) meaningfulAncestors.add(jn);
+        }
 
-        // 1. Execução ativa cuja pasta no Mach3 seja ou contenha uma das pastas ancestrais (ex: 'ENTRADA ARCO A' contém 'arco a')
+        const sub = String(fileObj?.subfolderName || '').toLowerCase().trim().replace(/\s+/g, ' ');
+
+        // 1. Execução ativa cuja pasta no Mach3 seja ou contenha uma das pastas ancestrais
         const matchAncestor = list.find(j => {
             if (!isJobActive(j) || !j.folder) return false;
             const jf = String(j.folder).toLowerCase().trim().replace(/\s+/g, ' ');
-            const sub = String(fileObj?.subfolderName || '').toLowerCase().trim().replace(/\s+/g, ' ');
+            if (GENERIC_FOLDER_NAMES.has(jf)) return false;
+
             if (sub && sub.length >= 3) {
                 // Ensure sibling arcos with numbers don't cross match (e.g. 'arco a' vs 'arco a2' vs 'arco a3')
                 const numJf = jf.match(/\d+$/)?.[0] || '';
@@ -718,16 +873,36 @@ async function getProductionPipeline(pool, forceRefresh = false) {
 
                 if (jf.includes('arco a') && !sub.includes('arco a')) return false;
                 if (jf.includes('arco b') && !sub.includes('arco b')) return false;
+                if (jf.includes('topo') && !sub.includes('topo')) return false;
+                if (!jf.includes('topo') && sub.includes('topo')) return false;
                 if (jf.includes(sub) || sub.includes(jf)) return true;
             }
-            if (ancestors.has(jf)) return true;
+            if (meaningfulAncestors.has(jf)) return true;
+
+            const codeFile = (fileObj?.jobName || '').match(/^\s*(\d+[a-zA-Z]?)/)?.[1]?.toLowerCase();
+            const codeJob = jf.match(/^\s*(\d+[a-zA-Z]?)/)?.[1]?.toLowerCase();
+            if (codeFile && codeJob && codeFile === codeJob) {
+                if (sub && !GENERIC_FOLDER_NAMES.has(sub)) {
+                    if (jf.includes('topo') && !sub.includes('topo')) return false;
+                    if (!jf.includes('topo') && sub.includes('topo')) return false;
+                    if (jf.includes('arco') || sub.includes('arco')) {
+                        const numJf = jf.match(/\d+$/)?.[0] || '';
+                        const numSub = sub.match(/\d+$/)?.[0] || '';
+                        if (numJf !== numSub) return false;
+                    }
+                }
+                return true;
+            }
+
             return false;
         });
         if (matchAncestor) return matchAncestor;
 
-        // 2. Execução ativa sem pasta informada no Mach3
-        const matchNoFolder = list.find(j => isJobActive(j) && !j.folder);
-        if (matchNoFolder) return matchNoFolder;
+        // 2. Execução ativa sem pasta informada no Mach3 (apenas se o próprio arquivo for na raiz / sem subpasta)
+        if (!sub || GENERIC_FOLDER_NAMES.has(sub)) {
+            const matchNoFolder = list.find(j => isJobActive(j) && (!j.folder || GENERIC_FOLDER_NAMES.has(String(j.folder).toLowerCase().trim())));
+            if (matchNoFolder) return matchNoFolder;
+        }
 
         return null;
     };
@@ -760,7 +935,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         const compoundKey = `${lower}___${subLower}`;
         const subSlashKey = `${subLower}/${lower}`;
 
-        const rec = compMap[fullKey] || compMap[compoundKey] || compMap[subSlashKey] || compMap[lower];
+        const rec = compMap[fullKey] || compMap[compoundKey] || compMap[subSlashKey] || (!subLower ? compMap[lower] : null);
         if (!rec) return null;
 
         // Se o arquivo no disco foi modificado/criado DEPOIS do horário em que foi dado baixa no banco (+60s de margem), é um arquivo NOVO/ATUALIZADO!
@@ -915,13 +1090,21 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     const isTopoColunas = (gf.subfolderName || '').toLowerCase().includes('topo isopor colunas') ||
                                           (gf.fullPath || '').toLowerCase().includes('topo isopor colunas') ||
                                           (gf.name || '').toLowerCase().includes('topo isopor colunas');
-                    if (isTopoColunas) {
+                    const customQty = getFileBatchQuantity(gf, gf.subfolderName);
+                    if (isTopoColunas && !customQty) {
                         matInfo.targetQuantity = 14;
-                        matInfo.tag = 'PVC 100mm (14x)';
                         matInfo.material = 'Isopor EPS';
                         matInfo.thickness = '100mm';
+                    } else if (customQty) {
+                        matInfo.targetQuantity = customQty;
                     }
-                    const targetQty = matInfo.targetQuantity || 1;
+                    const targetQty = customQty || matInfo.targetQuantity || 1;
+                    if (targetQty > 1) {
+                        matInfo.targetQuantity = targetQty;
+                        matInfo.tag = `${matInfo.material || 'Material'} ${matInfo.thickness || ''} (${completedExecs.length}/${targetQty})`.trim();
+                        matInfo.quantityLabel = `${completedExecs.length}/${targetQty}`;
+                        matInfo.completedCount = completedExecs.length;
+                    }
                     const dbCompRec = isFileCompletedInDb(gf, gf.jobName, gf.subfolderName, completedFilesMap);
                     const isDbDone = Boolean(dbCompRec);
                     const reopenRec = getFileReopenRec(gf, gf.subfolderName);
@@ -941,9 +1124,16 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                             depthMm: gf.depthMm || null,
                             feeds: gf.feeds || null,
                             spindles: gf.spindles || null,
-                            execCount: execs.length > 0 ? execs.length : 1,
-                            lastExec: execs[0] || {
-                                operator_name: dbCompRec?.operator_name || 'Tomas',
+                            execCount: execs.length > 0 ? execs.length : (targetQty > 1 ? targetQty : 1),
+                            targetQuantity: targetQty,
+                            completedExecsCount: completedExecs.length > 0 ? completedExecs.length : targetQty,
+                            quantityProgress: targetQty > 1 ? `${targetQty}/${targetQty}` : null,
+                            statusLabel: targetQty > 1 ? `Concluído (${targetQty}/${targetQty})` : 'Concluído',
+                            lastExec: execs[0] ? {
+                                ...execs[0],
+                                operator_name: isNightShiftHour(execs[0].start_time) ? 'brenno' : (execs[0].operator_name || 'Tomas')
+                            } : {
+                                operator_name: isNightShiftHour(dbCompRec?.completed_at || gf.mtimeDate) ? 'brenno' : (dbCompRec?.operator_name || 'Tomas'),
                                 machine_name: 'Router 2',
                                 start_time: dbCompRec?.completed_at || gf.mtimeDate || new Date().toISOString(),
                                 duration_minutes: gf.estimatedMinutes || dur
@@ -958,6 +1148,14 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                             ...gf,
                             matInfo,
                             execCount: completedExecs.length,
+                            targetQuantity: targetQty,
+                            completedExecsCount: completedExecs.length,
+                            quantityProgress: targetQty > 1 ? `${completedExecs.length}/${targetQty}` : null,
+                            statusLabel: isCurrentlyRunning
+                                ? `Usinando (${completedExecs.length + 1}/${targetQty})`
+                                : (targetQty > 1
+                                    ? (completedExecs.length > 0 ? `Em progresso (${completedExecs.length}/${targetQty})` : `Pendente (0/${targetQty})`)
+                                    : 'Pronto p/ Usinar na Router'),
                             estimatedMinutes: estMinutes || gf.estimatedMinutes || null,
                             cutMeters: meta.cutMeters !== undefined ? meta.cutMeters : (gf.cutMeters || null),
                             widthMm: meta.widthMm || gf.widthMm || null,
@@ -1320,11 +1518,13 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             const isTopoColunas = (subfolderName || '').toLowerCase().includes('topo isopor colunas') ||
                                   (gf.fullPath || '').toLowerCase().includes('topo isopor colunas') ||
                                   (gf.name || '').toLowerCase().includes('topo isopor colunas');
-            if (isTopoColunas) {
+            const customQty = getFileBatchQuantity(gf, subfolderName);
+            if (isTopoColunas && !customQty) {
                 matInfo.targetQuantity = 14;
-                matInfo.tag = 'PVC 100mm (14x)';
                 matInfo.material = 'Isopor EPS';
                 matInfo.thickness = '100mm';
+            } else if (customQty) {
+                matInfo.targetQuantity = customQty;
             }
             const lower = gf.name.toLowerCase().trim();
             const subLower = (subfolderName || '').toLowerCase().trim();
@@ -1332,11 +1532,17 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             if (seenJobGcodes.has(compoundKey)) return;
             seenJobGcodes.add(compoundKey);
 
-            const execs = getFileExecs({ ...gf, subfolderName }, lower);
+            const execs = getFileExecs({ ...gf, subfolderName, jobName: jName }, lower);
             const completedExecs = execs.filter(j => !isJobActive(j));
-            const activeExec = findActiveExec({ ...gf, subfolderName }, lower);
+            const activeExec = findActiveExec({ ...gf, subfolderName, jobName: jName }, lower);
             const isCurrentlyRunning = Boolean(activeExec);
-            const targetQty = matInfo.targetQuantity || 1;
+            const targetQty = customQty || matInfo.targetQuantity || 1;
+            if (targetQty > 1) {
+                matInfo.targetQuantity = targetQty;
+                matInfo.tag = `${matInfo.material || 'Material'} ${matInfo.thickness || ''} (${completedExecs.length}/${targetQty})`.trim();
+                matInfo.quantityLabel = `${completedExecs.length}/${targetQty}`;
+                matInfo.completedCount = completedExecs.length;
+            }
             const dbCompRec = isFileCompletedInDb(gf, jName, subfolderName, completedFilesMap);
             const isDbDone = Boolean(dbCompRec);
             const reopenRec = getFileReopenRec(gf, subfolderName);
@@ -1358,9 +1564,16 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     depthMm: gf.depthMm || null,
                     feeds: gf.feeds || null,
                     spindles: gf.spindles || null,
-                    execCount: execs.length > 0 ? execs.length : 1,
-                    lastExec: execs[0] || {
-                        operator_name: dbCompRec?.operator_name || 'Tomas',
+                    execCount: execs.length > 0 ? execs.length : (targetQty > 1 ? targetQty : 1),
+                    targetQuantity: targetQty,
+                    completedExecsCount: completedExecs.length > 0 ? completedExecs.length : targetQty,
+                    quantityProgress: targetQty > 1 ? `${targetQty}/${targetQty}` : null,
+                    statusLabel: targetQty > 1 ? `Concluído (${targetQty}/${targetQty})` : 'Concluído',
+                    lastExec: execs[0] ? {
+                        ...execs[0],
+                        operator_name: isNightShiftHour(execs[0].start_time) ? 'brenno' : (execs[0].operator_name || 'Tomas')
+                    } : {
+                        operator_name: isNightShiftHour(dbCompRec?.completed_at || gf.mtimeDate) ? 'brenno' : (dbCompRec?.operator_name || 'Tomas'),
                         machine_name: 'Router 2',
                         start_time: dbCompRec?.completed_at || gf.mtimeDate || new Date().toISOString(),
                         duration_minutes: gf.estimatedMinutes || dur
@@ -1388,7 +1601,16 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     isCurrentlyRunning,
                     isReopened: Boolean(reopenRec),
                     runningMachine: activeExec?.router_name || null,
-                    runningStartTime: activeExec?.start_time || null
+                    runningStartTime: activeExec?.start_time || null,
+                    targetQuantity: targetQty,
+                    completedExecsCount: completedExecs.length,
+                    execCount: completedExecs.length,
+                    quantityProgress: targetQty > 1 ? `${completedExecs.length}/${targetQty}` : null,
+                    statusLabel: isCurrentlyRunning
+                        ? `Usinando (${completedExecs.length + 1}/${targetQty})`
+                        : (targetQty > 1
+                            ? (completedExecs.length > 0 ? `Em progresso (${completedExecs.length}/${targetQty})` : `Pendente (0/${targetQty})`)
+                            : 'Pronto p/ Usinar na Router')
                 };
                 gcodeProntos.push(item);
                 allGcodeProntos.push(item);

@@ -4,7 +4,8 @@ import {
   Search, Filter, Copy, Check, ExternalLink, ArrowRight, HardDrive,
   Cpu, Wrench, Sparkles, ChevronDown, ChevronRight, FolderCheck,
   FileSpreadsheet, Zap, Flame, ShieldAlert, Award, PlayCircle, Compass,
-  FolderTree, Box, CheckSquare, Square, ClipboardList, RotateCcw
+  FolderTree, Box, CheckSquare, Square, ClipboardList, RotateCcw,
+  X, Plus, Minus
 } from 'lucide-react';
 import { api } from '../services/api';
 import { CaixaChecklistProducao, isFileMarkedOk } from './CaixaChecklistProducao';
@@ -82,6 +83,16 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
   const [routerCheckFilter, setRouterCheckFilter] = useState('pendentes'); // 'pendentes' | 'concluidos' | 'todos'
   const [stageToast, setStageToast] = useState(null);
 
+  // Modal de definição de Lote / Quantidade em massa
+  const [batchModalFile, setBatchModalFile] = useState(null);
+  const [batchQtyInput, setBatchQtyInput] = useState(1);
+  const [isSavingBatch, setIsSavingBatch] = useState(false);
+
+  const getCurrentShiftOperator = () => {
+    const h = new Date().getHours();
+    return (h >= 22 || h < 6) ? 'brenno' : 'Tomas';
+  };
+
   const getFileKey = (f) => f.fullPath || `${f.jobName || ''}_${f.name}`;
 
   const isFileChecked = (f) => {
@@ -155,11 +166,12 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
     setFileChecklist(prev => {
       const next = { ...prev };
       if (willBeChecked) {
+        const activeOp = getCurrentShiftOperator();
         const entry = {
           checkedAt: new Date().toISOString(),
           stage: stage,
           name: f.name,
-          operator: 'Tomas'
+          operator: activeOp
         };
         next[key] = entry;
         next[f.name] = entry;
@@ -188,7 +200,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
         subfolder: f.subfolderName || null,
         job_name: f.jobName || null,
         done: willBeChecked,
-        operator_name: 'Tomas'
+        operator_name: getCurrentShiftOperator()
       });
       // Invalida cache e recarrega na hora
       fetchPipeline(true);
@@ -244,6 +256,54 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
     navigator.clipboard.writeText(pathStr);
     setCopiedPath(pathStr);
     setTimeout(() => setCopiedPath(null), 2000);
+  };
+
+  const handleOpenBatchModal = (file) => {
+    const currentQty = file.targetQuantity || file.matInfo?.targetQuantity || 1;
+    setBatchModalFile(file);
+    setBatchQtyInput(currentQty);
+  };
+
+  const handleSaveBatchQty = async (qtyToSave) => {
+    if (!batchModalFile) return;
+    const qty = parseInt(qtyToSave !== undefined ? qtyToSave : batchQtyInput, 10);
+    if (isNaN(qty) || qty < 1) {
+      alert('Por favor informe uma quantidade válida (mínimo 1).');
+      return;
+    }
+
+    setIsSavingBatch(true);
+    try {
+      const fileKey = batchModalFile.fullPath || `${batchModalFile.jobName || ''}_${batchModalFile.name}`;
+      const payload = {
+        file_key: fileKey,
+        file_name: batchModalFile.name,
+        subfolder: batchModalFile.subfolderName || '',
+        job_name: batchModalFile.jobName || '',
+        quantity: qty
+      };
+      
+      const res = await api.savePipelineBatchQuantity(payload);
+      if (res && res.success) {
+        setStageToast({
+          title: batchModalFile.name,
+          nextStage: qty > 1 ? `Lote de ${qty}x Configurado` : '1x (Padrão)',
+          message: qty > 1 
+            ? `Lote de ${qty}x definido com sucesso!` 
+            : `Lote removido (1x normal).`
+        });
+        setTimeout(() => setStageToast(null), 3500);
+        setBatchModalFile(null);
+        await fetchPipeline(true);
+      } else {
+        alert('Erro ao salvar lote: ' + (res?.error || 'Erro desconhecido'));
+      }
+    } catch (err) {
+      console.error('Erro ao salvar lote:', err);
+      alert('Erro ao salvar lote.');
+    } finally {
+      setIsSavingBatch(false);
+    }
   };
 
   const toggleExpand = (name) => {
@@ -730,14 +790,14 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
         {/* TAB: CAIXA DE CHECKLIST OFICIAL */}
         {activeTab === 'checklist' && (
           <div className="space-y-3">
-            <CaixaChecklistProducao pipelineData={pipelineData} jobs={jobs} routers={routers} operatorName="Tomas" />
+            <CaixaChecklistProducao pipelineData={pipelineData} jobs={jobs} routers={routers} operatorName={getCurrentShiftOperator()} />
           </div>
         )}
 
         {/* TAB: LOTES SERIADOS & PRIORIDADES ATIVAS */}
         {activeTab === 'lotes' && (
           <div className="space-y-3">
-            <CaixaChecklistProducao pipelineData={pipelineData} jobs={jobs} routers={routers} operatorName="Tomas" />
+            <CaixaChecklistProducao pipelineData={pipelineData} jobs={jobs} routers={routers} operatorName={getCurrentShiftOperator()} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             {specialBatches.map(b => {
               const batchKey = `batch_${b.id}`;
@@ -1264,6 +1324,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                     <th className="py-2.5 px-3">Arquivo de Chapa (G-Code)</th>
                     <th className="py-2.5 px-3">Subpasta / O.S.</th>
                     <th className="py-2.5 px-3">Material Identificado</th>
+                    <th className="py-2.5 px-3 text-center">Lote / Qtd</th>
                     <th className="py-2.5 px-3">Duração do Corte</th>
                     <th className="py-2.5 px-3">Tamanho</th>
                     <th className="py-2.5 px-3">Status na Oficina</th>
@@ -1273,7 +1334,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                   {displayedGcodes.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-8 text-center text-slate-400">
+                      <td colSpan={10} className="py-8 text-center text-slate-400">
                         {routerCheckFilter === 'pendentes' ? (
                           <div className="flex flex-col items-center gap-1.5 py-4">
                             <CheckCircle2 size={32} className="text-emerald-500 opacity-80" />
@@ -1318,11 +1379,18 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                             </span>
                           </td>
                           <td className="py-2 px-3">
-                            <p className={`font-bold truncate max-w-sm transition-all ${
-                              isChecked ? 'line-through text-emerald-700 dark:text-emerald-300 opacity-80' : 'text-slate-900 dark:text-white'
-                            }`}>
-                              {f.name}
-                            </p>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className={`font-bold truncate max-w-sm transition-all ${
+                                isChecked ? 'line-through text-emerald-700 dark:text-emerald-300 opacity-80' : 'text-slate-900 dark:text-white'
+                              }`}>
+                                {f.name}
+                              </p>
+                              {((f.targetQuantity || f.matInfo?.targetQuantity || 1) > 1) && (
+                                <span className="px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                                  {f.completedExecsCount ?? f.execCount ?? 0}/{f.targetQuantity || f.matInfo?.targetQuantity} usinados
+                                </span>
+                              )}
+                            </div>
                             <p className="text-[9px] text-slate-500 truncate max-w-md font-mono">{f.fullPath}</p>
                           </td>
                           <td className="py-2 px-3">
@@ -1334,11 +1402,34 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                               <span className="text-[10px] text-slate-400 italic">-</span>
                             )}
                           </td>
+                          <td className="py-2 px-3 text-center">
+                            {((f.targetQuantity || f.matInfo?.targetQuantity || 1) > 1) ? (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenBatchModal(f)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black bg-amber-500/20 hover:bg-amber-500/30 text-amber-500 border border-amber-500/40 shadow-sm transition-all group"
+                                title="Lote configurado. Clique para alterar quantidade ou remover"
+                              >
+                                <Layers size={11} className="stroke-[2.5] group-hover:scale-110 transition-transform" />
+                                <span>{f.completedExecsCount ?? f.execCount ?? 0}/{f.targetQuantity || f.matInfo?.targetQuantity} un</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenBatchModal(f)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-white/5 hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 dark:hover:text-white border border-slate-200 dark:border-white/10 transition-all shadow-xs"
+                                title="Clique para rodar em lote (corte em massa) e definir quantidade"
+                              >
+                                <Layers size={11} />
+                                <span>Gerar Lote</span>
+                              </button>
+                            )}
+                          </td>
                           <td className="py-2 px-3 font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">
                             {f.estimatedMinutes || f.cutMeters ? (
                               <div className="flex flex-col">
                                 {(() => {
-                                  const qty = f.matInfo?.targetQuantity || (((f.subfolderName || '').toLowerCase().includes('topo isopor colunas') || (f.name || '').toLowerCase().includes('topo isopor colunas')) ? 14 : 1);
+                                  const qty = f.targetQuantity || f.matInfo?.targetQuantity || (((f.subfolderName || '').toLowerCase().includes('topo isopor colunas') || (f.name || '').toLowerCase().includes('topo isopor colunas')) ? 14 : 1);
                                   const singleDur = f.estimatedMinutes || Math.max(1, Math.round((f.cutMeters * 1000 / 1800) * 1.15));
                                   return (
                                     <span className="text-orange-500 font-black">
@@ -1364,12 +1455,17 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                             {f.isCurrentlyRunning ? (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 shadow-sm animate-pulse">
                                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
-                                ⚡ RODANDO AGORA ({f.runningMachine || 'Mach3'})
+                                ⚡ RODANDO AGORA {((f.targetQuantity || f.matInfo?.targetQuantity || 1) > 1) ? `(${Math.min((f.targetQuantity || f.matInfo?.targetQuantity), (f.completedExecsCount ?? f.execCount ?? 0) + 1)}/${f.targetQuantity || f.matInfo?.targetQuantity})` : `(${f.runningMachine || 'Mach3'})`}
                               </span>
                             ) : isChecked ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
                                 <Check size={11} className="stroke-[3]" />
-                                OK (Chapa Usinada)
+                                {((f.targetQuantity || f.matInfo?.targetQuantity || 1) > 1) ? `Concluído (${f.targetQuantity || f.matInfo?.targetQuantity}/${f.targetQuantity || f.matInfo?.targetQuantity})` : 'OK (Chapa Usinada)'}
+                              </span>
+                            ) : ((f.targetQuantity || f.matInfo?.targetQuantity || 1) > 1) ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-black bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                {(f.completedExecsCount ?? f.execCount ?? 0) === 0 ? `Pendente (0/${f.targetQuantity || f.matInfo?.targetQuantity})` : `${f.completedExecsCount ?? f.execCount ?? 0}/${f.targetQuantity || f.matInfo?.targetQuantity} Usinados (Falta ${(f.targetQuantity || f.matInfo?.targetQuantity) - (f.completedExecsCount ?? f.execCount ?? 0)})`}
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-orange-500/10 text-orange-500 border border-orange-500/20">
@@ -1565,6 +1661,187 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
         initialJob={selectedJob}
         uniqueJobNames={uniqueJobNames}
       />
+
+      {/* Modal de Configuração de Lote em Massa */}
+      {batchModalFile && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#18181b] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 max-w-md w-full overflow-hidden p-6 space-y-5 animate-in zoom-in-95">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0 border border-amber-500/30">
+                  <Layers size={20} className="stroke-[2.5]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white leading-snug">
+                    Gerar Lote de Produção
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Definir corte em massa para este arquivo
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBatchModalFile(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* File Details Card */}
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 space-y-1.5 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase font-bold text-slate-400">Arquivo</span>
+                <span className="font-mono font-bold text-orange-500 truncate max-w-[240px]">
+                  {batchModalFile.name}
+                </span>
+              </div>
+              {batchModalFile.jobName && (
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Projeto / O.S.</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[240px]">
+                    {batchModalFile.jobName}
+                  </span>
+                </div>
+              )}
+              {batchModalFile.subfolderName && (
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Subpasta</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[240px]">
+                    {batchModalFile.subfolderName}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase font-bold text-slate-400">Material</span>
+                <span>{renderMaterialBadge(batchModalFile.matInfo?.tag) || <span className="text-slate-400 italic">-</span>}</span>
+              </div>
+              <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-white/5">
+                <span className="text-[10px] uppercase font-bold text-slate-400">Já Usinados na Máquina</span>
+                <span className="font-black text-emerald-500">
+                  {batchModalFile.completedExecsCount ?? batchModalFile.execCount ?? 0} usinagens
+                </span>
+              </div>
+            </div>
+
+            {/* Stepper Input */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                Quantidade Total Desejada (Peças):
+              </label>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setBatchQtyInput(prev => Math.max(1, prev - 1))}
+                  className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-800 dark:text-white flex items-center justify-center font-black transition-all border border-slate-200 dark:border-white/10"
+                >
+                  <Minus size={18} />
+                </button>
+                <input
+                  type="number"
+                  min="1"
+                  max="9999"
+                  value={batchQtyInput}
+                  onChange={(e) => setBatchQtyInput(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                  className="flex-1 h-11 text-center font-black text-2xl bg-slate-50 dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setBatchQtyInput(prev => prev + 1)}
+                  className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-800 dark:text-white flex items-center justify-center font-black transition-all border border-slate-200 dark:border-white/10"
+                >
+                  <Plus size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Presets Rápidos */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] uppercase font-bold text-slate-400">Atalhos rápidos:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {[1, 2, 5, 10, 14, 20, 50].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setBatchQtyInput(preset)}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all border ${
+                      batchQtyInput === preset
+                        ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                        : 'bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/10'
+                    }`}
+                  >
+                    {preset === 1 ? '1x (Individual)' : `${preset}x`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Informação sobre Ficha Técnica */}
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300 space-y-1">
+              <p className="font-bold flex items-center gap-1.5">
+                <Sparkles size={13} className="text-amber-500" />
+                Atualização Automática na Ficha Técnica:
+              </p>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                {batchQtyInput > 1 ? (
+                  <>
+                    A Ficha Técnica irá desdobrar este arquivo em <strong>{batchQtyInput} peças individuais</strong> ([Peça 1 de {batchQtyInput}], [Peça 2 de {batchQtyInput}]...) com caixas de assinatura individuais. Conforme a router usinar, o progresso será somado automaticamente (ex: 1/{batchQtyInput}, 2/{batchQtyInput}...).
+                  </>
+                ) : (
+                  <>
+                    Quantidade 1x (corte padrão individual de 1 peça).
+                  </>
+                )}
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-between gap-2 pt-2">
+              {((batchModalFile.targetQuantity || batchModalFile.matInfo?.targetQuantity || 1) > 1) ? (
+                <button
+                  type="button"
+                  onClick={() => handleSaveBatchQty(1)}
+                  disabled={isSavingBatch}
+                  className="px-3 py-2 rounded-xl text-xs font-bold text-red-500 hover:bg-red-500/10 transition-all border border-red-500/20 disabled:opacity-50"
+                  title="Remove a configuração de lote e volta para corte de 1 peça"
+                >
+                  Remover Lote
+                </button>
+              ) : <div />}
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  type="button"
+                  onClick={() => setBatchModalFile(null)}
+                  disabled={isSavingBatch}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSaveBatchQty(batchQtyInput)}
+                  disabled={isSavingBatch}
+                  className="px-5 py-2 rounded-xl text-xs font-black bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {isSavingBatch ? (
+                    <>
+                      <RefreshCw size={13} className="animate-spin" />
+                      <span>Salvando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Layers size={13} />
+                      <span>{batchQtyInput > 1 ? `Confirmar Lote (${batchQtyInput}x)` : 'Confirmar'}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

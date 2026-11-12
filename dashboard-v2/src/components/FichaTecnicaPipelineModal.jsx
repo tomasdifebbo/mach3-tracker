@@ -36,14 +36,18 @@ export function FichaTecnicaPipelineModal({
   const [includeAspire, setIncludeAspire] = useState(true);
   const [includeCorel, setIncludeCorel] = useState(true);
   const [includeConcluded, setIncludeConcluded] = useState(false);
-  const [operatorName, setOperatorName] = useState('Tomas');
+  const [operatorName, setOperatorName] = useState(() => (new Date().getHours() >= 22 || new Date().getHours() < 6) ? 'brenno' : 'Tomas');
   const [assignedMachines, setAssignedMachines] = useState('Router 1 e Router 2');
   const [notes, setNotes] = useState('Verificar fixação na mesa a vácuo/parafusos, conferir zeramento em Z na base e sentido do veio do material.');
   const [copied, setCopied] = useState(false);
 
-  // Sincroniza initialJob se abrir para um job específico
+  // Sincroniza initialJob se abrir para um job específico e atualiza operador conforme o turno (pós-22h = brenno)
   React.useEffect(() => {
     if (initialJob) setSelectedJob(initialJob);
+    if (isOpen) {
+      const h = new Date().getHours();
+      setOperatorName((h >= 22 || h < 6) ? 'brenno' : 'Tomas');
+    }
   }, [initialJob, isOpen]);
 
   // Extração e enriquecimento de todas as tarefas da produção com a duração real de cada corte
@@ -193,8 +197,8 @@ export function FichaTecnicaPipelineModal({
         const dim = f.dimensions || (f.widthMm && f.heightMm ? `${f.widthMm}×${f.heightMm}mm` : null);
 
         const isTopoColunas = (f.subfolderName || '').toLowerCase().includes('topo isopor colunas') || (f.name || '').toLowerCase().includes('topo isopor colunas');
-        const targetQty = isTopoColunas ? 14 : (f.matInfo?.targetQuantity || 1);
-        const completedCount = f.execCount || 0;
+        const targetQty = f.targetQuantity || f.matInfo?.targetQuantity || (isTopoColunas ? 14 : 1);
+        const completedCount = f.completedExecsCount || f.execCount || 0;
 
         if (targetQty > 1) {
           for (let q = 1; q <= targetQty; q++) {
@@ -260,7 +264,7 @@ export function FichaTecnicaPipelineModal({
         const dim = f.dimensions || (f.widthMm && f.heightMm ? `${f.widthMm}×${f.heightMm}mm` : null);
 
         const isTopoColunas = (f.subfolderName || '').toLowerCase().includes('topo isopor colunas') || (f.name || '').toLowerCase().includes('topo isopor colunas');
-        const targetQty = isTopoColunas ? 14 : (f.matInfo?.targetQuantity || 1);
+        const targetQty = f.targetQuantity || f.matInfo?.targetQuantity || (isTopoColunas ? 14 : 1);
 
         if (targetQty > 1) {
           for (let q = 1; q <= targetQty; q++) {
@@ -685,14 +689,23 @@ export function FichaTecnicaPipelineModal({
           {/* Operador & Máquinas */}
           <div className="md:col-span-4 grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1">
-                Operador
+              <label className="block text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-between">
+                <span>Operador</span>
+                {(new Date().getHours() >= 22 || new Date().getHours() < 6) ? (
+                  <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20">
+                    🌙 Turno Noite
+                  </span>
+                ) : (
+                  <span className="text-[9px] font-bold text-sky-500 bg-sky-500/10 px-1.5 py-0.2 rounded border border-sky-500/20">
+                    ☀️ Turno Dia
+                  </span>
+                )}
               </label>
               <input
                 type="text"
                 value={operatorName}
                 onChange={e => setOperatorName(e.target.value)}
-                placeholder="Ex: Tomas"
+                placeholder="Ex: brenno / Tomas"
                 className="w-full text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-800 dark:text-slate-200 focus:outline-none focus:border-orange-500"
               />
             </div>

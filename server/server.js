@@ -85,10 +85,25 @@ app.use(express.static(publicDir, {
     }
 }));
 
-// Database setup using PostgreSQL (Supabase)
+// Database setup using PostgreSQL (Supabase / Neon)
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
+    max: 6,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000
+});
+
+pool.on('error', (err, client) => {
+    console.error('[DATABASE POOL ERROR - IDLE CLIENT RECONNECTING]:', err.message);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('[UNCAUGHT EXCEPTION PREVENTED CRASH]:', err.message);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[UNHANDLED REJECTION PREVENTED CRASH]:', reason ? (reason.message || reason) : 'desconhecido');
 });
 
 // Helper to close stale jobs (> 3 hours or corrupted router_name)
@@ -554,9 +569,141 @@ function authenticateToken(req, res, next) {
     });
 }
 
+// ===== REGRAS DE TURNO E ALOCAÇÃO AUTOMÁTICA DE OPERADORES =====
+// Regra: Todas as operações após as 22:00 (Período Noturno: 22:00 às 05:59:59)
+// são vinculadas ao operador do período noturno (brenno) e ele é automaticamente alocado nas máquinas
+function isNightShift(date = new Date()) {
+    try {
+        const d = (date instanceof Date) ? date : new Date(date);
+        const hourStr = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            hour: 'numeric',
+            hour12: false
+        }).format(d);
+        const hour = parseInt(hourStr, 10);
+        return hour >= 22 || hour < 6;
+    } catch (e) {
+        const h = (date instanceof Date ? date : new Date(date)).getHours();
+        return h >= 22 || h < 6;
+    }
+}
+
+async function getNightOperator(userId = 1) {
+    try {
+        const res = await pool.query(
+            `SELECT id, name FROM operators 
+             WHERE LOWER(shift) = 'noite' AND "userId" = $1 
+             ORDER BY id ASC LIMIT 1`,
+            [userId]
+        );
+        if (res.rows.length > 0) return res.rows[0];
+        return { id: 7, name: 'brenno' };
+    } catch (e) {
+        return { id: 7, name: 'brenno' };
+    }
+}
+
+async function getDayOperator(userId = 1) {
+    try {
+        const res = await pool.query(
+            `SELECT id, name FROM operators 
+             WHERE (LOWER(shift) = 'manha' OR LOWER(shift) = 'manhã') AND "userId" = $1 
+             ORDER BY id ASC LIMIT 1`,
+            [userId]
+        );
+        if (res.rows.length > 0) return res.rows[0];
+        return { id: 6, name: 'Tomas' };
+    } catch (e) {
+        return { id: 6, name: 'Tomas' };
+    }
+}
+
+async function applyShiftAllocationRule(targetUserId = null) {
+    try {
+        const now = new Date();
+        const night = isNightShift(now);
+
+        const usersQuery = targetUserId 
+            ? { rows: [{ id: targetUserId }] }
+            : await pool.query('SELECT DISTINCT "userId" AS id FROM operators WHERE "userId" IS NOT NULL');
+        
+        const userIds = usersQuery.rows.map(u => u.id);
+        if (!userIds.includes(1)) userIds.push(1);
+
+        for (const uId of userIds) {
+            if (night) {
+                const nightOp = await getNightOperator(uId);
+                if (!nightOp || !nightOp.name) continue;
+
+                // 1. Aloca automaticamente o operador do período noturno em todas as máquinas de corte ativas / routers
+                await pool.query(
+                    `UPDATE routers 
+                     SET operator_name = $1 
+                     WHERE "userId" = $2 
+                       AND (operator_name IS NULL OR LOWER(operator_name) != LOWER($1))`,
+                    [nightOp.name, uId]
+                );
+
+                // 2. Vincula qualquer job que iniciou ou está rodando no período noturno ao operador noturno
+                await pool.query(
+                    `UPDATE jobs 
+                     SET operator_name = $1 
+                     WHERE "userId" = $2 
+                       AND (
+                         EXTRACT(HOUR FROM (start_time AT TIME ZONE 'America/Sao_Paulo')) >= 22 
+                         OR EXTRACT(HOUR FROM (start_time AT TIME ZONE 'America/Sao_Paulo')) < 6
+                       )
+                       AND (operator_name IS NULL OR LOWER(operator_name) != LOWER($1))`,
+                    [nightOp.name, uId]
+                );
+
+                // 3. Atualiza o status do operador noturno para disponível e alocado nas máquinas
+                await pool.query(
+                    `UPDATE operators 
+                     SET status = 'disponivel', location = '⚙️ Routers CNC (Turno Noite)' 
+                     WHERE id = $1`,
+                    [nightOp.id]
+                );
+
+                // 4. Marca operadores diurnos como ausentes/fora do turno durante a madrugada
+                await pool.query(
+                    `UPDATE operators 
+                     SET status = 'ausente', location = 'Fora do Turno' 
+                     WHERE "userId" = $1 AND LOWER(shift) != 'noite' AND status = 'disponivel'`,
+                    [uId]
+                );
+            } else {
+                // Período Diurno (06:00 às 21:59)
+                const dayOp = await getDayOperator(uId);
+                const nightOp = await getNightOperator(uId);
+                if (dayOp && dayOp.name && nightOp && nightOp.name) {
+                    // Transfere as máquinas de volta para o operador diurno se ainda estiverem com o da noite
+                    await pool.query(
+                        `UPDATE routers 
+                         SET operator_name = $1 
+                         WHERE "userId" = $2 AND LOWER(operator_name) = LOWER($3)`,
+                        [dayOp.name, uId, nightOp.name]
+                    );
+
+                    // Coloca o operador noturno como fora do turno
+                    await pool.query(
+                        `UPDATE operators 
+                         SET status = 'ausente', location = 'Fora do Turno (Turno Noturno)' 
+                         WHERE id = $1 AND status = 'disponivel'`,
+                        [nightOp.id]
+                    );
+                }
+            }
+        }
+    } catch (err) {
+        console.error('Erro em applyShiftAllocationRule:', err);
+    }
+}
+
 // ===== ROUTERS STATUS =====
 app.get('/api/routers', authenticateToken, async (req, res) => {
     try {
+        await applyShiftAllocationRule(req.user.id);
         let routers = (await pool.query('SELECT * FROM routers WHERE "userId" = $1 ORDER BY id ASC', [req.user.id])).rows;
         
         // Auto-provision "Máquina a Vácuo" if missing for user
@@ -2475,9 +2622,26 @@ app.post('/api/jobs', authenticateToken, async (req, res) => {
         }
     }
 
-    // Auto-fetch operator assigned to this router if not specified
+    // Regra do Período Noturno (22:00 às 05:59):
+    // Todas as operações após as 22:00 são vinculadas ao operador noturno (brenno) e ele é automaticamente alocado nas máquinas
+    const isNight = isNightShift(dt);
     let operatorName = req.body.operator_name || null;
-    if (!operatorName && router_name) {
+
+    if (isNight) {
+        const nightOp = await getNightOperator(userId);
+        operatorName = nightOp.name;
+        // Aloca o operador noturno na máquina e nas routers ativas
+        if (router_name) {
+            await pool.query(
+                `UPDATE routers SET operator_name = $1 WHERE "userId" = $2 AND (status = 'active' OR status = 'cortando' OR name ILIKE $3)`,
+                [nightOp.name, userId, `%${router_name}%`]
+            );
+        }
+        await pool.query(
+            `UPDATE operators SET status = 'disponivel', location = $1 WHERE id = $2`,
+            [`⚙️ ${router_name || 'Routers CNC'} (Turno Noite)`, nightOp.id]
+        );
+    } else if (!operatorName && router_name) {
         const routerRes = (await pool.query('SELECT operator_name FROM routers WHERE (name ILIKE $1 OR name ILIKE $2) AND "userId" = $3 LIMIT 1', [`%${router_name}%`, `%${router_name.replace(/ruida/i, '').trim()}%`, userId])).rows[0];
         if (routerRes && routerRes.operator_name) {
             operatorName = routerRes.operator_name;
@@ -3526,8 +3690,27 @@ app.patch('/api/checklists/items/:id', authenticateToken, async (req, res) => {
 // Operator & Machine Assignment API
 app.get('/api/operators', authenticateToken, async (req, res) => {
     try {
+        await applyShiftAllocationRule(req.user.id);
         const ops = (await pool.query('SELECT * FROM operators WHERE "userId" = $1 ORDER BY name ASC', [req.user.id])).rows;
         res.json(ops);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Endpoint explícito para forçar/validar a regra de alocação de turno
+app.post('/api/operators/apply-shift-rule', authenticateToken, async (req, res) => {
+    try {
+        await applyShiftAllocationRule(req.user.id);
+        const night = isNightShift();
+        const nightOp = await getNightOperator(req.user.id);
+        const dayOp = await getDayOperator(req.user.id);
+        res.json({
+            success: true,
+            isNightShift: night,
+            activeShift: night ? 'Noite' : 'Dia',
+            allocatedOperator: night ? nightOp.name : dayOp.name
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -4242,10 +4425,34 @@ app.post('/api/pipeline/toggle-completed', async (req, res) => {
                 stage = COALESCE(EXCLUDED.stage, pipeline_completed_files.stage),
                 subfolder = COALESCE(EXCLUDED.subfolder, pipeline_completed_files.subfolder),
                 job_name = COALESCE(EXCLUDED.job_name, pipeline_completed_files.job_name),
+                completed_at = CASE WHEN EXCLUDED.done = TRUE THEN CURRENT_TIMESTAMP ELSE pipeline_completed_files.completed_at END,
                 updated_at = CURRENT_TIMESTAMP
             RETURNING *;
         `;
         const result = await pool.query(query, [key, name, stage || null, subfolder || null, job_name || null, isDone, op]);
+
+        // Se marcou como feito, sincroniza variantes de chaves e limpa de pipeline_reopen_files
+        if (isDone) {
+            try {
+                const normKey = key.toLowerCase().replace(/\\/g, '/');
+                await pool.query(`
+                    UPDATE pipeline_completed_files 
+                    SET done = TRUE, completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+                    WHERE LOWER(REPLACE(file_key, '\\', '/')) = $1
+                       OR (LOWER(file_name) = LOWER($2) AND subfolder IS NOT NULL AND LOWER(subfolder) = LOWER($3))
+                `, [normKey, name, subfolder || '']);
+
+                await pool.query(`
+                    DELETE FROM pipeline_reopen_files
+                    WHERE LOWER(file_key) = LOWER($1) 
+                       OR LOWER(file_key) = LOWER($2)
+                       OR LOWER(REPLACE(file_key, '\\', '/')) = $3
+                       OR (LOWER(file_key) LIKE '%' || LOWER($2) AND LOWER(file_key) LIKE '%' || LOWER($4) || '%')
+                `, [key, name, normKey, subfolder || '____none____']);
+            } catch (syncDoneErr) {
+                console.warn('Erro ao sincronizar conclusão em toggle-completed:', syncDoneErr.message);
+            }
+        }
 
         // Se desmarcou (reverteu), garante a reabertura no pipeline e atualiza variantes
         if (!isDone) {
@@ -4357,6 +4564,52 @@ app.post('/api/pipeline/reopen-file', async (req, res) => {
     }
 });
 
+// Definir quantidade em lote de um arquivo G-Code da fila da router
+app.post('/api/pipeline/batch-quantity', async (req, res) => {
+    try {
+        const { file_key, file_name, subfolder, job_name, quantity } = req.body;
+        if (!file_key && !file_name) return res.status(400).json({ error: 'file_key ou file_name é obrigatório' });
+        
+        const targetQty = parseInt(quantity, 10);
+        if (isNaN(targetQty) || targetQty < 1) {
+            return res.status(400).json({ error: 'Quantidade inválida' });
+        }
+
+        const lowerFn = (file_name || '').toLowerCase().trim();
+        const lowerSub = (subfolder || '').toLowerCase().trim();
+        const primaryKey = (file_key || file_name).trim();
+
+        const keysToSet = [primaryKey];
+        if (primaryKey.includes('\\')) keysToSet.push(primaryKey.replace(/\\/g, '/'));
+        if (primaryKey.includes('/')) keysToSet.push(primaryKey.replace(/\//g, '\\'));
+        if (lowerFn && lowerSub) {
+            keysToSet.push(`${lowerFn}___${lowerSub}`);
+            keysToSet.push(`${lowerSub}/${lowerFn}`);
+        }
+
+        if (targetQty === 1) {
+            for (const k of keysToSet) {
+                await pool.query('DELETE FROM pipeline_file_batches WHERE file_key = $1', [k]);
+            }
+        } else {
+            for (const k of keysToSet) {
+                await pool.query(`
+                    INSERT INTO pipeline_file_batches (file_key, file_name, subfolder, job_name, target_quantity, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
+                    ON CONFLICT (file_key)
+                    DO UPDATE SET target_quantity = EXCLUDED.target_quantity, updated_at = CURRENT_TIMESTAMP
+                `, [k, file_name || null, subfolder || null, job_name || null, targetQty]);
+            }
+        }
+
+        invalidatePipelineCache();
+        res.json({ success: true, target_quantity: targetQty });
+    } catch (err) {
+        console.error('Erro em POST /api/pipeline/batch-quantity:', err);
+        res.status(500).json({ error: 'Erro ao definir quantidade do lote' });
+    }
+});
+
 // Catch-all: Route all other non-API requests to the React SPA
 app.get('*', (req, res) => {
     const indexPath = fs.existsSync(path.join(__dirname, 'public', 'index.html'))
@@ -4368,6 +4621,9 @@ app.get('*', (req, res) => {
 // Automated Report & Machine Alert Scheduler (runs every 60s)
 setInterval(async () => {
     try {
+        // Regra contínua de alocação de turno nas máquinas (Período Noturno após as 22h / Diurno às 06h)
+        await applyShiftAllocationRule().catch(e => console.error('[SHIFT ALLOCATION RULE ERROR]', e));
+
         const now = new Date();
         const spParts = new Intl.DateTimeFormat('en-US', {
             timeZone: 'America/Sao_Paulo',

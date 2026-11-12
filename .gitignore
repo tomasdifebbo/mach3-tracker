@@ -31,3 +31,14 @@ Thumbs.db
 # IDEs
 .vscode/
 .idea/
+
+# Scratch & media
+scratch/
+scratch_*.js
+*.mp4
+video_assets/
+video_assets_demo/
+assistente_pastas/data/*.lock
+assistente_pastas/data/*.pid
+assistente_pastas/data/state.json
+
