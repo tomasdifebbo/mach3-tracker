@@ -93,16 +93,42 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
     return (h >= 22 || h < 6) ? 'brenno' : 'Tomas';
   };
 
-  const getFileKey = (f) => f.fullPath || `${f.jobName || ''}_${f.name}`;
+  const getFileKey = (f) => f.fullPath || (f.subfolderName ? `${f.jobName || ''}|${f.subfolderName}|${f.name}` : `${f.jobName || ''}_${f.name}`);
 
   const isFileChecked = (f) => {
     if (!f) return false;
-    const k = getFileKey(f);
     // Se o arquivo está RODANDO AGORA na máquina, NUNCA pode ser considerado concluído/checked
     if (f.isCurrentlyRunning) return false;
     // Se o arquivo foi reaberto / solicitado rodar novamente, NUNCA deve ser considerado concluído por checklist antigo!
     if (f.isReopened) return false;
-    return Boolean(fileChecklist[k] || (f.fullPath && fileChecklist[f.fullPath]) || f.isManuallyDone);
+    if (f.isManuallyDone) return true;
+
+    const full = (f.fullPath || '').trim();
+    const fullNorm = full.replace(/\\/g, '/').toLowerCase();
+    const name = (f.name || '').toLowerCase().trim();
+    const sub = (f.subfolderName || '').toLowerCase().trim();
+    const job = (f.jobName || '').toLowerCase().trim();
+
+    if (full && (fileChecklist[full]?.done !== false && fileChecklist[full])) return true;
+    if (fullNorm && (fileChecklist[fullNorm]?.done !== false && fileChecklist[fullNorm])) return true;
+
+    if (sub && sub !== 'raiz' && sub !== 'geral') {
+      const kCompound = `${name}___${sub}`;
+      const kSubSlash = `${sub}/${name}`;
+      const kJobSub = job ? `${job}|${sub}|${name}` : null;
+
+      return Boolean(
+        (fileChecklist[kCompound]?.done !== false && fileChecklist[kCompound]) ||
+        (fileChecklist[kSubSlash]?.done !== false && fileChecklist[kSubSlash]) ||
+        (kJobSub && fileChecklist[kJobSub]?.done !== false && fileChecklist[kJobSub])
+      );
+    }
+
+    const kJobName = job ? `${job}_${name}` : null;
+    return Boolean(
+      (kJobName && fileChecklist[kJobName]?.done !== false && fileChecklist[kJobName]) ||
+      (fileChecklist[name]?.done !== false && fileChecklist[name])
+    );
   };
 
   // Carrega e sincroniza arquivos concluídos do PostgreSQL de forma definitiva
@@ -121,8 +147,28 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                 operator: item.operator_name || 'Tomas'
               };
               merged[k] = entry;
+              if (item.subfolder && item.file_name) {
+                const fn = item.file_name.toLowerCase().trim();
+                const sub = item.subfolder.toLowerCase().trim();
+                merged[`${fn}___${sub}`] = entry;
+                merged[`${sub}/${fn}`] = entry;
+                if (item.job_name) {
+                  const job = item.job_name.toLowerCase().trim();
+                  merged[`${job}|${sub}|${fn}`] = entry;
+                }
+              }
             } else {
               delete merged[k];
+              if (item.subfolder && item.file_name) {
+                const fn = item.file_name.toLowerCase().trim();
+                const sub = item.subfolder.toLowerCase().trim();
+                delete merged[`${fn}___${sub}`];
+                delete merged[`${sub}/${fn}`];
+                if (item.job_name) {
+                  const job = item.job_name.toLowerCase().trim();
+                  delete merged[`${job}|${sub}|${fn}`];
+                }
+              }
             }
           });
           try {

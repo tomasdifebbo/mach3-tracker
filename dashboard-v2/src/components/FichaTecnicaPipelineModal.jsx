@@ -67,21 +67,40 @@ export function FichaTecnicaPipelineModal({
     const isFileChecked = (f) => {
       if (!f) return false;
       if (f.isCurrentlyRunning || isFileRunning(f.name, f.jobName)) return false;
+      if (f.isReopened) return false;
       if (f.isManuallyDone) return true;
-      const k1 = f.fullPath;
-      const k2 = `${f.jobName || ''}_${f.name}`;
-      const k3 = `${f.jobName || ''}|${f.subfolderName || ''}|${f.name}`;
-      const k4 = `${f.name || ''}`;
+
+      const full = (f.fullPath || '').trim();
+      const fullNorm = full.replace(/\\/g, '/').toLowerCase();
+      const name = (f.name || '').toLowerCase().trim();
+      const sub = (f.subfolderName || '').toLowerCase().trim();
+      const job = (f.jobName || '').toLowerCase().trim();
+
+      if (full && (fileChecklist[full]?.done !== false && fileChecklist[full])) return true;
+      if (fullNorm && (fileChecklist[fullNorm]?.done !== false && fileChecklist[fullNorm])) return true;
+
+      if (sub && sub !== 'raiz' && sub !== 'geral') {
+        const kCompound = `${name}___${sub}`;
+        const kSubSlash = `${sub}/${name}`;
+        const kJobSub = job ? `${job}|${sub}|${name}` : null;
+
+        return Boolean(
+          (fileChecklist[kCompound]?.done !== false && fileChecklist[kCompound]) ||
+          (fileChecklist[kSubSlash]?.done !== false && fileChecklist[kSubSlash]) ||
+          (kJobSub && fileChecklist[kJobSub]?.done !== false && fileChecklist[kJobSub])
+        );
+      }
+
+      const kJobName = job ? `${job}_${name}` : null;
       return Boolean(
-        (k1 && fileChecklist[k1]?.done !== false && fileChecklist[k1]) ||
-        (fileChecklist[k2]?.done !== false && fileChecklist[k2]) ||
-        (fileChecklist[k3]?.done !== false && fileChecklist[k3]) ||
-        (fileChecklist[k4]?.done !== false && fileChecklist[k4])
+        (kJobName && fileChecklist[kJobName]?.done !== false && fileChecklist[kJobName]) ||
+        (fileChecklist[name]?.done !== false && fileChecklist[name])
       );
     };
 
     const isDone = (f, stage) => {
       if (f.isCurrentlyRunning || isFileRunning(f.name, f.jobName)) return false;
+      if (f.isReopened) return false;
       if (isFileChecked(f)) return true;
       if (f.isExecuted) return true;
       if (isFileMarkedOk(f.name)) return true;
@@ -136,7 +155,7 @@ export function FichaTecnicaPipelineModal({
         const done = isDone(f, 'corel');
         if (!includeConcluded && done) return;
         items.push({
-          id: `corel-${f.jobName}-${f.name}`,
+          id: `corel-${f.jobName}-${f.subfolderName || 'raiz'}-${f.name}`,
           stage: 'corel',
           stageLabel: '1. COREL (.CDR)',
           stageColor: 'amber',
@@ -164,7 +183,7 @@ export function FichaTecnicaPipelineModal({
         const done = isDone(f, 'aspire');
         if (!includeConcluded && done) return;
         items.push({
-          id: `aspire-${f.jobName}-${f.name}`,
+          id: `aspire-${f.jobName}-${f.subfolderName || 'raiz'}-${f.name}`,
           stage: 'aspire',
           stageLabel: '2. ASPIRE (.CRV/.DXF)',
           stageColor: 'cyan',
@@ -208,7 +227,7 @@ export function FichaTecnicaPipelineModal({
             const pieceStatusLabel = pieceDone ? 'Concluído' : pieceRunning ? 'EM MÁQUINA AGORA' : `Pendente (${q}/${targetQty})`;
 
             items.push({
-              id: `router-${f.jobName}-${f.name}-p${q}`,
+              id: `router-${f.jobName}-${f.subfolderName || 'raiz'}-${f.name}-p${q}`,
               stage: 'router',
               stageLabel: '3. FILA ROUTER (.TXT)',
               stageColor: 'orange',
@@ -231,7 +250,7 @@ export function FichaTecnicaPipelineModal({
           }
         } else {
           items.push({
-            id: `router-${f.jobName}-${f.name}`,
+            id: `router-${f.jobName}-${f.subfolderName || 'raiz'}-${f.name}`,
             stage: 'router',
             stageLabel: '3. FILA ROUTER (.TXT)',
             stageColor: 'orange',
@@ -259,7 +278,7 @@ export function FichaTecnicaPipelineModal({
     if (includeConcluded && pipelineData.gcodeFeitos) {
       pipelineData.gcodeFeitos.forEach(f => {
         if (selectedJob !== 'todos' && f.jobName !== selectedJob && f.jobName?.replace(/\s+/g, ' ') !== selectedJob?.replace(/\s+/g, ' ')) return;
-        if (items.some(it => (it.baseName || it.name) === f.name && it.stage === 'router')) return;
+        if (items.some(it => (it.baseName || it.name) === f.name && (it.subfolder || '') === (f.subfolderName || '') && it.stage === 'router')) return;
         const durationMin = resolveTaskDuration(f);
         const dim = f.dimensions || (f.widthMm && f.heightMm ? `${f.widthMm}×${f.heightMm}mm` : null);
 
@@ -269,7 +288,7 @@ export function FichaTecnicaPipelineModal({
         if (targetQty > 1) {
           for (let q = 1; q <= targetQty; q++) {
             items.push({
-              id: `done-${f.jobName}-${f.name}-p${q}`,
+              id: `done-${f.jobName}-${f.subfolderName || 'raiz'}-${f.name}-p${q}`,
               stage: 'done',
               stageLabel: 'HISTÓRICO CONCLUÍDO',
               stageColor: 'emerald',
@@ -292,7 +311,7 @@ export function FichaTecnicaPipelineModal({
           }
         } else {
           items.push({
-            id: `done-${f.jobName}-${f.name}`,
+            id: `done-${f.jobName}-${f.subfolderName || 'raiz'}-${f.name}`,
             stage: 'done',
             stageLabel: 'HISTÓRICO CONCLUÍDO',
             stageColor: 'emerald',
