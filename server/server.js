@@ -89,8 +89,8 @@ app.use(express.static(publicDir, {
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
-    max: 6,
-    idleTimeoutMillis: 30000,
+    max: 4,
+    idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 10000
 });
 
@@ -711,7 +711,7 @@ app.get('/api/routers', authenticateToken, async (req, res) => {
         if (!hasVacuo) {
             const newVacuo = (await pool.query(
                 'INSERT INTO routers (name, status, "userId") VALUES ($1, $2, $3) RETURNING *',
-                ['Máquina a Vácuo', 'active', req.user.id]
+                ['Mesa de Vácuo', 'active', req.user.id]
             )).rows[0];
             routers.push(newVacuo);
         }

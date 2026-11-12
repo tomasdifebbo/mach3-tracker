@@ -72,7 +72,7 @@ export function CaixaChecklistProducao({
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddingOpen, setIsAddingOpen] = useState(false);
   const [newItemText, setNewItemText] = useState('');
-  const [newItemMachine, setNewItemMachine] = useState('Router 2');
+  const [newItemMachine, setNewItemMachine] = useState('Router Central');
   const [newItemTool, setNewItemTool] = useState('Topo Ø6mm');
   const [newItemGroup, setNewItemGroup] = useState('Lote Tijolos (81-100)');
 
@@ -419,10 +419,10 @@ export function CaixaChecklistProducao({
               onChange={(e) => setNewItemMachine(e.target.value)}
               className="sm:col-span-2 px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-black/30 border border-slate-200 dark:border-white/15 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer"
             >
-              <option value="Router 2">Router 2</option>
               <option value="Router Central">Router Central</option>
-              <option value="Router 1">Router 1</option>
+              <option value="Router 2">Router 2</option>
               <option value="Laser">Laser</option>
+              <option value="Mesa de Vácuo">Mesa de Vácuo</option>
             </select>
             <select
               value={newItemGroup}

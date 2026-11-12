@@ -25,7 +25,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
 
   // Quick occurrence form
   const [showOccurrenceModal, setShowOccurrenceModal] = useState(false);
-  const [occMachine, setOccMachine] = useState('Router CNC');
+  const [occMachine, setOccMachine] = useState('Router Central');
   const [occType, setOccType] = useState('Fresa cega / quebrada');
   const [occSeverity, setOccSeverity] = useState('media');
   const [occDesc, setOccDesc] = useState('');
@@ -1501,11 +1501,11 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
                   onChange={(e) => setOccMachine(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-red-500"
                 >
-                  <option value="Router CNC" className="bg-zinc-900">Router CNC</option>
-                  <option value="Laser CO₂" className="bg-zinc-900">Laser CO₂</option>
-                  <option value="Impressão 3D" className="bg-zinc-900">Impressão 3D</option>
+                  <option value="Router Central" className="bg-zinc-900">Router Central</option>
+                  <option value="Router 2" className="bg-zinc-900">Router 2</option>
+                  <option value="Laser" className="bg-zinc-900">Laser</option>
                   <option value="Mesa de Vácuo" className="bg-zinc-900">Mesa de Vácuo</option>
-                  <option value="Geral" className="bg-zinc-900">Geral / Fábrica</option>
+                  <option value="Geral" className="bg-zinc-900">Geral / Oficina</option>
                 </select>
               </div>
 

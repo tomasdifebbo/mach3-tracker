@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   LayoutGrid, Calendar, Columns3, CheckSquare2, Package, TrendingUp,
   AlertCircle, CheckCircle2, Clock, Star, ChevronRight, Zap, Target,
-  AlertTriangle, PlusCircle, X, ShieldAlert, Trash2, Edit2, CalendarClock, User, FileCode, Box, Archive, ClipboardList, FolderSync, Layers
+  AlertTriangle, PlusCircle, Plus, X, ShieldAlert, Trash2, Edit2, CalendarClock, User, FileCode, Box, Archive, ClipboardList, FolderSync, Layers
 } from 'lucide-react';
 import { api } from '../services/api';
 import { LinkProjectModal } from '../components/LinkProjectModal';
@@ -27,11 +27,17 @@ function KpiCard({ icon, value, label, color = 'text-accent-cyan', meta }) {
   );
 }
 
-function SectionHeader({ label, title }) {
+function SectionHeader({ label, title, action, children }) {
   return (
-    <div className="mb-8">
-      <p className="text-xs font-black uppercase tracking-[0.3em] text-orange-400 mb-2">{label}</p>
-      <h2 className="text-3xl font-black text-white tracking-tight">{title}</h2>
+    <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div>
+        <p className="text-xs font-black uppercase tracking-[0.3em] text-orange-400 mb-2">{label}</p>
+        <div className="flex items-center gap-4 flex-wrap">
+          <h2 className="text-3xl font-black text-white tracking-tight">{title}</h2>
+          {children}
+        </div>
+      </div>
+      {action && <div>{action}</div>}
     </div>
   );
 }
@@ -331,16 +337,15 @@ function KanbanCard({ card, onDragStart, onClick, onArchive, onReschedule, opera
 
 const INITIAL_CARDS = {
   todo: [
-    { id: 'k1', title: 'Peças de MDF — Cliente Marcenaria X', machine: 'Router CNC', date: 'Hoje 18:00', priority: 'alta' },
+    { id: 'k1', title: 'Peças de MDF — Cliente Marcenaria X', machine: 'Router Central', date: 'Hoje 18:00', priority: 'alta' },
     { id: 'k2', title: 'Gravação Acrílico — Loja Y', machine: 'Laser', date: 'Amanhã', priority: 'media' },
-    { id: 'k3', title: 'Protótipo de Case — Interno', machine: 'Impressão 3D', date: 'Semana', priority: 'baixa' },
   ],
   doing: [
-    { id: 'k4', title: 'Moldes de PETG — Embalagens Z', machine: 'Vácuo', operator: 'Op. João', priority: 'urgente' },
+    { id: 'k4', title: 'Moldes de PETG — Embalagens Z', machine: 'Mesa de Vácuo', operator: 'Op. João', priority: 'urgente' },
     { id: 'k5', title: 'Corte Chapas — Sinalização ABC', machine: 'Laser', operator: 'Op. Maria', priority: 'alta' },
   ],
   done: [
-    { id: 'k6', title: 'Usinagem Painel — Cliente W', machine: 'Router CNC', date: 'Entregue ontem', priority: 'media' },
+    { id: 'k6', title: 'Usinagem Painel — Cliente W', machine: 'Router 2', date: 'Entregue ontem', priority: 'media' },
   ],
 };
 
@@ -471,9 +476,16 @@ function QualityModal({ card, onConfirm, onCancel }) {
   );
 }
 
+const KANBAN_MACHINES = [
+  'Router Central',
+  'Router 2',
+  'Laser',
+  'Mesa de Vácuo',
+];
+
 function KanbanCardModal({ card, onClose, onSave, onDelete }) {
   const [title, setTitle] = useState(card.title || '');
-  const [machine, setMachine] = useState(card.machine || 'Router CNC');
+  const [machine, setMachine] = useState(card.machine || 'Router Central');
   const [operator, setOperator] = useState(card.operator || '');
   const [date, setDate] = useState(card.date || '');
   const [priority, setPriority] = useState(card.priority || 'media');
@@ -529,26 +541,22 @@ function KanbanCardModal({ card, onClose, onSave, onDelete }) {
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Máquina / Local</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-text-muted">Máquina</label>
             <select 
               value={machine} 
               onChange={(e) => setMachine(e.target.value)}
               className="bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:border-orange-500 focus:outline-none transition-colors cursor-pointer"
             >
-              <optgroup label="🏭 Máquinas da Fábrica" className="bg-zinc-900 text-orange-400 font-bold">
-                <option value="Router CNC" className="bg-zinc-900 text-white">Router CNC</option>
-                <option value="Router Central 1325" className="bg-zinc-900 text-white">Router Central 1325</option>
-                <option value="Router 2" className="bg-zinc-900 text-white">Router 2</option>
-                <option value="Laser Ruida CO2 1390" className="bg-zinc-900 text-white">Laser Ruida CO2 1390</option>
-                <option value="Mesa de Vácuo" className="bg-zinc-900 text-white">Mesa de Vácuo</option>
-                <option value="Impressão 3D" className="bg-zinc-900 text-white">Impressão 3D</option>
-              </optgroup>
-              <optgroup label="📍 Status & Locais" className="bg-zinc-900 text-purple-400 font-bold">
-                <option value="Na Fábrica (Disponível)" className="bg-zinc-900 text-white">🟢 Na Fábrica (Disponível)</option>
-                <option value="Serviço Externo" className="bg-zinc-900 text-white">🟡 Serviço Externo</option>
-                <option value="Outro Setor da Fábrica" className="bg-zinc-900 text-white">🔵 Outro Setor da Fábrica</option>
-                <option value="Folga / Ausente" className="bg-zinc-900 text-white">⚫ Folga / Ausente</option>
-              </optgroup>
+              {KANBAN_MACHINES.map((m) => (
+                <option key={m} value={m} className="bg-zinc-900 text-white">
+                  {m}
+                </option>
+              ))}
+              {machine && !KANBAN_MACHINES.includes(machine) && (
+                <option value={machine} className="bg-zinc-900 text-white">
+                  {machine}
+                </option>
+              )}
             </select>
           </div>
 
@@ -1049,7 +1057,16 @@ function PainelKanban({ jobs = [] }) {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <SectionHeader label="Gestão de Produção" title="Painel Kanban" />
+      <SectionHeader label="Gestão de Produção" title="Painel Kanban">
+        <button
+          type="button"
+          onClick={() => setSelectedCard({ column_id: 'todo' })}
+          className="flex items-center gap-2 px-3.5 py-1.5 bg-orange-500 hover:bg-orange-400 text-black font-black uppercase tracking-wider rounded-xl text-xs transition-all shadow-lg shadow-orange-500/20 cursor-pointer"
+        >
+          <Plus size={15} strokeWidth={3} />
+          <span>Adicionar O.S.</span>
+        </button>
+      </SectionHeader>
 
       {/* Alerta de cortes não identificados */}
       {unmatchedActiveJobs.length > 0 && (
@@ -1117,8 +1134,19 @@ function PainelKanban({ jobs = [] }) {
             onDragLeave={(e) => e.currentTarget.classList.remove('ring-1', 'ring-white/20')}
             onDrop={(e) => { e.currentTarget.classList.remove('ring-1', 'ring-white/20'); handleDrop(e, col.id); }}
           >
-            <div className="flex items-center justify-between gap-2">
-              <h4 className={`text-xs font-black uppercase tracking-widest ${col.color}`}>{col.label}</h4>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <h4 className={`text-xs font-black uppercase tracking-widest ${col.color} whitespace-nowrap`}>{col.label}</h4>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCard({ column_id: col.id })}
+                  title={`Adicionar O.S. em ${col.label}`}
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 transition-all cursor-pointer whitespace-nowrap"
+                >
+                  <Plus size={11} strokeWidth={3} />
+                  <span>Adicionar O.S.</span>
+                </button>
+              </div>
               <div className="flex items-center gap-2">
                 {col.id === 'done' && columns.done.length > 0 && (
                   <button
@@ -1126,7 +1154,7 @@ function PainelKanban({ jobs = [] }) {
                     onClick={handleArchiveAllDone}
                     disabled={archivingAll}
                     title="Arquivar todas as O.S. concluídas"
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-accent-success/15 hover:bg-accent-success/30 text-accent-success border border-accent-success/30 transition-all disabled:opacity-50 cursor-pointer"
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-accent-success/15 hover:bg-accent-success/30 text-accent-success border border-accent-success/30 transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap"
                   >
                     <Archive size={11} />
                     {archivingAll ? 'Arquivando...' : 'Arquivar Tudo'}
@@ -1340,9 +1368,9 @@ function PainelKanban({ jobs = [] }) {
 }
 
 const MACHINE_CHECKLISTS = {
-  router: {
-    label: '🔩 Router CNC',
-    title: 'Router CNC — Setup Operacional & Auditoria do Encarregado',
+  router_central: {
+    label: '🔩 Router Central',
+    title: 'Router Central — Setup Operacional & Auditoria do Encarregado',
     supply: 'Fresas retas, fresas de acabamento, pontas de gravação, pinças ER sobressalentes.',
     items: [
       '[Operador] Verificar fixação e nivelamento do material na mesa (vácuo ou garras).',
@@ -1355,6 +1383,22 @@ const MACHINE_CHECKLISTS = {
       '[Encarregado] 👔 VALIDAÇÃO: Conferir se o diâmetro e tipo da fresa instalada confere exatamente com a O.S.',
       '[Encarregado] 👔 VÁCUO: Verificar manômetro da bomba de vácuo (Mínimo -0.7 a -0.8 bar) para retenção total da chapa.',
       '[Encarregado] 👔 LIBERAÇÃO: Inspecionar dimensões X/Y e esquadro da 1ª peça cortada antes de autorizar lote.'
+    ]
+  },
+  router_2: {
+    label: '🔩 Router 2',
+    title: 'Router 2 — Setup Operacional & Auditoria do Encarregado',
+    supply: 'Fresas retas, fresas de acabamento, pontas de gravação, pinças ER sobressalentes.',
+    items: [
+      '[Operador] Verificar fixação e nivelamento do material na mesa.',
+      '[Operador] Inspecionar desgaste da fresa — fresas cegas causam rebarba e vibração.',
+      '[Operador] Efetuar referenciamento nos três eixos (Zero XY e Z-Probe).',
+      '[Operador] Ligar exaustor/coletor de pó antes do início da usinagem.',
+      '[Operador] Limpar e lubrificar guias lineares e fusos.',
+      '[Encarregado] 👔 AUDITORIA: Conferir espessura real do material com paquímetro antes de liberar usinagem.',
+      '[Encarregado] 👔 SEGURANÇA: Auditar EPI obrigatório do operador.',
+      '[Encarregado] 👔 VALIDAÇÃO: Conferir diâmetro e tipo de fresa instalada com a O.S.',
+      '[Encarregado] 👔 LIBERAÇÃO: Inspecionar 1ª peça cortada antes de autorizar o restante do lote.'
     ]
   },
   laser: {
@@ -1375,8 +1419,8 @@ const MACHINE_CHECKLISTS = {
     ]
   },
   vacuo: {
-    label: '💨 Vácuo',
-    title: 'Moldadora a Vácuo — Setup Operacional & Auditoria do Encarregado',
+    label: '💨 Mesa de Vácuo',
+    title: 'Mesa de Vácuo — Setup Operacional & Auditoria do Encarregado',
     supply: 'Chapas PSA, ABS, PETG; resistências sobressalentes; óleo para bomba de vácuo.',
     items: [
       '[Operador] Inspecionar borrachas de vedação da moldura de aperto (evita perda de sucção).',
@@ -1388,21 +1432,6 @@ const MACHINE_CHECKLISTS = {
       '[Encarregado] 👔 TEMPERATURA & TEMPO: Auditar pirômetro infravermelho e tempo de forno para o polímero (PSAI/PETG/ABS).',
       '[Encarregado] 👔 PROTEÇÃO PNEUMÁTICA: Validar funcionamento do acionamento bimanual e travas de segurança da mesa pneumática.',
       '[Encarregado] 👔 INSPEÇÃO DE ESTICAMENTO: Inspecionar 1ª peça moldada garantindo que não haja afinamento crítico nem bolhas.'
-    ]
-  },
-  impressao3d: {
-    label: '🧱 Impressão 3D',
-    title: 'Impressoras 3D — Setup Operacional & Auditoria do Encarregado',
-    supply: 'Filamentos PLA, ABS, PETG; bicos (nozzles 0.4mm e 0.6mm); fitas de aderência.',
-    items: [
-      '[Operador] Verificar nivelamento da mesa de impressão (Bed Leveling manual ou automático).',
-      '[Operador] Limpar a mesa com álcool isopropílico para adesão correta da primeira camada.',
-      '[Operador] Inspecionar bico (nozzle) por resíduos e entupimentos de filamento queimado.',
-      '[Operador] Confirmar que os filamentos estão armazenados em ambiente seco (caixa selada ou estufa).',
-      '[Encarregado] 👔 FATIAMENTO & INFILL: Validar no arquivo fatiado a densidade de preenchimento (Infill %) e suportes da O.S.',
-      '[Encarregado] 👔 DESUMIDIFICAÇÃO: Auditar se os carretéis de filamento (PLA/PETG/ABS) estão no desumidificador com sílica.',
-      '[Encarregado] 👔 PRIMEIRA CAMADA: Inspecionar a adesão e o Z-Offset da 1ª camada antes de liberar para execução longa.',
-      '[Encarregado] 👔 LAVAGEM E CURA (SLA): Auditar tempos de banho de IPA e câmara de cura UV para peças em resina.'
     ]
   },
   encarregado_geral: {
@@ -1721,7 +1750,7 @@ const OCCURRENCE_TYPES = [
   'Outro',
 ];
 
-const OCCURRENCE_MACHINES = ['Router CNC', 'Laser CO₂', 'Impressão 3D', 'Mesa de Vácuo', 'Geral'];
+const OCCURRENCE_MACHINES = ['Router Central', 'Router 2', 'Laser', 'Mesa de Vácuo', 'Geral / Oficina'];
 
 const SEV_STYLE = {
   alta:  { bg: 'bg-accent-danger/15',  text: 'text-accent-danger',  label: 'Alta' },
@@ -1733,7 +1762,7 @@ function OcorrenciasPanel() {
   const [occurrences, setOccurrences] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ machine: 'Router CNC', type: OCCURRENCE_TYPES[0], description: '', severity: 'media' });
+  const [form, setForm] = useState({ machine: 'Router Central', type: OCCURRENCE_TYPES[0], description: '', severity: 'media' });
   const [submitting, setSubmitting] = useState(false);
 
   const load = async () => {
@@ -1926,7 +1955,7 @@ function OcorrenciasPanel() {
 }
 
 function ChecklistsDiarios() {
-  const [activeTab, setActiveTab] = useState('router');
+  const [activeTab, setActiveTab] = useState('router_central');
   const tabs = Object.entries(MACHINE_CHECKLISTS);
 
   return (
@@ -1952,7 +1981,7 @@ function ChecklistsDiarios() {
   );
 }
 
-const STOCK_MACHINES = ['Router CNC', 'Laser CO₂', 'Impressão 3D', 'Mesa de Vácuo', 'Geral'];
+const STOCK_MACHINES = ['Router Central', 'Router 2', 'Laser', 'Mesa de Vácuo', 'Geral / Oficina'];
 
 function getStockStatus(item) {
   const { qty_current, qty_min, qty_max } = item;
@@ -1965,7 +1994,7 @@ function getStockStatus(item) {
   return { pct, status: 'ok', label: 'OK', bar: 'bg-accent-success', text: 'text-accent-success' };
 }
 
-const EMPTY_FORM = { name: '', machine: 'Router CNC', unit: 'un', qty_current: '', qty_min: '', qty_max: '' };
+const EMPTY_FORM = { name: '', machine: 'Router Central', unit: 'un', qty_current: '', qty_min: '', qty_max: '' };
 
 function ControleEstoque() {
   const [items, setItems] = useState([]);
