@@ -50,7 +50,7 @@ class RuidaMonitor {
             this.socket.bind(() => {
                 try {
                     this.socket.setBroadcast(true);
-                } catch (e) {}
+                } catch { /* ignore */ }
             });
         } catch (err) {
             console.error('[RUIDA INIT ERROR]', err.message);

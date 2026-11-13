@@ -10,8 +10,6 @@ export function SubscriptionPlans({ user }) {
 
   // Active status per plan
   const isStarterActive = user?.plan === 'starter' && !isTrialExpired;
-  const isProActive = user?.plan === 'pro';
-  const isBusinessActive = user?.plan === 'business';
 
   const handleSubscribe = async (planType) => {
     setCheckoutLoading(planType);

@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "scripts": {
     "start": "node server/server.js",
-    "build": "cd dashboard-v2 && npm install && npm run build"
+    "build": "cd dashboard-v2 && npm install && npm run build",
+    "test": "npm --prefix server test && npm --prefix dashboard-v2 test",
+    "lint": "npm --prefix dashboard-v2 run lint && npm --prefix server run lint"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

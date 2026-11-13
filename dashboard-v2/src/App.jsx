@@ -1,25 +1,35 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { api } from './services/api';
-
-// Components
-import { Dashboard } from './pages/Dashboard';
-import { History } from './pages/History';
-import { Charts } from './pages/Charts';
-import { Materials } from './pages/Materials';
-import { Maintenance } from './pages/Maintenance';
-import { Settings } from './pages/Settings';
-import { Login } from './pages/Login';
-import { AdminPortal } from './pages/AdminPortal';
-import { AdminLogin } from './pages/AdminLogin';
-import { PaymentResult } from './pages/PaymentResult';
-import { PaymentModal } from './components/PaymentModal';
-import { Encarregado } from './pages/Encarregado';
-import { Operador } from './pages/Operador';
-import { DemoTourModal } from './components/DemoTourModal';
+import { lazyNamed } from './utils/lazyNamed';
 import { HeadsUpNotification } from './components/HeadsUpNotification';
 import { pushService } from './services/pushService';
+
+// Lazy-loaded pages & heavy modals (Vite code-splitting)
+const Dashboard = lazyNamed(() => import('./pages/Dashboard'), 'Dashboard');
+const History = lazyNamed(() => import('./pages/History'), 'History');
+const Charts = lazyNamed(() => import('./pages/Charts'), 'Charts');
+const Materials = lazyNamed(() => import('./pages/Materials'), 'Materials');
+const Maintenance = lazyNamed(() => import('./pages/Maintenance'), 'Maintenance');
+const Settings = lazyNamed(() => import('./pages/Settings'), 'Settings');
+const Login = lazyNamed(() => import('./pages/Login'), 'Login');
+const AdminPortal = lazyNamed(() => import('./pages/AdminPortal'), 'AdminPortal');
+const AdminLogin = lazyNamed(() => import('./pages/AdminLogin'), 'AdminLogin');
+const PaymentResult = lazyNamed(() => import('./pages/PaymentResult'), 'PaymentResult');
+const Encarregado = lazyNamed(() => import('./pages/Encarregado'), 'Encarregado');
+const Operador = lazyNamed(() => import('./pages/Operador'), 'Operador');
+const PaymentModal = lazyNamed(() => import('./components/PaymentModal'), 'PaymentModal');
+const DemoTourModal = lazyNamed(() => import('./components/DemoTourModal'), 'DemoTourModal');
+
+function PageFallback() {
+  return (
+    <div className="h-full min-h-[240px] w-full bg-bg-main flex flex-col items-center justify-center gap-3 text-accent-cyan">
+      <div className="w-8 h-8 border-4 border-accent-cyan/20 border-t-accent-cyan rounded-full animate-spin" />
+      <span className="text-[11px] font-bold uppercase tracking-widest text-text-muted">Carregando módulo...</span>
+    </div>
+  );
+}
 
 function App() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -28,8 +38,8 @@ function App() {
   const [materials, setMaterials] = useState([]);
   const [routers, setRouters] = useState([]);
   const [maintenance, setMaintenance] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('mach3_token'));
+  const [loading, setLoading] = useState(() => !!localStorage.getItem('mach3_token'));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTrialExpired, setIsTrialExpired] = useState(false);
   const [isDemoTourOpen, setIsDemoTourOpen] = useState(false);
@@ -37,7 +47,7 @@ function App() {
   const activeJobsRef = useRef(new Set());
 
   // Auth Check & User Data
-  const loadUser = async () => {
+  const loadUser = useCallback(async () => {
     try {
       const userData = await api.getMe();
       setUser(userData);
@@ -71,10 +81,10 @@ function App() {
       localStorage.removeItem('mach3_token');
       setLoading(false);
     }
-  };
+  }, []);
 
   // Data Polling
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!isLoggedIn) return;
     try {
       const [jobsData, materialsData, routersData, maintenanceData] = await Promise.all([
@@ -114,67 +124,64 @@ function App() {
       console.error("Fetch failed:", err);
       setLoading(false);
     }
-  };
+  }, [isLoggedIn]);
 
   useEffect(() => {
-    if (isLoggedIn) {
-      const init = async () => {
-        await loadUser();
-        await fetchData();
-        const token = localStorage.getItem('mach3_token');
-        if (token) {
-          pushService.autoSync(token);
-        }
-      };
-      init();
+    if (!isLoggedIn) return;
+    const init = async () => {
+      await loadUser();
+      await fetchData();
+      const token = localStorage.getItem('mach3_token');
+      if (token) {
+        pushService.autoSync(token);
+      }
+    };
+    init();
 
-      // Listener para eventos do Service Worker (ex: push recebido com o app aberto)
-      const onSwMessage = (event) => {
-        if (event.data && event.data.type === 'MACH3_JOB_COMPLETED') {
-          const payload = event.data.payload || {};
-          setHeadsUpAlert({
-            title: payload.title || '🔔 Corte Concluído',
-            body: payload.body || 'Um trabalho foi concluído na máquina.',
-            jobId: payload.job_id
-          });
-          pushService.playChime();
-          fetchData();
-        }
-      };
+    // Listener para eventos do Service Worker (ex: push recebido com o app aberto)
+    const onSwMessage = (event) => {
+      if (event.data && event.data.type === 'MACH3_JOB_COMPLETED') {
+        const payload = event.data.payload || {};
+        setHeadsUpAlert({
+          title: payload.title || '🔔 Corte Concluído',
+          body: payload.body || 'Um trabalho foi concluído na máquina.',
+          jobId: payload.job_id
+        });
+        pushService.playChime();
+        fetchData();
+      }
+    };
 
-      // Listener para teste manual de notificação disparado em Configurações
-      const onTestAlert = (event) => {
-        if (event.detail) {
-          setHeadsUpAlert({
-            title: event.detail.title || '🔔 Teste - Mach3 Tracker',
-            body: event.detail.body || 'Banner flutuante estilo WhatsApp com auto-recolhimento.',
-            jobId: Date.now()
-          });
-        }
-      };
+    // Listener para teste manual de notificação disparado em Configurações
+    const onTestAlert = (event) => {
+      if (event.detail) {
+        setHeadsUpAlert({
+          title: event.detail.title || '🔔 Teste - Mach3 Tracker',
+          body: event.detail.body || 'Banner flutuante estilo WhatsApp com auto-recolhimento.',
+          jobId: Date.now()
+        });
+      }
+    };
 
+    if (typeof window !== 'undefined') {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', onSwMessage);
+      }
+      window.addEventListener('mach3:test-alert', onTestAlert);
+    }
+
+    // Polling de 25 segundos
+    const interval = setInterval(fetchData, 25000);
+    return () => {
+      clearInterval(interval);
       if (typeof window !== 'undefined') {
         if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.addEventListener('message', onSwMessage);
+          navigator.serviceWorker.removeEventListener('message', onSwMessage);
         }
-        window.addEventListener('mach3:test-alert', onTestAlert);
+        window.removeEventListener('mach3:test-alert', onTestAlert);
       }
-
-      // Polling de 25 segundos
-      const interval = setInterval(fetchData, 25000);
-      return () => {
-        clearInterval(interval);
-        if (typeof window !== 'undefined') {
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.removeEventListener('message', onSwMessage);
-          }
-          window.removeEventListener('mach3:test-alert', onTestAlert);
-        }
-      };
-    } else {
-      setLoading(false);
-    }
-  }, [isLoggedIn]);
+    };
+  }, [isLoggedIn, fetchData, loadUser]);
 
   // Sync System Theme
   useEffect(() => {
@@ -190,25 +197,41 @@ function App() {
 
   if (isAdminRoute) {
     if (!isLoggedIn) {
-      return <AdminLogin onLoginSuccess={() => {
-        setIsLoggedIn(true);
-        window.location.reload();
-      }} />;
+      return (
+        <Suspense fallback={<PageFallback />}>
+          <AdminLogin onLoginSuccess={() => {
+            setIsLoggedIn(true);
+            window.location.reload();
+          }} />
+        </Suspense>
+      );
     }
     if (user && user.role === 'admin') {
-      return <AdminPortal />;
+      return (
+        <Suspense fallback={<PageFallback />}>
+          <AdminPortal />
+        </Suspense>
+      );
     } else if (user && user.role !== 'admin') {
-      return <AdminLogin onLoginSuccess={() => {
-        setIsLoggedIn(true);
-        window.location.reload();
-      }} />;
+      return (
+        <Suspense fallback={<PageFallback />}>
+          <AdminLogin onLoginSuccess={() => {
+            setIsLoggedIn(true);
+            window.location.reload();
+          }} />
+        </Suspense>
+      );
     }
     return <div className="h-screen w-full bg-zinc-950 flex items-center justify-center text-purple-500 font-bold">Carregando...</div>;
   }
 
   // Handle standard routes
   if (!isLoggedIn || (!loading && !user)) {
-    return <Login onLoginSuccess={() => { setIsLoggedIn(true); loadUser(); }} />;
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <Login onLoginSuccess={() => { setIsLoggedIn(true); loadUser(); }} />
+      </Suspense>
+    );
   }
 
   // Show Loading Screen while user data fetches (prevents brief dashboard flash on F5/Login)
@@ -225,14 +248,16 @@ function App() {
   if (pathParts[1] === 'payment') {
     const paymentStatus = pathParts[2] || 'success';
     return (
-      <PaymentResult
-        status={paymentStatus}
-        onGoToDashboard={() => {
-          window.history.replaceState({}, '', '/');
-          setActiveSection(paymentStatus === 'failure' ? 'settings' : 'dashboard');
-          window.location.href = '/';
-        }}
-      />
+      <Suspense fallback={<PageFallback />}>
+        <PaymentResult
+          status={paymentStatus}
+          onGoToDashboard={() => {
+            window.history.replaceState({}, '', '/');
+            setActiveSection(paymentStatus === 'failure' ? 'settings' : 'dashboard');
+            window.location.href = '/';
+          }}
+        />
+      </Suspense>
     );
   }
 
@@ -274,7 +299,7 @@ function App() {
       case 'materials': return <Materials materials={materials} onRefresh={fetchData} />;
       case 'maintenance': return <Maintenance maintenance={maintenance} routers={routers} onRefresh={fetchData} user={user} />;
       case 'settings': return <Settings user={user} onRefresh={loadUser} isTrialExpired={isTrialExpired} />;
-      case 'encarregado': return <Encarregado jobs={jobs} routers={routers} />;
+      case 'encarregado': return <Encarregado jobs={jobs} routers={routers} user={user} />;
       default: return <Dashboard jobs={jobs} user={user} routers={routers} onRefresh={fetchData} />;
     }
   };
@@ -292,8 +317,10 @@ function App() {
 
   return (
     <div className="flex h-screen bg-bg-main overflow-hidden text-slate-200 relative">
-      {isTrialExpired && <PaymentModal user={user} />}
-      <DemoTourModal isOpen={isDemoTourOpen} onClose={() => setIsDemoTourOpen(false)} setActiveSection={setActiveSection} />
+      <Suspense fallback={null}>
+        {isTrialExpired && <PaymentModal user={user} />}
+        {isDemoTourOpen && <DemoTourModal isOpen={isDemoTourOpen} onClose={() => setIsDemoTourOpen(false)} setActiveSection={setActiveSection} />}
+      </Suspense>
       
       <Sidebar 
         activeSection={activeSection} 
@@ -324,7 +351,9 @@ function App() {
         />
         
         <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
-          {renderContent()}
+          <Suspense fallback={<PageFallback />}>
+            {renderContent()}
+          </Suspense>
         </div>
       </main>
 

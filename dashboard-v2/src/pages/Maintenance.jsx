@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 
-export function Maintenance({ maintenance = [], routers = [], onRefresh, user }) {
+export function Maintenance({ maintenance = [], routers = [], onRefresh }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     router_id: '',
@@ -67,7 +67,7 @@ export function Maintenance({ maintenance = [], routers = [], onRefresh, user })
       setPartsReplaced('');
       setPartsCost('');
       onRefresh();
-    } catch (err) {
+    } catch {
       alert('Erro ao concluir manutenção');
     }
   };
@@ -77,7 +77,7 @@ export function Maintenance({ maintenance = [], routers = [], onRefresh, user })
     try {
       await api.deleteMaintenance(id);
       onRefresh();
-    } catch (err) {
+    } catch {
       alert('Erro ao excluir');
     }
   };
@@ -97,7 +97,6 @@ export function Maintenance({ maintenance = [], routers = [], onRefresh, user })
   };
 
   const pending = maintenance.filter(m => m.status === 'pending');
-  const history = maintenance.filter(m => m.status !== 'pending');
 
   return (
     <div className="p-4 md:p-8 space-y-6">

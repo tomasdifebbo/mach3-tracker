@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, X, ExternalLink } from 'lucide-react';
 
 export function HeadsUpNotification({ notification, onDismiss, onOpen }) {
@@ -17,7 +17,7 @@ export function HeadsUpNotification({ notification, onDismiss, onOpen }) {
   return (
     <AnimatePresence>
       {notification && (
-        <motion.div
+        <Motion.div
           key="heads-up-banner"
           initial={{ y: -120, opacity: 0, scale: 0.92 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
@@ -79,7 +79,7 @@ export function HeadsUpNotification({ notification, onDismiss, onOpen }) {
 
             {/* Barra de progresso do auto-recolhimento (4.5s) */}
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/5 overflow-hidden">
-              <motion.div
+              <Motion.div
                 initial={{ width: '100%' }}
                 animate={{ width: '0%' }}
                 transition={{ duration: 4.5, ease: 'linear' }}
@@ -87,7 +87,7 @@ export function HeadsUpNotification({ notification, onDismiss, onOpen }) {
               />
             </div>
           </div>
-        </motion.div>
+        </Motion.div>
       )}
     </AnimatePresence>
   );

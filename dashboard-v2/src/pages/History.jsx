@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
+import { extractProjectName } from '../utils/tenantUtils';
 import { 
   Filter, 
   Download, 
@@ -14,7 +15,7 @@ import {
   X,
   PlusCircle
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
 import { generateProductionReport } from '../utils/generateReport';
 import { calculateInsumo } from '../utils/insumoCalculator';
@@ -31,7 +32,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
-  const [showPdfMenu, setShowPdfMenu] = useState(false);
+  const [, setShowPdfMenu] = useState(false);
   const [exportingPdf, setExportingPdf] = useState(false);
   const pdfMenuRef = useRef(null);
   const [editingJobId, setEditingJobId] = useState(null);
@@ -65,7 +66,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       }
       setEditingJobId(null);
       onRefresh();
-    } catch (err) {
+    } catch {
       alert('Erro ao atualizar nome do projeto');
     }
   };
@@ -79,7 +80,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       setEditingOperatorJobId(null);
       setIsCustomOperatorInput(false);
       if (onRefresh) onRefresh();
-    } catch (err) {
+    } catch {
       alert('Erro ao atualizar operador do job');
     }
   };
@@ -126,7 +127,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       }
       setEditingQtyJobId(null);
       if (onRefresh) onRefresh();
-    } catch (err) {
+    } catch {
       alert('Erro ao atualizar quantidade do job');
     }
   };
@@ -351,7 +352,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       }
       onRefresh();
       setConfirmDeleteId(null);
-    } catch (err) {
+    } catch {
       alert('Erro ao excluir jobs');
     }
     setDeletingId(null);
@@ -390,7 +391,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       }
       setActiveDropdown(null);
       onRefresh();
-    } catch (err) {
+    } catch {
       alert('Erro ao atualizar material');
     }
   };
@@ -521,7 +522,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
 
         {/* Collapsible Filter Panel */}
         {showFilterPanel && (
-          <motion.div 
+          <Motion.div 
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
@@ -618,7 +619,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                 <X size={14} /> Limpar Filtros
               </button>
             </div>
-          </motion.div>
+          </Motion.div>
         )}
       </div>
 
@@ -694,28 +695,9 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                   </td>
                   <td className="px-2 py-2 min-w-[130px] max-w-[220px]">
                     {(() => {
-                      let projectName = '';
-                      if (job.folder && !job.folder.includes('\\') && !job.folder.includes('/')) {
-                        projectName = job.folder;
-                      } else {
-                        const pathParts = (job.folder || 'Geral').replace(/^Router \d+ \| /, '').split('\\');
-                        const routerIdx = pathParts.findIndex(p => p.toUpperCase() === 'ROUTER');
-                        
-                        if (routerIdx !== -1 && routerIdx < pathParts.length - 1) {
-                          projectName = pathParts[routerIdx + 1];
-                        } else {
-                          const folderOnlyParts = pathParts.filter(p => !p.toUpperCase().includes('.TXT') && !p.toUpperCase().includes('.TAP') && !p.toUpperCase().includes('.NC'));
-                          const cleanPath = folderOnlyParts.join('\\').replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
-                          const parts = cleanPath.split('\\').filter(p => {
-                            const up = p.toUpperCase();
-                            const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
-                                              up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
-                                              up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
-                            return p && !isGeneric;
-                          });
-                          projectName = parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || 'Produção Geral');
-                        }
-                      }
+                      const projectName = (job.folder && !job.folder.includes('\\') && !job.folder.includes('/'))
+                        ? job.folder
+                        : extractProjectName(job.folder, 'Produção Geral');
                       
                       const isEditing = editingJobId === job.id;
                       
@@ -968,7 +950,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                     
                     <AnimatePresence>
                       {activeDropdown === job.id && (
-                        <motion.div 
+                        <Motion.div 
                           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
                           className="absolute left-1/2 -translate-x-1/2 mt-2 w-52 glass border border-border rounded-2xl shadow-2xl z-[100] p-1.5"
                         >
@@ -1004,7 +986,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                               </button>
                             );
                           })}
-                        </motion.div>
+                        </Motion.div>
                       )}
                     </AnimatePresence>
                   </td>

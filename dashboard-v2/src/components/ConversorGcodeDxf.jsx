@@ -3,7 +3,7 @@ import { FileCode, Download, UploadCloud, RefreshCw, CheckCircle2, Layers, Box, 
 import { processGCodeToDxf } from '../utils/gcodeToDxf';
 
 export function ConversorGcodeDxf() {
-  const [file, setFile] = useState(null);
+  const [, setFile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);

@@ -4,7 +4,9 @@
   "description": "Mach3 Tracker - CNC Production Monitor Backend (Supabase)",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js",
+    "lint": "node scripts/lint.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

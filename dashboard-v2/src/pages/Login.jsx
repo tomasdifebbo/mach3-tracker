@@ -179,20 +179,7 @@ export function Login({ onLoginSuccess }) {
                  <><Lock size={18} /> Salvar Nova Senha</>}
               </button>
 
-              {/* Botão de Acesso Rápido Casa do Trem */}
-              {mode === 'login' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail('casadotrem@gmail.com');
-                    setPassword('admin');
-                  }}
-                  className="w-full py-2.5 rounded-xl border border-white/10 hover:border-accent-cyan/40 bg-white/[0.02] hover:bg-white/[0.06] text-slate-300 text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
-                >
-                  <span>⚡ Preencher Acesso Oficina (Casa do Trem)</span>
-                </button>
-              )}
-           </form>
+            </form>
 
            <div className="mt-8 text-center text-[11px] text-text-muted font-medium opacity-50">
              © 2026 Mach3 Tracker Pro. Todos os direitos reservados.

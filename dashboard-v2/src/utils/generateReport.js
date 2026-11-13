@@ -1,33 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-
-/**
- * Extracts the clean project name from a folder path
- * using the "After-Router" strategy.
- */
-function extractProjectName(folder) {
-  const pathParts = (folder || 'Geral').replace(/^Router \d+ \| /, '').split('\\');
-  const routerIdx = pathParts.findIndex(p => p.toUpperCase() === 'ROUTER');
-  
-  if (routerIdx !== -1 && routerIdx < pathParts.length - 1) {
-    return pathParts[routerIdx + 1];
-  }
-  
-  const folderOnlyParts = pathParts.filter(p => 
-    !p.toUpperCase().includes('.TXT') && 
-    !p.toUpperCase().includes('.TAP') && 
-    !p.toUpperCase().includes('.NC')
-  );
-  const cleanPath = folderOnlyParts.join('\\').replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
-  const parts = cleanPath.split('\\').filter(p => {
-    const up = p.toUpperCase();
-    const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
-                      up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
-                      up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
-    return p && !isGeneric;
-  });
-  return parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || 'Producao Geral');
-}
+import { extractProjectName } from './tenantUtils';
 
 /**
  * Formats minutes into HH:MM:SS string
@@ -290,7 +263,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       4: { halign: 'center', cellWidth: 30 },
     },
     margin: { left: 20, right: 20 },
-    didDrawPage: (data) => {
+    didDrawPage: () => {
       // Footer on every page
       drawFooter(doc, pageWidth, pageHeight);
     }
@@ -373,7 +346,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       10: { cellWidth: 28, halign: 'right', fontStyle: 'bold' },
     },
     margin: { left: 8, right: 8 },
-    didDrawPage: (data) => {
+    didDrawPage: () => {
       drawFooter(doc, pageWidth, pageHeight);
     }
   });
@@ -448,7 +421,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
         6: { halign: 'center', fontStyle: 'bold' },
       },
       margin: { left: 20, right: 20 },
-      didDrawPage: (data) => {
+      didDrawPage: () => {
         drawFooter(doc, pageWidth, pageHeight);
       }
     });
@@ -527,7 +500,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
         7: { halign: 'center', fontStyle: 'bold', cellWidth: 20 },
       },
       margin: { left: 20, right: 20 },
-      didDrawPage: (data) => {
+      didDrawPage: () => {
         drawFooter(doc, pageWidth, pageHeight);
       }
     });
@@ -666,7 +639,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
         }
       },
       margin: { left: 20, right: 20 },
-      didDrawPage: (data) => {
+      didDrawPage: () => {
         drawFooter(doc, pageWidth, pageHeight);
       }
     });
@@ -751,7 +724,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
         7: { cellWidth: 60, halign: 'left' },
       },
       margin: { left: 10, right: 10 },
-      didDrawPage: (data) => {
+      didDrawPage: () => {
         drawFooter(doc, pageWidth, pageHeight);
       }
     });

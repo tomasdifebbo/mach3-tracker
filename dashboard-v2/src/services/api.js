@@ -1,6 +1,6 @@
 // API Base Configuration
 // In production, frontend is served by the same Express server (same-origin)
-const API_URL = window.location.origin.includes('localhost') 
+export const API_URL = window.location.origin.includes('localhost') 
   ? 'http://localhost:3000' 
   : '';
 
@@ -436,6 +436,9 @@ export const api = {
   },
   savePipelineBatchQuantity: async (payload) => {
     return api.post('/pipeline/batch-quantity', payload);
+  },
+  saveWorkshopConfig: async (payload) => {
+    return api.patch('/user/workshop-config', payload);
   },
 
   deleteCustom: async (url) => {

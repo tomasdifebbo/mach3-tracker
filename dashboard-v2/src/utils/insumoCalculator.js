@@ -6,8 +6,7 @@
  * 2. Se maxXMm e maxYMm estiverem disponíveis, calcula: (maxXMm / 1000) * (maxYMm / 1000)
  * 3. Caso contrário, usa as dimensões cadastradas da chapa/material (ex: 2.70m x 1.80m = 4.86 m²).
  */
-export function calculateInsumo({ 
-  durationMinutes = 0, 
+export function calculateInsumo({
   pricePerM2 = 0, 
   maxXMm = null, 
   maxYMm = null, 

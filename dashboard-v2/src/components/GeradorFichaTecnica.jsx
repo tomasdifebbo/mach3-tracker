@@ -125,7 +125,7 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-export function GeradorFichaTecnica({ jobs = [], routers = [] }) {
+export function GeradorFichaTecnica({ jobs = [] }) {
   // 'lote' = Lote Seriado (Chapa 01 até N, ex: Parede Tijolo 50 chapas)
   // 'arquivos' = Checklist por Arquivos G-Code (ex: Setor Isopor Arco A / Arco B)
   const [mode, setMode] = useState('lote');
@@ -146,20 +146,20 @@ export function GeradorFichaTecnica({ jobs = [], routers = [] }) {
 
   // Estados de filtro e configuração
   const [selectedFolder, setSelectedFolder] = useState('');
-  const [keywordFilter, setKeywordFilter] = useState('tijolo');
+  const [keywordFilter, setKeywordFilter] = useState('');
   const [targetSheets, setTargetSheets] = useState(50);
-  const [minValidMinutes, setMinValidMinutes] = useState(24);
+  const [minValidMinutes, setMinValidMinutes] = useState(15);
   const [numRoutersProj, setNumRoutersProj] = useState(2);
   const [setupMinutes, setSetupMinutes] = useState(7);
-  const [shiftStartTime, setShiftStartTime] = useState('18:00');
-  const [dateFromFilter, setDateFromFilter] = useState('2026-10-29');
+  const [shiftStartTime, setShiftStartTime] = useState('08:00');
+  const [dateFromFilter, setDateFromFilter] = useState('');
 
   // Cabeçalho Técnico Editável
-  const [docTitle, setDocTitle] = useState('2640A - EXPRESSO HOGWARTS · PAREDE TIJOLO (MDF 9MM)');
-  const [docSubtitle, setDocSubtitle] = useState('Projeto: 2640a PAREDE TIJOLO · Controle Sequencial de Chapas');
-  const [toolSpec, setToolSpec] = useState('Fresa Topo Ø6mm (e6mm) · Passe Z 3mm');
-  const [cncParams, setCncParams] = useState('MDF 9mm (2731×1843mm) · F3200 · S15000');
-  const [sheetDimLabel, setSheetDimLabel] = useState('2731×1843mm · MDF 9mm');
+  const [docTitle, setDocTitle] = useState('ORDEM DE PRODUÇÃO · FICHA TÉCNICA CNC');
+  const [docSubtitle, setDocSubtitle] = useState('Controle Sequencial de Chapas e Tempo Estimado');
+  const [toolSpec, setToolSpec] = useState('Fresa Topo Ø6mm (e6mm)');
+  const [cncParams, setCncParams] = useState('MDF 9mm (2750×1850mm) · F3200 · S18000');
+  const [sheetDimLabel, setSheetDimLabel] = useState('2750×1850mm · MDF');
   const [footerNotes, setFooterNotes] = useState('');
 
   // Arquivos G-Code carregados manualmente no Modo B
@@ -856,32 +856,32 @@ export function GeradorFichaTecnica({ jobs = [], routers = [] }) {
   const applyPresetTijolo = () => {
     setMode('lote');
     setSelectedFolder('');
-    setKeywordFilter('tijolo');
-    setDateFromFilter('2026-10-29');
-    setTargetSheets(100);
-    setMinValidMinutes(24);
+    setKeywordFilter('mdf');
+    setDateFromFilter('');
+    setTargetSheets(50);
+    setMinValidMinutes(15);
     setNumRoutersProj(2);
     setSetupMinutes(7);
-    setShiftStartTime('18:00');
-    setDocTitle('2640A - EXPRESSO HOGWARTS · PAREDE TIJOLO (MDF 9MM)');
-    setDocSubtitle('Projeto: 2640a PAREDE TIJOLO · Controle Sequencial até Chapa 50');
+    setShiftStartTime('08:00');
+    setDocTitle('LOTE SERIADO MDF 9MM · FICHA TÉCNICA');
+    setDocSubtitle('Controle Sequencial de Chapas');
     setToolSpec('Fresa Topo Ø6mm (e6mm) · Passe Z 3mm');
-    setCncParams('MDF 9mm (2731×1843mm) · F3200 · S15000');
-    setSheetDimLabel('2731×1843mm · MDF 9mm');
-    setFooterNotes('Obs.: Em 29/10 manhã/tarde foram feitas +3 chapas de teste/regulagem (28,3m, 28,2m e 30,9m com Tomas), totalizando 40 chapas acumuladas caso aproveitadas na montagem.');
+    setCncParams('MDF 9mm (2750×1850mm) · F3200 · S18000');
+    setSheetDimLabel('2750×1850mm · MDF 9mm');
+    setFooterNotes('');
   };
 
   const applyPresetIsopor = () => {
     setMode('arquivos');
     setSelectedFolder('');
-    setKeywordFilter('pvc100mm');
-    setDateFromFilter('2026-10-31');
+    setKeywordFilter('isopor');
+    setDateFromFilter('');
     setNumRoutersProj(2);
     setSetupMinutes(8);
-    setShiftStartTime('15:30');
-    setDocTitle('2667A - EXPO ENTRADA · SETOR ISOPOR');
-    setDocSubtitle('Pasta: 2667A - EXPO ENTRADA \\ ENTRADA \\ ISOPOR (Arco A · Arco B · Colunas)');
-    setToolSpec('Ball Nose Ø12mm (b12mm)');
+    setShiftStartTime('08:00');
+    setDocTitle('SETOR ISOPOR / EPS 3D · FICHA TÉCNICA');
+    setDocSubtitle('Lista de Usinagem de Blocos Isopor / PVC Expandido');
+    setToolSpec('Ball Nose Ø10mm / Ø12mm');
     setCncParams('Esp. 100mm · F6000 · S12000');
     setSheetDimLabel('Isopor 100mm');
     setFooterNotes('');
@@ -890,19 +890,19 @@ export function GeradorFichaTecnica({ jobs = [], routers = [] }) {
   const applyPresetPendencias = () => {
     setMode('lote');
     setSelectedFolder('');
-    setKeywordFilter('tijolo');
-    setDateFromFilter('2026-10-29');
-    setTargetSheets(100);
-    setMinValidMinutes(24);
+    setKeywordFilter('');
+    setDateFromFilter('');
+    setTargetSheets(50);
+    setMinValidMinutes(10);
     setNumRoutersProj(2);
     setSetupMinutes(7);
-    setShiftStartTime('15:15');
-    setDocTitle('ORDEM DE CORTE · PENDÊNCIAS E MDFS 9MM FALTANTES (OFICINA ACT)');
-    setDocSubtitle('Lote MDF 9mm Tijolos (60 Concluídas / 40 Faltantes de 100) + Compensado 6mm + Molduras 9mm');
-    setToolSpec('Fresa Ø6mm (e6mm) Passe Z 3mm + Ball Nose Ø10mm');
-    setCncParams('MDF 9mm, MDF 6/15mm, Compensado 6mm, Isopor 100mm · S18000 / F3200');
-    setSheetDimLabel('MDF 9mm (2731×1843) / Diversos');
-    setFooterNotes('MDF 9mm Lote Seriado Tijolos: 60 chapas concluídas, 40 chapas faltantes (Chapas 61 a 100 de 100). Compensado 6mm Entrada: Chapas 6 a 9 a finalizar (~19m). Isopor Pinguins: 100% Concluído. Torres 9mm: 100% Concluído.');
+    setShiftStartTime('08:00');
+    setDocTitle('ORDEM DE CORTE · PENDÊNCIAS DA OFICINA');
+    setDocSubtitle('Controle de Materiais e Chapas Pendentes de Corte');
+    setToolSpec('Fresa Ø6mm / Ø4mm + Ball Nose');
+    setCncParams('MDF, Compensado, PVC e Isopor · S18000 / F3200');
+    setSheetDimLabel('Chapas 2750×1850 / Diversos');
+    setFooterNotes('Conferir fixação das peças, zeramento de eixos e sequência de chapas concluídas.');
   };
 
   return (
@@ -962,13 +962,13 @@ export function GeradorFichaTecnica({ jobs = [], routers = [] }) {
             onClick={applyPresetTijolo}
             className="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 cursor-pointer transition-all"
           >
-            🧱 MDF 9mm Tijolos (50 Chapas)
+            🧱 Lote Seriado MDF 9mm
           </button>
           <button
             onClick={applyPresetIsopor}
             className="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/25 cursor-pointer transition-all"
           >
-            🧊 Expo Entrada · Isopor
+            🧊 Setor Isopor / EPS 3D
           </button>
           <button
             onClick={applyPresetPendencias}

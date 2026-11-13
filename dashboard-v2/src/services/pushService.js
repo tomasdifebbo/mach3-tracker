@@ -58,7 +58,7 @@ export const pushService = {
         permission,
         subscribed: !!sub
       };
-    } catch (e) {
+    } catch {
       return { supported: true, permission, subscribed: false };
     }
   },
@@ -239,7 +239,7 @@ export const pushService = {
       if (navigator.vibrate) {
         navigator.vibrate([300, 100, 300, 100, 500]);
       }
-    } catch (e) {
+    } catch {
       // Ignora silenciosamente se áudio bloqueado antes de gesto
     }
   }

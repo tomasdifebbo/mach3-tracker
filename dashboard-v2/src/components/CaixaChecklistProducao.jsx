@@ -9,63 +9,13 @@ import { api } from '../services/api';
 const CUSTOM_STORAGE_KEY = 'mach3_custom_checklist_manual_v1';
 const USER_TOGGLES_KEY = 'mach3_checklist_user_toggles_v2';
 
-// Função universal para detectar arquivos que já foram testados, usinados ou dados OK pelo operador
-export function isFileMarkedOk(filename = '') {
-  if (!filename) return false;
-  const lower = filename.toLowerCase().trim();
-
-  // 1. Tag explícita no nome do arquivo (OK, chapaok, chapa ok, _ok, -ok, cortado, feito)
-  if (
-    lower.includes('chapaok') ||
-    lower.includes('chapa ok') ||
-    lower.includes(' ok.txt') ||
-    lower.includes('_ok.txt') ||
-    lower.includes('-ok.txt') ||
-    lower.includes(' ok ') ||
-    lower.includes('ja foi') ||
-    lower.includes('cortado') ||
-    lower.includes('feito') ||
-    lower.endsWith('ok.txt')
-  ) {
-    return true;
-  }
-
-  // 2. Arquivos de Compensado e Tijolos confirmados como concluídos pelo Tomas
-  if (
-    lower === 'compensado 6mm e6mm_11.txt' ||
-    lower === 'compensado 6mm e6mm_12.txt' ||
-    lower === 'compensado 6mm e6mm_10.txt' ||
-    lower === 'compensado 6mm e6mm_9.txt' ||
-    lower === 'compensado 6mm e6mm_8.txt' ||
-    lower === 'compensado 6mm e6mm_7.txt' ||
-    lower === 'compensado 6mm e6mm_5.txt' ||
-    lower === 'compensado 6mm e6mm_4.txt' ||
-    lower === 'compensado 6mm e6mm_3.txt' ||
-    lower === 'compensado 6mm e6mm_2.txt' ||
-    lower === 'compensado 6mm e6mm_1.txt' ||
-    lower.includes('textura tijolos especiais e4mm') ||
-    lower === 'compensado 10mm e6mm_1.txt' ||
-    lower.includes('aplique mdf 9mm_1-corte 1') ||
-    lower.includes('aplique mdf 9mm_2-corte 2') ||
-    lower.includes('aplique mdf 9mm_3-corte 3') ||
-    lower.includes('aplique mdf 9mm_4-corte 4') ||
-    lower.includes('aplique mdf 9mm_1-corte 5') ||
-    lower.includes('aplique mdf 9mm_2-corte 6') ||
-    lower.includes('aplique mdf 9mm_4-corte 7') ||
-    lower === '4x compensado 6mm e6mm.txt' ||
-    lower === '2x compensado 6mm e6mm_1-corte 2.txt'
-  ) {
-    return true;
-  }
-
-  return false;
-}
+import { isFileMarkedOk } from '../utils/fileChecklistUtils';
 
 export function CaixaChecklistProducao({ 
   pipelineData = null, 
   jobs = [], 
   routers = [], 
-  operatorName = 'Tomas' 
+  operatorName = 'Operador' 
 }) {
   const [filterStatus, setFilterStatus] = useState('pendentes'); // 'pendentes' | 'todos' | 'concluidos'
   const [selectedGroup, setSelectedGroup] = useState('todos');
@@ -73,7 +23,7 @@ export function CaixaChecklistProducao({
   const [isAddingOpen, setIsAddingOpen] = useState(false);
   const [newItemText, setNewItemText] = useState('');
   const [newItemMachine, setNewItemMachine] = useState('Router Central');
-  const [newItemTool, setNewItemTool] = useState('Topo Ø6mm');
+  const [newItemTool] = useState('Topo Ø6mm');
   const [newItemGroup, setNewItemGroup] = useState('Lote Tijolos (81-100)');
 
   // Toggles manuais gravados pelo operador (permite dar ou tirar OK em qualquer item)
@@ -81,7 +31,7 @@ export function CaixaChecklistProducao({
     try {
       const saved = localStorage.getItem(USER_TOGGLES_KEY);
       return saved ? JSON.parse(saved) : {};
-    } catch (e) {
+    } catch {
       return {};
     }
   });
@@ -91,7 +41,7 @@ export function CaixaChecklistProducao({
     try {
       const saved = localStorage.getItem(CUSTOM_STORAGE_KEY);
       return saved ? JSON.parse(saved) : [];
-    } catch (e) {
+    } catch {
       return [];
     }
   });
@@ -99,7 +49,7 @@ export function CaixaChecklistProducao({
   useEffect(() => {
     try {
       localStorage.setItem(CUSTOM_STORAGE_KEY, JSON.stringify(customItems));
-    } catch (e) {}
+    } catch { /* ignore */ }
   }, [customItems]);
 
   // Sincroniza toggles com PostgreSQL
@@ -130,7 +80,7 @@ export function CaixaChecklistProducao({
       if (item.title) next[item.title] = nextVal;
       try {
         localStorage.setItem(USER_TOGGLES_KEY, JSON.stringify(next));
-      } catch (e) {}
+      } catch { /* ignore */ }
       return next;
     });
 
@@ -140,7 +90,7 @@ export function CaixaChecklistProducao({
       file_name: item.title || key,
       stage: 'checklist',
       done: nextVal,
-      operator_name: operatorName || 'Tomas'
+      operator_name: operatorName || 'Operador'
     }).catch(err => console.warn('Erro ao sincronizar toggle com PostgreSQL:', err));
   };
 
@@ -214,8 +164,6 @@ export function CaixaChecklistProducao({
 
     // 2. Outros Lotes Seriados (Apenas metas sem arquivos individuais rastreados)
     specialBatches.forEach(b => {
-      // Tijolos e Apliques já são listados pelas suas chapas e arquivos individuais reais!
-      if (b.id === 'tijolos_9mm' || b.id === 'hogsmead_apliques_9mm') return;
       const isBatchDone = (b.pendingSheets === 0) || (b.status === 'concluido');
       rawList.push({
         id: `batch-${b.id}`,
@@ -253,7 +201,7 @@ export function CaixaChecklistProducao({
         done: isDone,
         isAuto: true,
         isRunning: isRunning,
-        doneBy: markedOk ? 'Tomas (OK)' : (hasRunInJobs ? 'Mach3 Auto' : null),
+        doneBy: markedOk ? `${operatorName || 'Operador'} (OK)` : (hasRunInJobs ? 'Mach3 Auto' : null),
         doneAt: markedOk ? 'Confirmado' : (hasRunInJobs ? 'Usinado' : null),
         statusText: isDone 
           ? '✓ Usinado no Mach3' 
@@ -296,7 +244,7 @@ export function CaixaChecklistProducao({
         statusText: finalDone ? (item.statusText.includes('Usinado') ? item.statusText : '✓ Concluído (OK)') : item.statusText
       };
     });
-  }, [pipelineData, jobs, routers, customItems, userToggles]);
+  }, [pipelineData, jobs, routers, customItems, userToggles, operatorName]);
 
   // Métricas gerais
   const metrics = useMemo(() => {
@@ -596,7 +544,7 @@ export function CaixaChecklistProducao({
                   ) : isDone ? (
                     <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 flex items-center gap-1 group-hover:bg-emerald-500 group-hover:text-white transition-all">
                       <Check size={11} className="stroke-[3]" />
-                      {item.doneBy === 'Tomas (OK)' ? '✓ OK Tomas' : '✓ OK Usinado'}
+                      {item.doneBy && item.doneBy.endsWith('(OK)') ? `✓ ${item.doneBy}` : '✓ OK Usinado'}
                     </span>
                   ) : (
                     <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center gap-1 group-hover:bg-emerald-500 group-hover:text-white transition-all">

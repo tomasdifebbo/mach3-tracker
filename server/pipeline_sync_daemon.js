@@ -83,10 +83,7 @@ function triggerInstantSync(fileInfo) {
 
 // Resolve watch directories dynamically from tenant #1 PostgreSQL config or environment variables
 async function resolveWatchDirs() {
-    const dirs = new Set([
-        'E:\\arquivos 2024\\ARQUIVOS 2026\\router',
-        'C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos'
-    ]);
+    const dirs = new Set();
     if (process.env.PIPELINE_LOCAL_ROOT) dirs.add(process.env.PIPELINE_LOCAL_ROOT.trim());
     if (process.env.PIPELINE_ONEDRIVE_ROOT) dirs.add(process.env.PIPELINE_ONEDRIVE_ROOT.trim());
 

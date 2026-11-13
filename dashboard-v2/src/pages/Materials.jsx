@@ -16,7 +16,6 @@ import {
   Gauge
 } from 'lucide-react';
 import { api } from '../services/api';
-import { calculateInsumo } from '../utils/insumoCalculator';
 
 const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
@@ -129,7 +128,7 @@ export function Materials({ materials = [], onRefresh }) {
       } else {
         alert('Erro ao excluir: ' + (resp?.error || 'Erro desconhecido'));
       }
-    } catch (err) { 
+    } catch { 
       alert('Erro de rede: Verifique sua conexão.'); 
     }
     setDeletingId(null);
@@ -300,10 +299,7 @@ export function Materials({ materials = [], onRefresh }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredMaterials.map((m) => {
-            const fRate = m.feed_rate || 3000;
-            const pWidth = m.pass_width || 100;
-            const m1h = calculateInsumo({ durationMinutes: 60, pricePerM2: m.price || 0, feedRateMmMin: fRate, passWidthMm: pWidth });
-            
+
             return (
               <div key={m.id} className="glass p-6 rounded-3xl border-border/40 hover:border-accent-cyan/30 transition-all group duration-300 relative overflow-hidden flex flex-col justify-between">
                 <div>

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { api } from '../services/api';
+import { extractProjectName } from '../utils/tenantUtils';
 import { 
   Users, 
   Clock, 
@@ -26,7 +28,7 @@ import {
   LineElement
 } from 'chart.js';
 import { Bar, Doughnut } from 'react-chartjs-2';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { LinkProjectModal } from '../components/LinkProjectModal';
 
 ChartJS.register(
@@ -53,7 +55,7 @@ const formatDuration = (minutes) => {
 const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
 export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
-  const [elapsed, setElapsed] = useState(0);
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const [togglingId, setTogglingId] = useState(null);
   const [selectedLinkJob, setSelectedLinkJob] = useState(null);
   const [selectedLinkRouter, setSelectedLinkRouter] = useState('');
@@ -74,23 +76,8 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
   
   // Live Timer Effect for multiple jobs
   useEffect(() => {
-    if (activeJobs.length === 0) {
-      setElapsed(0);
-      return;
-    }
-    
-    const update = () => {
-      // For simplicity, we track the elapsed time of the most recent active job for the main display
-      // but in the UI we can show multiple trackers.
-      const newestJob = activeJobs[0];
-      if (!newestJob) return;
-      const startDt = new Date(newestJob.start_time);
-      const diffSec = Math.floor((Date.now() - startDt) / 1000);
-      setElapsed(diffSec > 0 ? diffSec / 60 : 0);
-    };
-    
-    update();
-    const interval = setInterval(update, 1000);
+    if (activeJobs.length === 0) return undefined;
+    const interval = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(interval);
   }, [activeJobs]);
 
@@ -117,7 +104,6 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
     const d = new Date(isoStr);
     return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
   };
-  const jobsToday = jobs.filter(j => isToday(j.start_time)).length;
   const minutesToday = jobs.filter(j => isToday(j.start_time)).reduce((acc, j) => acc + (j.duration_minutes || 0), 0);
   const oee = Math.min(100, (minutesToday / (plannedHours * 60)) * 100);
 
@@ -145,29 +131,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
   const groupedJobs = jobs.reduce((acc, j) => {
     const name = j.file_name || 'Desconhecido';
     
-    // Extract neat project name (skipping generic folders like ROUTER, ISOPOR, etc)
-    // Extract project name from folder path
-    // Aggressive project name extraction
-    const pathParts = (j.folder || 'Geral').replace(/^Router \d+ \| /, '').split('\\');
-    // Specialized Log Logic: Find the folder immediately AFTER 'router'
-    const routerIdx = pathParts.findIndex(p => p.toUpperCase() === 'ROUTER');
-    let projectName = '';
-    
-    if (routerIdx !== -1 && routerIdx < pathParts.length - 1) {
-      projectName = pathParts[routerIdx + 1];
-    } else {
-      // Fallback for non-log paths (like Globotoy)
-      const folderOnlyParts = pathParts.filter(p => !p.toUpperCase().includes('.TXT') && !p.toUpperCase().includes('.TAP') && !p.toUpperCase().includes('.NC'));
-      const cleanPath = folderOnlyParts.join('\\').replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
-      const parts = cleanPath.split('\\').filter(p => {
-        const up = p.toUpperCase();
-        const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
-                          up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
-                          up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
-        return p && !isGeneric;
-      });
-      projectName = parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || 'Produção Geral');
-    }
+    const projectName = extractProjectName(j.folder, 'Produção Geral');
     
     const key = `${name}-${projectName}-${j.router_name || 'Central'}`;
     
@@ -190,26 +154,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
   
   // Group by folder and sum duration
   const groupedFolders = jobs.reduce((acc, j) => {
-    // Use the same intelligent project name extraction
-    // Aggressive project name extraction
-    const pathParts = (j.folder || 'Geral').replace(/^Router \d+ \| /, '').split('\\');
-    const routerIdx = pathParts.findIndex(p => p.toUpperCase() === 'ROUTER');
-    let projectName = '';
-    
-    if (routerIdx !== -1 && routerIdx < pathParts.length - 1) {
-      projectName = pathParts[routerIdx + 1];
-    } else {
-      const folderOnlyParts = pathParts.filter(p => !p.toUpperCase().includes('.TXT') && !p.toUpperCase().includes('.TAP') && !p.toUpperCase().includes('.NC'));
-      const cleanPath = folderOnlyParts.join('\\').replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/, '');
-      const parts = cleanPath.split('\\').filter(p => {
-        const up = p.toUpperCase();
-        const isGeneric = up.includes('TOMAS') || up.includes('ARQUIVOS') || up.includes('ROUTER') || 
-                          up.includes('ISOPOR') || up.includes('2024') || up.includes('2026') || 
-                          up === 'CNC' || up === 'PROGRAMA' || up === 'FILES';
-        return p && !isGeneric;
-      });
-      projectName = parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || 'Produção Geral');
-    }
+    const projectName = extractProjectName(j.folder, 'Produção Geral');
                  
     if (!acc[projectName]) {
       acc[projectName] = { name: projectName, count: 0, totalMinutes: 0 };
@@ -228,7 +173,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
       <div className="space-y-4">
         {activeJobs.map(job => {
           const startDt = new Date(job.start_time);
-          const elapsedMin = Math.max(0, (Date.now() - startDt) / 60000);
+          const elapsedMin = Math.max(0, (nowMs - startDt) / 60000);
           const estMin = job.estimated_minutes;
           const hasEstimate = estMin && estMin > 0;
           const isOverdue = hasEstimate && elapsedMin > estMin;
@@ -239,7 +184,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
           const isNearEnd = progress !== null && progress >= 85 && !isOverdue;
 
           return (
-          <motion.div 
+          <Motion.div 
             key={job.id}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -312,7 +257,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
                   </span>
                 </div>
                 <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden relative">
-                  <motion.div 
+                  <Motion.div 
                     initial={{ width: 0 }} 
                     animate={{ width: `${Math.min(progress, 100)}%` }}
                     transition={{ duration: 1, ease: 'easeOut' }}
@@ -330,7 +275,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
                 </div>
               </div>
             )}
-          </motion.div>
+          </Motion.div>
           );
         })}
       </div>
@@ -384,7 +329,6 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
             const handleToggle = async (newStatus) => {
               setTogglingId(router.id);
               try {
-                const { api } = await import('../services/api');
                 await api.updateRouterStatus(router.id, newStatus);
                 if (onRefresh) onRefresh();
               } catch (err) {
@@ -394,7 +338,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
             };
 
             return (
-              <motion.div
+              <Motion.div
                 key={router.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -480,7 +424,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
                     {router.status_note}
                   </div>
                 )}
-              </motion.div>
+              </Motion.div>
             );
           })}
         </div>
@@ -489,7 +433,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
         {stats.map((s, i) => (
-          <motion.div 
+          <Motion.div 
             key={i}
             whileHover={{ y: -5 }}
             className="glass p-4 md:p-6 rounded-2xl group transition-all"
@@ -504,7 +448,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
             </div>
             <h4 className="text-xs md:text-sm text-text-muted font-medium mb-1">{s.label}</h4>
             <div className="text-lg sm:text-xl md:text-2xl font-bold text-white tracking-tight">{s.value}</div>
-          </motion.div>
+          </Motion.div>
         ))}
       </div>
 
@@ -621,7 +565,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
                       </td>
                       <td className="px-4 py-3 rounded-r-xl w-28">
                         <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                          <motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} className="h-full bg-accent-blue" />
+                          <Motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} className="h-full bg-accent-blue" />
                         </div>
                       </td>
                     </tr>
@@ -661,7 +605,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
                       </td>
                       <td className="px-4 py-3 rounded-r-xl w-32">
                         <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                          <motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} className="h-full bg-accent-success" />
+                          <Motion.div initial={{ width: 0 }} animate={{ width: `${percentage}%` }} className="h-full bg-accent-success" />
                         </div>
                       </td>
                     </tr>

@@ -1,3 +1,15 @@
+def ensure_default_desktop():
+    try:
+        import ctypes
+        user32 = ctypes.windll.user32
+        hdesk = user32.OpenDesktopW("Default", 0, False, 0x01FF)
+        if hdesk:
+            user32.SetThreadDesktop(hdesk)
+    except Exception:
+        pass
+
+ensure_default_desktop()
+
 import logging
 import os
 from pathlib import Path
@@ -503,6 +515,22 @@ class FolderAssistantApp:
                 pass
             self._restore_from_mini_or_minimized()
 
+        test_robo_sig = DATA_DIR / "test_robo.signal"
+        if test_robo_sig.exists():
+            try:
+                test_robo_sig.unlink()
+            except OSError:
+                pass
+            self._on_test_robo()
+
+        test_kanban_sig = DATA_DIR / "test_kanban.signal"
+        if test_kanban_sig.exists():
+            try:
+                test_kanban_sig.unlink()
+            except OSError:
+                pass
+            self._on_test_kanban_robo()
+
         while not self.ui_queue.empty():
             try:
                 kind, payload = self.ui_queue.get_nowait()
@@ -925,6 +953,8 @@ class FolderAssistantApp:
         cfg = load_config()
         if not cfg.get("notify_popup", True):
             return
+        clean_msg = message.replace("\n", " • ")
+        logging.info(f"_show_toast_popup acionado: {title} | {clean_msg} | pasta={folder_path}")
 
         def _handle_click():
             logging.info(f"Clique no balão de notificação: folder_path={folder_path}, job_name={job_name}")

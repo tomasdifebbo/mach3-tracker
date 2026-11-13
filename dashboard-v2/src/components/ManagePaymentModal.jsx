@@ -21,7 +21,7 @@ export function ManagePaymentModal({ isOpen, onClose, user, onRefresh }) {
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'plans' | 'invoices' | 'billing'
   const [checkoutLoading, setCheckoutLoading] = useState(null);
   const [paymentsHistory, setPaymentsHistory] = useState([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [, setLoadingHistory] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   
   // Billing info state

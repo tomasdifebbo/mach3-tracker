@@ -137,7 +137,7 @@ export function ControlePastasOficina() {
               Sincronização 3 - OFICINA
             </span>
             <span className="text-xs text-text-muted">|</span>
-            <span className="text-xs font-semibold text-text-muted">OneDrive ➔ ARQUIVOS 2026 (Local)</span>
+            <span className="text-xs font-semibold text-text-muted">Pasta Nuvem ➔ Pasta Local CNC</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-black text-white flex items-center gap-3">
             <FolderSync className="text-orange-400" size={32} />
@@ -528,16 +528,16 @@ export function ControlePastasOficina() {
               <span className="text-xs font-black uppercase tracking-wider text-orange-400">Configuração Ativa</span>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                 <div className="p-3.5 bg-white/5 rounded-xl border border-white/5">
-                  <span className="text-[10px] font-bold text-text-muted uppercase">Origem (OneDrive Ativo):</span>
+                  <span className="text-[10px] font-bold text-text-muted uppercase">Origem (Nuvem / Jobs Ativos):</span>
                   <p className="font-mono text-white mt-1 break-all">
-                    {syncData?.active_config?.source_dir || 'C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos'}
+                    {syncData?.active_config?.source_dir || 'Não configurado (ajuste em Configurações)'}
                   </p>
                 </div>
 
                 <div className="p-3.5 bg-white/5 rounded-xl border border-white/5">
                   <span className="text-[10px] font-bold text-text-muted uppercase">Destino Local da Router:</span>
                   <p className="font-mono text-white mt-1 break-all">
-                    {syncData?.active_config?.dest_dir || 'E:\\arquivos 2024\\ARQUIVOS 2026'}
+                    {syncData?.active_config?.dest_dir || 'Não configurado (ajuste em Configurações)'}
                   </p>
                 </div>
 

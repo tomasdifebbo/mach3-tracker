@@ -21,7 +21,7 @@ const ALL_FEATURES = [
 export function AdminPortal() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [, setError] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null); // User for Feature Checklist modal
   const [editingFeatures, setEditingFeatures] = useState({});
   const [savingFeatures, setSavingFeatures] = useState(false);
@@ -52,7 +52,7 @@ export function AdminPortal() {
     try {
       await api.patch(`/admin/users/${id}/plan`, { plan: newPlan });
       fetchUsers();
-    } catch (e) {
+    } catch {
       alert('Erro ao mudar plano');
     }
   };
@@ -61,7 +61,7 @@ export function AdminPortal() {
     try {
       await api.patch(`/admin/users/${id}/company-role`, { company_role: newRole });
       fetchUsers();
-    } catch (e) {
+    } catch {
       alert('Erro ao alterar perfil do cliente');
     }
   };
@@ -71,7 +71,7 @@ export function AdminPortal() {
     try {
       await api.patch(`/admin/users/${id}/plan`, { addDays: days });
       fetchUsers();
-    } catch (e) {
+    } catch {
       alert('Erro ao extender trial');
     }
   };
@@ -95,7 +95,7 @@ export function AdminPortal() {
       await api.patch(`/admin/users/${selectedUser.id}/features`, { features: editingFeatures });
       await fetchUsers();
       setSelectedUser(null);
-    } catch (e) {
+    } catch {
       alert('Erro ao salvar permissões do cliente.');
     } finally {
       setSavingFeatures(false);

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { CheckCircle2, XCircle, Clock, ArrowRight, Loader2 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -63,21 +63,21 @@ export function PaymentResult({ status = 'success', onGoToDashboard }) {
         <div className={`absolute w-[700px] h-[700px] rounded-full blur-[140px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-br ${state.bg}`} />
       </div>
 
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, scale: 0.9, y: 30 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 200, damping: 20 }}
         className={`relative z-10 max-w-lg w-full glass rounded-[40px] p-12 border ring-1 ${state.ring} text-center space-y-8`}
       >
         {/* Icon */}
-        <motion.div
+        <Motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: 'spring', stiffness: 300 }}
           className={`inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br ${state.bg} ring-1 ${state.ring} mx-auto`}
         >
           <Icon size={48} className={state.color} />
-        </motion.div>
+        </Motion.div>
 
         {/* Title */}
         <div className="space-y-3">
@@ -110,7 +110,7 @@ export function PaymentResult({ status = 'success', onGoToDashboard }) {
         )}
 
         {/* CTA */}
-        <motion.button
+        <Motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
           onClick={onGoToDashboard}
@@ -118,8 +118,8 @@ export function PaymentResult({ status = 'success', onGoToDashboard }) {
         >
           {status === 'failure' ? 'Tentar Novamente' : 'Ir para o Dashboard'}
           <ArrowRight size={18} />
-        </motion.button>
-      </motion.div>
+        </Motion.button>
+      </Motion.div>
     </div>
   );
 }

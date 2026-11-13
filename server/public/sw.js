@@ -1,7 +1,6 @@
 // Service Worker para Notificações Push PWA do Mach3 Tracker
-const CACHE_NAME = 'mach3-tracker-v2';
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
@@ -21,7 +20,7 @@ self.addEventListener('push', (event) => {
   if (event.data) {
     try {
       data = event.data.json();
-    } catch (err) {
+    } catch {
       data.body = event.data.text();
     }
   }

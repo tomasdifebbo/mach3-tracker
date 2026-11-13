@@ -52,7 +52,7 @@ export function GeradorLetraCaixa3D() {
   // Estados de Processamento e Motor
   const [isProcessing, setIsProcessing] = useState(false);
   const [blenderOnline, setBlenderOnline] = useState(false);
-  const [activeEngine, setActiveEngine] = useState('auto'); // 'auto', 'blender', 'client'
+  const [activeEngine] = useState('auto'); // 'auto', 'blender', 'client'
   const [error, setError] = useState(null);
   const [successInfo, setSuccessInfo] = useState(null);
 
@@ -85,10 +85,11 @@ export function GeradorLetraCaixa3D() {
 
   // Inicializa Viewport Three.js
   useEffect(() => {
-    if (!mountRef.current) return;
+    const mountEl = mountRef.current;
+    if (!mountEl) return;
 
-    const width = mountRef.current.clientWidth || 500;
-    const height = mountRef.current.clientHeight || 380;
+    const width = mountEl.clientWidth || 500;
+    const height = mountEl.clientHeight || 380;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x020617);
@@ -104,8 +105,8 @@ export function GeradorLetraCaixa3D() {
     renderer.shadowMap.enabled = true;
     rendererRef.current = renderer;
 
-    mountRef.current.innerHTML = '';
-    mountRef.current.appendChild(renderer.domElement);
+    mountEl.innerHTML = '';
+    mountEl.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -156,7 +157,7 @@ export function GeradorLetraCaixa3D() {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationFrameId);
       renderer.dispose();
-      if (mountRef.current) mountRef.current.innerHTML = '';
+      if (mountEl) mountEl.innerHTML = '';
     };
   }, []);
 

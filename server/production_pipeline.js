@@ -39,7 +39,7 @@ function scanDirRecursive(dir, maxDepth = 8, depth = 0) {
                 }
             }
         }
-    } catch (e) {}
+    } catch { /* ignore */ }
     return files;
 }
 
@@ -155,7 +155,7 @@ function getGCodeMetadata(filePath, mtime = 0) {
         };
         gcodeMetadataCache.set(cacheKey, result);
         return result;
-    } catch (e) {
+    } catch {
         return null;
     }
 }
@@ -165,11 +165,10 @@ function extractMaterialInfo(name, folderPath = '') {
     const fn = path.parse(name || '').name.toLowerCase();
     const folder = (folderPath || '').toLowerCase();
     let material = null;
-    if (folder.includes('topo isopor colunas') || fn.includes('topo isopor colunas')) material = 'Isopor EPS';
-    else if (fn.includes('mdf')) material = 'MDF';
+    if (fn.includes('mdf')) material = 'MDF';
     else if (fn.includes('compensado') || fn.includes('comp ') || fn.includes('cambota')) material = 'Compensado';
     else if (fn.includes('pvc')) material = 'PVC';
-    else if (fn.includes('isopor') || fn.includes('eps')) material = 'Isopor EPS';
+    else if (fn.includes('isopor') || fn.includes('eps') || folder.includes('isopor')) material = 'Isopor EPS';
     else if (fn.includes('acrilico') || fn.includes('acrílico')) material = 'Acrílico';
     else if (fn.includes('ps ') || fn.includes('ps3mm') || fn.includes('ps2mm') || fn.includes('ps1mm')) material = 'PS';
     else if (fn.includes('eva')) material = 'EVA';
@@ -188,16 +187,11 @@ function extractMaterialInfo(name, folderPath = '') {
     const chapaMatch = fn.match(/(?:chapa\s*(\d+)|(\d+)\s*x|parte\s*(\d+)|_(\d+)|(\d+)\s*(?:pvc|mdf|comp))/i);
     const chapaIndex = chapaMatch ? (chapaMatch[1] || chapaMatch[2] || chapaMatch[3] || chapaMatch[4] || chapaMatch[5]) : null;
 
-    // Detecta quantidade de repetições (ex: 4X, 2X, 3X, ou topo isopor colunas 14x)
+    // Detecta quantidade de repetições (ex: 4X, 2X, 3X, 14x)
     let targetQuantity = 1;
-    if (folder.includes('topo isopor colunas') || fn.includes('topo isopor colunas')) {
-        targetQuantity = 14;
-        tag = 'PVC 100mm (14x)';
-    } else {
-        const qtyMatch = fn.match(/^(\d+)\s*x|\b(\d+)\s*x\b/i);
-        if (qtyMatch) {
-            targetQuantity = parseInt(qtyMatch[1] || qtyMatch[2], 10);
-        }
+    const qtyMatch = fn.match(/^(\d+)\s*x|\b(\d+)\s*x\b/i);
+    if (qtyMatch) {
+        targetQuantity = parseInt(qtyMatch[1] || qtyMatch[2], 10);
     }
 
     return { material, thickness, tag, chapaIndex, targetQuantity };
@@ -224,7 +218,7 @@ function isFileMarkedOk(filename = '') {
         return true;
     }
 
-    // 2. Arquivos de Compensado e Tijolos confirmados como concluídos pelo Tomas
+    // 2. Arquivos confirmados como concluídos por padrão legado de lote
     if (
         lower === 'compensado 6mm e6mm_11.txt' ||
         lower === 'compensado 6mm e6mm_12.txt' ||
@@ -255,7 +249,7 @@ function isFileMarkedOk(filename = '') {
     return false;
 }
 
-// Regra de Turno Noturno: Todas as operações entre 22:00 e 05:59 pertencem ao operador noturno (brenno)
+// Regra de Turno Noturno: Todas as operações entre 22:00 e 05:59 pertencem ao operador noturno do tenant
 function isNightShiftHour(date) {
     if (!date) return false;
     try {
@@ -267,311 +261,146 @@ function isNightShiftHour(date) {
         }).format(d);
         const hour = parseInt(hourStr, 10);
         return hour >= 22 || hour < 6;
-    } catch (e) {
+    } catch {
         const h = (new Date(date)).getHours();
         return h >= 22 || h < 6;
     }
 }
 
-function calculateDynamicBatches(dbJobs = [], completedFilesMap = {}) {
-    // 1. Tijolos MDF 9mm (Meta: 100 chapas - 90 Usinadas / 10 Faltantes)
-    const tijoloRuns = dbJobs.filter(j => 
-        (j.file_name || '').toLowerCase().includes('tijolo') &&
-        new Date(j.start_time) >= new Date('2026-10-29T00:00:00Z') &&
-        (Number(j.duration_minutes) >= 18 || (!j.duration_minutes && (Date.now() - new Date(j.start_time).getTime() < 5400000)))
-    );
-    const tijoloDone = Math.min(100, Math.max(90, tijoloRuns.length));
-    const tijoloPending = Math.max(0, 100 - tijoloDone);
+function scopeFileKey(userId, key) {
+    const clean = String(key || '').trim();
+    if (!clean) return '';
+    const uId = Number(userId || 1) || 1;
+    if (uId <= 1) return clean;
+    const prefix = `u${uId}::`;
+    return clean.startsWith(prefix) ? clean : `${prefix}${clean}`;
+}
 
-    // 2. Pinguins Hella 100mm (Meta: 8 chapas/blocos PVC)
-    const pvcNumbers = [1, 2, 3, 4, 5, 6, 7, 8];
-    const pvcDoneList = pvcNumbers.filter(n => 
-        dbJobs.some(j => (j.file_name || '').toLowerCase().includes(n + ' pvc 100mm') && new Date(j.start_time) >= new Date('2026-11-04T00:00:00Z'))
-    );
-    const pinguinsDone = pvcDoneList.length;
-    const pinguinsPending = Math.max(0, 8 - pinguinsDone);
+function unscopeFileKey(userId, storedKey) {
+    const raw = String(storedKey || '').trim();
+    if (!raw) return '';
+    const uId = Number(userId || 1) || 1;
+    if (uId <= 1) return raw;
+    const prefix = `u${uId}::`;
+    return raw.startsWith(prefix) ? raw.slice(prefix.length) : raw;
+}
 
-    // 3. Arcos & Pilares Entrada (Meta: 8 chapas: 3x 15mm + 5x 9mm)
-    const arcos15Done = [1, 2, 3].filter(n =>
-        dbJobs.some(j => (j.file_name || '').toLowerCase().includes('mdf 15mm') && (j.file_name || '').toLowerCase().includes('arco corte ' + n) && new Date(j.start_time) >= new Date('2026-11-04T00:00:00Z'))
-    ).length;
-    const arcos9Done = [1, 2, 3, 4, 5].filter(n =>
-        dbJobs.some(j => (j.file_name || '').toLowerCase().includes('arcos corte ' + n) && new Date(j.start_time) >= new Date('2026-11-04T00:00:00Z'))
-    ).length;
-    const arcosTotalDone = arcos15Done + arcos9Done;
-    const arcosPending = Math.max(0, 8 - arcosTotalDone);
+function resolveExecutionMeta(execs, dbCompRec, gf, dur, dayOpName, nightOpName) {
+    if (execs && execs[0]) {
+        return {
+            ...execs[0],
+            operator_name: isNightShiftHour(execs[0].start_time)
+                ? nightOpName
+                : (execs[0].operator_name || dayOpName)
+        };
+    }
+    return {
+        operator_name: isNightShiftHour(dbCompRec?.completed_at || gf.mtimeDate)
+            ? nightOpName
+            : (dbCompRec?.operator_name || dayOpName),
+        machine_name: 'Router 2',
+        start_time: dbCompRec?.completed_at || gf.mtimeDate || new Date().toISOString(),
+        duration_minutes: gf.estimatedMinutes || dur
+    };
+}
 
-    // 4. Compensado 6mm Entrada (Meta: 12 chapas - 100% Concluído/OK)
-    const compDoneCount = 12;
-    const compPending = 0;
+function calculateDynamicBatches(dbJobs = [], completedFilesMap = {}, customBatches = [], fileBatchMeta = []) {
+    const batches = [];
+    const seenIds = new Set();
 
-    // 5. Moldura Menor 9mm
-    const molduraRuns = dbJobs.filter(j => (j.file_name || '').toLowerCase().includes('moldura menor') && (j.file_name || '').toLowerCase().includes('9mm'));
-    const molduraDone = molduraRuns.length > 0 ? 1 : 0;
-    const molduraPending = Math.max(0, 1 - molduraDone);
+    // 1. Lotes personalizados configurados para o tenant (users.pipeline_batches JSONB)
+    if (Array.isArray(customBatches)) {
+        customBatches.forEach((cfg, idx) => {
+            if (!cfg || !cfg.name) return;
+            const id = String(cfg.id || `custom_${idx + 1}`);
+            const targetSheets = Math.max(1, parseInt(cfg.targetSheets, 10) || 1);
+            const keyword = String(cfg.matchKeyword || '').toLowerCase().trim();
+            const folderKw = String(cfg.matchFolder || '').toLowerCase().trim();
+            const minDur = Number(cfg.minMinutes) || 0;
+            const sinceMs = cfg.sinceDate ? new Date(cfg.sinceDate).getTime() : 0;
 
-    // 6. Coluna & Parede Teste 9mm
-    const hasColuna = dbJobs.some(j => (j.file_name || '').toLowerCase().includes('coluna mdf 9mm'));
-    const hasParede = dbJobs.some(j => (j.file_name || '').toLowerCase().includes('parede test mdf 9mm'));
-    const colDone = (hasColuna ? 1 : 0) + (hasParede ? 1 : 0);
-    const colPending = Math.max(0, 2 - colDone);
+            let matchedDone = Number(cfg.baseDone) || 0;
+            if (keyword || folderKw) {
+                matchedDone += dbJobs.filter(j => {
+                    const fn = (j.file_name || '').toLowerCase();
+                    const fld = (j.folder || '').toLowerCase();
+                    const st = new Date(j.start_time).getTime();
+                    if (sinceMs && st < sinceMs) return false;
+                    if (minDur > 0 && Number(j.duration_minutes) < minDur) return false;
+                    const okFile = !keyword || fn.includes(keyword);
+                    const okFolder = !folderKw || fld.includes(folderKw);
+                    return okFile && okFolder;
+                }).length;
+            }
+            const doneSheets = Math.min(targetSheets, Math.max(0, matchedDone));
+            const pendingSheets = Math.max(0, targetSheets - doneSheets);
+            const estMin = Math.max(1, Number(cfg.estMinutesPerSheet) || 20);
+            seenIds.add(id);
+            batches.push({
+                id,
+                name: cfg.name,
+                job: cfg.job || 'Produção',
+                subfolder: cfg.subfolder || 'ROUTER',
+                file: cfg.file || keyword || cfg.name,
+                material: cfg.material || 'Material CNC',
+                dimensions: cfg.dimensions || 'Padrão CNC',
+                tool: cfg.tool || 'Fresa CNC',
+                targetSheets,
+                doneSheets,
+                pendingSheets,
+                status: pendingSheets === 0 ? 'concluido' : (doneSheets > 0 ? 'em_andamento' : 'pronto_router'),
+                estMinutesPerSheet: estMin,
+                totalEstMinutes: pendingSheets * estMin,
+                priority: cfg.priority || 'alta'
+            });
+        });
+    }
 
-    // 7. Torres MDF 9mm
-    const torresDone = 12;
+    // 2. Lotes dinâmicos criados automaticamente a partir de metas definidas na fila (pipeline_file_batches)
+    if (Array.isArray(fileBatchMeta)) {
+        fileBatchMeta.forEach((bMeta) => {
+            const qty = parseInt(bMeta.target_quantity, 10) || 1;
+            if (qty <= 1 || !bMeta.file_name) return;
+            const cleanName = bMeta.file_name.trim();
+            const lowerName = cleanName.toLowerCase();
+            const lowerSub = (bMeta.subfolder || '').toLowerCase().trim();
+            const id = `batch_file_${lowerSub || 'root'}_${lowerName}`.replace(/[^a-z0-9_]+/g, '_');
+            if (seenIds.has(id)) return;
+            seenIds.add(id);
 
-    // 8. Hogsmead Apliques MDF 9mm & 15mm (11 cortes no total)
-    const apliqueDoneSet = new Set();
-    dbJobs.forEach(j => {
-        const fn = (j.file_name || '').toLowerCase();
-        if (fn.includes('aplique mdf 9mm') || fn.includes('aplique mdf 15')) {
-            const match = fn.match(/corte\s*(\d+)/i);
-            if (match) apliqueDoneSet.add(parseInt(match[1]));
-        }
-    });
-    Object.keys(completedFilesMap || {}).forEach(k => {
-        if (k.includes('aplique mdf 9mm') || k.includes('aplique mdf 15')) {
-            const match = k.match(/corte\s*(\d+)/i);
-            if (match) apliqueDoneSet.add(parseInt(match[1]));
-        }
-    });
-    // Cortes 1 a 7 já executados / confirmados
-    [1, 2, 3, 4, 5, 6, 7].forEach(n => apliqueDoneSet.add(n));
-    const apliqueDone = Math.min(11, apliqueDoneSet.size);
-    const apliquePending = Math.max(0, 11 - apliqueDone);
+            const execRuns = dbJobs.filter(j => {
+                const jn = (j.file_name || '').toLowerCase().trim();
+                if (jn !== lowerName) return false;
+                if (lowerSub && j.folder) {
+                    return j.folder.toLowerCase().includes(lowerSub);
+                }
+                return true;
+            });
+            const doneSheets = Math.min(qty, execRuns.length);
+            const pendingSheets = Math.max(0, qty - doneSheets);
+            const avgDur = execRuns.length > 0
+                ? Math.max(1, Math.round(execRuns.reduce((s, r) => s + (Number(r.duration_minutes) || 0), 0) / execRuns.length))
+                : 25;
 
-    // 9. Parede Especial Photo Opp (33 cortes executados na madrugada de 07/11)
-    const paredeEspDone = 33;
-
-    // 10. Arcos Isopor Photo Opp (Arco A, Arco A2, Arco A3 - 2 blocos de 100mm por arco = 6 blocos no total)
-    const arcosIsoporA2Done = dbJobs.filter(j => {
-        const fn = (j.file_name || '').toLowerCase();
-        const fld = (j.folder || '').toLowerCase();
-        return fn.includes('pvc100mm') && fld.includes('arco a2');
-    }).length;
-    const arcosIsoporA3Done = dbJobs.filter(j => {
-        const fn = (j.file_name || '').toLowerCase();
-        const fld = (j.folder || '').toLowerCase();
-        return fn.includes('pvc100mm') && fld.includes('arco a3');
-    }).length;
-    const arcosIsoporA_Done = dbJobs.some(j => (j.file_name || '').toLowerCase().includes('1 pvc100mm') && (j.folder || '').toLowerCase() === 'arco a') ? 2 : 0;
-    const arcosIsoporDone = arcosIsoporA_Done + arcosIsoporA2Done + arcosIsoporA3Done;
-    const arcosIsoporPending = Math.max(0, 6 - arcosIsoporDone);
-
-    // 11. Topo Isopor Colunas (Meta: 14 blocos de 100mm · ~55min cada)
-    const topoColunasRuns = dbJobs.filter(j => {
-        const fn = (j.file_name || '').toLowerCase();
-        const fld = (j.folder || '').toLowerCase();
-        return (fn.includes('pvc100mm') || fn.includes('1 pvc100mm b10mm')) && fld.includes('topo isopor colunas');
-    });
-    const topoColunasDone = topoColunasRuns.length;
-    const topoColunasPending = Math.max(0, 14 - topoColunasDone);
-
-    const batches = [
-        {
-            id: 'tijolos_9mm',
-            name: `Lote Seriado MDF 9mm Tijolos (${tijoloDone} de 100)`,
-            job: '2640  - EXPRESSO HOGWARTS CCXP',
-            subfolder: '2640a PAREDE TIJOLO',
-            file: 'chapa 3 mdf9mm teste tijolo descida 3mm e6mm.txt',
-            material: 'MDF 9mm',
-            dimensions: '2731 × 1843 mm',
-            tool: 'Fresa Ø6mm (e6mm) Z=3mm · S18000',
-            targetSheets: 100,
-            doneSheets: tijoloDone,
-            pendingSheets: tijoloPending,
-            status: tijoloPending === 0 ? 'concluido' : 'pronto_router',
-            estMinutesPerSheet: 21,
-            totalEstMinutes: tijoloPending * 21,
-            priority: 'alta'
-        },
-        {
-            id: 'pinguins_hella_100mm',
-            name: `Pinguins Hella EPS/PVC 100mm (${pinguinsDone} de 8)`,
-            job: '2663A e B - PINGUINS HELLA REVESTIDOS',
-            subfolder: 'ROUTER',
-            file: '1 PVC a 8 PVC 100mm b10mm.txt',
-            material: 'Isopor EPS / PVC 100mm',
-            dimensions: 'Blocos 100mm',
-            tool: 'Ball Nose Ø10mm / Ø12mm',
-            targetSheets: 8,
-            doneSheets: pinguinsDone,
-            pendingSheets: pinguinsPending,
-            status: pinguinsPending === 0 ? 'concluido' : 'em_andamento',
-            estMinutesPerSheet: 50,
-            totalEstMinutes: pinguinsPending * 50,
-            priority: 'alta'
-        },
-        {
-            id: 'arcos_pilares_entrada',
-            name: `Arcos & Pilares Entrada (${arcosTotalDone} de 8)`,
-            job: '2640  - EXPRESSO HOGWARTS CCXP',
-            subfolder: 'FACHADA CASAS/CNC',
-            file: 'MDF 15MM E6MM ARCO (3x) + MDF 9MM ARCOS (5x)',
-            material: 'MDF 15mm & MDF 9mm',
-            dimensions: 'Chapas 2750 × 1850 mm',
-            tool: 'Fresa Topo Ø6mm · S18000',
-            targetSheets: 8,
-            doneSheets: arcosTotalDone,
-            pendingSheets: arcosPending,
-            status: arcosPending === 0 ? 'concluido' : 'pronto_router',
-            estMinutesPerSheet: 20,
-            totalEstMinutes: arcosPending * 20,
-            priority: 'alta'
-        },
-        {
-            id: 'compensado_6mm_entrada',
-            name: 'Compensado 6mm Entrada (12 de 12)',
-            job: '2640  - EXPRESSO HOGWARTS CCXP',
-            subfolder: 'FACHADA PHOTO OPP',
-            file: 'compensado 6mm e6mm (Chapas 1 a 12)',
-            material: 'Compensado 6mm',
-            dimensions: '2200 × 1600 mm',
-            tool: 'Fresa Topo Ø6mm · S15000',
-            targetSheets: 12,
-            doneSheets: 12,
-            pendingSheets: 0,
-            status: 'concluido',
-            estMinutesPerSheet: 5,
-            totalEstMinutes: 0,
-            priority: 'alta'
-        },
-        {
-            id: 'moldura_menor_9mm',
-            name: `Moldura Menor Porta Castelo MDF 9mm (${molduraDone} de 1)`,
-            job: '2640  - EXPRESSO HOGWARTS CCXP',
-            subfolder: '2640A - porta castelo',
-            file: 'MDF 9MM MOLDURA MENOR E6MM.txt',
-            material: 'MDF 9mm',
-            dimensions: '2750 × 1850 mm',
-            tool: 'Fresa Ø6mm · S18000',
-            targetSheets: 1,
-            doneSheets: molduraDone,
-            pendingSheets: molduraPending,
-            status: molduraPending === 0 ? 'concluido' : 'pronto_router',
-            estMinutesPerSheet: 8,
-            totalEstMinutes: molduraPending * 8,
-            priority: 'media'
-        },
-        {
-            id: 'colunas_parede_9mm',
-            name: `Coluna & Parede Teste MDF 9mm (${colDone} de 2)`,
-            job: '2640  - EXPRESSO HOGWARTS CCXP',
-            subfolder: '2640a - TESTE COLUNAS',
-            file: 'coluna mdf 9mm e6mm.txt / parede test mdf 9mm e6mm.txt',
-            material: 'MDF 9mm',
-            dimensions: '1767 × 1222 mm',
-            tool: 'Fresa Ø6mm · S18000',
-            targetSheets: 2,
-            doneSheets: colDone,
-            pendingSheets: colPending,
-            status: colPending === 0 ? 'concluido' : 'pronto_router',
-            estMinutesPerSheet: 23,
-            totalEstMinutes: colPending * 23,
-            priority: 'media'
-        },
-        {
-            id: 'sala_magia_compensado_6mm',
-            name: 'Sala de Magia Compensado 6mm (6 de 6 chapas)',
-            job: '2640  - EXPRESSO HOGWARTS CCXP',
-            subfolder: 'ROUTER/SALA DE MAGIA',
-            file: '4X COMPENSADO 6MM E6MM.TXT (4x) + 2X COMPENSADO 6MM E6MM_1-Corte 2.txt (2x)',
-            material: 'Compensado 6mm',
-            dimensions: 'Chapas 2200 × 1600 mm',
-            tool: 'Fresa Topo Ø6mm (e6mm)',
-            targetSheets: 6,
-            doneSheets: 6,
-            pendingSheets: 0,
-            status: 'concluido',
-            estMinutesPerSheet: 12,
-            totalEstMinutes: 0,
-            priority: 'alta'
-        },
-        {
-            id: 'hogsmead_apliques_9mm',
-            name: `Apliques Hogsmead MDF 9mm & 15mm (${apliqueDone} de 11 cortes)`,
-            job: '2640  - EXPRESSO HOGWARTS CCXP',
-            subfolder: 'ROUTER/HOGSMEAD',
-            file: 'APLIQUE MDF 9MM & 15MM (Cortes 1 a 11)',
-            material: 'MDF 9mm & 15mm',
-            dimensions: 'Chapas 2750 × 1850 mm',
-            tool: 'Fresa Topo Ø6mm / Ø4mm',
-            targetSheets: 11,
-            doneSheets: apliqueDone,
-            pendingSheets: apliquePending,
-            status: apliquePending === 0 ? 'concluido' : 'em_andamento',
-            estMinutesPerSheet: 18,
-            totalEstMinutes: apliquePending * 18,
-            priority: 'alta'
-        },
-        {
-            id: 'parede_especial_photo_opp',
-            name: 'Parede Especial Photo Opp (33 de 33 chapas)',
-            job: '2640  - EXPRESSO HOGWARTS CCXP',
-            subfolder: 'FACHADA PHOTO OPP/PAREDE ESPECIAL',
-            file: 'MDF 9 MM E4MM CHAPA_1 a 34',
-            material: 'MDF 9mm',
-            dimensions: 'Chapas 2750 × 1850 mm',
-            tool: 'Fresa Topo Ø4mm (e4mm)',
-            targetSheets: 33,
-            doneSheets: 33,
-            pendingSheets: 0,
-            status: 'concluido',
-            estMinutesPerSheet: 32,
-            totalEstMinutes: 0,
-            priority: 'alta'
-        },
-        {
-            id: 'torres_mdf_9mm',
-            name: 'Torres MDF 9mm (Chapas 1 e 2)',
-            job: '2640  - EXPRESSO HOGWARTS CCXP',
-            subfolder: 'TORRES',
-            file: 'chapa 1 mdf 9mm e6mm.txt / chapa 2 mdf 9mm e6mm.txt',
-            material: 'MDF 9mm',
-            dimensions: '2750 × 1850 mm',
-            tool: 'Fresa Ø6mm',
-            targetSheets: 12,
-            doneSheets: 12,
-            pendingSheets: 0,
-            status: 'concluido',
-            estMinutesPerSheet: 35,
-            totalEstMinutes: 0,
-            priority: 'concluido'
-        },
-        {
-            id: 'isopor_arcos_photo_opp',
-            name: `Arcos Isopor Photo Opp - Arco A, A2, A3 (${arcosIsoporDone} de 6 blocos)`,
-            job: '2640  - EXPRESSO HOGWARTS CCXP',
-            subfolder: 'FACHADA PHOTO OPP/ISOPOR (ARCO A, A2, A3)',
-            file: '1 pvc100mm b10mm.txt & 2 pvc100mm b10mm.txt (ARCO A, A2, A3)',
-            material: 'Isopor EPS / PVC 100mm',
-            dimensions: 'Blocos 100mm Usinagem 3D',
-            tool: 'Ball Nose Ø10mm (b10mm)',
-            targetSheets: 6,
-            doneSheets: arcosIsoporDone,
-            pendingSheets: arcosIsoporPending,
-            status: arcosIsoporPending === 0 ? 'concluido' : 'pronto_router',
-            estMinutesPerSheet: 48,
-            totalEstMinutes: arcosIsoporPending * 48,
-            priority: 'alta'
-        },
-        {
-            id: 'topo_isopor_colunas_14x',
-            name: `Topo Isopor Colunas 100mm (${topoColunasDone} de 14 blocos)`,
-            job: '2640  - EXPRESSO HOGWARTS CCXP',
-            subfolder: 'ROUTER/ENTRADA/TOPO ISOPOR COLUNAS',
-            file: '1 pvc100mm b10mm.txt (14x repetições)',
-            material: 'Isopor EPS / PVC 100mm',
-            dimensions: '1926 × 988 × 100 mm (14 blocos)',
-            tool: 'Ball Nose Ø10mm (b10mm)',
-            targetSheets: 14,
-            doneSheets: topoColunasDone,
-            pendingSheets: topoColunasPending,
-            status: topoColunasPending === 0 ? 'concluido' : 'pronto_router',
-            estMinutesPerSheet: 55,
-            totalEstMinutes: topoColunasPending * 55,
-            priority: 'alta'
-        }
-    ];
+            batches.push({
+                id,
+                name: `${cleanName} (${doneSheets} de ${qty})`,
+                job: bMeta.job_name || bMeta.subfolder || 'Produção CNC',
+                subfolder: bMeta.subfolder || 'ROUTER',
+                file: cleanName,
+                material: extractMaterialInfo(cleanName, bMeta.subfolder || '').tag || 'CNC',
+                dimensions: 'Série Programada',
+                tool: 'Conforme G-Code',
+                targetSheets: qty,
+                doneSheets,
+                pendingSheets,
+                status: pendingSheets === 0 ? 'concluido' : (doneSheets > 0 ? 'em_andamento' : 'pronto_router'),
+                estMinutesPerSheet: avgDur,
+                totalEstMinutes: pendingSheets * avgDur,
+                priority: 'alta'
+            });
+        });
+    }
 
     return batches.map(b => {
         const isBatchChecked = Boolean(
@@ -593,32 +422,77 @@ function calculateDynamicBatches(dbJobs = [], completedFilesMap = {}) {
     });
 }
 
-let cachedResult = null;
-let lastCacheTime = 0;
+const pipelineCache = new Map();
 const CACHE_TTL_MS = 4000; // 4s para atualização rápida e tempo real
 
-function invalidatePipelineCache() {
-    lastCacheTime = 0;
-    cachedResult = null;
+function invalidatePipelineCache(userId = null) {
+    if (userId !== null && userId !== undefined) {
+        pipelineCache.delete(String(userId));
+    } else {
+        pipelineCache.clear();
+    }
 }
 
-async function getProductionPipeline(pool, forceRefresh = false) {
+async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
+    const userId = Number(options?.userId || 1) || 1;
+    const cacheKey = String(userId);
     const now = Date.now();
-    if (!forceRefresh && cachedResult && (now - lastCacheTime < CACHE_TTL_MS)) {
-        return cachedResult;
+    const cachedEntry = pipelineCache.get(cacheKey);
+    if (!forceRefresh && cachedEntry && (now - cachedEntry.ts < CACHE_TTL_MS)) {
+        return cachedEntry.data;
     }
 
-    // 1. Get executions from PostgreSQL
+    // 0. Carregar configuração multi-tenant e operadores do tenant
+    let tenantUser = {};
+    let tenantOperators = [];
+    try {
+        const uRes = await pool.query(
+            'SELECT default_day_operator, default_night_operator, pipeline_local_root, pipeline_cloud_root, pipeline_batches FROM users WHERE id = $1 LIMIT 1',
+            [userId]
+        );
+        tenantUser = uRes.rows[0] || {};
+    } catch { /* ignore */ }
+    try {
+        const oRes = await pool.query(
+            'SELECT id, name, shift FROM operators WHERE "userId" = $1 ORDER BY id ASC',
+            [userId]
+        );
+        tenantOperators = oRes.rows || [];
+    } catch { /* ignore */ }
+
+    const nightOpName =
+        (tenantOperators.find(o => /noite|night|noturno/i.test(o.shift || ''))?.name || '').trim() ||
+        (tenantUser.default_night_operator || '').trim() ||
+        (process.env.DEFAULT_NIGHT_OPERATOR || '').trim() ||
+        'Operador Noite';
+    const dayOpName =
+        (tenantOperators.find(o => /manha|manhã|dia|day|diurno|tarde/i.test(o.shift || ''))?.name || '').trim() ||
+        (tenantUser.default_day_operator || '').trim() ||
+        (process.env.DEFAULT_DAY_OPERATOR || '').trim() ||
+        'Operador';
+
+    let customBatches = [];
+    if (Array.isArray(tenantUser.pipeline_batches)) {
+        customBatches = tenantUser.pipeline_batches;
+    } else if (typeof tenantUser.pipeline_batches === 'string' && tenantUser.pipeline_batches.trim()) {
+        try {
+            const parsed = JSON.parse(tenantUser.pipeline_batches);
+            if (Array.isArray(parsed)) customBatches = parsed;
+        } catch { /* ignore */ }
+    }
+
+    // 1. Get executions from PostgreSQL (escopo por tenant)
     let dbJobs = [];
     try {
         const { rows } = await pool.query(`
-            SELECT id, file_name, folder, router_name, operator_name, start_time, end_time, duration_minutes 
-            FROM jobs 
+            SELECT id, file_name, folder, router_name, operator_name, start_time, end_time, duration_minutes
+            FROM jobs
+            WHERE ("userId" = $1 OR ($1::int = 1 AND "userId" IS NULL))
             ORDER BY start_time DESC
-        `);
+        `, [userId]);
         dbJobs = rows.map(j => {
             if (isNightShiftHour(j.start_time)) {
-                return { ...j, operator_name: 'brenno' };
+                return { ...j, operator_name: nightOpName };
             }
             return j;
         });
@@ -634,17 +508,20 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                    (completed_at AT TIME ZONE 'UTC') AS completed_at
             FROM pipeline_completed_files
             WHERE done = TRUE
-        `);
+              AND ("userId" = $1 OR ($1::int = 1 AND "userId" IS NULL))
+        `, [userId]);
         rows.forEach(r => {
-            if (r.file_key) completedFilesMap[r.file_key.toLowerCase().trim()] = r;
+            const cleanKey = unscopeFileKey(userId, r.file_key);
+            const rec = { ...r, file_key: cleanKey };
+            if (cleanKey) completedFilesMap[cleanKey.toLowerCase().trim()] = rec;
             const subLower = (r.subfolder || '').toLowerCase().trim();
             const fnLower = (r.file_name || '').toLowerCase().trim();
             if (subLower && fnLower) {
-                completedFilesMap[`${fnLower}___${subLower}`] = r;
-                completedFilesMap[`${subLower}/${fnLower}`] = r;
+                completedFilesMap[`${fnLower}___${subLower}`] = rec;
+                completedFilesMap[`${subLower}/${fnLower}`] = rec;
             }
-            if (fnLower && !subLower && (!r.file_key || (!r.file_key.includes('\\') && !r.file_key.includes('/')))) {
-                completedFilesMap[fnLower] = r;
+            if (fnLower && !subLower && (!cleanKey || (!cleanKey.includes('\\') && !cleanKey.includes('/')))) {
+                completedFilesMap[fnLower] = rec;
             }
         });
     } catch (e) {
@@ -657,9 +534,11 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         const { rows: reopenRows } = await pool.query(`
             SELECT file_key, (reopened_at AT TIME ZONE 'UTC') AS reopened_at, reason
             FROM pipeline_reopen_files
-        `);
+            WHERE ("userId" = $1 OR ($1::int = 1 AND "userId" IS NULL))
+        `, [userId]);
         reopenRows.forEach(r => {
-            if (r.file_key) reopenFilesMap[r.file_key.toLowerCase().trim()] = r;
+            const cleanKey = unscopeFileKey(userId, r.file_key);
+            if (cleanKey) reopenFilesMap[cleanKey.toLowerCase().trim()] = { ...r, file_key: cleanKey };
         });
     } catch (e) {
         console.error('Error fetching pipeline_reopen_files in getProductionPipeline:', e.message);
@@ -682,15 +561,25 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                null;
     };
 
-    // 1.3 Obter lotes e quantidades personalizadas definidas pelo operador (ex: rodar 14x)
+    // 1.3 Obter lotes e quantidades personalizadas definidas pelo operador
     let fileBatchesMap = {};
+    let fileBatchMeta = [];
     try {
         const { rows: batchRows } = await pool.query(`
-            SELECT file_key, target_quantity FROM pipeline_file_batches
-        `);
+            SELECT file_key, file_name, subfolder, job_name, target_quantity
+            FROM pipeline_file_batches
+            WHERE ("userId" = $1 OR ($1::int = 1 AND "userId" IS NULL))
+        `, [userId]);
+        const seenMeta = new Set();
         batchRows.forEach(r => {
-            if (r.file_key && r.target_quantity) {
-                fileBatchesMap[r.file_key.toLowerCase().trim()] = parseInt(r.target_quantity, 10);
+            const cleanKey = unscopeFileKey(userId, r.file_key);
+            if (cleanKey && r.target_quantity) {
+                fileBatchesMap[cleanKey.toLowerCase().trim()] = parseInt(r.target_quantity, 10);
+            }
+            const metaKey = `${(r.file_name || '').toLowerCase()}___${(r.subfolder || '').toLowerCase()}`;
+            if (r.file_name && !seenMeta.has(metaKey)) {
+                seenMeta.add(metaKey);
+                fileBatchMeta.push(r);
             }
         });
     } catch (e) {
@@ -740,10 +629,10 @@ async function getProductionPipeline(pool, forceRefresh = false) {
     };
 
     const GENERIC_FOLDER_NAMES = new Set([
-        '', 'desconhecido', 'router', 'router 2', 'router central', 
-        'laser ruida', 'lasercad', 'cnc', 'isopor', 'cod', '3 - oficina', 
-        'oficina', 'dados2 - jobs ativos', 'dados2', 'arquivos 2026', 
-        'arquivos 2024', 'arquivos 2025', 'arquivos', 'c:', 'd:', 'e:', 'users', 'atelier arte', 'atelier casa do trem ltda'
+        '', 'desconhecido', 'router', 'router 2', 'router central',
+        'laser ruida', 'lasercad', 'cnc', 'isopor', 'cod', '3 - oficina',
+        'oficina', 'dados2 - jobs ativos', 'dados2', 'arquivos 2026',
+        'arquivos 2024', 'arquivos 2025', 'arquivos', 'c:', 'd:', 'e:', 'users'
     ]);
 
     // Execuções de um G-Code: associa execuções registradas no Mach3 garantindo que pertençam
@@ -866,10 +755,10 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             if (GENERIC_FOLDER_NAMES.has(jf)) return false;
 
             if (sub && sub.length >= 3) {
-                // Ensure sibling arcos with numbers don't cross match (e.g. 'arco a' vs 'arco a2' vs 'arco a3')
+                // Evita cross-match entre pastas irmãs ou numeradas (ex: 'colunas' vs 'colunas 5', 'arco a' vs 'arco a2')
                 const numJf = jf.match(/\d+$/)?.[0] || '';
                 const numSub = sub.match(/\d+$/)?.[0] || '';
-                if (numJf !== numSub && (jf.includes('arco') || sub.includes('arco'))) return false;
+                if (numJf !== numSub) return false;
 
                 if (jf.includes('arco a') && !sub.includes('arco a')) return false;
                 if (jf.includes('arco b') && !sub.includes('arco b')) return false;
@@ -885,11 +774,9 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                 if (sub && !GENERIC_FOLDER_NAMES.has(sub)) {
                     if (jf.includes('topo') && !sub.includes('topo')) return false;
                     if (!jf.includes('topo') && sub.includes('topo')) return false;
-                    if (jf.includes('arco') || sub.includes('arco')) {
-                        const numJf = jf.match(/\d+$/)?.[0] || '';
-                        const numSub = sub.match(/\d+$/)?.[0] || '';
-                        if (numJf !== numSub) return false;
-                    }
+                    const numJf = jf.match(/\d+$/)?.[0] || '';
+                    const numSub = sub.match(/\d+$/)?.[0] || '';
+                    if (numJf !== numSub) return false;
                 }
                 return true;
             }
@@ -921,8 +808,16 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         }
     });
 
-    const oneDriveRoot = 'C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos';
-    const localRouterRoot = 'E:\\arquivos 2024\\ARQUIVOS 2026';
+    const oneDriveRoot = (
+        tenantUser.pipeline_cloud_root ||
+        (userId === 1 ? process.env.PIPELINE_ONEDRIVE_ROOT : '') ||
+        ''
+    ).trim();
+    const localRouterRoot = (
+        tenantUser.pipeline_local_root ||
+        (userId === 1 ? process.env.PIPELINE_LOCAL_ROOT : '') ||
+        ''
+    ).trim();
 
     const jobMap = {};
     let scannedFromDisk = false;
@@ -957,8 +852,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         return rec;
     }
 
-    // 1. Scan OneDrive (3 - OFICINA, Nova pasta, e subpastas CNC/ROUTER)
-    if (fs.existsSync(oneDriveRoot)) {
+    // 1. Scan OneDrive / Pasta Nuvem (3 - OFICINA, Nova pasta, e subpastas CNC/ROUTER)
+    if (oneDriveRoot && fs.existsSync(oneDriveRoot)) {
         try {
             const list = fs.readdirSync(oneDriveRoot, { withFileTypes: true });
             for (const d of list) {
@@ -989,13 +884,13 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                         };
                         scannedFromDisk = true;
                     }
-                } catch (e) {}
+                } catch { /* ignore */ }
             }
-        } catch (e) {}
+        } catch { /* ignore */ }
     }
 
-    // 2. Scan Local E:\arquivos 2024\ARQUIVOS 2026\router and active folders (todas as subpastas de projetos)
-    if (fs.existsSync(localRouterRoot)) {
+    // 2. Scan Local CNC root and active folders (todas as subpastas de projetos)
+    if (localRouterRoot && fs.existsSync(localRouterRoot)) {
         try {
             const list = fs.readdirSync(localRouterRoot, { withFileTypes: true });
             for (const d of list) {
@@ -1039,7 +934,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     scannedFromDisk = true;
                 }
             }
-        } catch (e) {}
+        } catch { /* ignore */ }
     }
 
     // Helper: normaliza o diretório removendo subpastas técnicas (CNC, cod, etc)
@@ -1051,13 +946,13 @@ async function getProductionPipeline(pool, forceRefresh = false) {
     if (!scannedFromDisk || Object.keys(jobMap).length === 0) {
         let snap = null;
         try {
-            const dbSnap = await pool.query('SELECT snapshot_data FROM pipeline_live_snapshot WHERE id = 1');
+            const dbSnap = await pool.query('SELECT snapshot_data FROM pipeline_live_snapshot WHERE id = $1', [userId]);
             if (dbSnap.rows.length > 0 && dbSnap.rows[0].snapshot_data) {
                 snap = dbSnap.rows[0].snapshot_data;
             }
-        } catch (e) {}
+        } catch { /* ignore */ }
 
-        if (!snap) {
+        if (!snap && userId === 1) {
             const snapFile = path.join(__dirname, 'initial_pipeline_snapshot.json');
             if (fs.existsSync(snapFile)) {
                 try {
@@ -1087,15 +982,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     const activeExec = findActiveExec(gf, lower);
                     const isCurrentlyRunning = Boolean(activeExec);
                     let matInfo = gf.matInfo?.tag ? { ...gf.matInfo } : extractMaterialInfo(gf.name, gf.fullPath || gf.subfolderName);
-                    const isTopoColunas = (gf.subfolderName || '').toLowerCase().includes('topo isopor colunas') ||
-                                          (gf.fullPath || '').toLowerCase().includes('topo isopor colunas') ||
-                                          (gf.name || '').toLowerCase().includes('topo isopor colunas');
                     const customQty = getFileBatchQuantity(gf, gf.subfolderName);
-                    if (isTopoColunas && !customQty) {
-                        matInfo.targetQuantity = 14;
-                        matInfo.material = 'Isopor EPS';
-                        matInfo.thickness = '100mm';
-                    } else if (customQty) {
+                    if (customQty) {
                         matInfo.targetQuantity = customQty;
                     }
                     const targetQty = customQty || matInfo.targetQuantity || 1;
@@ -1129,15 +1017,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                             completedExecsCount: completedExecs.length > 0 ? completedExecs.length : targetQty,
                             quantityProgress: targetQty > 1 ? `${targetQty}/${targetQty}` : null,
                             statusLabel: targetQty > 1 ? `Concluído (${targetQty}/${targetQty})` : 'Concluído',
-                            lastExec: execs[0] ? {
-                                ...execs[0],
-                                operator_name: isNightShiftHour(execs[0].start_time) ? 'brenno' : (execs[0].operator_name || 'Tomas')
-                            } : {
-                                operator_name: isNightShiftHour(dbCompRec?.completed_at || gf.mtimeDate) ? 'brenno' : (dbCompRec?.operator_name || 'Tomas'),
-                                machine_name: 'Router 2',
-                                start_time: dbCompRec?.completed_at || gf.mtimeDate || new Date().toISOString(),
-                                duration_minutes: gf.estimatedMinutes || dur
-                            },
+                            lastExec: resolveExecutionMeta(execs, dbCompRec, gf, dur, dayOpName, nightOpName),
                             totalDurationMinutes: dur,
                             isManuallyDone: isDbDone
                         });
@@ -1230,7 +1110,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                         };
                     });
 
-                cachedResult = {
+                const snapResult = {
                     summary: {
                         totalJobs: snap.jobs?.length || 0,
                         totalCadPreparar: cadPrepararList.length,
@@ -1238,7 +1118,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                         totalGcodePronto: gcodeProntos.length,
                         totalConcluidos: gcodeFeitos.length
                     },
-                    specialBatches: calculateDynamicBatches(dbJobs, completedFilesMap),
+                    specialBatches: calculateDynamicBatches(dbJobs, completedFilesMap, customBatches, fileBatchMeta),
                     jobs: snap.jobs || [],
                     cadPreparar: cadPrepararList,
                     aspirePreparar: aspirePrepararList,
@@ -1246,8 +1126,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     gcodeFeitos,
                     updatedAt: new Date().toISOString()
                 };
-                lastCacheTime = now;
-                return cachedResult;
+                pipelineCache.set(cacheKey, { data: snapResult, ts: now });
+                return snapResult;
             } catch (err) {
                 console.error('Error processing snapshot in getProductionPipeline:', err);
             }
@@ -1515,15 +1395,8 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             const dir = getNormDir(gf.fullPath);
             const subfolderName = path.basename(dir);
             let matInfo = extractMaterialInfo(gf.name, gf.fullPath || subfolderName);
-            const isTopoColunas = (subfolderName || '').toLowerCase().includes('topo isopor colunas') ||
-                                  (gf.fullPath || '').toLowerCase().includes('topo isopor colunas') ||
-                                  (gf.name || '').toLowerCase().includes('topo isopor colunas');
             const customQty = getFileBatchQuantity(gf, subfolderName);
-            if (isTopoColunas && !customQty) {
-                matInfo.targetQuantity = 14;
-                matInfo.material = 'Isopor EPS';
-                matInfo.thickness = '100mm';
-            } else if (customQty) {
+            if (customQty) {
                 matInfo.targetQuantity = customQty;
             }
             const lower = gf.name.toLowerCase().trim();
@@ -1569,15 +1442,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
                     completedExecsCount: completedExecs.length > 0 ? completedExecs.length : targetQty,
                     quantityProgress: targetQty > 1 ? `${targetQty}/${targetQty}` : null,
                     statusLabel: targetQty > 1 ? `Concluído (${targetQty}/${targetQty})` : 'Concluído',
-                    lastExec: execs[0] ? {
-                        ...execs[0],
-                        operator_name: isNightShiftHour(execs[0].start_time) ? 'brenno' : (execs[0].operator_name || 'Tomas')
-                    } : {
-                        operator_name: isNightShiftHour(dbCompRec?.completed_at || gf.mtimeDate) ? 'brenno' : (dbCompRec?.operator_name || 'Tomas'),
-                        machine_name: 'Router 2',
-                        start_time: dbCompRec?.completed_at || gf.mtimeDate || new Date().toISOString(),
-                        duration_minutes: gf.estimatedMinutes || dur
-                    },
+                    lastExec: resolveExecutionMeta(execs, dbCompRec, gf, dur, dayOpName, nightOpName),
                     totalDurationMinutes: dur,
                     isManuallyDone: isDbDone
                 };
@@ -1650,7 +1515,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
     allGcodeProntos.sort((a, b) => (b.isCurrentlyRunning ? 1 : 0) - (a.isCurrentlyRunning ? 1 : 0) || (b.mtime || 0) - (a.mtime || 0));
     allGcodeFeitos.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
 
-    cachedResult = {
+    const result = {
         summary: {
             totalJobs: jobsList.length,
             totalCadPreparar,
@@ -1658,7 +1523,7 @@ async function getProductionPipeline(pool, forceRefresh = false) {
             totalGcodePronto,
             totalConcluidos
         },
-        specialBatches: calculateDynamicBatches(dbJobs, completedFilesMap),
+        specialBatches: calculateDynamicBatches(dbJobs, completedFilesMap, customBatches, fileBatchMeta),
         jobs: jobsList,
         cadPreparar: allCadPreparar,
         aspirePreparar: allAspirePreparar,
@@ -1666,18 +1531,31 @@ async function getProductionPipeline(pool, forceRefresh = false) {
         gcodeFeitos: allGcodeFeitos,
         updatedAt: new Date().toISOString()
     };
-    lastCacheTime = now;
+    pipelineCache.set(cacheKey, { data: result, ts: now });
 
-    // Salva automaticamente no PostgreSQL para sincronizar em tempo real com o servidor Render Cloud
+    // Salva automaticamente no PostgreSQL para sincronizar em tempo real por tenant
     if (scannedFromDisk) {
-        pool.query(`
-            INSERT INTO pipeline_live_snapshot (id, snapshot_data, updated_at)
-            VALUES (1, $1, CURRENT_TIMESTAMP)
-            ON CONFLICT (id) DO UPDATE SET snapshot_data = EXCLUDED.snapshot_data, updated_at = CURRENT_TIMESTAMP
-        `, [JSON.stringify(cachedResult)]).catch(() => {});
+        try {
+            await pool.query(`
+                INSERT INTO pipeline_live_snapshot (id, snapshot_data, updated_at)
+                VALUES ($1, $2, CURRENT_TIMESTAMP)
+                ON CONFLICT (id) DO UPDATE SET snapshot_data = EXCLUDED.snapshot_data, updated_at = CURRENT_TIMESTAMP
+            `, [userId, JSON.stringify(result)]);
+        } catch (saveErr) {
+            console.error('Erro ao salvar pipeline_live_snapshot:', saveErr.message);
+        }
     }
 
-    return cachedResult;
+    return result;
 }
 
-module.exports = { getProductionPipeline, calculateDynamicBatches, invalidatePipelineCache };
+module.exports = {
+    getProductionPipeline,
+    calculateDynamicBatches,
+    invalidatePipelineCache,
+    getGCodeMetadata,
+    extractMaterialInfo,
+    isFileMarkedOk,
+    scopeFileKey,
+    unscopeFileKey
+};

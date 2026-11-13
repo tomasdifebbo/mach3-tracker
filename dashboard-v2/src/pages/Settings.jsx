@@ -20,9 +20,10 @@ import {
   Smartphone,
   Bell,
   BellRing,
-  BellOff
+  BellOff,
+  Building2
 } from 'lucide-react';
-import { api } from '../services/api';
+import { api, API_URL } from '../services/api';
 import { pushService } from '../services/pushService';
 
 import { SubscriptionPlans } from '../components/SubscriptionPlans';
@@ -33,9 +34,9 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
   const [plannedHours, setPlannedHours] = useState(user?.settings?.plannedHours || 8);
   const [webhookUrl, setWebhookUrl] = useState(user?.settings?.webhookUrl || '');
   const [companyRole, setCompanyRole] = useState(localStorage.getItem('mach3_device_role') || user?.company_role || 'gerente');
-  const [savingRole, setSavingRole] = useState(false);
+  const [, setSavingRole] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [checkoutLoading, setCheckoutLoading] = useState(null); // tracks which plan is loading
+
   const [status, setStatus] = useState(null);
 
   const [gerentePin, setGerentePin] = useState('');
@@ -50,7 +51,14 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
   const [dailyReport, setDailyReport] = useState(user?.daily_report !== undefined ? user.daily_report : (localStorage.getItem('mach3_daily_report') !== 'false'));
   const [idleAlert, setIdleAlert] = useState(user?.idle_alert !== undefined ? user.idle_alert : (localStorage.getItem('mach3_idle_alert') !== 'false'));
   const [weeklyReport, setWeeklyReport] = useState(user?.weekly_report !== undefined ? user.weekly_report : (localStorage.getItem('mach3_weekly_report') === 'true'));
-  const [reportEmail, setReportEmail] = useState(user?.report_email || localStorage.getItem('mach3_report_email') || user?.email || 'tomasdifebbo.tdf@gmail.com');
+  const [reportEmail, setReportEmail] = useState(user?.report_email || localStorage.getItem('mach3_report_email') || user?.email || '');
+  const [companyLegalName, setCompanyLegalName] = useState(user?.company_legal_name || '');
+  const [defaultDayOp, setDefaultDayOp] = useState(user?.default_day_operator || '');
+  const [defaultNightOp, setDefaultNightOp] = useState(user?.default_night_operator || '');
+  const [pipelineLocalRoot, setPipelineLocalRoot] = useState(user?.pipeline_local_root || '');
+  const [pipelineCloudRoot, setPipelineCloudRoot] = useState(user?.pipeline_cloud_root || '');
+  const [savingWorkshop, setSavingWorkshop] = useState(false);
+  const [workshopFeedback, setWorkshopFeedback] = useState(null);
   const [savingReports, setSavingReports] = useState(false);
   const [cycleLoading, setCycleLoading] = useState(false);
   const [cycleResult, setCycleResult] = useState(null);
@@ -97,7 +105,7 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
             const data = await res.json();
             setPushDevicesCount(data.devicesCount || 0);
           }
-        } catch (e) {}
+        } catch { /* ignore */ }
       }
     };
     checkPush();
@@ -231,7 +239,7 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
       localStorage.setItem('mach3_device_role', newRole);
       setCompanyRole(newRole);
       window.location.href = '/';
-    } catch (err) {
+    } catch {
       alert('Erro ao alterar nível de acesso.');
     } finally {
       setSavingRole(false);
@@ -250,26 +258,35 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
       alert('Senhas de proteção dos perfis atualizadas com sucesso!');
       setGerentePin('');
       setSupervisorPin('');
-    } catch (err) {
+    } catch {
       alert('Erro ao salvar senhas.');
     } finally {
       setSavingPins(false);
     }
   };
 
-  const handleSubscribe = async (plan) => {
-    setCheckoutLoading(plan);
+  const handleSaveWorkshopConfig = async (e) => {
+    e.preventDefault();
+    setSavingWorkshop(true);
+    setWorkshopFeedback(null);
     try {
-      const resp = await api.createPreference(plan);
-      if (resp.init_point) {
-        setTimeout(() => { window.location.href = resp.init_point; }, 300);
+      const resp = await api.saveWorkshopConfig({
+        company_legal_name: companyLegalName,
+        default_day_operator: defaultDayOp,
+        default_night_operator: defaultNightOp,
+        pipeline_local_root: pipelineLocalRoot,
+        pipeline_cloud_root: pipelineCloudRoot
+      });
+      if (resp && resp.error) {
+        setWorkshopFeedback({ type: 'error', text: resp.error });
       } else {
-        throw new Error(resp.error || 'Link de pagamento não retornado');
+        if (onRefresh) await onRefresh();
+        setWorkshopFeedback({ type: 'success', text: 'Parametrização da oficina salva com sucesso!' });
       }
-    } catch (err) {
-      setStatus({ type: 'error', message: 'Erro ao abrir checkout: ' + (err.message || 'tente novamente') });
-      setTimeout(() => setStatus(null), 5000);
-      setCheckoutLoading(null);
+    } catch {
+      setWorkshopFeedback({ type: 'error', text: 'Erro ao salvar parametrização da oficina.' });
+    } finally {
+      setSavingWorkshop(false);
     }
   };
 
@@ -482,7 +499,7 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
               <div className="glass p-8 rounded-[32px] space-y-6">
                 <h4 className="text-xl font-bold text-white mb-2">Ranking de Eficiência dos Operadores</h4>
                 <div className="space-y-4">
-                  {operatorRanking.length > 0 ? operatorRanking.map(([op, mins], idx) => {
+                  {operatorRanking.length > 0 ? operatorRanking.map(([op, mins]) => {
                     const hours = (mins / 60).toFixed(1);
                     const pct = Math.min(100, Math.round((mins / maxOpMinutes) * 100));
                     return (
@@ -635,7 +652,7 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
                 
                 <div className="flex flex-wrap items-center gap-2">
                   <a
-                    href={`https://mach3tracker.up.railway.app/api/user/report-preview?period=week&token=${localStorage.getItem('mach3_token') || ''}`}
+                    href={`${API_URL}/api/user/report-preview?period=week&token=${localStorage.getItem('mach3_token') || ''}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-4 py-2.5 bg-white/10 hover:bg-white/15 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center gap-1.5"
@@ -876,6 +893,104 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
               className="px-5 py-2.5 bg-purple-500 hover:bg-purple-600 disabled:opacity-40 text-black font-black uppercase text-xs rounded-xl transition-all shadow-lg shadow-purple-500/20 cursor-pointer"
             >
               {savingPins ? 'Salvação...' : 'Salvar Senhas dos Perfis'}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {/* Parametrização Multi-Tenant da Oficina */}
+      <section className="glass p-6 md:p-10 rounded-[32px] md:rounded-[40px] space-y-6 border border-orange-500/20 bg-gradient-to-br from-orange-500/5 via-transparent to-transparent">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h3 className="text-xl font-black text-white flex items-center gap-2.5">
+              <Building2 size={22} className="text-orange-400" />
+              Parametrização da Oficina & Pastas CNC
+            </h3>
+            <p className="text-xs text-text-muted leading-relaxed">
+              Configure a identificação da empresa, operadores padrão por turno e os diretórios locais/nuvem exclusivos desta conta.
+            </p>
+          </div>
+          <span className="self-start text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-orange-500/15 text-orange-400 border border-orange-500/30">
+            Multi-Tenant
+          </span>
+        </div>
+
+        {workshopFeedback && (
+          <div className={`p-3.5 rounded-2xl text-xs font-semibold flex items-center gap-2 border ${
+            workshopFeedback.type === 'success'
+              ? 'bg-accent-success/15 border-accent-success/30 text-accent-success'
+              : 'bg-red-500/15 border-red-500/30 text-red-400'
+          }`}>
+            {workshopFeedback.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+            <span>{workshopFeedback.text}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSaveWorkshopConfig} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase text-text-muted tracking-wider block">Nome da Oficina / Razão Social</label>
+              <input
+                type="text"
+                placeholder="Ex: Atelier CNC Ltda"
+                value={companyLegalName}
+                onChange={(e) => setCompanyLegalName(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-orange-500"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase text-text-muted tracking-wider block">Operador Padrão (Turno Dia)</label>
+              <input
+                type="text"
+                placeholder="Ex: Operador Manhã/Tarde"
+                value={defaultDayOp}
+                onChange={(e) => setDefaultDayOp(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-orange-500"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase text-text-muted tracking-wider block">Operador Padrão (Turno Noite · 22h–06h)</label>
+              <input
+                type="text"
+                placeholder="Ex: Operador Noite"
+                value={defaultNightOp}
+                onChange={(e) => setDefaultNightOp(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white outline-none focus:border-orange-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase text-text-muted tracking-wider block">Diretório Local de G-Codes (Router CNC)</label>
+              <input
+                type="text"
+                placeholder="Ex: D:\CNC\Projetos"
+                value={pipelineLocalRoot}
+                onChange={(e) => setPipelineLocalRoot(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-mono outline-none focus:border-orange-500"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase text-text-muted tracking-wider block">Diretório Nuvem / Origem (OneDrive / Drive)</label>
+              <input
+                type="text"
+                placeholder="Ex: C:\Users\Oficina\OneDrive\Jobs Ativos"
+                value={pipelineCloudRoot}
+                onChange={(e) => setPipelineCloudRoot(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white font-mono outline-none focus:border-orange-500"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              type="submit"
+              disabled={savingWorkshop}
+              className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-black font-black uppercase text-xs rounded-xl transition-all shadow-lg shadow-orange-500/20 cursor-pointer flex items-center gap-2"
+            >
+              <Save size={14} />
+              {savingWorkshop ? 'Salvando...' : 'Salvar Parametrização da Oficina'}
             </button>
           </div>
         </form>

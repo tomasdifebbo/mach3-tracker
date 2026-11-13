@@ -1,3 +1,15 @@
+def ensure_default_desktop():
+    try:
+        import ctypes
+        user32 = ctypes.windll.user32
+        hdesk = user32.OpenDesktopW("Default", 0, False, 0x01FF)
+        if hdesk:
+            user32.SetThreadDesktop(hdesk)
+    except Exception:
+        pass
+
+ensure_default_desktop()
+
 """
 Robô Router — notificador animado estilo "Mordomo Bob" (IncrediMail).
 
@@ -6,6 +18,7 @@ transforma-se num robô e mostra a mensagem num balão.
 Feito 100% em tkinter (sem vídeos, sem web, sem bibliotecas externas).
 """
 
+import logging
 import math
 import random
 import threading
@@ -30,7 +43,7 @@ T_WAKE = 0.45
 T_OUT = 0.75
 T_SLIDE_OUT = 0.35
 CPS = 45.0                # caracteres por segundo no efeito "digitando"
-HOLD = 7.0                # tempo que o balão fica após terminar de digitar
+HOLD = 14.0               # tempo que o balão fica após terminar de digitar (14s para dar tempo de ver com calma)
 
 OUTLINE = "#0b0f17"
 AMBER = "#f59e0b"
@@ -180,6 +193,8 @@ class RoboNotificador:
     # ---- API pública
     def show(self, title: str, message: str, on_click=None, play_sound: bool = True, action_label: str | None = None) -> None:
         self.action_label = action_label or "📁 Clique no balão para abrir a pasta"
+        msg_flat = message.replace("\n", " • ")
+        logging.info(f"RoboNotificador.show: {title} | {msg_flat}")
         if self.win is not None and self.win.winfo_exists():
             if self.state in ("out_trans", "out_slide"):
                 self.pending.append((title, message, on_click, play_sound, self.action_label))
@@ -220,6 +235,15 @@ class RoboNotificador:
         win.configure(bg=TRANSPARENT)
         sw, sh = win.winfo_screenwidth(), win.winfo_screenheight()
         win.geometry(f"{W}x{H}+{sw - W - 8}+{sh - H - 46}")
+        ensure_default_desktop()
+        win.lift()
+        try:
+            import ctypes
+            user32 = ctypes.windll.user32
+            hwnd = user32.GetParent(win.winfo_id()) or win.winfo_id()
+            user32.SetWindowPos(hwnd, -1, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0040)
+        except Exception:
+            pass
 
         cv = tk.Canvas(win, width=W, height=H, bg=TRANSPARENT, highlightthickness=0, bd=0)
         cv.pack()
@@ -357,7 +381,8 @@ class RoboNotificador:
         elif st == "talk":
             trans, wake, wave = 1.0, 1.0, clamp(el / 0.35)
             end = self.text_t0 + len(self.message) / CPS + HOLD
-            if now >= end and not self.hover:
+            max_end = self.text_t0 + len(self.message) / CPS + 30.0
+            if (now >= end and not self.hover) or (now >= max_end):
                 self._goto("out_trans")
         elif st == "out_trans":
             wake = clamp(1 - el / 0.2)
@@ -375,6 +400,10 @@ class RoboNotificador:
         try:
             self._draw(now, slide, trans, wake, wave, spin)
         except tk.TclError:
+            return
+        except Exception as exc:
+            logging.exception(f"Erro em _draw do robo: {exc}")
+            self._close()
             return
         self.win.after(16, self._tick)
 

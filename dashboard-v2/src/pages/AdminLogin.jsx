@@ -26,7 +26,7 @@ export function AdminLogin({ onLoginSuccess }) {
       } else {
         setError(data.error || 'Erro na autenticação');
       }
-    } catch (err) {
+    } catch {
       setError('Erro de conexão com o servidor');
     }
     setLoading(false);

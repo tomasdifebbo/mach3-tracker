@@ -445,38 +445,51 @@ class FolderAssistantEngine:
             scanned_jobs.append(job_info)
 
             # Notifications & auto-copy queuing for newly detected items
+            # Assinaturas com caminho, mtime e tamanho para capturar arquivos novos e revisões
+            new_file_map = {f["rel_path"]: f"{f['rel_path']}|{int(f['mtime'])}|{f['size']}" for f in enriched_files if f["is_new"]}
+            new_rel_paths = list(new_file_map.keys())
+
             if status in ("novo", "atualizacao") and len(new_rel_paths) > 0:
-                prev_notified = self._notified_signatures.get(job_name, set())
-                unnotified = set(new_rel_paths) - prev_notified
-                if unnotified:
-                    self._notified_signatures[job_name] = prev_notified | set(new_rel_paths)
+                prev_notified_sigs = self._notified_signatures.get(job_name, set())
+                unnotified_rels = [rel for rel, sig in new_file_map.items() if sig not in prev_notified_sigs]
+                unnotified_sigs = {sig for rel, sig in new_file_map.items() if sig not in prev_notified_sigs}
+                if unnotified_rels:
+                    self._notified_signatures[job_name] = prev_notified_sigs | unnotified_sigs
                     if not was_first_scan:
-                        target_folder = self._resolve_target_folder(job_info, unnotified)
+                        target_folder = self._resolve_target_folder(job_info, unnotified_rels)
+                        sample_files = sorted(unnotified_rels)
+                        if len(sample_files) == 1:
+                            detail_str = sample_files[0]
+                        elif len(sample_files) <= 3:
+                            detail_str = "\n".join(sample_files)
+                        else:
+                            detail_str = f"{sample_files[0]}\n(+{len(sample_files)-1} arquivo(s))"
+
                         if status == "novo":
                             self._notify(
                                 "Novo serviço liberado na Oficina!",
-                                f"{job_name} ({len(new_rel_paths)} arquivo(s) em 3 - OFICINA)",
+                                f"{job_name}\n📁 {detail_str}",
                                 folder_path=target_folder,
                                 job_name=job_name,
                             )
                             add_history_event(
                                 "detected",
                                 job_name,
-                                f"Novo serviço detectado com {len(new_rel_paths)} arquivo(s).",
-                                list(new_rel_paths),
+                                f"Novo serviço detectado com {len(unnotified_rels)} arquivo(s).",
+                                list(unnotified_rels),
                             )
                         else:
                             self._notify(
                                 "Novos arquivos em 3 - OFICINA!",
-                                f"{job_name}: +{len(unnotified)} arquivo(s) novo(s)",
+                                f"{job_name}\n📁 {detail_str}",
                                 folder_path=target_folder,
                                 job_name=job_name,
                             )
                             add_history_event(
                                 "detected",
                                 job_name,
-                                f"Detectado(s) {len(unnotified)} arquivo(s) novo(s) na pasta 3 - OFICINA.",
-                                sorted(unnotified),
+                                f"Detectado(s) {len(unnotified_rels)} arquivo(s) novo(s) na pasta 3 - OFICINA.",
+                                sorted(unnotified_rels),
                             )
 
                 if allow_auto_copy and cfg.get("auto_copy_new", False):
@@ -592,11 +605,20 @@ class FolderAssistantEngine:
             for f in files:
                 rel = f["rel_path"]
                 dst_file = dest_job_dir / Path(rel)
+                is_cloud_newer = False
                 if dst_file.exists():
-                    skipped_existing += 1
-                    copied_set.add(rel)
-                    continue
-                if force_missing:
+                    try:
+                        st_local = dst_file.stat()
+                        is_cloud_newer = (f["mtime"] > (st_local.st_mtime + 5)) and (
+                            f["size"] != st_local.st_size or f["mtime"] > (st_local.st_mtime + 60)
+                        )
+                    except OSError:
+                        pass
+                    if not is_cloud_newer:
+                        skipped_existing += 1
+                        copied_set.add(rel)
+                        continue
+                if force_missing or is_cloud_newer:
                     to_copy.append(f)
                 else:
                     if (rel not in copied_set) and (rel not in ignored_set):
@@ -636,12 +658,21 @@ class FolderAssistantEngine:
                     src_file = oficina_dir / Path(rel)
                     dst_file = dest_job_dir / Path(rel)
 
-                    # Double-check non-overwrite safety right before writing
+                    # Double-check non-overwrite safety right before writing (allows revisions)
+                    is_cloud_newer = False
                     if dst_file.exists():
-                        skipped_existing += 1
-                        copied_set.add(rel)
-                        self.copy_status["copied_count"] = idx
-                        continue
+                        try:
+                            st_local = dst_file.stat()
+                            is_cloud_newer = (f["mtime"] > (st_local.st_mtime + 5)) and (
+                                f["size"] != st_local.st_size or f["mtime"] > (st_local.st_mtime + 60)
+                            )
+                        except OSError:
+                            pass
+                        if not is_cloud_newer:
+                            skipped_existing += 1
+                            copied_set.add(rel)
+                            self.copy_status["copied_count"] = idx
+                            continue
 
                     dst_file.parent.mkdir(parents=True, exist_ok=True)
                     tmp_dst = dst_file.with_name(dst_file.name + ".copying_tmp")
@@ -663,7 +694,7 @@ class FolderAssistantEngine:
                             os.utime(tmp_dst, (f["mtime"], f["mtime"]))
                         except OSError:
                             pass
-                        if dst_file.exists():
+                        if dst_file.exists() and not is_cloud_newer:
                             tmp_dst.unlink(missing_ok=True)
                             skipped_existing += 1
                         else:
@@ -700,9 +731,10 @@ class FolderAssistantEngine:
                         sub = (dest_job_dir / Path(copied_files_now[0])).parent
                         if sub.exists():
                             dest_target = str(sub)
+                    sample = copied_files_now[0] if len(copied_files_now) == 1 else f"{len(copied_files_now)} arquivo(s)"
                     self._notify(
                         "Serviço copiado para ARQUIVOS 2026!",
-                        f"{job_name}: {len(copied_files_now)} arquivo(s) de 3 - OFICINA copiado(s).",
+                        f"{job_name}\n📁 {sample} copiado(s).",
                         folder_path=dest_target,
                         job_name=job_name,
                     )
