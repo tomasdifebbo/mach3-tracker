@@ -3,7 +3,7 @@ import {
   X, Printer, ClipboardList, CheckSquare, Square, Share2, Check,
   Clock, Layers, Cpu, Wrench, AlertCircle, Sparkles, Filter, ChevronDown
 } from 'lucide-react';
-import { isFileMarkedOk } from './CaixaChecklistProducao';
+import { isFileMarkedOk } from '../utils/fileChecklistUtils';
 
 function escapeHtml(str) {
   if (!str) return '';

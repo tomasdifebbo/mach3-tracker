@@ -35,6 +35,7 @@ Thumbs.db
 # Scratch & media
 scratch/
 scratch_*.js
+scratch_*.py
 *.mp4
 video_assets/
 video_assets_demo/

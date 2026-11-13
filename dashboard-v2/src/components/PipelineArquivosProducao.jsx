@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Layers, FileCode2, Clock, CheckCircle2, AlertCircle, RefreshCw,
   Search, Filter, Copy, Check, ExternalLink, ArrowRight, HardDrive,
@@ -8,8 +8,10 @@ import {
   X, Plus, Minus
 } from 'lucide-react';
 import { api } from '../services/api';
-import { CaixaChecklistProducao, isFileMarkedOk } from './CaixaChecklistProducao';
+import { CaixaChecklistProducao } from './CaixaChecklistProducao';
 import { FichaTecnicaPipelineModal } from './FichaTecnicaPipelineModal';
+import { isFileMarkedOk } from '../utils/fileChecklistUtils';
+import { resolveShiftOperator } from '../utils/tenantUtils';
 
 function formatBytes(bytes) {
   if (!bytes || bytes <= 0) return '0 B';
@@ -28,7 +30,7 @@ function formatDate(isoStr) {
   try {
     const d = new Date(isoStr);
     return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-  } catch (e) {
+  } catch {
     return isoStr;
   }
 }
@@ -57,15 +59,14 @@ function renderMaterialBadge(tag) {
   );
 }
 
-export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
+export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
   const [pipelineData, setPipelineData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('lotes'); // start on active priorities / lotes
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJob, setSelectedJob] = useState('todos');
-  const [selectedExt, setSelectedExt] = useState('todas');
+  const [selectedExt] = useState('todas');
   const [copiedPath, setCopiedPath] = useState(null);
-  const [expandedJobs, setExpandedJobs] = useState({});
   const [isFichaModalOpen, setIsFichaModalOpen] = useState(false);
 
   // Checklist interativo para o operador dar OK nos arquivos concluídos
@@ -88,14 +89,11 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
   const [batchQtyInput, setBatchQtyInput] = useState(1);
   const [isSavingBatch, setIsSavingBatch] = useState(false);
 
-  const getCurrentShiftOperator = () => {
-    const h = new Date().getHours();
-    return (h >= 22 || h < 6) ? 'brenno' : 'Tomas';
-  };
+  const getCurrentShiftOperator = useCallback(() => resolveShiftOperator({ user }), [user]);
 
-  const getFileKey = (f) => f.fullPath || `${f.jobName || ''}_${f.name}`;
+  const getFileKey = useCallback((f) => f.fullPath || (f.subfolderName ? `${f.jobName || ''}|${f.subfolderName}|${f.name}` : `${f.jobName || ''}_${f.name}`), []);
 
-  const isFileChecked = (f) => {
+  const isFileChecked = useCallback((f) => {
     if (!f) return false;
     const k = getFileKey(f);
     // Se o arquivo está RODANDO AGORA na máquina, NUNCA pode ser considerado concluído/checked
@@ -103,10 +101,10 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
     // Se o arquivo foi reaberto / solicitado rodar novamente, NUNCA deve ser considerado concluído por checklist antigo!
     if (f.isReopened) return false;
     return Boolean(fileChecklist[k] || (f.fullPath && fileChecklist[f.fullPath]) || f.isManuallyDone);
-  };
+  }, [fileChecklist, getFileKey]);
 
   // Carrega e sincroniza arquivos concluídos do PostgreSQL de forma definitiva
-  const syncCompletedFiles = async () => {
+  const syncCompletedFiles = useCallback(async () => {
     try {
       const res = await api.getPipelineCompletedFiles();
       if (res && res.success && res.map) {
@@ -118,16 +116,36 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                 checkedAt: item.completed_at || new Date().toISOString(),
                 stage: item.stage || '',
                 name: item.file_name || k,
-                operator: item.operator_name || 'Tomas'
+                operator: item.operator_name || getCurrentShiftOperator()
               };
               merged[k] = entry;
+              if (item.subfolder && item.file_name) {
+                const fn = item.file_name.toLowerCase().trim();
+                const sub = item.subfolder.toLowerCase().trim();
+                merged[`${fn}___${sub}`] = entry;
+                merged[`${sub}/${fn}`] = entry;
+                if (item.job_name) {
+                  const job = item.job_name.toLowerCase().trim();
+                  merged[`${job}|${sub}|${fn}`] = entry;
+                }
+              }
             } else {
               delete merged[k];
+              if (item.subfolder && item.file_name) {
+                const fn = item.file_name.toLowerCase().trim();
+                const sub = item.subfolder.toLowerCase().trim();
+                delete merged[`${fn}___${sub}`];
+                delete merged[`${sub}/${fn}`];
+                if (item.job_name) {
+                  const job = item.job_name.toLowerCase().trim();
+                  delete merged[`${job}|${sub}|${fn}`];
+                }
+              }
             }
           });
           try {
             localStorage.setItem('mach3_pipeline_file_checklist_v1', JSON.stringify(merged));
-          } catch (e) {}
+          } catch { /* ignore */ }
           return merged;
         });
 
@@ -143,11 +161,11 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                 file_name: val.name || key,
                 stage: val.stage || '',
                 done: true,
-                operator_name: val.operator || 'Tomas'
+                operator_name: val.operator || getCurrentShiftOperator()
               });
             }
           });
-        } catch (e) {}
+        } catch { /* ignore */ }
 
         if (localItems.length > 0) {
           api.bulkSyncPipelineCompleted(localItems).catch(() => {});
@@ -156,7 +174,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
     } catch (err) {
       console.warn('Erro ao sincronizar arquivos concluídos com o banco:', err);
     }
-  };
+  }, [getCurrentShiftOperator]);
 
   const toggleFileCheck = async (f, stage = '') => {
     const key = getFileKey(f);
@@ -187,7 +205,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       }
       try {
         localStorage.setItem('mach3_pipeline_file_checklist_v1', JSON.stringify(next));
-      } catch (err) {}
+      } catch { /* ignore */ }
       return next;
     });
 
@@ -249,7 +267,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
     fetchPipeline(false);
     const interval = setInterval(() => fetchPipeline(false), 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [syncCompletedFiles]);
 
   const handleCopy = (pathStr) => {
     if (!pathStr) return;
@@ -304,10 +322,6 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
     } finally {
       setIsSavingBatch(false);
     }
-  };
-
-  const toggleExpand = (name) => {
-    setExpandedJobs(prev => ({ ...prev, [name]: !prev[name] }));
   };
 
   const summary = pipelineData?.summary || { totalJobs: 0, totalCadPreparar: 0, totalAspirePreparar: 0, totalGcodePronto: 0, totalConcluidos: 0 };
@@ -368,7 +382,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       }
       return true;
     });
-  }, [pipelineData, fileChecklist, selectedJob, selectedExt, searchTerm]);
+  }, [pipelineData, fileChecklist, selectedJob, selectedExt, searchTerm, getFileKey]);
 
   // Filtered G-Codes (Fila Router)
   const filteredGcodes = useMemo(() => {
@@ -402,7 +416,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       }
       return true;
     });
-  }, [pipelineData, fileChecklist, selectedJob, selectedExt, searchTerm]);
+  }, [pipelineData, fileChecklist, selectedJob, selectedExt, searchTerm, getFileKey]);
 
   // Filtered Concluded Executions (4. Já Feito / Histórico)
   const filteredDone = useMemo(() => {
@@ -417,7 +431,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
           ...gf,
           execCount: 1,
           lastExec: {
-            operator_name: fileChecklist[k]?.operator || 'Tomas',
+            operator_name: fileChecklist[k]?.operator || getCurrentShiftOperator(),
             machine_name: 'Router 2',
             start_time: fileChecklist[k]?.checkedAt || gf.mtimeDate || new Date().toISOString()
           },
@@ -436,7 +450,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       }
       return true;
     });
-  }, [pipelineData, fileChecklist, selectedJob, searchTerm]);
+  }, [pipelineData, isFileChecked, fileChecklist, getFileKey, selectedJob, searchTerm, getCurrentShiftOperator]);
 
   // Contadores e Listas para Checklist Interativo
   const cadCounts = useMemo(() => {
@@ -449,7 +463,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       concluidos,
       pendentes: Math.max(0, filteredCad.length - concluidos)
     };
-  }, [filteredCad, fileChecklist]);
+  }, [filteredCad, isFileChecked]);
 
   const displayedCad = useMemo(() => {
     return filteredCad.filter(f => {
@@ -458,9 +472,9 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       if (cadCheckFilter === 'concluidos') return isChecked;
       return true;
     });
-  }, [filteredCad, fileChecklist, cadCheckFilter]);
+  }, [filteredCad, isFileChecked, cadCheckFilter]);
 
-  const isAspireDone = (f) => Boolean(isFileChecked(f) || (f.chapasCount > 0) || f.hasCrv || f.hasGcode);
+  const isAspireDone = useCallback((f) => Boolean(isFileChecked(f) || (f.chapasCount > 0) || f.hasCrv || f.hasGcode), [isFileChecked]);
 
   const aspireCounts = useMemo(() => {
     let concluidos = 0;
@@ -472,7 +486,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       concluidos,
       pendentes: Math.max(0, filteredAspire.length - concluidos)
     };
-  }, [filteredAspire, fileChecklist]);
+  }, [filteredAspire, isAspireDone]);
 
   const displayedAspire = useMemo(() => {
     return filteredAspire.filter(f => {
@@ -481,13 +495,13 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       if (aspireCheckFilter === 'concluidos') return isChecked;
       return true;
     });
-  }, [filteredAspire, fileChecklist, aspireCheckFilter]);
+  }, [filteredAspire, isAspireDone, aspireCheckFilter]);
 
-  const isFileDone = (f) => {
+  const isFileDone = useCallback((f) => {
     if (!f || f.isCurrentlyRunning) return false;
     if (f.isReopened) return false;
     return Boolean(isFileChecked(f) || f.isExecuted || isFileMarkedOk(f.name));
-  };
+  }, [isFileChecked]);
 
   const routerCounts = useMemo(() => {
     let concluidos = (pipelineData?.gcodeFeitos || []).length;
@@ -501,7 +515,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       concluidos,
       pendentes
     };
-  }, [filteredGcodes, pipelineData?.gcodeFeitos, fileChecklist]);
+  }, [filteredGcodes, pipelineData?.gcodeFeitos, isFileDone]);
 
   const displayedGcodes = useMemo(() => {
     if (routerCheckFilter === 'concluidos') {
@@ -530,7 +544,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
       if (routerCheckFilter === 'pendentes') return !isChecked;
       return true;
     });
-  }, [filteredGcodes, pipelineData?.gcodeFeitos, fileChecklist, routerCheckFilter, selectedJob, selectedExt, searchTerm]);
+  }, [filteredGcodes, pipelineData?.gcodeProntos, pipelineData?.gcodeFeitos, isFileDone, routerCheckFilter, selectedJob, selectedExt, searchTerm]);
 
   const runningGcodes = useMemo(() => {
     return filteredGcodes.filter(f => f.isCurrentlyRunning);
@@ -981,7 +995,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                                   ? 'bg-emerald-500 text-white shadow-sm ring-2 ring-emerald-500/20'
                                   : 'border-2 border-slate-300 dark:border-white/20 text-transparent hover:border-emerald-500 hover:text-emerald-500/40'
                               }`}
-                              title={isChecked ? `Marcado como OK em ${formatDate(fileChecklist[key]?.checkedAt)} por Tomas - Clique para desmarcar` : 'Clique para marcar como OK (Concluído)'}
+                              title={isChecked ? `Marcado como OK em ${formatDate(fileChecklist[key]?.checkedAt)} por ${fileChecklist[key]?.operator || getCurrentShiftOperator()} - Clique para desmarcar` : 'Clique para marcar como OK (Concluído)'}
                             >
                               <Check size={13} className="stroke-[3]" />
                             </button>
@@ -1549,7 +1563,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
                           </span>
                         </td>
                         <td className="py-2 px-3 capitalize font-semibold text-orange-500 text-[11px]">
-                          {d.lastExec?.operator_name || 'Tomas'}
+                          {d.lastExec?.operator_name || getCurrentShiftOperator()}
                         </td>
                         <td className="py-2 px-3">
                           <span className="font-black text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
@@ -1660,6 +1674,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [] }) {
         fileChecklist={fileChecklist}
         initialJob={selectedJob}
         uniqueJobNames={uniqueJobNames}
+        user={user}
       />
 
       {/* Modal de Configuração de Lote em Massa */}
