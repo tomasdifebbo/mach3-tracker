@@ -124,9 +124,9 @@ function getEffectiveFeatures(userPlan, overrideJsonStr) {
 }
 
 const PLANS = {
-    starter:  { name: 'MACH3 Tracker STARTER',   price: 59.90, maxRouters: 1 },
-    pro:      { name: 'MACH3 Tracker PRO',      price: 149.90, maxRouters: 3 },
-    business: { name: 'MACH3 Tracker BUSINESS',  price: 349.90, maxRouters: 999 }
+    starter:  { name: 'MACH3 Tracker STARTER',   price: 97.00, maxRouters: 1 },
+    pro:      { name: 'MACH3 Tracker PRO',      price: 197.00, maxRouters: 3 },
+    business: { name: 'MACH3 Tracker BUSINESS',  price: 497.00, maxRouters: 999 }
 };
 
 module.exports = {

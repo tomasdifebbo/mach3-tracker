@@ -188,7 +188,7 @@ export function ManagePaymentModal({ isOpen, onClose, user, onRefresh }) {
                   <div className="text-left md:text-right">
                     <div className="text-xs text-text-muted font-bold uppercase tracking-wider">Valor da Mensalidade</div>
                     <div className="text-2xl sm:text-3xl font-black text-white">
-                      R$ 349,90 <span className="text-xs font-normal text-text-muted">/mês</span>
+                      {user?.plan === 'starter' ? 'R$ 97,00' : user?.plan === 'pro' ? 'R$ 197,00' : 'R$ 497,00'} <span className="text-xs font-normal text-text-muted">/mês</span>
                     </div>
                   </div>
                   
@@ -399,7 +399,7 @@ export function ManagePaymentModal({ isOpen, onClose, user, onRefresh }) {
 
                       <div className="flex items-center gap-6 justify-between sm:justify-end">
                         <div className="text-left sm:text-right">
-                          <div className="text-sm font-black text-white">R$ 349,90</div>
+                          <div className="text-sm font-black text-white">R$ 497,00</div>
                           <div className="text-[10px] text-accent-success font-bold uppercase">Pago em 01/10/2026</div>
                         </div>
 
@@ -408,7 +408,7 @@ export function ManagePaymentModal({ isOpen, onClose, user, onRefresh }) {
                             id: 'FAT-2026-10-8492',
                             date: '01/10/2026',
                             plan: 'BUSINESS Premium',
-                            amount: 'R$ 349,90'
+                            amount: 'R$ 497,00'
                           })}
                           className="px-3.5 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
                         >
@@ -477,12 +477,13 @@ export function ManagePaymentModal({ isOpen, onClose, user, onRefresh }) {
                 <div className="glass p-6 rounded-3xl border-white/5 flex flex-col items-center text-center space-y-4 hover:border-white/20 transition-all">
                   <h5 className="font-bold text-white text-lg">STARTER</h5>
                   <div className="text-2xl font-black text-white">
-                    R$ 59,90<span className="text-xs text-text-muted">/mês</span>
+                    R$ 97,00<span className="text-xs text-text-muted">/mês</span>
                   </div>
                   <ul className="text-xs text-text-muted space-y-2 text-left w-full flex-1">
-                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> 1 Máquina CNC Ativa</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> Telemetria em tempo real</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> Histórico 30 dias</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> 1 Máquina CNC Ativa (Router ou Laser)</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> Telemetria em tempo real via Mach3</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> Histórico de produção & G-Codes</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> Cálculo de Consumo por m²</li>
                   </ul>
                   <button
                     onClick={() => handleSubscribe('starter')}
@@ -497,12 +498,13 @@ export function ManagePaymentModal({ isOpen, onClose, user, onRefresh }) {
                 <div className="glass p-6 rounded-3xl border-white/5 flex flex-col items-center text-center space-y-4 hover:border-white/20 transition-all">
                   <h5 className="font-bold text-white text-lg">PRO</h5>
                   <div className="text-2xl font-black text-white">
-                    R$ 149,90<span className="text-xs text-text-muted">/mês</span>
+                    R$ 197,00<span className="text-xs text-text-muted">/mês</span>
                   </div>
                   <ul className="text-xs text-text-muted space-y-2 text-left w-full flex-1">
-                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> Até 3 Máquinas CNC/Laser</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> Cálculo de Consumo m²</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> Relatórios PDF / CSV</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> Até 3 Máquinas (Routers & Laser)</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> <strong>Robô Assistente de Oficina</strong> (Pop-up & Voz)</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> <strong>Ficha Técnica de Produção</strong> Automática</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> Relatórios PDF / CSV & Gráficos OEE</li>
                   </ul>
                   <button
                     onClick={() => handleSubscribe('pro')}
@@ -522,12 +524,14 @@ export function ManagePaymentModal({ isOpen, onClose, user, onRefresh }) {
                     <span>💎</span> BUSINESS
                   </h5>
                   <div className="text-2xl font-black text-white">
-                    R$ 349,90<span className="text-xs text-text-muted">/mês</span>
+                    R$ 497,00<span className="text-xs text-text-muted">/mês</span>
                   </div>
                   <ul className="text-xs text-text-muted space-y-2 text-left w-full flex-1">
-                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> Máquinas Ilimitadas (até 999)</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> Automação de E-mails & Alertas</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> Suporte Prioritário VIP</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> Máquinas Ilimitadas (Routers, Laser, Vácuo)</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> <strong>Painel Kanban com Auto-Sync por Telemetria</strong></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> <strong>Robô Monitor de Rede & Alerta Kanban</strong></li>
+                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> Checklists Operacionais, Ocorrências & Estoque</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-accent-success shrink-0" /> Suporte Prioritário VIP via WhatsApp</li>
                   </ul>
                   <button
                     onClick={() => handleSubscribe('business')}
