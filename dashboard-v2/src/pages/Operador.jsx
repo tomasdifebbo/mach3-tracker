@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  UserCheck, Wrench, CheckSquare, Layers, ShieldAlert, Utensils, LogOut
+  UserCheck, Wrench, CheckSquare, Layers, ShieldAlert, Utensils, LogOut,
+  Flame, ListOrdered
 } from 'lucide-react';
+import { FilaRouterOperador } from '../components/operador/FilaRouterOperador';
 import { api } from '../services/api';
 import {
   getLocalTodayStr, getDateRange, OPERATOR_STATUS_CONFIG
@@ -15,7 +17,8 @@ import { OperadorChecklist } from '../components/operador/OperadorChecklist';
 
 export function Operador({ jobs = [], routers = [], onRefresh }) {
   const [operatorName, setOperatorName] = useState(localStorage.getItem('mach3_operator_name') || 'Operador Principal');
-  const [activeTab, setActiveTab] = useState('os'); // 'os' | 'checklists' | 'ocorrencia'
+  const [activeTab, setActiveTab] = useState('os'); // 'os' | 'fila_router' | 'checklists' | 'ocorrencia'
+  const [showFilaModal, setShowFilaModal] = useState(false);
   const [kanbanTasks, setKanbanTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
 
@@ -378,6 +381,15 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
         {/* Identificação do Operador & Gestão da Equipe */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 relative z-10 bg-white/5 p-3 rounded-2xl border border-white/10">
           <button
+            onClick={() => setShowFilaModal(true)}
+            className="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg shadow-orange-500/20 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+            title="Visualizar a Fila de Corte da Router CNC com duração real de usinagem"
+          >
+            <Flame size={16} className="animate-pulse" />
+            <span>Fila da Router</span>
+          </button>
+          <div className="h-4 w-px bg-white/10 hidden sm:block" />
+          <button
             onClick={() => setShowOperatorsModal(true)}
             className="px-3.5 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
@@ -518,7 +530,7 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
       />
 
       {/* Navegação de Abas do Operador */}
-      <div className="flex gap-2 border-b border-white/10 pb-2">
+      <div className="flex gap-2 border-b border-white/10 pb-2 flex-wrap">
         <button
           onClick={() => setActiveTab('os')}
           className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider border transition-all flex items-center gap-2 cursor-pointer ${
@@ -526,6 +538,14 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
           }`}
         >
           <Layers size={16} /> Minhas Ordens de Serviço ({activeJobs.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('fila_router')}
+          className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider border transition-all flex items-center gap-2 cursor-pointer ${
+            activeTab === 'fila_router' ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white border-orange-500 shadow-lg shadow-orange-500/20' : 'glass border-white/5 text-text-muted hover:text-white'
+          }`}
+        >
+          <ListOrdered size={16} /> Fila de Corte da Router
         </button>
         <button
           onClick={() => setActiveTab('checklists')}
@@ -536,6 +556,16 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
           <CheckSquare size={16} /> Checklist Diário da Fábrica
         </button>
       </div>
+
+      {/* Conteúdo: Fila de Corte da Router */}
+      {activeTab === 'fila_router' && (
+        <FilaRouterOperador
+          operatorName={operatorName}
+          routers={routers}
+          jobs={jobs}
+          onOpenModal={() => setShowFilaModal(true)}
+        />
+      )}
 
       {/* Conteúdo: Checklist Diário */}
       {activeTab === 'checklists' && (
@@ -555,6 +585,17 @@ export function Operador({ jobs = [], routers = [], onRefresh }) {
         handleOpenReschedule={handleOpenReschedule}
         handleUpdateTaskOperator={handleUpdateTaskOperator}
       />
+
+      {/* Modal Fila da Router & Orientação de Corte */}
+      {showFilaModal && (
+        <FilaRouterOperador
+          isModal={true}
+          onClose={() => setShowFilaModal(false)}
+          operatorName={operatorName}
+          routers={routers}
+          jobs={jobs}
+        />
+      )}
 
       <OperadorModals
         kanbanTasks={kanbanTasks}
