@@ -432,7 +432,7 @@ export function CaixaChecklistProducao({
           <select
             value={selectedGroup}
             onChange={(e) => setSelectedGroup(e.target.value)}
-            className="px-2 py-1 text-xs rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer truncate max-w-[140px]"
+            className="px-2.5 py-1 text-xs rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer min-w-[120px]"
           >
             <option value="todos">Todos Grupos</option>
             {groups.map(g => (
