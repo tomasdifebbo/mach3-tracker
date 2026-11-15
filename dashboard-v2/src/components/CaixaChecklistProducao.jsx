@@ -316,13 +316,13 @@ export function CaixaChecklistProducao({
 
         {/* Barra de Progresso e Métricas */}
         <div className="mt-3.5 space-y-1.5">
-          <div className="flex items-center justify-between text-xs font-bold">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs font-bold">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-slate-600 dark:text-slate-300">Progresso Geral:</span>
               <span className="text-emerald-500 font-black">{metrics.done} de {metrics.total} concluídos</span>
               <span className="text-[10px] text-slate-400">({metrics.percent}%)</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-500 border border-amber-500/30">
                 {metrics.pending} Restantes na Fila
               </span>

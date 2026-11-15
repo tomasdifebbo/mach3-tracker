@@ -583,43 +583,45 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 dark:bg-[#0c0d10] text-slate-900 dark:text-slate-100 p-2.5 md:p-3.5 gap-2.5">
+    <div className="flex-1 flex flex-col min-h-0 h-full overflow-hidden bg-slate-50 dark:bg-[#0c0d10] text-slate-900 dark:text-slate-100 p-1.5 sm:p-2.5 md:p-3.5 gap-2 sm:gap-2.5">
       {/* Top Header */}
-      <div className="flex items-center justify-between gap-3 bg-white dark:bg-white/[0.03] py-2 px-3.5 rounded-xl border border-slate-200 dark:border-white/5 shrink-0 shadow-sm">
-        <div className="flex items-center gap-2.5 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 bg-white dark:bg-white/[0.03] py-2 px-3 sm:px-3.5 rounded-xl border border-slate-200 dark:border-white/5 shrink-0 shadow-sm">
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
           <div className="w-7 h-7 rounded-lg bg-orange-500/15 text-orange-500 flex items-center justify-center shrink-0">
             <Layers size={16} />
           </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-sm md:text-base font-black text-slate-900 dark:text-white leading-none">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h1 className="text-sm md:text-base font-black text-slate-900 dark:text-white leading-tight truncate">
                 Pipeline de Arquivos & Produção
               </h1>
-              <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
-                Corel (.CDR) ➔ Materiais (.EPS / .DXF) ➔ Lote Chapas Aspire ➔ Router (.TXT)
+              <span className="hidden sm:inline-block px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 truncate">
+                Corel (.CDR) ➔ Aspire (.EPS/.DXF) ➔ Fila Router (.TXT)
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-text-muted hidden sm:block">
+            <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-text-muted truncate">
               {pipelineData?.updatedAt ? `Sincronizado ${formatDate(pipelineData.updatedAt)} · ` : ''}
-              Lógica por pasta: CDR mestre gera arquivos por material, abertos no Aspire em lotes de chapas liberados para corte
+              Lógica por pasta: CDR mestre gera arquivos por material, liberados para corte na Router
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
           <button
             onClick={() => setIsFichaModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-sm transition-all shrink-0 active:scale-95 cursor-pointer"
+            className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-black bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-sm transition-all shrink-0 active:scale-95 cursor-pointer"
             title="Emitir Ficha Técnica com relação das tarefas (Impressão / PDF / WhatsApp)"
           >
-            <ClipboardList size={14} />
-            <span>Gerar Ficha Técnica</span>
+            <ClipboardList size={13} />
+            <span className="hidden sm:inline">Gerar Ficha Técnica</span>
+            <span className="sm:hidden">Ficha Técnica</span>
           </button>
 
           <button
             onClick={() => fetchPipeline(true)}
             disabled={loading}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-orange-500 hover:text-orange-500 transition-all shrink-0 disabled:opacity-50"
+            className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-orange-500 hover:text-orange-500 transition-all shrink-0 disabled:opacity-50"
+            title="Atualizar lista de arquivos"
           >
             <RefreshCw size={12} className={loading ? 'animate-spin text-orange-500' : ''} />
             <span className="hidden sm:inline">{loading ? 'Escaneando...' : 'Atualizar'}</span>
@@ -628,11 +630,11 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
       </div>
 
       {/* KPI Cards Row - 5 cards covering all stages */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 shrink-0">
+      <div className="flex lg:grid lg:grid-cols-5 gap-2 shrink-0 overflow-x-auto no-scrollbar py-0.5">
         {/* KPI 1 - Corel .CDR Mestre */}
         <div 
           onClick={() => setActiveTab('preparar')}
-          className={`py-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+          className={`py-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between min-w-[140px] sm:min-w-[160px] lg:min-w-0 flex-1 shrink-0 snap-start ${
             activeTab === 'preparar'
               ? 'bg-amber-500/15 border-amber-500/60 shadow-sm'
               : 'bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/5 hover:border-amber-500/40'
@@ -653,7 +655,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         {/* KPI 2 - Preparação Aspire (.EPS / .DXF) */}
         <div 
           onClick={() => setActiveTab('aspire')}
-          className={`py-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+          className={`py-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between min-w-[140px] sm:min-w-[160px] lg:min-w-0 flex-1 shrink-0 snap-start ${
             activeTab === 'aspire'
               ? 'bg-sky-500/15 border-sky-500/60 shadow-sm'
               : 'bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/5 hover:border-sky-500/40'
@@ -674,7 +676,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         {/* KPI 3 - Pronto Router (Chapas Liberadas) */}
         <div 
           onClick={() => setActiveTab('fila_router')}
-          className={`py-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+          className={`py-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between min-w-[140px] sm:min-w-[160px] lg:min-w-0 flex-1 shrink-0 snap-start ${
             activeTab === 'fila_router'
               ? 'bg-orange-500/15 border-orange-500/60 shadow-sm'
               : 'bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/5 hover:border-orange-500/40'
@@ -697,7 +699,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         {/* KPI 4 - Já Feito */}
         <div 
           onClick={() => setActiveTab('concluidos')}
-          className={`py-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+          className={`py-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between min-w-[140px] sm:min-w-[160px] lg:min-w-0 flex-1 shrink-0 snap-start ${
             activeTab === 'concluidos'
               ? 'bg-emerald-500/15 border-emerald-500/60 shadow-sm'
               : 'bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/5 hover:border-emerald-500/40'
@@ -718,7 +720,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         {/* KPI 5 - Lotes Seriados */}
         <div 
           onClick={() => setActiveTab('lotes')}
-          className={`py-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+          className={`py-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between min-w-[140px] sm:min-w-[160px] lg:min-w-0 flex-1 shrink-0 snap-start ${
             activeTab === 'lotes'
               ? 'bg-violet-500/15 border-violet-500/60 shadow-sm'
               : 'bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/5 hover:border-violet-500/40'
@@ -738,16 +740,16 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
       </div>
 
       {/* Tabs & Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-white/[0.02] p-2 rounded-xl border border-slate-200 dark:border-white/5 shrink-0">
-        <div className="flex flex-wrap items-center gap-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white dark:bg-white/[0.02] p-1.5 sm:p-2 rounded-xl border border-slate-200 dark:border-white/5 shrink-0">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar flex-nowrap py-0.5 w-full sm:w-auto">
           {[
-            { id: 'preparar', label: '1. Corel (.CDR)', icon: Sparkles, count: cadCounts.pendentes, total: cadCounts.total },
-            { id: 'aspire', label: '2. Materiais Aspire (.EPS / .DXF)', icon: Compass, count: aspireCounts.pendentes, total: aspireCounts.total },
-            { id: 'fila_router', label: '3. Fila Router (.TXT)', icon: Cpu, count: routerCounts.pendentes, total: routerCounts.total },
-            { id: 'lotes', label: 'Lotes Seriados', icon: Award, count: specialBatches.length },
-            { id: 'concluidos', label: '4. Já Feito (Histórico)', icon: CheckCircle2, count: pipelineData?.gcodeFeitos?.length || summary.totalConcluidos },
-            { id: 'checklist', label: 'Painel Geral', icon: CheckSquare, count: cadCounts.concluidos + aspireCounts.concluidos + routerCounts.concluidos },
-            { id: 'visao_geral', label: 'Jobs', icon: FolderCheck, count: allJobs.length }
+            { id: 'fila_router', label: '3. Fila Router (.TXT)', shortLabel: '3. Router', icon: Cpu, count: routerCounts.pendentes, total: routerCounts.total },
+            { id: 'lotes', label: 'Lotes Seriados', shortLabel: 'Lotes', icon: Award, count: specialBatches.length },
+            { id: 'aspire', label: '2. Materiais Aspire (.EPS / .DXF)', shortLabel: '2. Aspire', icon: Compass, count: aspireCounts.pendentes, total: aspireCounts.total },
+            { id: 'preparar', label: '1. Corel (.CDR)', shortLabel: '1. Corel', icon: Sparkles, count: cadCounts.pendentes, total: cadCounts.total },
+            { id: 'concluidos', label: '4. Já Feito (Histórico)', shortLabel: '4. Histórico', icon: CheckCircle2, count: pipelineData?.gcodeFeitos?.length || summary.totalConcluidos },
+            { id: 'checklist', label: 'Painel Geral', shortLabel: 'Painel', icon: CheckSquare, count: cadCounts.concluidos + aspireCounts.concluidos + routerCounts.concluidos },
+            { id: 'visao_geral', label: 'Jobs', shortLabel: 'Jobs', icon: FolderCheck, count: allJobs.length }
           ].map(t => {
             const Icon = t.icon;
             const active = activeTab === t.id;
@@ -755,15 +757,16 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 transition-all ${
                   active
                     ? 'bg-orange-500 text-white shadow-sm'
                     : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-text-muted hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <Icon size={12} />
-                <span>{t.label}</span>
-                <span className={`text-[10px] px-1.5 py-0.1 rounded font-black ${
+                <Icon size={12} className="shrink-0" />
+                <span className="hidden sm:inline">{t.label}</span>
+                <span className="sm:hidden">{t.shortLabel}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded font-black ${
                   active ? 'bg-black/20 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300'
                 }`}>
                   {t.count}
@@ -774,22 +777,22 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-1.5 flex-1 max-w-md justify-end">
-          <div className="relative flex-1 min-w-[130px]">
+        <div className="flex items-center gap-1.5 w-full sm:w-auto sm:flex-1 sm:max-w-md justify-between sm:justify-end">
+          <div className="relative flex-1 min-w-[120px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar arquivo, material, O.S..."
-              className="w-full pl-7 pr-2.5 py-1 text-xs rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-all placeholder:text-slate-400"
+              placeholder="Buscar arquivo, O.S..."
+              className="w-full pl-7 pr-2.5 py-1.5 text-xs rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-all placeholder:text-slate-400"
             />
           </div>
 
           <select
             value={selectedJob}
             onChange={(e) => setSelectedJob(e.target.value)}
-            className="px-2 py-1 text-xs rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-orange-500 transition-all cursor-pointer max-w-[150px] truncate"
+            className="px-2 py-1.5 text-xs rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-orange-500 transition-all cursor-pointer max-w-[140px] truncate shrink-0"
           >
             <option value="todos">Todos Serviços</option>
             {uniqueJobNames.map(j => (
@@ -905,31 +908,31 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         {/* TAB 1: ARQUIVOS COREL A PREPARAR (.CDR MESTRE) */}
         {activeTab === 'preparar' && (
           <div className="bg-white dark:bg-white/[0.03] rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm">
-            <div className="p-3 bg-amber-500/5 border-b border-slate-200 dark:border-white/5 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+            <div className="p-2 sm:p-3 bg-amber-500/5 border-b border-slate-200 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-500 border border-amber-500/30">
                   Etapa CAD: Corel (.CDR)
                 </span>
                 <p className="text-xs text-slate-600 dark:text-slate-300">
-                  Dê <strong>OK</strong> nos arquivos conforme você for abrindo no Corel e salvando os materiais para o Aspire.
+                  Dê <strong>OK</strong> quando salvar os materiais para o Aspire.
                 </p>
               </div>
 
               {/* Filtros rápidos do checklist */}
-              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 p-1 rounded-lg">
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-lg overflow-x-auto no-scrollbar flex-nowrap w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={() => setCadCheckFilter('pendentes')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
                     cadCheckFilter === 'pendentes' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
                   }`}
                 >
-                  ⏳ Pendentes na Etapa ({cadCounts.pendentes})
+                  ⏳ Pendentes ({cadCounts.pendentes})
                 </button>
                 <button
                   type="button"
                   onClick={() => setCadCheckFilter('todos')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
                     cadCheckFilter === 'todos' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
                   }`}
                 >
@@ -938,16 +941,105 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                 <button
                   type="button"
                   onClick={() => setCadCheckFilter('concluidos')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
                     cadCheckFilter === 'concluidos' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
                   }`}
                 >
-                  ✓ Concluídos (Avançados: {cadCounts.concluidos})
+                  ✓ Concluídos ({cadCounts.concluidos})
                 </button>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Mobile Cards (telas pequenas) */}
+            <div className="md:hidden divide-y divide-slate-100 dark:divide-white/5 p-2 space-y-2">
+              {displayedCad.length === 0 ? (
+                <div className="py-8 text-center text-slate-400">
+                  {cadCheckFilter === 'pendentes' ? (
+                    <div className="flex flex-col items-center gap-1.5 py-4">
+                      <CheckCircle2 size={32} className="text-emerald-500 opacity-80" />
+                      <p className="font-bold text-slate-800 dark:text-slate-200 text-xs">🎉 Nenhum arquivo pendente nesta etapa!</p>
+                      <p className="text-[11px] text-slate-500">Todos os arquivos que você deu OK já avançaram para a etapa de Aspire.</p>
+                    </div>
+                  ) : 'Nenhum arquivo Corel (.cdr) encontrado para este filtro.'}
+                </div>
+              ) : (
+                displayedCad.map((f, idx) => {
+                  const key = getFileKey(f);
+                  const isChecked = isFileChecked(f);
+                  return (
+                    <div
+                      key={key || idx}
+                      className={`p-2.5 rounded-xl border transition-all ${
+                        isChecked
+                          ? 'bg-emerald-500/[0.04] dark:bg-emerald-500/[0.07] border-emerald-500/30'
+                          : 'bg-white dark:bg-white/[0.02] border-slate-200 dark:border-white/5'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => toggleFileCheck(f, 'corel')}
+                          className={`w-7 h-7 mt-0.5 rounded-lg flex items-center justify-center shrink-0 transition-all ${
+                            isChecked
+                              ? 'bg-emerald-500 text-white shadow-sm ring-2 ring-emerald-500/20'
+                              : 'border-2 border-slate-300 dark:border-white/20 text-transparent hover:border-emerald-500'
+                          }`}
+                          title={isChecked ? 'Clique para desmarcar' : 'Dar OK (Concluído)'}
+                        >
+                          <Check size={14} className="stroke-[3]" />
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`px-1.5 py-0.2 rounded text-[9px] font-black border ${getExtBadgeClass(f.ext)}`}>
+                              {f.ext}
+                            </span>
+                            <p className={`font-bold text-xs truncate max-w-[200px] ${
+                              isChecked ? 'line-through text-emerald-700 dark:text-emerald-300 opacity-80' : 'text-slate-900 dark:text-white'
+                            }`}>
+                              {f.name}
+                            </p>
+                          </div>
+                          <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                            {f.subfolderName || 'Geral'} {f.jobName ? `· ${f.jobName}` : ''}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                            {f.matInfo?.tag ? renderMaterialBadge(f.matInfo.tag) : (
+                              f.detectedMaterials && f.detectedMaterials.length > 0 ? (
+                                f.detectedMaterials.map((m, i) => (
+                                  <span key={i}>{renderMaterialBadge(m)}</span>
+                                ))
+                              ) : (
+                                <span className="text-[10px] text-slate-400 italic">Mestre (Vários)</span>
+                              )
+                            )}
+                            {isChecked ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                                <Check size={10} className="stroke-[3]" />
+                                OK (Separado)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                Aguardando Separação
+                              </span>
+                            )}
+                            <button
+                              onClick={() => handleCopy(f.fullPath)}
+                              className="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-white/5 hover:bg-orange-500 hover:text-white transition-all inline-flex items-center gap-1 text-slate-500"
+                            >
+                              {copiedPath === f.fullPath ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} />}
+                              <span>{copiedPath === f.fullPath ? 'OK' : 'Copiar'}</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Desktop Table (telas médias e grandes) */}
+            <div className="overflow-x-auto hidden md:block">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-text-muted uppercase text-[9px] font-black tracking-wider border-b border-slate-200 dark:border-white/5">
                   <tr>
@@ -1085,8 +1177,8 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         {/* TAB 2: ARQUIVOS DE MATERIAIS PARA O ASPIRE (.EPS / .DXF) */}
         {activeTab === 'aspire' && (
           <div className="bg-white dark:bg-white/[0.03] rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm">
-            <div className="p-3 bg-sky-500/5 border-b border-slate-200 dark:border-white/5 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+            <div className="p-2 sm:p-3 bg-sky-500/5 border-b border-slate-200 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-sky-500/20 text-sky-400 border border-sky-500/30">
                   Etapa CAM: Aspire
                 </span>
@@ -1096,11 +1188,11 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
               </div>
 
               {/* Filtros rápidos do checklist */}
-              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 p-1 rounded-lg">
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-lg overflow-x-auto no-scrollbar flex-nowrap w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={() => setAspireCheckFilter('pendentes')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
                     aspireCheckFilter === 'pendentes' ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
                   }`}
                 >
@@ -1109,7 +1201,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                 <button
                   type="button"
                   onClick={() => setAspireCheckFilter('todos')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
                     aspireCheckFilter === 'todos' ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
                   }`}
                 >
@@ -1118,16 +1210,108 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                 <button
                   type="button"
                   onClick={() => setAspireCheckFilter('concluidos')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
                     aspireCheckFilter === 'concluidos' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
                   }`}
                 >
-                  ✓ Lotes Prontos (Avançados: {aspireCounts.concluidos})
+                  ✓ Lotes Prontos ({aspireCounts.concluidos})
                 </button>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Mobile Cards (telas pequenas) */}
+            <div className="md:hidden divide-y divide-slate-100 dark:divide-white/5 p-2 space-y-2">
+              {displayedAspire.length === 0 ? (
+                <div className="py-8 text-center text-slate-400">
+                  {aspireCheckFilter === 'pendentes' ? (
+                    <div className="flex flex-col items-center gap-1.5 py-4">
+                      <CheckCircle2 size={32} className="text-emerald-500 opacity-80" />
+                      <p className="font-bold text-slate-800 dark:text-slate-200 text-xs">🎉 Nenhum lote pendente no Aspire!</p>
+                      <p className="text-[11px] text-slate-500">Todos os arquivos que você deu OK já avançaram para a 3. Fila Router (.TXT).</p>
+                    </div>
+                  ) : 'Nenhum arquivo vetorial (.eps / .dxf) encontrado para este filtro.'}
+                </div>
+              ) : (
+                displayedAspire.map((f, idx) => {
+                  const key = getFileKey(f);
+                  const isChecked = isAspireDone(f);
+                  return (
+                    <div
+                      key={key || idx}
+                      className={`p-2.5 rounded-xl border transition-all ${
+                        isChecked
+                          ? 'bg-emerald-500/[0.04] dark:bg-emerald-500/[0.07] border-emerald-500/30'
+                          : 'bg-white dark:bg-white/[0.02] border-slate-200 dark:border-white/5'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => toggleFileCheck(f, 'aspire')}
+                          className={`w-7 h-7 mt-0.5 rounded-lg flex items-center justify-center shrink-0 transition-all ${
+                            isChecked
+                              ? 'bg-emerald-500 text-white shadow-sm ring-2 ring-emerald-500/20'
+                              : 'border-2 border-slate-300 dark:border-white/20 text-transparent hover:border-emerald-500'
+                          }`}
+                          title={isChecked ? 'Clique para desmarcar' : 'Dar OK (Lote Aspire Salvo)'}
+                        >
+                          <Check size={14} className="stroke-[3]" />
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`px-1.5 py-0.2 rounded text-[9px] font-black border ${getExtBadgeClass(f.ext)}`}>
+                              {f.ext}
+                            </span>
+                            <p className={`font-bold text-xs truncate max-w-[200px] ${
+                              isChecked ? 'line-through text-emerald-700 dark:text-emerald-300 opacity-80' : 'text-slate-900 dark:text-white'
+                            }`}>
+                              {f.name}
+                            </p>
+                          </div>
+                          <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                            {f.subfolderName || 'Geral'} {f.jobName ? `· ${f.jobName}` : ''}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                            {renderMaterialBadge(f.matInfo?.tag) || (
+                              <span className="text-[10px] text-slate-400 italic">Identificando</span>
+                            )}
+                            {f.chapasCount > 0 ? (
+                              <span className="font-black text-emerald-400 text-[10px] bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
+                                {f.chapasCount} chapas
+                              </span>
+                            ) : f.hasCrv ? (
+                              <span className="font-bold text-sky-400 text-[10px] bg-sky-500/10 px-1.5 py-0.2 rounded border border-sky-500/20">
+                                .CRV3D Salvo
+                              </span>
+                            ) : null}
+                            {isChecked ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                                <Check size={10} className="stroke-[3]" />
+                                Lote Salvo
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                                Abrir no Aspire
+                              </span>
+                            )}
+                            <button
+                              onClick={() => handleCopy(f.fullPath)}
+                              className="ml-auto px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-white/5 hover:bg-sky-500 hover:text-white transition-all inline-flex items-center gap-1 text-slate-500"
+                            >
+                              {copiedPath === f.fullPath ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} />}
+                              <span>{copiedPath === f.fullPath ? 'OK' : 'Copiar'}</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Desktop Table (telas médias e grandes) */}
+            <div className="overflow-x-auto hidden md:block">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-text-muted uppercase text-[9px] font-black tracking-wider border-b border-slate-200 dark:border-white/5">
                   <tr>
@@ -1261,39 +1445,39 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         {/* TAB 3: PRONTO PARA ROUTER (CHAPAS G-CODE LIBERADAS) */}
         {activeTab === 'fila_router' && (
           <div className="bg-white dark:bg-white/[0.03] rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm">
-            <div className="p-3 bg-orange-500/5 border-b border-slate-200 dark:border-white/5 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2 flex-wrap">
+            <div className="p-2 sm:p-3 bg-orange-500/5 border-b border-slate-200 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                  Fila Router: G-Codes (.TXT)
+                  Fila Router (.TXT)
                 </span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-500 border border-amber-500/25 flex items-center gap-1">
                   <Clock size={11} />
-                  Duração Total da Fila: {formatHm(displayedGcodes.reduce((sum, f) => {
+                  Fila: {formatHm(displayedGcodes.reduce((sum, f) => {
                     const qty = f.matInfo?.targetQuantity || (((f.subfolderName || '').toLowerCase().includes('topo isopor colunas') || (f.name || '').toLowerCase().includes('topo isopor colunas')) ? 14 : 1);
                     const est = f.estimatedMinutes || (f.cutMeters ? Math.max(1, Math.round((f.cutMeters * 1000 / 1800) * 1.15)) : (f.name?.toLowerCase().includes('isopor') ? 90 : 0));
                     return sum + (est * qty);
-                  }, 0))} ({displayedGcodes.length} arquivos)
+                  }, 0))} ({displayedGcodes.length} arqs)
                 </span>
-                <p className="text-xs text-slate-600 dark:text-slate-300">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">
                   ⚡ <strong>Baixa Automática:</strong> Conforme os arquivos rodam nas Routers (Mach3), o sistema detecta a conclusão automaticamente sem precisar de OK manual.
                 </p>
               </div>
 
               {/* Filtros rápidos do checklist */}
-              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-white/5 p-1 rounded-lg">
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-lg overflow-x-auto no-scrollbar flex-nowrap w-full sm:w-auto">
                 <button
                   type="button"
                   onClick={() => setRouterCheckFilter('pendentes')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
                     routerCheckFilter === 'pendentes' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
                   }`}
                 >
-                  ⏳ Fila da Máquina ({routerCounts.pendentes})
+                  ⏳ Fila ({routerCounts.pendentes})
                 </button>
                 <button
                   type="button"
                   onClick={() => setRouterCheckFilter('todos')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
                     routerCheckFilter === 'todos' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
                   }`}
                 >
@@ -1302,34 +1486,185 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                 <button
                   type="button"
                   onClick={() => setRouterCheckFilter('concluidos')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
                     routerCheckFilter === 'concluidos' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
                   }`}
                 >
-                  ✓ Usinados (Avançados: {routerCounts.concluidos})
+                  ✓ Usinados ({routerCounts.concluidos})
                 </button>
               </div>
             </div>
 
             {/* Banner de status ativo quando houver máquina cortando agora */}
             {runningGcodes.length > 0 && (
-              <div className="mx-3 my-2.5 p-2.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2.5 w-2.5">
+              <div className="mx-2 sm:mx-3 my-2 sm:my-2.5 p-2 sm:p-2.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="relative flex h-2.5 w-2.5 shrink-0">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
                   </span>
-                  <span className="text-xs font-black text-cyan-400 uppercase tracking-wider">
-                    {runningGcodes.length === 1 ? '⚡ 1 Router Trabalhando Agora' : `⚡ ${runningGcodes.length} Routers Trabalhando Agora`}:
+                  <span className="text-xs font-black text-cyan-400 uppercase tracking-wider shrink-0">
+                    {runningGcodes.length === 1 ? '⚡ 1 Router Trabalhando' : `⚡ ${runningGcodes.length} Routers Trabalhando`}:
                   </span>
-                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
                     {runningGcodes.map(r => `${r.runningMachine || 'Router'}: ${r.name}`).join(' | ')}
                   </span>
                 </div>
               </div>
             )}
 
-            <div className="overflow-x-auto">
+            {/* Mobile Cards (telas pequenas) */}
+            <div className="md:hidden divide-y divide-slate-100 dark:divide-white/5 p-2 space-y-2">
+              {displayedGcodes.length === 0 ? (
+                <div className="py-8 text-center text-slate-400">
+                  {routerCheckFilter === 'pendentes' ? (
+                    <div className="flex flex-col items-center gap-1.5 py-4">
+                      <CheckCircle2 size={32} className="text-emerald-500 opacity-80" />
+                      <p className="font-bold text-slate-800 dark:text-slate-200 text-xs">🎉 Fila de corte zerada!</p>
+                      <p className="text-[11px] text-slate-500">Todas as chapas foram usinadas ou marcadas como OK.</p>
+                    </div>
+                  ) : 'Nenhum arquivo G-code (.txt) encontrado para este filtro.'}
+                </div>
+              ) : (
+                displayedGcodes.map((f, idx) => {
+                  const key = getFileKey(f);
+                  const isChecked = isFileDone(f);
+                  const targetQty = f.targetQuantity || f.matInfo?.targetQuantity || (((f.subfolderName || '').toLowerCase().includes('topo isopor colunas') || (f.name || '').toLowerCase().includes('topo isopor colunas')) ? 14 : 1);
+                  const isBatch = targetQty > 1;
+                  const completedExecs = f.completedExecsCount ?? f.execCount ?? 0;
+                  const singleDur = f.estimatedMinutes || (f.cutMeters ? Math.max(1, Math.round((f.cutMeters * 1000 / 1800) * 1.15)) : (f.name?.toLowerCase().includes('isopor') ? 90 : 0));
+
+                  return (
+                    <div
+                      key={key || idx}
+                      className={`p-2.5 rounded-xl border transition-all ${
+                        f.isCurrentlyRunning
+                          ? 'bg-cyan-500/[0.08] border-cyan-500/50 shadow-sm'
+                          : isChecked
+                          ? 'bg-emerald-500/[0.04] dark:bg-emerald-500/[0.07] border-emerald-500/30'
+                          : 'bg-white dark:bg-white/[0.02] border-slate-200 dark:border-white/5'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => toggleFileCheck(f, 'router')}
+                          className={`w-7 h-7 mt-0.5 rounded-lg flex items-center justify-center shrink-0 transition-all ${
+                            f.isCurrentlyRunning
+                              ? 'bg-cyan-500 text-white animate-pulse'
+                              : isChecked
+                              ? 'bg-emerald-500 text-white shadow-sm ring-2 ring-emerald-500/20'
+                              : 'border-2 border-slate-300 dark:border-white/20 text-transparent hover:border-emerald-500'
+                          }`}
+                          title={isChecked ? 'Clique para desmarcar' : 'Dar OK (Concluído)'}
+                        >
+                          <Check size={14} className="stroke-[3]" />
+                        </button>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`px-1.5 py-0.2 rounded text-[9px] font-black border ${getExtBadgeClass(f.ext)}`}>
+                              {f.ext}
+                            </span>
+                            <p className={`font-black text-xs truncate max-w-[200px] ${
+                              isChecked ? 'line-through text-emerald-700 dark:text-emerald-300 opacity-80' : 'text-slate-900 dark:text-white'
+                            }`}>
+                              {f.name}
+                            </p>
+                          </div>
+
+                          <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                            {f.subfolderName || 'Geral'} {f.jobName ? `· ${f.jobName}` : ''}
+                          </p>
+
+                          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                            {renderMaterialBadge(f.matInfo?.tag) || (
+                              <span className="text-[10px] text-slate-400 italic">Identificando</span>
+                            )}
+
+                            {/* Botão de Lote */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBatchModalFile(f);
+                                setBatchQtyInput(targetQty);
+                              }}
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-black flex items-center gap-1 transition-all ${
+                                isBatch
+                                  ? isChecked
+                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                    : completedExecs > 0
+                                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                                    : 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                                  : 'bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-orange-400'
+                              }`}
+                              title="Configurar Lote"
+                            >
+                              <Layers size={10} />
+                              <span>{isBatch ? `${completedExecs}/${targetQty} Peças` : '1x (Lote)'}</span>
+                            </button>
+
+                            {singleDur > 0 && (
+                              <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
+                                <Clock size={10} />
+                                <span>~{formatHm(singleDur)}{isBatch && targetQty > 1 ? ` (total ${formatHm(singleDur * targetQty)})` : ''}</span>
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2 mt-2 pt-1.5 border-t border-slate-100 dark:border-white/5">
+                            <div>
+                              {f.isCurrentlyRunning ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 animate-pulse">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+                                  ⚡ Cortando ({f.runningMachine || 'Mach3'})
+                                </span>
+                              ) : isChecked ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                                  <Check size={10} className="stroke-[3]" />
+                                  {isBatch ? `Concluído (${targetQty}/${targetQty})` : 'OK (Usinado)'}
+                                </span>
+                              ) : isBatch ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                  {completedExecs === 0 ? `Pendente (0/${targetQty})` : `${completedExecs}/${targetQty} Usinados`}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-orange-500/10 text-orange-500 border border-orange-500/20">
+                                  Pronto p/ Usinar
+                                </span>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(f.fullPath)}
+                              className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-white/5 hover:bg-orange-500 hover:text-white transition-all inline-flex items-center gap-1 text-slate-500"
+                              title="Copiar caminho"
+                            >
+                              {copiedPath === f.fullPath ? (
+                                <>
+                                  <Check size={10} className="text-emerald-400" />
+                                  <span>OK</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy size={10} />
+                                  <span>Copiar</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Desktop Table (telas médias e grandes) */}
+            <div className="overflow-x-auto hidden md:block">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-text-muted uppercase text-[9px] font-black tracking-wider border-b border-slate-200 dark:border-white/5">
                   <tr>
@@ -1520,7 +1855,63 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         {/* TAB 4: JÁ FEITO (HISTÓRICO DE USINAGEM) */}
         {activeTab === 'concluidos' && (
           <div className="bg-white dark:bg-white/[0.03] rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
+            {/* Mobile Cards (telas pequenas) */}
+            <div className="md:hidden divide-y divide-slate-100 dark:divide-white/5 p-2 space-y-2">
+              {filteredDone.length === 0 ? (
+                <div className="py-8 text-center text-slate-400 text-xs">
+                  Nenhum arquivo executado encontrado.
+                </div>
+              ) : (
+                filteredDone.map((d, idx) => (
+                  <div key={idx} className="p-2.5 rounded-xl border border-slate-200 dark:border-white/5 bg-white dark:bg-white/[0.02] space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1 truncate">
+                          <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+                          <span className="truncate">{d.name}</span>
+                        </p>
+                        <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                          {d.subfolderName || d.jobName}
+                        </p>
+                      </div>
+                      <span className="font-black text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                        {d.execCount}x
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
+                      {renderMaterialBadge(d.matInfo?.tag)}
+                      <span className="px-1.5 py-0.2 rounded font-bold bg-white/10 text-slate-200 border border-white/10">
+                        {d.lastExec?.router_name || 'Router'}
+                      </span>
+                      <span className="capitalize font-semibold text-orange-500">
+                        {d.lastExec?.operator_name || getCurrentShiftOperator()}
+                      </span>
+                      <span className="font-mono font-bold text-slate-300">
+                        {Math.round(d.totalDurationMinutes || 0)} min
+                      </span>
+                      <span className="text-slate-400 text-[9px]">
+                        {formatDate(d.lastExec?.start_time)}
+                      </span>
+                    </div>
+
+                    <div className="pt-1 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => toggleFileCheck(d, 'router')}
+                        className="px-2 py-1 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-500 dark:text-amber-400 border border-amber-500/30 text-[10px] font-bold inline-flex items-center gap-1 transition-all"
+                      >
+                        <RotateCcw size={11} />
+                        <span>Devolver p/ Fila</span>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Desktop Table (telas médias e grandes) */}
+            <div className="overflow-x-auto hidden md:block">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-text-muted uppercase text-[9px] font-black tracking-wider border-b border-slate-200 dark:border-white/5">
                   <tr>
@@ -1679,8 +2070,8 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
 
       {/* Modal de Configuração de Lote em Massa */}
       {batchModalFile && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#18181b] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 max-w-md w-full overflow-hidden p-6 space-y-5 animate-in zoom-in-95">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#18181b] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 max-w-md w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 animate-in zoom-in-95">
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">

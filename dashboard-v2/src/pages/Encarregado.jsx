@@ -157,7 +157,7 @@ export function Encarregado({ jobs = [], routers = [], user = null }) {
       </aside>
 
       {/* Conteúdo */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-8">
+      <main className={`flex-1 overflow-y-auto ${activeTab === 'pipeline_arquivos' ? 'p-1 sm:p-3 md:p-6' : 'p-2 sm:p-4 md:p-8'}`}>
         <Suspense fallback={
           <div className="h-64 flex items-center justify-center text-xs font-bold uppercase tracking-widest text-orange-400">
             Carregando módulo do encarregado...
