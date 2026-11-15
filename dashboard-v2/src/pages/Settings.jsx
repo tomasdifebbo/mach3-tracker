@@ -21,10 +21,15 @@ import {
   Bell,
   BellRing,
   BellOff,
-  Building2
+  Building2,
+  Palette,
+  Type,
+  Check,
+  Sliders
 } from 'lucide-react';
 import { api, API_URL } from '../services/api';
 import { pushService } from '../services/pushService';
+import { applyTheme, THEME_PRESETS, FONT_COLOR_PRESETS } from '../utils/themeUtils';
 
 import { SubscriptionPlans } from '../components/SubscriptionPlans';
 import { ManagePaymentModal } from '../components/ManagePaymentModal';
@@ -47,7 +52,12 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
   const [jobsData, setJobsData] = useState([]);
   const [routersCount, setRoutersCount] = useState(0);
   const [companyLogo, setCompanyLogo] = useState(user?.company_logo || localStorage.getItem('mach3_company_logo') || '');
-  const [theme, setTheme] = useState(user?.theme || localStorage.getItem('mach3_theme') || 'Escuro');
+  const [theme, setTheme] = useState(() => localStorage.getItem('mach3_theme') || user?.theme || 'Escuro');
+  const [customBgColor, setCustomBgColor] = useState(() => localStorage.getItem('mach3_custom_bg_color') || '#0a0e1a');
+  const [customAccentColor, setCustomAccentColor] = useState(() => localStorage.getItem('mach3_custom_accent_color') || '#06b6d4');
+  const [fontColorMode, setFontColorMode] = useState(() => localStorage.getItem('mach3_font_color_mode') || 'auto');
+  const [customFontColor, setCustomFontColor] = useState(() => localStorage.getItem('mach3_custom_font_color') || '#ffffff');
+  const [themeFeedback, setThemeFeedback] = useState(null);
   const [dailyReport, setDailyReport] = useState(user?.daily_report !== undefined ? user.daily_report : (localStorage.getItem('mach3_daily_report') !== 'false'));
   const [idleAlert, setIdleAlert] = useState(user?.idle_alert !== undefined ? user.idle_alert : (localStorage.getItem('mach3_idle_alert') !== 'false'));
   const [weeklyReport, setWeeklyReport] = useState(user?.weekly_report !== undefined ? user.weekly_report : (localStorage.getItem('mach3_weekly_report') === 'true'));
@@ -334,18 +344,77 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
     }
   };
 
-  const handleThemeChange = async (newTheme) => {
+  const handleThemeChange = async (newTheme, newCustomColors = null, newFontConfig = null) => {
     setTheme(newTheme);
     localStorage.setItem('mach3_theme', newTheme);
-    const themeKey = newTheme.toLowerCase().includes('claro') 
-      ? 'claro' 
-      : (newTheme.toLowerCase().includes('azul') ? 'azul' : 'escuro');
-    document.documentElement.setAttribute('data-theme', themeKey);
+
+    const colors = newCustomColors || {
+      bg: customBgColor,
+      accent: customAccentColor
+    };
+    const font = newFontConfig || {
+      mode: fontColorMode,
+      customColor: customFontColor
+    };
+
+    applyTheme(newTheme, colors, font);
+
+    setThemeFeedback('✓ Tema aplicado e salvo com sucesso!');
+    setTimeout(() => setThemeFeedback(null), 3000);
+
     try {
-      await api.saveReportSettings({ theme: newTheme });
+      await api.saveReportSettings({ 
+        theme: newTheme,
+        custom_theme_config: JSON.stringify({ ...colors, font }) 
+      });
       if (onRefresh) onRefresh();
     } catch (err) {
-      console.error("Erro ao salvar tema:", err);
+      console.warn("Erro ao salvar tema:", err);
+    }
+  };
+
+  const handleFontModeChange = async (mode, color = null) => {
+    setFontColorMode(mode);
+    localStorage.setItem('mach3_font_color_mode', mode);
+    if (color) {
+      setCustomFontColor(color);
+      localStorage.setItem('mach3_custom_font_color', color);
+    }
+
+    const fontConfig = {
+      mode,
+      customColor: color || customFontColor
+    };
+
+    applyTheme(theme, { bg: customBgColor, accent: customAccentColor }, fontConfig);
+
+    setThemeFeedback('✓ Cor da fonte atualizada!');
+    setTimeout(() => setThemeFeedback(null), 3000);
+
+    try {
+      await api.saveReportSettings({
+        theme,
+        custom_theme_config: JSON.stringify({
+          bg: customBgColor,
+          accent: customAccentColor,
+          font: fontConfig
+        })
+      });
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.warn("Erro ao salvar preferência de fonte:", err);
+    }
+  };
+
+  const handleCustomColorChange = (type, val) => {
+    if (type === 'bg') {
+      setCustomBgColor(val);
+      localStorage.setItem('mach3_custom_bg_color', val);
+      applyTheme('Personalizado', { bg: val, accent: customAccentColor }, { mode: fontColorMode, customColor: customFontColor });
+    } else if (type === 'accent') {
+      setCustomAccentColor(val);
+      localStorage.setItem('mach3_custom_accent_color', val);
+      applyTheme('Personalizado', { bg: customBgColor, accent: val }, { mode: fontColorMode, customColor: customFontColor });
     }
   };
 
@@ -585,58 +654,276 @@ export function Settings({ user, onRefresh, isTrialExpired }) {
               </div>
             </div>
 
-            {/* 4. Company Personalization */}
-            <div className="glass p-8 rounded-[32px] space-y-6">
-              <h4 className="text-xl font-bold text-white">Personalização da Empresa</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* 4. Company Personalization & Theme Colors */}
+            <div className="glass p-6 sm:p-8 rounded-[32px] space-y-7">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-4">
                 <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="text-xs text-text-muted font-bold uppercase tracking-wider">Logo da Empresa</label>
-                    {companyLogo && (
-                      <button
-                        type="button"
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setCompanyLogo('');
-                          localStorage.removeItem('mach3_company_logo');
-                          await api.saveReportSettings({ company_logo: '' }).catch(() => {});
-                          if (onRefresh) onRefresh();
-                        }}
-                        className="text-[10px] font-bold text-red-400 hover:text-red-300 underline cursor-pointer"
-                      >
-                        Restaurar Logo Padrão
-                      </button>
-                    )}
+                  <h4 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Palette size={22} className="text-accent-cyan" />
+                    <span>Personalização da Empresa</span>
+                  </h4>
+                  <p className="text-xs text-text-muted mt-1">
+                    Defina a identidade visual, logo, paleta de cores e contraste das letras para todas as telas
+                  </p>
+                </div>
+                {themeFeedback && (
+                  <div className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center gap-1.5 animate-in fade-in">
+                    <Check size={14} className="stroke-[3]" />
+                    <span>{themeFeedback}</span>
                   </div>
-                  <label className="border-2 border-dashed border-white/10 hover:border-accent-cyan/50 bg-white/5 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all min-h-[140px] group relative">
-                    <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
-                    <img 
-                      src={companyLogo || '/favicon.svg'} 
-                      alt="Logo Ativa" 
-                      onError={(e) => { e.currentTarget.src = '/favicon.svg'; }}
-                      className="max-h-20 object-contain p-1 transition-transform group-hover:scale-105" 
-                    />
-                    <span className="text-[11px] font-semibold text-text-muted group-hover:text-accent-cyan transition-colors text-center">
-                      {companyLogo ? 'Logo do cliente ativa — Clique para alterar imagem' : 'Logo padrão ativa — Clique para enviar a logo da sua empresa'}
-                    </span>
+                )}
+              </div>
+
+              {/* Logo da Empresa */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-text-muted font-bold uppercase tracking-wider flex items-center gap-2">
+                    <Building2 size={14} className="text-accent-cyan" />
+                    <span>Logo da Empresa</span>
                   </label>
+                  {companyLogo && (
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setCompanyLogo('');
+                        localStorage.removeItem('mach3_company_logo');
+                        await api.saveReportSettings({ company_logo: '' }).catch(() => {});
+                        if (onRefresh) onRefresh();
+                      }}
+                      className="text-[10px] font-bold text-red-400 hover:text-red-300 underline cursor-pointer"
+                    >
+                      Restaurar Logo Padrão
+                    </button>
+                  )}
                 </div>
-                <div>
-                  <label className="text-xs text-text-muted font-bold block mb-3 uppercase tracking-wider">Tema do Sistema</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {['Escuro', 'Claro', 'Azul Corporativo'].map(t => (
-                      <div 
-                        key={t}
-                        onClick={() => handleThemeChange(t)}
-                        className={`p-4 rounded-xl border text-center cursor-pointer transition-all ${theme === t ? 'bg-accent-cyan/10 border-accent-cyan text-white' : 'bg-white/5 border-white/5 text-text-muted hover:border-white/20'}`}
+                <label className="border-2 border-dashed border-white/10 hover:border-accent-cyan/50 bg-white/5 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all min-h-[140px] group relative">
+                  <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                  <img 
+                    src={companyLogo || '/favicon.svg'} 
+                    alt="Logo Ativa" 
+                    onError={(e) => { e.currentTarget.src = '/favicon.svg'; }}
+                    className="max-h-20 object-contain p-1 transition-transform group-hover:scale-105" 
+                  />
+                  <span className="text-[11px] font-semibold text-text-muted group-hover:text-accent-cyan transition-colors text-center">
+                    {companyLogo ? 'Logo do cliente ativa — Clique para alterar imagem' : 'Logo padrão ativa — Clique para enviar a logo da sua empresa'}
+                  </span>
+                </label>
+              </div>
+
+              {/* Tema do Sistema (Personalização por Cor) */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-text-muted font-bold uppercase tracking-wider flex items-center gap-2">
+                    <Palette size={14} className="text-accent-cyan" />
+                    <span>Tema do Sistema & Paleta de Cores</span>
+                  </label>
+                  <span className="text-[10px] font-bold text-accent-cyan bg-accent-cyan/10 px-2.5 py-0.5 rounded-full border border-accent-cyan/25">
+                    Ativo: {theme}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                  {THEME_PRESETS.map(preset => {
+                    const isSelected = theme === preset.id;
+                    return (
+                      <div
+                        key={preset.id}
+                        onClick={() => handleThemeChange(preset.id)}
+                        className={`p-3 rounded-2xl border transition-all cursor-pointer relative flex flex-col justify-between gap-2 ${
+                          isSelected
+                            ? 'bg-accent-cyan/15 border-accent-cyan text-white shadow-lg shadow-accent-cyan/10 ring-2 ring-accent-cyan/30'
+                            : 'bg-white/5 border-white/5 text-text-muted hover:border-white/20 hover:text-white'
+                        }`}
                       >
-                        <div className={`w-full h-8 rounded-lg mb-2 ${t === 'Escuro' ? 'bg-zinc-900' : t === 'Claro' ? 'bg-gray-100' : 'bg-blue-900'}`}></div>
-                        <span className="text-xs font-bold">{t}</span>
+                        <div className="space-y-1.5">
+                          {/* Mini visual preview */}
+                          <div
+                            className={`w-full h-8 rounded-xl p-1 flex items-center justify-between border ${preset.previewBadge}`}
+                            style={{ backgroundColor: preset.bg }}
+                          >
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: preset.accent }} />
+                            <div className="h-1.5 w-7 rounded-full bg-white/20" />
+                          </div>
+                          <p className="text-xs font-black truncate">{preset.label}</p>
+                        </div>
+                        <p className="text-[10px] text-text-muted line-clamp-2 leading-tight">
+                          {preset.desc}
+                        </p>
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-accent-cyan text-black flex items-center justify-center">
+                            <Check size={10} className="stroke-[3]" />
+                          </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
+
+                {/* Seletor Avançado quando 'Personalizado' estiver selecionado */}
+                {theme === 'Personalizado' && (
+                  <div className="p-4 rounded-2xl bg-white/[0.03] border border-orange-500/30 space-y-4 animate-in fade-in">
+                    <div className="flex items-center gap-2">
+                      <Sliders size={15} className="text-orange-400" />
+                      <h5 className="text-xs font-black uppercase tracking-wider text-orange-400">
+                        Configurar Cores Personalizadas da Marca
+                      </h5>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Cor de Fundo Principal */}
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-300">
+                          Cor de Fundo Principal:
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="color"
+                            value={customBgColor}
+                            onChange={(e) => handleCustomColorChange('bg', e.target.value)}
+                            className="w-10 h-10 rounded-xl cursor-pointer bg-transparent border border-white/20"
+                          />
+                          <input
+                            type="text"
+                            value={customBgColor}
+                            onChange={(e) => handleCustomColorChange('bg', e.target.value)}
+                            className="flex-1 px-3 py-2 text-xs font-mono font-bold rounded-xl bg-white/5 border border-white/10 text-white"
+                          />
+                        </div>
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <span className="text-[10px] text-text-muted">Sugestões:</span>
+                          {['#0a0e1a', '#061121', '#0b1329', '#0d1117', '#121212', '#18181b'].map(c => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => handleCustomColorChange('bg', c)}
+                              className="w-5 h-5 rounded-md border border-white/20 cursor-pointer transition-transform hover:scale-110"
+                              style={{ backgroundColor: c }}
+                              title={c}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Cor de Destaque / Accent */}
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-300">
+                          Cor de Destaque (Botões, Ícones, Bordas):
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="color"
+                            value={customAccentColor}
+                            onChange={(e) => handleCustomColorChange('accent', e.target.value)}
+                            className="w-10 h-10 rounded-xl cursor-pointer bg-transparent border border-white/20"
+                          />
+                          <input
+                            type="text"
+                            value={customAccentColor}
+                            onChange={(e) => handleCustomColorChange('accent', e.target.value)}
+                            className="flex-1 px-3 py-2 text-xs font-mono font-bold rounded-xl bg-white/5 border border-white/10 text-white"
+                          />
+                        </div>
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <span className="text-[10px] text-text-muted">Sugestões:</span>
+                          {['#f97316', '#06b6d4', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#eab308'].map(c => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => handleCustomColorChange('accent', c)}
+                              className="w-5 h-5 rounded-md border border-white/20 cursor-pointer transition-transform hover:scale-110"
+                              style={{ backgroundColor: c }}
+                              title={c}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Cor da Fonte / Tipografia (Opcional) */}
+              <div className="space-y-3 pt-2 border-t border-white/5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-xs text-text-muted font-bold uppercase tracking-wider flex items-center gap-2">
+                      <Type size={14} className="text-accent-cyan" />
+                      <span>Cor da Fonte / Letras (Opcional)</span>
+                    </label>
+                    <p className="text-[11px] text-text-muted mt-0.5">
+                      Garante que nenhuma letra seja apagada e oferece opções de alto contraste para oficinas
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold text-accent-cyan bg-accent-cyan/10 px-2.5 py-0.5 rounded-full border border-accent-cyan/25">
+                    Modo: {FONT_COLOR_PRESETS.find(f => f.id === fontColorMode)?.label || fontColorMode}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                  {FONT_COLOR_PRESETS.map(preset => {
+                    const isSelected = fontColorMode === preset.id;
+                    return (
+                      <div
+                        key={preset.id}
+                        onClick={() => handleFontModeChange(preset.id)}
+                        className={`p-3 rounded-2xl border transition-all cursor-pointer relative flex flex-col justify-between gap-2 ${
+                          isSelected
+                            ? 'bg-accent-cyan/15 border-accent-cyan text-white shadow-lg shadow-accent-cyan/10 ring-2 ring-accent-cyan/30'
+                            : 'bg-white/5 border-white/5 text-text-muted hover:border-white/20 hover:text-white'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span
+                              className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0"
+                              style={{ backgroundColor: preset.colorPreview }}
+                            />
+                            <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded bg-white/10">
+                              {preset.badgeText}
+                            </span>
+                          </div>
+                          <p className="text-xs font-black truncate">{preset.label}</p>
+                        </div>
+
+                        <p className="text-[10px] text-text-muted line-clamp-2 leading-tight">
+                          {preset.desc}
+                        </p>
+
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-accent-cyan text-black flex items-center justify-center">
+                            <Check size={10} className="stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Seletor Livre quando a Cor da Fonte for 'Personalizada' */}
+                {fontColorMode === 'custom' && (
+                  <div className="p-4 rounded-2xl bg-white/[0.03] border border-cyan-500/30 space-y-3 animate-in fade-in">
+                    <label className="block text-xs font-bold text-slate-300">
+                      Escolha a Cor Exata das Letras (Hexadecimal):
+                    </label>
+                    <div className="flex items-center gap-3 max-w-xs">
+                      <input
+                        type="color"
+                        value={customFontColor}
+                        onChange={(e) => handleFontModeChange('custom', e.target.value)}
+                        className="w-10 h-10 rounded-xl cursor-pointer bg-transparent border border-white/20"
+                      />
+                      <input
+                        type="text"
+                        value={customFontColor}
+                        onChange={(e) => handleFontModeChange('custom', e.target.value)}
+                        placeholder="#ffffff"
+                        className="flex-1 px-3 py-2 text-xs font-mono font-bold rounded-xl bg-white/5 border border-white/10 text-white"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

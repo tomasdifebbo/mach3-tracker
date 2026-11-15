@@ -5,6 +5,7 @@ import { api } from './services/api';
 import { lazyNamed } from './utils/lazyNamed';
 import { HeadsUpNotification } from './components/HeadsUpNotification';
 import { pushService } from './services/pushService';
+import { applyTheme } from './utils/themeUtils';
 
 // Lazy-loaded pages & heavy modals (Vite code-splitting)
 const Dashboard = lazyNamed(() => import('./pages/Dashboard'), 'Dashboard');
@@ -186,9 +187,9 @@ function App() {
   // Sync System Theme
   useEffect(() => {
     const savedTheme = localStorage.getItem('mach3_theme') || user?.theme || 'Escuro';
-    const t = savedTheme.toLowerCase();
-    const themeKey = t.includes('claro') ? 'claro' : (t.includes('azul') ? 'azul' : 'escuro');
-    document.documentElement.setAttribute('data-theme', themeKey);
+    applyTheme(savedTheme);
+
+
   }, [user?.theme]);
 
   // Handle Admin Portal Route (/admin)

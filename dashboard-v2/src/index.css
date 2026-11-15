@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="escuro"], [data-theme="azul"], [data-theme="verde"], [data-theme="roxo"], [data-theme="personalizado"], .dark, .dark *));
+
 @theme {
   --color-bg-main: #0a0e1a;
   --color-bg-sidebar: #0f1524;
@@ -256,6 +258,132 @@
   background-color: rgba(10, 25, 47, 0.75) !important;
   border-color: rgba(59, 130, 246, 0.25) !important;
   box-shadow: 0 4px 25px -2px rgba(6, 182, 212, 0.08);
+}
+
+[data-theme="verde"] {
+  --color-bg-main: #041810;
+  --color-bg-sidebar: #062418;
+  --color-bg-card: rgba(6, 36, 24, 0.8);
+  --color-border: rgba(16, 185, 129, 0.3);
+  --color-accent-cyan: #10b981;
+  --color-accent-blue: #059669;
+  color-scheme: dark;
+}
+
+[data-theme="verde"] body {
+  background-color: #041810 !important;
+  color: #ecfdf5 !important;
+}
+
+[data-theme="verde"] .glass {
+  background-color: rgba(6, 36, 24, 0.8) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  box-shadow: 0 4px 25px -2px rgba(16, 185, 129, 0.1);
+}
+
+[data-theme="roxo"] {
+  --color-bg-main: #0e081e;
+  --color-bg-sidebar: #150d2c;
+  --color-bg-card: rgba(21, 13, 44, 0.8);
+  --color-border: rgba(168, 85, 247, 0.3);
+  --color-accent-cyan: #a855f7;
+  --color-accent-blue: #8b5cf6;
+  color-scheme: dark;
+}
+
+[data-theme="roxo"] body {
+  background-color: #0e081e !important;
+  color: #faf5ff !important;
+}
+
+[data-theme="roxo"] .glass {
+  background-color: rgba(21, 13, 44, 0.8) !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
+  box-shadow: 0 4px 25px -2px rgba(168, 85, 247, 0.1);
+}
+
+[data-theme="personalizado"] {
+  color-scheme: dark;
+}
+
+[data-theme="personalizado"] body {
+  background-color: var(--color-bg-main, #0a0e1a) !important;
+  color: var(--color-text-main, #f1f5f9) !important;
+}
+
+[data-theme="personalizado"] .glass {
+  background-color: var(--color-bg-card, rgba(15, 21, 36, 0.75)) !important;
+  border-color: var(--color-border, rgba(65, 84, 126, 0.3)) !important;
+}
+
+/* HIGH-CONTRAST SAFEGUARDS: Ensure text on dark themes NEVER becomes black / invisible */
+[data-theme="escuro"]:not(.claro) :not(input):not(select):not(textarea):not([class*="bg-white"]):not([class*="bg-slate-100"]):not([class*="bg-gray-100"]) > .text-slate-900,
+[data-theme="azul"]:not(.claro) :not(input):not(select):not(textarea):not([class*="bg-white"]):not([class*="bg-slate-100"]):not([class*="bg-gray-100"]) > .text-slate-900,
+[data-theme="verde"]:not(.claro) :not(input):not(select):not(textarea):not([class*="bg-white"]):not([class*="bg-slate-100"]):not([class*="bg-gray-100"]) > .text-slate-900,
+[data-theme="roxo"]:not(.claro) :not(input):not(select):not(textarea):not([class*="bg-white"]):not([class*="bg-slate-100"]):not([class*="bg-gray-100"]) > .text-slate-900,
+[data-theme="personalizado"]:not(.claro) :not(input):not(select):not(textarea):not([class*="bg-white"]):not([class*="bg-slate-100"]):not([class*="bg-gray-100"]) > .text-slate-900,
+html.dark :not(input):not(select):not(textarea):not([class*="bg-white"]):not([class*="bg-slate-100"]):not([class*="bg-gray-100"]) > .text-slate-900 {
+  color: #f1f5f9;
+}
+
+[data-theme="escuro"]:not(.claro) :not(input):not(select):not(textarea):not([class*="bg-white"]):not([class*="bg-slate-100"]):not([class*="bg-gray-100"]) > .text-slate-800,
+[data-theme="azul"]:not(.claro) :not(input):not(select):not(textarea):not([class*="bg-white"]):not([class*="bg-slate-100"]):not([class*="bg-gray-100"]) > .text-slate-800,
+[data-theme="verde"]:not(.claro) :not(input):not(select):not(textarea):not([class*="bg-white"]):not([class*="bg-slate-100"]):not([class*="bg-gray-100"]) > .text-slate-800,
+[data-theme="roxo"]:not(.claro) :not(input):not(select):not(textarea):not([class*="bg-white"]):not([class*="bg-slate-100"]):not([class*="bg-gray-100"]) > .text-slate-800,
+[data-theme="personalizado"]:not(.claro) :not(input):not(select):not(textarea):not([class*="bg-white"]):not([class*="bg-slate-100"]):not([class*="bg-gray-100"]) > .text-slate-800,
+html.dark :not(input):not(select):not(textarea):not([class*="bg-white"]):not([class*="bg-slate-100"]):not([class*="bg-gray-100"]) > .text-slate-800 {
+  color: #e2e8f0;
+}
+
+/* OPTIONAL FONT COLOR CUSTOMIZATION MODES */
+[data-font-mode="white"] h1,
+[data-font-mode="white"] h2,
+[data-font-mode="white"] h3,
+[data-font-mode="white"] h4,
+[data-font-mode="white"] h5,
+[data-font-mode="white"] .font-bold:not([class*="text-amber"]):not([class*="text-emerald"]):not([class*="text-orange"]):not([class*="text-cyan"]):not([class*="text-red"]):not([class*="text-blue"]):not([class*="text-purple"]),
+[data-font-mode="white"] .font-black:not([class*="text-amber"]):not([class*="text-emerald"]):not([class*="text-orange"]):not([class*="text-cyan"]):not([class*="text-red"]):not([class*="text-blue"]):not([class*="text-purple"]) {
+  color: #ffffff !important;
+}
+
+[data-font-mode="amber"] h1,
+[data-font-mode="amber"] h2,
+[data-font-mode="amber"] h3,
+[data-font-mode="amber"] h4,
+[data-font-mode="amber"] h5,
+[data-font-mode="amber"] .font-bold:not([class*="text-emerald"]):not([class*="text-orange"]):not([class*="text-cyan"]):not([class*="text-red"]),
+[data-font-mode="amber"] .font-black:not([class*="text-emerald"]):not([class*="text-orange"]):not([class*="text-cyan"]):not([class*="text-red"]) {
+  color: #fef08a !important;
+}
+
+[data-font-mode="cyan"] h1,
+[data-font-mode="cyan"] h2,
+[data-font-mode="cyan"] h3,
+[data-font-mode="cyan"] h4,
+[data-font-mode="cyan"] h5,
+[data-font-mode="cyan"] .font-bold:not([class*="text-amber"]):not([class*="text-emerald"]):not([class*="text-orange"]):not([class*="text-red"]),
+[data-font-mode="cyan"] .font-black:not([class*="text-amber"]):not([class*="text-emerald"]):not([class*="text-orange"]):not([class*="text-red"]) {
+  color: #67e8f9 !important;
+}
+
+[data-font-mode="green"] h1,
+[data-font-mode="green"] h2,
+[data-font-mode="green"] h3,
+[data-font-mode="green"] h4,
+[data-font-mode="green"] h5,
+[data-font-mode="green"] .font-bold:not([class*="text-amber"]):not([class*="text-orange"]):not([class*="text-cyan"]):not([class*="text-red"]),
+[data-font-mode="green"] .font-black:not([class*="text-amber"]):not([class*="text-orange"]):not([class*="text-cyan"]):not([class*="text-red"]) {
+  color: #86efac !important;
+}
+
+[data-font-mode="custom"] h1,
+[data-font-mode="custom"] h2,
+[data-font-mode="custom"] h3,
+[data-font-mode="custom"] h4,
+[data-font-mode="custom"] h5,
+[data-font-mode="custom"] .font-bold:not([class*="text-amber"]):not([class*="text-emerald"]):not([class*="text-orange"]):not([class*="text-cyan"]):not([class*="text-red"]):not([class*="text-blue"]):not([class*="text-purple"]),
+[data-font-mode="custom"] .font-black:not([class*="text-amber"]):not([class*="text-emerald"]):not([class*="text-orange"]):not([class*="text-cyan"]):not([class*="text-red"]):not([class*="text-blue"]):not([class*="text-purple"]) {
+  color: var(--user-font-color, #ffffff) !important;
 }
 
 @layer base {
