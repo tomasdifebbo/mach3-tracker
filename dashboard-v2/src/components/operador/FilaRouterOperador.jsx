@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  X, Printer, ClipboardList, CheckSquare, Square, Share2, Check,
+  X, Printer, Copy, ClipboardList, CheckSquare, Square, Share2, Check,
   Clock, Layers, Cpu, Wrench, AlertCircle, Sparkles, Filter, ChevronDown,
   RefreshCw, Flame, ListOrdered, Play, Maximize2, FileText, Search, Disc
 } from 'lucide-react';
@@ -45,6 +45,21 @@ export function FilaRouterOperador({
   const [searchTerm, setSearchTerm] = useState('');
   const [assignedMachines, setAssignedMachines] = useState('Router 1 e Router 2');
   const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(null);
+
+  const handleCopyPath = (task) => {
+    let p = task.fullPath || task.fullFile?.fullPath || task.fullFile?.path || '';
+    if (!p) {
+      const sub = task.subfolder && task.subfolder !== 'Raiz' ? `\\${task.subfolder}` : '';
+      p = `E:\\arquivos 2024\\ARQUIVOS 2026\\router\\${task.jobName}${sub}\\${task.baseName || task.name}`;
+    }
+    const winPath = p.replace(/\//g, '\\');
+    navigator.clipboard.writeText(winPath);
+    setCopiedKey(task.id);
+    setTimeout(() => {
+      setCopiedKey(null);
+    }, 2500);
+  };
   const [togglingKey, setTogglingKey] = useState(null);
 
   // Carrega e sincroniza arquivos concluídos do banco
@@ -293,7 +308,8 @@ export function FilaRouterOperador({
               dimensions: dim,
               operator: operatorName,
               mtime: f.mtimeDate,
-              fullFile: f
+              fullFile: f,
+              fullPath: f.fullPath
             });
           }
         } else {
@@ -317,7 +333,8 @@ export function FilaRouterOperador({
             dimensions: dim,
             operator: operatorName,
             mtime: f.mtimeDate,
-            fullFile: f
+            fullFile: f,
+            fullPath: f.fullPath
           });
         }
       });
@@ -1033,7 +1050,7 @@ export function FilaRouterOperador({
                         <th className="py-2.5 px-3">Etapa</th>
                         <th className="py-2.5 px-3">Material</th>
                         <th className="py-2.5 px-3">Duração do Corte</th>
-                        <th className="py-2.5 px-3">Apontamento Máquina</th>
+                        <th className="py-2.5 px-3">COPIAR CAMINHO</th>
                         <th className="py-2.5 px-3 text-right">Operador</th>
                       </tr>
                     </thead>
@@ -1130,21 +1147,36 @@ export function FilaRouterOperador({
                               )}
                             </td>
 
-                            {/* Coluna 6: Apontamento Máquina */}
-                            <td className="py-2.5 px-3 font-mono text-[11px]">
-                              {isRunningState ? (
-                                <span className="text-orange-500 font-black animate-pulse flex items-center gap-1">
-                                  <Play size={10} fill="currentColor" /> RODANDO EM MÁQUINA
-                                </span>
-                              ) : isDoneState ? (
-                                <span className="text-emerald-500 font-bold flex items-center gap-1">
-                                  <Check size={12} /> EXECUTADO
-                                </span>
-                              ) : (
-                                <span className="text-slate-400">
-                                  Máq: ______ · Início: ___:___ Fim: ___:___
-                                </span>
-                              )}
+                            {/* Coluna 6: Copiar Caminho */}
+                            <td className="py-2.5 px-3">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {isRunningState && (
+                                  <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 font-black text-[10px] animate-pulse flex items-center gap-1">
+                                    <Play size={9} fill="currentColor" /> RODANDO
+                                  </span>
+                                )}
+                                <button
+                                  onClick={() => handleCopyPath(t)}
+                                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95 ${
+                                    copiedKey === t.id
+                                      ? 'bg-emerald-500 text-white border border-emerald-600'
+                                      : 'bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-orange-500 hover:text-orange-500 hover:bg-orange-500/10'
+                                  }`}
+                                  title="Clique para copiar o caminho do arquivo para o Mach3 ou Windows Explorer"
+                                >
+                                  {copiedKey === t.id ? (
+                                    <>
+                                      <Check size={13} className="text-white" />
+                                      <span>Caminho Copiado!</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy size={13} />
+                                      <span>Copiar Caminho</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
                             </td>
 
                             {/* Coluna 7: Operador */}

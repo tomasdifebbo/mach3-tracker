@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
-  X, Printer, ClipboardList, CheckSquare, Square, Share2, Check,
+  X, Printer, Copy, Play, ClipboardList, CheckSquare, Square, Share2, Check,
   Clock, Layers, Cpu, Wrench, AlertCircle, Sparkles, Filter, ChevronDown
 } from 'lucide-react';
 import { isFileMarkedOk } from '../utils/fileChecklistUtils';
@@ -40,6 +40,21 @@ export function FichaTecnicaPipelineModal({
   const [assignedMachines, setAssignedMachines] = useState('Router 1 e Router 2');
   const [notes, setNotes] = useState('Verificar fixação na mesa a vácuo/parafusos, conferir zeramento em Z na base e sentido do veio do material.');
   const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(null);
+
+  const handleCopyPath = (task) => {
+    let p = task.fullPath || task.fullFile?.fullPath || task.fullFile?.path || '';
+    if (!p) {
+      const sub = task.subfolder && task.subfolder !== 'Raiz' ? `\\${task.subfolder}` : '';
+      p = `E:\\arquivos 2024\\ARQUIVOS 2026\\router\\${task.jobName}${sub}\\${task.baseName || task.name}`;
+    }
+    const winPath = p.replace(/\//g, '\\');
+    navigator.clipboard.writeText(winPath);
+    setCopiedKey(task.id);
+    setTimeout(() => {
+      setCopiedKey(null);
+    }, 2500);
+  };
 
   // Sincroniza initialJob se abrir para um job específico e atualiza operador conforme o turno (pós-22h = brenno)
   React.useEffect(() => {
@@ -226,7 +241,9 @@ export function FichaTecnicaPipelineModal({
               cutMeters: f.cutMeters || null,
               dimensions: dim,
               operator: operatorName,
-              mtime: f.mtimeDate
+              mtime: f.mtimeDate,
+              fullFile: f,
+              fullPath: f.fullPath
             });
           }
         } else {
@@ -249,7 +266,9 @@ export function FichaTecnicaPipelineModal({
             cutMeters: f.cutMeters || null,
             dimensions: dim,
             operator: operatorName,
-            mtime: f.mtimeDate
+            mtime: f.mtimeDate,
+            fullFile: f,
+            fullPath: f.fullPath
           });
         }
       });
@@ -850,7 +869,7 @@ export function FichaTecnicaPipelineModal({
                           <th className="py-2 px-3">Etapa</th>
                           <th className="py-2 px-3">Material</th>
                           <th className="py-2 px-3">Duração do Corte</th>
-                          <th className="py-2 px-3">Apontamento Máquina</th>
+                          <th className="py-2 px-3">COPIAR CAMINHO</th>
                           <th className="py-2 px-3 text-right">Operador</th>
                         </tr>
                       </thead>
@@ -917,14 +936,35 @@ export function FichaTecnicaPipelineModal({
                                   <span className="text-slate-400">-</span>
                                 )}
                               </td>
-                              <td className="py-2 px-3 font-mono text-[11px] text-slate-400">
-                                {isRunning ? (
-                                  <span className="text-orange-500 font-bold">RODANDO EM MÁQUINA</span>
-                                ) : isDone ? (
-                                  <span className="text-emerald-500 font-bold">EXECUTADO</span>
-                                ) : (
-                                  <span>Máq: ______ · Início: ___:___ Fim: ___:___</span>
-                                )}
+                              <td className="py-2 px-3">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {isRunning && (
+                                    <span className="px-2 py-0.5 rounded bg-amber-500/15 text-amber-500 font-black text-[10px] animate-pulse flex items-center gap-1">
+                                      <Play size={9} fill="currentColor" /> RODANDO
+                                    </span>
+                                  )}
+                                  <button
+                                    onClick={() => handleCopyPath(t)}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95 ${
+                                      copiedKey === t.id
+                                        ? 'bg-emerald-500 text-white border border-emerald-600'
+                                        : 'bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-orange-500 hover:text-orange-500 hover:bg-orange-500/10'
+                                    }`}
+                                    title="Clique para copiar o caminho do arquivo para o Mach3 ou Windows Explorer"
+                                  >
+                                    {copiedKey === t.id ? (
+                                      <>
+                                        <Check size={13} className="text-white" />
+                                        <span>Caminho Copiado!</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Copy size={13} />
+                                        <span>Copiar Caminho</span>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
                               </td>
                               <td className="py-2 px-3 text-right font-medium text-slate-700 dark:text-slate-300">
                                 {t.operator || operatorName}
