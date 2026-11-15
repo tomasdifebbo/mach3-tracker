@@ -640,20 +640,20 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         {/* KPI 1 - Corel .CDR Mestre */}
         <div 
           onClick={() => setActiveTab('preparar')}
-          className={`py-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between min-w-0 ${
+          className={`py-2.5 px-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between min-w-0 hover:scale-[1.01] active:scale-[0.99] ${
             activeTab === 'preparar'
-              ? 'bg-amber-500/15 border-amber-500/60 shadow-sm'
-              : 'bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/5 hover:border-amber-500/40'
+              ? 'bg-gradient-to-br from-amber-500/20 via-amber-500/5 to-transparent border-amber-500/60 shadow-md shadow-amber-500/10 ring-1 ring-amber-500/30'
+              : 'bg-white dark:bg-white/[0.03] border-slate-200/80 dark:border-white/5 hover:border-amber-500/40'
           }`}
         >
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500 truncate">1. Corel (.CDR)</p>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-xl font-black text-slate-900 dark:text-white leading-none">{summary.totalCadPreparar}</span>
+              <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-none tracking-tight">{summary.totalCadPreparar}</span>
               <span className="text-[11px] text-slate-500 whitespace-nowrap">desenhos</span>
             </div>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 ml-2">
+          <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 ml-2 shadow-inner">
             <Sparkles size={16} />
           </div>
         </div>
@@ -661,20 +661,20 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         {/* KPI 2 - Preparação Aspire (.EPS / .DXF) */}
         <div 
           onClick={() => setActiveTab('aspire')}
-          className={`py-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between min-w-0 ${
+          className={`py-2.5 px-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between min-w-0 hover:scale-[1.01] active:scale-[0.99] ${
             activeTab === 'aspire'
-              ? 'bg-sky-500/15 border-sky-500/60 shadow-sm'
-              : 'bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/5 hover:border-sky-500/40'
+              ? 'bg-gradient-to-br from-sky-500/20 via-sky-500/5 to-transparent border-sky-500/60 shadow-md shadow-sky-500/10 ring-1 ring-sky-500/30'
+              : 'bg-white dark:bg-white/[0.03] border-slate-200/80 dark:border-white/5 hover:border-sky-500/40'
           }`}
         >
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-wider text-sky-400 truncate">2. Aspire CAM</p>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-xl font-black text-slate-900 dark:text-white leading-none">{summary.totalAspirePreparar || filteredAspire.length}</span>
+              <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-none tracking-tight">{summary.totalAspirePreparar || filteredAspire.length}</span>
               <span className="text-[11px] text-slate-500 whitespace-nowrap">vetores CAM</span>
             </div>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0 ml-2">
+          <div className="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0 ml-2 shadow-inner">
             <Compass size={16} />
           </div>
         </div>
@@ -682,20 +682,20 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         {/* KPI 3 - Pronto Router (Chapas Liberadas) */}
         <div 
           onClick={() => setActiveTab('fila_router')}
-          className={`py-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between min-w-0 ${
+          className={`py-2.5 px-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between min-w-0 hover:scale-[1.01] active:scale-[0.99] ${
             activeTab === 'fila_router'
-              ? 'bg-orange-500/15 border-orange-500/60 shadow-sm'
-              : 'bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/5 hover:border-orange-500/40'
+              ? 'bg-gradient-to-br from-orange-500/20 via-orange-500/5 to-transparent border-orange-500/60 shadow-md shadow-orange-500/10 ring-1 ring-orange-500/30'
+              : 'bg-white dark:bg-white/[0.03] border-slate-200/80 dark:border-white/5 hover:border-orange-500/40'
           }`}
         >
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-wider text-orange-500 truncate">3. Chapas na Fila</p>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-xl font-black text-slate-900 dark:text-white leading-none">{summary.totalGcodePronto}</span>
+              <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-none tracking-tight">{summary.totalGcodePronto}</span>
               <span className="text-[11px] text-slate-500 whitespace-nowrap">G-Codes</span>
             </div>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0 ml-2">
+          <div className="w-8 h-8 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0 ml-2 shadow-inner">
             <Cpu size={16} />
           </div>
         </div>
@@ -703,20 +703,20 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         {/* KPI 4 - Já Feito */}
         <div 
           onClick={() => setActiveTab('concluidos')}
-          className={`py-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between min-w-0 ${
+          className={`py-2.5 px-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between min-w-0 hover:scale-[1.01] active:scale-[0.99] ${
             activeTab === 'concluidos'
-              ? 'bg-emerald-500/15 border-emerald-500/60 shadow-sm'
-              : 'bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/5 hover:border-emerald-500/40'
+              ? 'bg-gradient-to-br from-emerald-500/20 via-emerald-500/5 to-transparent border-emerald-500/60 shadow-md shadow-emerald-500/10 ring-1 ring-emerald-500/30'
+              : 'bg-white dark:bg-white/[0.03] border-slate-200/80 dark:border-white/5 hover:border-emerald-500/40'
           }`}
         >
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 truncate">4. Já Usinado</p>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-xl font-black text-slate-900 dark:text-white leading-none">{summary.totalConcluidos}</span>
+              <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-none tracking-tight">{summary.totalConcluidos}</span>
               <span className="text-[11px] text-slate-500 whitespace-nowrap">execuções</span>
             </div>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 ml-2">
+          <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 ml-2 shadow-inner">
             <CheckCircle2 size={16} />
           </div>
         </div>
@@ -724,86 +724,116 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         {/* KPI 5 - Lotes Seriados */}
         <div 
           onClick={() => setActiveTab('lotes')}
-          className={`py-2 px-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between min-w-0 col-span-2 sm:col-span-2 lg:col-span-1 ${
+          className={`py-2.5 px-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between min-w-0 col-span-2 sm:col-span-2 lg:col-span-1 hover:scale-[1.01] active:scale-[0.99] ${
             activeTab === 'lotes'
-              ? 'bg-violet-500/15 border-violet-500/60 shadow-sm'
-              : 'bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/5 hover:border-violet-500/40'
+              ? 'bg-gradient-to-br from-violet-500/20 via-violet-500/5 to-transparent border-violet-500/60 shadow-md shadow-violet-500/10 ring-1 ring-violet-500/30'
+              : 'bg-white dark:bg-white/[0.03] border-slate-200/80 dark:border-white/5 hover:border-violet-500/40'
           }`}
         >
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-wider text-violet-400 truncate">5. Lotes Seriados</p>
             <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="text-xl font-black text-slate-900 dark:text-white leading-none">{specialBatches.length}</span>
+              <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-none tracking-tight">{specialBatches.length}</span>
               <span className="text-[11px] text-slate-500 whitespace-nowrap">metas ativas</span>
             </div>
           </div>
-          <div className="w-8 h-8 rounded-lg bg-violet-500/20 text-violet-400 flex items-center justify-center shrink-0 ml-2">
+          <div className="w-8 h-8 rounded-xl bg-violet-500/20 text-violet-400 flex items-center justify-center shrink-0 ml-2 shadow-inner">
             <Award size={16} />
           </div>
         </div>
       </div>
 
-      {/* Tabs & Filter Bar */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5 bg-white dark:bg-white/[0.02] p-2 sm:p-2.5 rounded-xl border border-slate-200 dark:border-white/5 shrink-0 shadow-sm">
-        {/* Horizontal Tabs with clean scroll and no clipped text */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 xl:pb-0 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-white/10 shrink-0">
-          {[
-            { id: 'fila_router', label: '3. Fila Router (.TXT)', shortLabel: '3. Fila Router', icon: Cpu, count: routerCounts.pendentes, total: routerCounts.total },
-            { id: 'lotes', label: 'Lotes Seriados', shortLabel: 'Lotes Seriados', icon: Award, count: specialBatches.length },
-            { id: 'aspire', label: '2. Materiais Aspire (.EPS / .DXF)', shortLabel: '2. Aspire (.EPS)', icon: Compass, count: aspireCounts.pendentes, total: aspireCounts.total },
-            { id: 'preparar', label: '1. Corel (.CDR)', shortLabel: '1. Corel (.CDR)', icon: Sparkles, count: cadCounts.pendentes, total: cadCounts.total },
-            { id: 'concluidos', label: '4. Já Feito (Histórico)', shortLabel: '4. Já Feito', icon: CheckCircle2, count: pipelineData?.gcodeFeitos?.length || summary.totalConcluidos },
-            { id: 'checklist', label: 'Painel Geral', shortLabel: 'Painel Geral', icon: CheckSquare, count: cadCounts.concluidos + aspireCounts.concluidos + routerCounts.concluidos },
-            { id: 'visao_geral', label: 'Jobs', shortLabel: 'Jobs', icon: FolderCheck, count: allJobs.length }
-          ].map(t => {
-            const Icon = t.icon;
-            const active = activeTab === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab(t.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
-                  active
-                    ? 'bg-orange-500 text-white shadow-sm'
-                    : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-text-muted hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10'
-                }`}
-              >
-                <Icon size={13} className="shrink-0" />
-                <span className="hidden md:inline">{t.label}</span>
-                <span className="md:hidden">{t.shortLabel}</span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-black ${
-                  active ? 'bg-black/25 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300'
-                }`}>
-                  {t.count}
-                </span>
-              </button>
-            );
-          })}
+      {/* Modern Control Bar: Tabs & Search/Filter */}
+      <div className="flex flex-col gap-2.5 bg-white dark:bg-white/[0.03] p-2 sm:p-2.5 rounded-2xl border border-slate-200/80 dark:border-white/5 shrink-0 shadow-sm">
+        {/* Row 1: Segmented Horizontal Tabs */}
+        <div className="relative w-full">
+          <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 px-0.5 w-full scrollbar-none snap-x snap-mandatory">
+            {[
+              { id: 'fila_router', label: '3. Fila Router (.TXT)', shortLabel: 'Router (.TXT)', icon: Cpu, count: routerCounts.pendentes, total: routerCounts.total },
+              { id: 'lotes', label: 'Lotes Seriados', shortLabel: 'Lotes Seriados', icon: Award, count: specialBatches.length },
+              { id: 'aspire', label: '2. Materiais Aspire (.EPS)', shortLabel: 'Aspire (.EPS)', icon: Compass, count: aspireCounts.pendentes, total: aspireCounts.total },
+              { id: 'preparar', label: '1. Corel (.CDR)', shortLabel: 'Corel (.CDR)', icon: Sparkles, count: cadCounts.pendentes, total: cadCounts.total },
+              { id: 'concluidos', label: '4. Já Feito (Histórico)', shortLabel: 'Histórico', icon: CheckCircle2, count: pipelineData?.gcodeFeitos?.length || summary.totalConcluidos },
+              { id: 'checklist', label: 'Painel Geral', shortLabel: 'Painel Geral', icon: CheckSquare, count: cadCounts.concluidos + aspireCounts.concluidos + routerCounts.concluidos },
+              { id: 'visao_geral', label: 'Visão por Jobs', shortLabel: 'Jobs', icon: FolderCheck, count: allJobs.length }
+            ].map(t => {
+              const Icon = t.icon;
+              const active = activeTab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setActiveTab(t.id)}
+                  className={`snap-start flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+                    active
+                      ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/25 ring-1 ring-white/20'
+                      : 'bg-slate-100/90 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-white/[0.08] border border-slate-200/60 dark:border-white/[0.06]'
+                  }`}
+                >
+                  <Icon size={13} className={`shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
+                  <span className="hidden sm:inline">{t.label}</span>
+                  <span className="sm:hidden">{t.shortLabel}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black font-mono transition-colors ${
+                    active ? 'bg-black/25 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300'
+                  }`}>
+                    {t.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-2 w-full xl:w-auto xl:min-w-[380px] shrink-0">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={13} />
+        {/* Row 2: Sleek Search & Job Selector */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1 border-t border-slate-100 dark:border-white/5">
+          {/* Search Box with Clear Button */}
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" size={14} />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar arquivo, O.S., material..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-all placeholder:text-slate-400"
+              className="w-full pl-9 pr-8 py-2 text-xs rounded-xl bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30 transition-all"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white p-0.5 rounded-md hover:bg-slate-200 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                title="Limpar busca"
+              >
+                <X size={13} />
+              </button>
+            )}
           </div>
 
-          <select
-            value={selectedJob}
-            onChange={(e) => setSelectedJob(e.target.value)}
-            className="px-3 py-1.5 text-xs rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-orange-500 transition-all cursor-pointer min-w-[130px] shrink-0"
-          >
-            <option value="todos">Todos Serviços</option>
-            {uniqueJobNames.map(j => (
-              <option key={j} value={j}>{j}</option>
-            ))}
-          </select>
+          {/* Job Filter Selector */}
+          <div className="flex items-center gap-2 shrink-0">
+            <select
+              value={selectedJob}
+              onChange={(e) => setSelectedJob(e.target.value)}
+              className="w-full sm:w-60 px-3 py-2 text-xs rounded-xl bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30 transition-all cursor-pointer truncate"
+            >
+              <option value="todos">Todos Serviços ({uniqueJobNames.length})</option>
+              {uniqueJobNames.map(j => (
+                <option key={j} value={j}>{j}</option>
+              ))}
+            </select>
+
+            {(searchTerm || selectedJob !== 'todos') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedJob('todos');
+                }}
+                className="px-2.5 py-2 text-xs font-bold text-orange-500 hover:text-orange-600 dark:text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 rounded-xl transition-all cursor-pointer whitespace-nowrap shrink-0"
+                title="Limpar todos os filtros"
+              >
+                Limpar
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
