@@ -1,6 +1,6 @@
 {
   "status": "online",
-  "last_scan_time": "23:41:37",
+  "last_scan_time": "09:38:04",
   "total_projects": 12,
   "active_config": {
     "source_dir": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos",
@@ -18,19 +18,19 @@
       "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\ROUTER\\2640  - EXPRESSO HOGWARTS CCXP",
       "dest_exists": true,
       "status": "atualizacao",
-      "total_files": 215,
-      "new_files_count": 26,
-      "missing_local_count": 24,
-      "total_bytes": 937568314,
-      "new_bytes": 42892978,
+      "total_files": 223,
+      "new_files_count": 2,
+      "missing_local_count": 0,
+      "total_bytes": 948821850,
+      "new_bytes": 7372940,
       "categories": [
         "IMPRESSÃO 3D",
         "MANUAL",
         "ROUTER"
       ],
-      "latest_mtime": 1794687905.0,
-      "latest_date_str": "14/11/2026 17:25",
-      "last_copied_at": "14/11/2026 22:47:27",
+      "latest_mtime": 1794741967.0,
+      "latest_date_str": "15/11/2026 08:26",
+      "last_copied_at": "15/11/2026 09:38:01",
       "ignored": false,
       "files": [
         {
@@ -887,8 +887,8 @@
           "size": 402237,
           "mtime": 1794435036.9927366,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -931,8 +931,8 @@
           "size": 795678,
           "mtime": 1793640046.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1008,8 +1008,8 @@
           "size": 594267,
           "mtime": 1794340455.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1019,8 +1019,8 @@
           "size": 7623,
           "mtime": 1794340414.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1470,8 +1470,8 @@
           "size": 1692234,
           "mtime": 1794518108.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1481,8 +1481,8 @@
           "size": 1615691,
           "mtime": 1794518640.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1492,8 +1492,8 @@
           "size": 1043875,
           "mtime": 1794518768.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1503,8 +1503,8 @@
           "size": 997488,
           "mtime": 1794518809.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1514,8 +1514,8 @@
           "size": 714784,
           "mtime": 1794517795.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1525,8 +1525,8 @@
           "size": 5192704,
           "mtime": 1794518120.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1536,8 +1536,8 @@
           "size": 652184,
           "mtime": 1794517813.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1547,8 +1547,8 @@
           "size": 4790784,
           "mtime": 1794518643.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1558,8 +1558,8 @@
           "size": 738284,
           "mtime": 1794517825.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1569,8 +1569,8 @@
           "size": 4358144,
           "mtime": 1794518771.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1580,8 +1580,8 @@
           "size": 729184,
           "mtime": 1794517836.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1591,8 +1591,8 @@
           "size": 5559296,
           "mtime": 1794518813.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -1651,6 +1651,28 @@
           "is_modified": false
         },
         {
+          "rel_path": "ROUTER/GRANDE HALL/ARCOS COLUNAS/ROUTER.ai",
+          "name": "ROUTER.ai",
+          "category": "ROUTER",
+          "size": 122874,
+          "mtime": 1794735263.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/GRANDE HALL/ARCOS COLUNAS/ROUTER.cdr",
+          "name": "ROUTER.cdr",
+          "category": "ROUTER",
+          "size": 653274,
+          "mtime": 1794735397.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
           "rel_path": "ROUTER/GRANDE HALL/ARCOS VITRAL/ROUTER.ai",
           "name": "ROUTER.ai",
           "category": "ROUTER",
@@ -1695,6 +1717,17 @@
           "is_modified": false
         },
         {
+          "rel_path": "ROUTER/GRANDE HALL/COLUNAS.cdr",
+          "name": "COLUNAS.cdr",
+          "category": "ROUTER",
+          "size": 640110,
+          "mtime": 1794741104.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
           "rel_path": "ROUTER/GRANDE HALL/GUIA FERRAGEM ARCOS/Cópia_de_segurança_de_ROUTER.cdr",
           "name": "Cópia_de_segurança_de_ROUTER.cdr",
           "category": "ROUTER",
@@ -1717,11 +1750,55 @@
           "is_modified": false
         },
         {
-          "rel_path": "ROUTER/GRANDE HALL/JANELAS/ROUTER.cdr",
-          "name": "ROUTER.cdr",
+          "rel_path": "ROUTER/GRANDE HALL/ISOPOR COLUNAS/1 pvc100mm b10mm.txt",
+          "name": "1 pvc100mm b10mm.txt",
+          "category": "ROUTER",
+          "size": 947178,
+          "mtime": 1794737495.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/GRANDE HALL/ISOPOR COLUNAS/1.stl",
+          "name": "1.stl",
+          "category": "ROUTER",
+          "size": 2125684,
+          "mtime": 1794737441.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/GRANDE HALL/ISOPOR COLUNAS/1.v3d",
+          "name": "1.v3d",
+          "category": "ROUTER",
+          "size": 5400576,
+          "mtime": 1794737499.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/GRANDE HALL/JANELAS/Cópia_de_segurança_de_ROUTER.cdr",
+          "name": "Cópia_de_segurança_de_ROUTER.cdr",
           "category": "ROUTER",
           "size": 624640,
           "mtime": 1794682139.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/GRANDE HALL/JANELAS/ROUTER.cdr",
+          "name": "ROUTER.cdr",
+          "category": "ROUTER",
+          "size": 624789,
+          "mtime": 1794741197.0,
           "is_cloud": false,
           "exists_local": true,
           "is_new": false,
@@ -1733,6 +1810,17 @@
           "category": "ROUTER",
           "size": 683911,
           "mtime": 1794332570.0,
+          "is_cloud": false,
+          "exists_local": true,
+          "is_new": false,
+          "is_modified": false
+        },
+        {
+          "rel_path": "ROUTER/GRANDE HALL/TEXTURA PAREDE VÁCUO/ROUTER.cdr",
+          "name": "ROUTER.cdr",
+          "category": "ROUTER",
+          "size": 739051,
+          "mtime": 1794741967.0,
           "is_cloud": false,
           "exists_local": true,
           "is_new": false,
@@ -2020,8 +2108,8 @@
           "size": 662742,
           "mtime": 1794162544.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2240,8 +2328,8 @@
           "size": 637948,
           "mtime": 1794033950.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2251,8 +2339,8 @@
           "size": 168810,
           "mtime": 1794033902.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2273,8 +2361,8 @@
           "size": 86444,
           "mtime": 1793277644.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2284,8 +2372,8 @@
           "size": 78526,
           "mtime": 1793289051.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2295,8 +2383,8 @@
           "size": 170172,
           "mtime": 1793279609.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2306,8 +2394,8 @@
           "size": 1128154,
           "mtime": 1793279635.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2317,8 +2405,8 @@
           "size": 2702785,
           "mtime": 1793279629.0,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2406,19 +2494,19 @@
       "oficina_path": "C:\\Users\\Atelier Arte\\Atelier Casa do Trem LTDA\\dados2 - Jobs Ativos\\2675A - HELLO KITTY TOBÔ\\3 - OFICINA",
       "dest_path": "E:\\arquivos 2024\\ARQUIVOS 2026\\ROUTER\\2675A - HELLO KITTY TOBÔ",
       "dest_exists": true,
-      "status": "atualizacao",
+      "status": "sincronizado",
       "total_files": 27,
-      "new_files_count": 25,
-      "missing_local_count": 25,
+      "new_files_count": 0,
+      "missing_local_count": 0,
       "total_bytes": 27880976,
-      "new_bytes": 20281140,
+      "new_bytes": 0,
       "categories": [
         "MANUAL",
         "ROUTER"
       ],
       "latest_mtime": 1794350714.4928768,
       "latest_date_str": "10/11/2026 19:45",
-      "last_copied_at": "10/11/2026 16:56:55",
+      "last_copied_at": "15/11/2026 09:38:03",
       "ignored": false,
       "files": [
         {
@@ -2439,8 +2527,8 @@
           "size": 459551,
           "mtime": 1794350714.3297691,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2450,8 +2538,8 @@
           "size": 455513,
           "mtime": 1794350714.332869,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2461,8 +2549,8 @@
           "size": 348190,
           "mtime": 1794350714.336003,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2472,8 +2560,8 @@
           "size": 340560,
           "mtime": 1794350714.3405447,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2483,8 +2571,8 @@
           "size": 579635,
           "mtime": 1794350714.34574,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2494,8 +2582,8 @@
           "size": 316161,
           "mtime": 1794350714.3496366,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2505,8 +2593,8 @@
           "size": 585213,
           "mtime": 1794350714.3548734,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2516,8 +2604,8 @@
           "size": 427969,
           "mtime": 1794350714.361109,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2527,8 +2615,8 @@
           "size": 892957,
           "mtime": 1794350714.3694613,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2538,8 +2626,8 @@
           "size": 784230,
           "mtime": 1794350714.3762376,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2549,8 +2637,8 @@
           "size": 1767095,
           "mtime": 1794350714.387494,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2560,8 +2648,8 @@
           "size": 1199972,
           "mtime": 1794350680.6395123,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2571,8 +2659,8 @@
           "size": 839927,
           "mtime": 1794350714.3995645,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2582,8 +2670,8 @@
           "size": 1950631,
           "mtime": 1794350714.4115365,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2593,8 +2681,8 @@
           "size": 658850,
           "mtime": 1794350714.4158752,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2604,8 +2692,8 @@
           "size": 936293,
           "mtime": 1794350714.422462,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2615,8 +2703,8 @@
           "size": 427850,
           "mtime": 1794350714.426046,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2626,8 +2714,8 @@
           "size": 1223538,
           "mtime": 1794350714.4345634,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2648,8 +2736,8 @@
           "size": 880516,
           "mtime": 1794350714.4445832,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2659,8 +2747,8 @@
           "size": 545290,
           "mtime": 1794350714.450717,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2670,8 +2758,8 @@
           "size": 1308636,
           "mtime": 1794350714.4616332,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2681,8 +2769,8 @@
           "size": 1038895,
           "mtime": 1794350714.474327,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2692,8 +2780,8 @@
           "size": 854426,
           "mtime": 1794350714.4807398,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2703,8 +2791,8 @@
           "size": 979839,
           "mtime": 1794350714.4892762,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         },
         {
@@ -2714,8 +2802,8 @@
           "size": 479403,
           "mtime": 1794350714.4928768,
           "is_cloud": false,
-          "exists_local": false,
-          "is_new": true,
+          "exists_local": true,
+          "is_new": false,
           "is_modified": false
         }
       ]
@@ -2739,7 +2827,7 @@
       ],
       "latest_mtime": 1793818516.0,
       "latest_date_str": "04/11/2026 15:55",
-      "last_copied_at": "12/11/2026 10:52:50",
+      "last_copied_at": null,
       "ignored": false,
       "files": [
         {
@@ -5759,7 +5847,7 @@
       ],
       "latest_mtime": 1790778333.0,
       "latest_date_str": "30/09/2026 11:25",
-      "last_copied_at": "12/11/2026 10:52:21",
+      "last_copied_at": null,
       "ignored": false,
       "files": [
         {

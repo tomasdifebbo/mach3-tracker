@@ -110,34 +110,23 @@ def _is_ignored_system_folder(folder_name: str, ignored_list: list[str]) -> bool
     return False
 
 
-def _should_skip_file(filename: str) -> bool:
-    low = filename.lower()
-    if low in SKIP_FILENAMES:
-        return True
-    if low.startswith("~$") or low.startswith(".~"):
-        return True
-    if low.endswith(SKIP_SUFFIXES):
-        return True
-    return False
-
-
-def _scan_oficina_files(oficina_path: Path) -> list[dict]:
-    """Scan files inside 3 - OFICINA using scandir metadata only (does NOT trigger OneDrive hydration)."""
+def _scan_oficina_files(oficina_dir: Path) -> list[dict]:
     results = []
-    root_str = str(oficina_path)
+    root_str = str(oficina_dir)
 
-    def _walk(current_dir: str):
+    def _walk(current: str):
         try:
-            with os.scandir(current_dir) as it:
+            with os.scandir(current) as it:
                 for entry in it:
-                    try:
-                        if entry.is_dir(follow_symlinks=False):
-                            _walk(entry.path)
-                        elif entry.is_file(follow_symlinks=False):
-                            if _should_skip_file(entry.name):
-                                continue
-                            st = entry.stat(follow_symlinks=False)
-                            rel = os.path.relpath(entry.path, root_str).replace("\\", "/")
+                    if entry.is_dir(follow_symlinks=False):
+                        _walk(entry.path)
+                    elif entry.is_file(follow_symlinks=False):
+                        name_lower = entry.name.lower()
+                        if name_lower in SKIP_FILENAMES or any(name_lower.endswith(s) for s in SKIP_SUFFIXES):
+                            continue
+                        rel = os.path.relpath(entry.path, root_str).replace("\\", "/")
+                        try:
+                            st = entry.stat()
                             attrs = getattr(st, "st_file_attributes", 0)
                             is_cloud = bool(
                                 attrs & (FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS)
@@ -152,8 +141,8 @@ def _scan_oficina_files(oficina_path: Path) -> list[dict]:
                                     "is_cloud": is_cloud,
                                 }
                             )
-                    except OSError:
-                        continue
+                        except OSError:
+                            continue
         except OSError:
             return
 
@@ -182,11 +171,9 @@ def _resolve_dest_job_dir(dest_dir: Path, job_name: str) -> tuple[Path, bool]:
         return router_direct, True
 
     # 3. Busca por correspondência inteligente (prefixo numérico ou substring do job)
-    # Ex: "2662A - CAPACETE" encontra "2662A - capacete senna" ou "2640" encontra "2640 - entrada"
     code_match = re.match(r"^(\d+[A-Za-z]*)", job_name.strip())
     job_code = code_match.group(1).upper() if code_match else None
 
-    # Procura dentro de dest_dir / "router" e dest_dir
     for search_base in [dest_dir / "router", dest_dir]:
         if not search_base.exists():
             continue
@@ -200,6 +187,51 @@ def _resolve_dest_job_dir(dest_dir: Path, job_name: str) -> tuple[Path, bool]:
                         return Path(entry.path), True
         except OSError:
             pass
+
+    return direct, False
+
+
+def resolve_dest_file_path(dest_job_dir: Path, rel_path: str) -> tuple[Path, bool]:
+    """
+    Localiza o arquivo correspondente dentro da pasta local do job em ARQUIVOS 2026.
+    Retorna (caminho_do_arquivo, existe_no_disco).
+    Procura em:
+    1. Caminho relativo exato: dest_job_dir / rel_path
+    2. Raiz do job: dest_job_dir / filename
+    3. Subpastas comuns da oficina: CNC, cnc, cod, cortes, ROUTER, router, ISOPOR, isopor, etc.
+    4. Subpastas de primeiro nível caso o operador tenha organizado em pastas customizadas
+    Se não existir em nenhum desses, retorna (dest_job_dir / rel_path, False).
+    """
+    direct = dest_job_dir / Path(rel_path)
+    if direct.exists() and direct.is_file():
+        return direct, True
+
+    if not dest_job_dir.exists():
+        return direct, False
+
+    fn = Path(rel_path).name
+
+    # 1. Raiz do job local
+    cand_root = dest_job_dir / fn
+    if cand_root.exists() and cand_root.is_file():
+        return cand_root, True
+
+    # 2. Subpastas comuns da oficina
+    for sub_name in ("CNC", "cnc", "cod", "cortes", "ROUTER", "router", "ISOPOR", "isopor"):
+        cand_sub = dest_job_dir / sub_name / fn
+        if cand_sub.exists() and cand_sub.is_file():
+            return cand_sub, True
+
+    # 3. Subpastas de primeiro nível do projeto
+    try:
+        with os.scandir(dest_job_dir) as it:
+            for entry in it:
+                if entry.is_dir(follow_symlinks=False):
+                    cand_custom = Path(entry.path) / fn
+                    if cand_custom.exists() and cand_custom.is_file():
+                        return cand_custom, True
+    except OSError:
+        pass
 
     return direct, False
 
@@ -265,20 +297,26 @@ class FolderAssistantEngine:
         oficina_path_str = job_info.get("oficina_path")
         src_path_str = job_info.get("source_path")
 
-        # 1. Se temos caminhos relativos de arquivos novos, aponta para a subpasta exata onde eles estão
+        # 1. Se informou arquivos específicos, tenta abrir a subpasta onde eles estão
         if rel_paths:
-            first_rel = next(iter(rel_paths), None)
-            if first_rel:
-                # Se existe no destino local (ARQUIVOS 2026)
-                if dest_path_str and Path(dest_path_str).exists():
-                    cand = (Path(dest_path_str) / Path(first_rel)).parent
-                    if cand.exists():
-                        return str(cand)
-                # Se existe na pasta 3 - OFICINA do OneDrive
-                if oficina_path_str and Path(oficina_path_str).exists():
-                    cand = (Path(oficina_path_str) / Path(first_rel)).parent
-                    if cand.exists():
-                        return str(cand)
+            first_rel = sorted(rel_paths)[0]
+            rel_parent = Path(first_rel).parent
+
+            # Testa primeiro se a subpasta existe na pasta local (ARQUIVOS 2026)
+            if dest_path_str and Path(dest_path_str).exists():
+                dest_base = Path(dest_path_str)
+                cand = dest_base / rel_parent
+                if cand.exists():
+                    return str(cand)
+                # Testa se os arquivos foram salvos direto na raiz local
+                if (dest_base / Path(first_rel).name).exists():
+                    return str(dest_base)
+
+            # Se não existe localmente, abre na pasta de origem (3 - OFICINA)
+            if oficina_path_str and Path(oficina_path_str).exists():
+                cand = Path(oficina_path_str) / rel_parent
+                if cand.exists():
+                    return str(cand)
 
         # 2. Se a pasta de destino local existir, usa ela
         if dest_path_str and Path(dest_path_str).exists():
@@ -343,6 +381,7 @@ class FolderAssistantEngine:
 
             jstate = jobs_state.get(job_name, {})
             copied_set = set(jstate.get("copied_files", []))
+            copied_meta = dict(jstate.get("copied_files_meta", {}))
             ignored_set = set(jstate.get("ignored_files", []))
             is_ignored_job = bool(jstate.get("ignored", False))
 
@@ -351,41 +390,46 @@ class FolderAssistantEngine:
             missing_local_count = 0
             total_bytes = 0
             new_bytes = 0
+            migrated_meta = False
 
             for f in files:
                 rel = f["rel_path"]
                 total_bytes += f["size"]
-                local_file_path = dest_job_dir / Path(rel)
-                exists_local = local_file_path.exists() if dest_exists else False
-
-                # Se não encontrou no caminho relativo original, verifica na raiz do job local ou subpastas comuns
-                if not exists_local and dest_exists:
-                    fn = Path(rel).name
-                    cand = dest_job_dir / fn
-                    if cand.exists():
-                        local_file_path = cand
-                        exists_local = True
-                    else:
-                        for sub_name in ("CNC", "cnc", "cod", "cortes", "ROUTER", "router"):
-                            cand_sub = dest_job_dir / sub_name / fn
-                            if cand_sub.exists():
-                                local_file_path = cand_sub
-                                exists_local = True
-                                break
+                local_file_path, exists_local = (
+                    resolve_dest_file_path(dest_job_dir, rel)
+                    if dest_exists
+                    else (dest_job_dir / Path(rel), False)
+                )
 
                 # Verificação contínua de arquivo novo ou modificado/revisado
+                meta = copied_meta.get(rel)
                 is_modified = False
-                if exists_local:
+
+                if meta:
+                    # Compara com os metadados de quando o arquivo foi copiado (mtime e tamanho da nuvem)
+                    cloud_mtime_diff = f["mtime"] - meta.get("mtime", 0.0)
+                    size_changed = f["size"] != meta.get("size", -1)
+                    if cloud_mtime_diff > 1.0 or size_changed:
+                        is_modified = True
+                elif exists_local:
                     try:
                         st = local_file_path.stat()
-                        # Se na nuvem (OneDrive) o arquivo tem mtime superior ao local (> 5 seg de tolerância)
-                        # e houve alteração de tamanho ou mtime mais recente
-                        if f["mtime"] > (st.st_mtime + 5):
-                            if f["size"] != st.st_size or f["mtime"] > (st.st_mtime + 60):
-                                is_modified = True
+                        # Nuvem tem mtime mais recente que o arquivo local ou tamanho diferente com diferença de mtime
+                        if f["mtime"] > (st.st_mtime + 2.0) or (
+                            f["size"] != st.st_size and abs(f["mtime"] - st.st_mtime) > 2.0
+                        ):
+                            is_modified = True
+                        elif rel in copied_set and not is_modified:
+                            copied_meta[rel] = {
+                                "mtime": f["mtime"],
+                                "size": f["size"],
+                                "copied_at": jstate.get("last_copied_at", "sincronizado"),
+                            }
+                            migrated_meta = True
                     except OSError:
                         pass
-                else:
+
+                if not exists_local:
                     missing_local_count += 1
 
                 # É novo se não existe localmente OU se foi atualizado/modificado na nuvem
@@ -402,6 +446,10 @@ class FolderAssistantEngine:
                         "is_modified": is_modified,
                     }
                 )
+
+            if migrated_meta:
+                jstate["copied_files_meta"] = copied_meta
+                save_state(state)
 
             if len(enriched_files) == 0:
                 status = "aguardando"
@@ -465,7 +513,26 @@ class FolderAssistantEngine:
                         else:
                             detail_str = f"{sample_files[0]}\n(+{len(sample_files)-1} arquivo(s))"
 
-                        if status == "novo":
+                        has_modified_files = any(
+                            f.get("is_modified", False)
+                            for f in enriched_files
+                            if f["rel_path"] in unnotified_rels
+                        )
+
+                        if has_modified_files:
+                            self._notify(
+                                "⚠️ Arquivo Atualizado em 3 - OFICINA!",
+                                f"{job_name}\n🔄 {detail_str}\nArquivo revisado e atualizado na nuvem!",
+                                folder_path=target_folder,
+                                job_name=job_name,
+                            )
+                            add_history_event(
+                                "updated",
+                                job_name,
+                                f"Arquivo(s) atualizado(s)/revisado(s) na pasta 3 - OFICINA ({len(unnotified_rels)} arquivo(s)).",
+                                sorted(unnotified_rels),
+                            )
+                        elif status == "novo":
                             self._notify(
                                 "Novo serviço liberado na Oficina!",
                                 f"{job_name}\n📁 {detail_str}",
@@ -570,7 +637,8 @@ class FolderAssistantEngine:
     def copy_job(self, job_name: str, force_missing: bool = False, triggered_by: str = "manual") -> dict:
         """
         Copies contents of <Job>/3 - OFICINA into <dest_dir>/<Job>.
-        NEVER overwrites files that already exist locally in <dest_dir>/<Job>.
+        Overwrites files only when cloud has newer revisions or force_missing is True.
+        Preserves local operator modifications if cloud was not revised.
         """
         with self._copy_lock:
             cfg = load_config()
@@ -598,31 +666,50 @@ class FolderAssistantEngine:
             state = load_state()
             jstate = state.setdefault("jobs", {}).setdefault(job_name, {})
             copied_set = set(jstate.get("copied_files", []))
+            copied_meta = dict(jstate.get("copied_files_meta", {}))
             ignored_set = set(jstate.get("ignored_files", []))
 
-            to_copy = []
+            to_copy: list[tuple[dict, Path, bool]] = []
             skipped_existing = 0
+
             for f in files:
                 rel = f["rel_path"]
-                dst_file = dest_job_dir / Path(rel)
+                dst_file, exists_local = resolve_dest_file_path(dest_job_dir, rel)
+
+                # Verifica se o arquivo na nuvem é mais recente que a versão copiada
+                meta = copied_meta.get(rel)
                 is_cloud_newer = False
-                if dst_file.exists():
+
+                if meta:
+                    cloud_mtime_diff = f["mtime"] - meta.get("mtime", 0.0)
+                    size_changed = f["size"] != meta.get("size", -1)
+                    if cloud_mtime_diff > 1.0 or size_changed:
+                        is_cloud_newer = True
+                elif exists_local:
                     try:
                         st_local = dst_file.stat()
-                        is_cloud_newer = (f["mtime"] > (st_local.st_mtime + 5)) and (
-                            f["size"] != st_local.st_size or f["mtime"] > (st_local.st_mtime + 60)
-                        )
+                        if f["mtime"] > (st_local.st_mtime + 2.0) or (
+                            f["size"] != st_local.st_size and abs(f["mtime"] - st_local.st_mtime) > 2.0
+                        ):
+                            is_cloud_newer = True
                     except OSError:
                         pass
-                    if not is_cloud_newer:
+
+                if is_cloud_newer:
+                    to_copy.append((f, dst_file, True))
+                elif not exists_local:
+                    if force_missing or (rel not in copied_set and rel not in ignored_set):
+                        to_copy.append((f, dst_file, False))
+                    else:
+                        skipped_existing += 1
+                else:
+                    if force_missing:
+                        to_copy.append((f, dst_file, False))
+                    else:
                         skipped_existing += 1
                         copied_set.add(rel)
-                        continue
-                if force_missing or is_cloud_newer:
-                    to_copy.append(f)
-                else:
-                    if (rel not in copied_set) and (rel not in ignored_set):
-                        to_copy.append(f)
+                        if rel not in copied_meta:
+                            copied_meta[rel] = {"mtime": f["mtime"], "size": f["size"], "copied_at": "synced"}
 
             # Always ensure project folder exists in ARQUIVOS 2026 when user explicitly copies
             dest_job_dir.mkdir(parents=True, exist_ok=True)
@@ -630,11 +717,13 @@ class FolderAssistantEngine:
             if not to_copy:
                 jstate["ignored"] = False
                 jstate["copied_files"] = sorted(copied_set)
+                jstate["copied_files_meta"] = copied_meta
                 save_state(state)
                 self.scan_once(allow_auto_copy=False)
                 return {
                     "ok": True,
                     "copied": 0,
+                    "updated": 0,
                     "skipped_existing": skipped_existing,
                     "message": "Todos os arquivos já existem na pasta local (nenhum arquivo sobrescrito).",
                 }
@@ -649,30 +738,15 @@ class FolderAssistantEngine:
             }
 
             copied_files_now = []
+            updated_files_now = []
             errors = []
+            now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
             try:
-                for idx, f in enumerate(to_copy, start=1):
+                for idx, (f, dst_file, is_update) in enumerate(to_copy, start=1):
                     rel = f["rel_path"]
                     self.copy_status["current_file"] = rel
                     src_file = oficina_dir / Path(rel)
-                    dst_file = dest_job_dir / Path(rel)
-
-                    # Double-check non-overwrite safety right before writing (allows revisions)
-                    is_cloud_newer = False
-                    if dst_file.exists():
-                        try:
-                            st_local = dst_file.stat()
-                            is_cloud_newer = (f["mtime"] > (st_local.st_mtime + 5)) and (
-                                f["size"] != st_local.st_size or f["mtime"] > (st_local.st_mtime + 60)
-                            )
-                        except OSError:
-                            pass
-                        if not is_cloud_newer:
-                            skipped_existing += 1
-                            copied_set.add(rel)
-                            self.copy_status["copied_count"] = idx
-                            continue
 
                     dst_file.parent.mkdir(parents=True, exist_ok=True)
                     tmp_dst = dst_file.with_name(dst_file.name + ".copying_tmp")
@@ -687,20 +761,33 @@ class FolderAssistantEngine:
                             try_patch_gcode_file(
                                 tmp_dst,
                                 target_speed=cfg.get("target_spindle_speed", "18000"),
-                                original_name=dst_file.name
+                                original_name=dst_file.name,
                             )
 
                         try:
                             os.utime(tmp_dst, (f["mtime"], f["mtime"]))
                         except OSError:
                             pass
-                        if dst_file.exists() and not is_cloud_newer:
-                            tmp_dst.unlink(missing_ok=True)
-                            skipped_existing += 1
-                        else:
+
+                        # Substituição atômica ou fallback com sufixo (ATUALIZADO) se travado pelo Mach3
+                        try:
                             tmp_dst.replace(dst_file)
-                            copied_files_now.append(rel)
-                            copied_set.add(rel)
+                        except PermissionError:
+                            ext = dst_file.suffix
+                            stem = dst_file.stem
+                            fallback_dst = dst_file.with_name(f"{stem} (ATUALIZADO){ext}")
+                            tmp_dst.replace(fallback_dst)
+                            errors.append(f"{rel}: Arquivo em uso pelo Mach3/programa; salvo como '{fallback_dst.name}'")
+
+                        copied_files_now.append(rel)
+                        if is_update:
+                            updated_files_now.append(rel)
+                        copied_set.add(rel)
+                        copied_meta[rel] = {
+                            "mtime": f["mtime"],
+                            "size": f["size"],
+                            "copied_at": now_str,
+                        }
                     except Exception as exc:
                         tmp_dst.unlink(missing_ok=True)
                         errors.append(f"{rel}: {exc}")
@@ -710,49 +797,67 @@ class FolderAssistantEngine:
                 self.copy_status["active"] = False
                 self.copy_status["current_file"] = None
 
-            now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
             jstate["ignored"] = False
             jstate["copied_files"] = sorted(copied_set)
+            jstate["copied_files_meta"] = copied_meta
             if copied_files_now:
                 jstate["last_copied_at"] = now_str
             save_state(state)
 
             if copied_files_now:
                 mode_label = "automaticamente" if triggered_by == "auto" else "manualmente"
-                add_history_event(
-                    "copied",
-                    job_name,
-                    f"{len(copied_files_now)} arquivo(s) copiado(s) {mode_label} para ARQUIVOS 2026.",
-                    copied_files_now,
-                )
+                if updated_files_now:
+                    add_history_event(
+                        "copied",
+                        job_name,
+                        f"{len(updated_files_now)} arquivo(s) ATUALIZADO(S) e {len(copied_files_now) - len(updated_files_now)} novo(s) copiado(s) {mode_label} para ARQUIVOS 2026.",
+                        copied_files_now,
+                    )
+                else:
+                    add_history_event(
+                        "copied",
+                        job_name,
+                        f"{len(copied_files_now)} arquivo(s) copiado(s) {mode_label} para ARQUIVOS 2026.",
+                        copied_files_now,
+                    )
+
                 if triggered_by == "auto":
                     dest_target = str(dest_job_dir) if dest_job_dir and dest_job_dir.exists() else None
                     if dest_target and copied_files_now:
                         sub = (dest_job_dir / Path(copied_files_now[0])).parent
                         if sub.exists():
                             dest_target = str(sub)
+                        elif dest_job_dir.exists():
+                            dest_target = str(dest_job_dir)
                     sample = copied_files_now[0] if len(copied_files_now) == 1 else f"{len(copied_files_now)} arquivo(s)"
-                    self._notify(
-                        "Serviço copiado para ARQUIVOS 2026!",
-                        f"{job_name}\n📁 {sample} copiado(s).",
-                        folder_path=dest_target,
-                        job_name=job_name,
-                    )
+                    if updated_files_now:
+                        title = "⚠️ Arquivos atualizados em ARQUIVOS 2026!"
+                        body = f"{job_name}\n🔄 {sample} atualizado(s) com a nova versão da nuvem."
+                    else:
+                        title = "Serviço copiado para ARQUIVOS 2026!"
+                        body = f"{job_name}\n📁 {sample} copiado(s)."
+                    self._notify(title, body, folder_path=dest_target, job_name=job_name)
 
             if errors:
                 add_history_event(
                     "error",
                     job_name,
-                    f"Falha ao copiar {len(errors)} arquivo(s) (verifique sincronização do OneDrive).",
+                    f"Avisos na sincronização de {len(errors)} arquivo(s).",
                     errors,
                 )
 
             self.scan_once(allow_auto_copy=False)
             return {
-                "ok": len(errors) == 0,
+                "ok": len(errors) == 0 or len(copied_files_now) > 0,
                 "copied": len(copied_files_now),
+                "updated": len(updated_files_now),
                 "skipped_existing": skipped_existing,
                 "errors": errors,
+                "message": (
+                    f"{len(copied_files_now)} arquivo(s) processado(s)"
+                    + (f" ({len(updated_files_now)} atualizado(s))" if updated_files_now else "")
+                    + "."
+                ),
                 "dest_path": str(dest_job_dir),
             }
 
@@ -762,7 +867,6 @@ class FolderAssistantEngine:
         jstate["ignored"] = ignored
 
         if ignored:
-            # Snapshot current files so we ignore existing ones, while still catching FUTURE files added later
             job_match = next((j for j in self.jobs_snapshot if j["name"] == job_name), None)
             if job_match:
                 current_rels = {f["rel_path"] for f in job_match["files"]}
@@ -807,7 +911,6 @@ class FolderAssistantEngine:
         return {"ok": True}
 
     def _monitor_loop(self) -> None:
-        # Initial scan without firing Windows toast barrage on startup
         self.scan_once(allow_auto_copy=True)
         while not self._stop_event.is_set():
             cfg = load_config()

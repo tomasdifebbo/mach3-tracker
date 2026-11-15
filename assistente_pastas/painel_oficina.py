@@ -591,6 +591,9 @@ class FolderAssistantApp:
         if st == "novo":
             return f"★ NOVO SERVIÇO ({job['new_files_count']} arq)"
         if st == "atualizacao":
+            has_mod = any(f.get("is_modified") for f in job.get("files", []))
+            if has_mod:
+                return f"⚠️ {job['new_files_count']} ATUALIZAÇÃO(ÕES)"
             return f"★ +{job['new_files_count']} ARQUIVO(S) NOVO(S)"
         if st == "sincronizado":
             return "✓ Na Pasta 2026"
@@ -812,8 +815,13 @@ class FolderAssistantApp:
         def _work():
             res = self.engine.copy_job(jname, force_missing=force_missing, triggered_by="manual")
             if res.get("ok"):
+                cp_cnt = res.get('copied', 0)
+                up_cnt = res.get('updated', 0)
+                sub_txt = f"{cp_cnt} arquivo(s) copiado(s)"
+                if up_cnt > 0:
+                    sub_txt += f" ({up_cnt} atualizado(s))"
                 self.ui_queue.put(
-                    ("msg", ("Cópia Concluída!", f"{jname}: {res.get('copied', 0)} arquivo(s) copiado(s).", False))
+                    ("msg", ("Cópia Concluída!", f"{jname}: {sub_txt}.", False))
                 )
             else:
                 err_txt = res.get("error") or "\n".join(res.get("errors", [])[:5])
