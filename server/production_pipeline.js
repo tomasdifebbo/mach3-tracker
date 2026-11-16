@@ -165,10 +165,10 @@ function extractMaterialInfo(name, folderPath = '') {
     const fn = path.parse(name || '').name.toLowerCase();
     const folder = (folderPath || '').toLowerCase();
     let material = null;
-    if (fn.includes('mdf')) material = 'MDF';
+    if (folder.includes('isopor') || folder.includes('eps') || fn.includes('isopor') || fn.includes('eps')) material = 'Isopor EPS';
+    else if (fn.includes('mdf')) material = 'MDF';
     else if (fn.includes('compensado') || fn.includes('comp ') || fn.includes('cambota')) material = 'Compensado';
     else if (fn.includes('pvc')) material = 'PVC';
-    else if (fn.includes('isopor') || fn.includes('eps') || folder.includes('isopor')) material = 'Isopor EPS';
     else if (fn.includes('acrilico') || fn.includes('acrílico')) material = 'Acrílico';
     else if (fn.includes('ps ') || fn.includes('ps3mm') || fn.includes('ps2mm') || fn.includes('ps1mm')) material = 'PS';
     else if (fn.includes('eva')) material = 'EVA';
@@ -187,11 +187,29 @@ function extractMaterialInfo(name, folderPath = '') {
     const chapaMatch = fn.match(/(?:chapa\s*(\d+)|(\d+)\s*x|parte\s*(\d+)|_(\d+)|(\d+)\s*(?:pvc|mdf|comp))/i);
     const chapaIndex = chapaMatch ? (chapaMatch[1] || chapaMatch[2] || chapaMatch[3] || chapaMatch[4] || chapaMatch[5]) : null;
 
-    // Detecta quantidade de repetições (ex: 4X, 2X, 3X, 14x)
+    // Detecta quantidade de repetições (ex: 4X, 2X, 3X, 14x, rodar 2x)
     let targetQuantity = 1;
-    const qtyMatch = fn.match(/^(\d+)\s*x|\b(\d+)\s*x\b/i);
+    const qtyMatch = fn.match(/^(\d+)\s*x|\b(\d+)\s*x\b/i) || folder.match(/rodar\s*(\d+)\s*x|\b(\d+)\s*x\b/i);
     if (qtyMatch) {
         targetQuantity = parseInt(qtyMatch[1] || qtyMatch[2], 10);
+    }
+
+    if (targetQuantity === 1 && folderPath) {
+        try {
+            const dirToCheck = fs.existsSync(folderPath) && fs.statSync(folderPath).isDirectory()
+                ? folderPath
+                : path.dirname(folderPath);
+            if (fs.existsSync(dirToCheck)) {
+                const entries = fs.readdirSync(dirToCheck);
+                for (const ent of entries) {
+                    const m = ent.match(/^rodar\s*(\d+)\s*x$/i);
+                    if (m) {
+                        targetQuantity = parseInt(m[1], 10);
+                        break;
+                    }
+                }
+            }
+        } catch { /* ignore */ }
     }
 
     return { material, thickness, tag, chapaIndex, targetQuantity };
@@ -654,18 +672,20 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
                 const qty = parseInt(r.target_quantity, 10);
                 const variants = getBaseFileVariants(fn);
                 variants.forEach(v => {
-                    fileBatchesMap[v] = qty;
                     if (sub) {
                         fileBatchesMap[`${v}___${sub}`] = qty;
                         fileBatchesMap[`${sub}/${v}`] = qty;
+                    } else {
+                        fileBatchesMap[v] = qty;
                     }
                 });
                 const cleanBase = getCleanBaseGCodeName(fn);
                 if (cleanBase) {
-                    fileBatchesMap[cleanBase] = qty;
                     if (sub) {
                         fileBatchesMap[`${cleanBase}___${sub}`] = qty;
                         fileBatchesMap[`${sub}/${cleanBase}`] = qty;
+                    } else {
+                        fileBatchesMap[cleanBase] = qty;
                     }
                 }
             }
@@ -684,17 +704,27 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
         const variants = getBaseFileVariants(fileObj.name || '');
         const sub = (subfolderName || fileObj.subfolderName || '').toLowerCase().trim();
         for (const v of variants) {
-            const compoundKey = `${v}___${sub}`;
-            const subSlashKey = `${sub}/${v}`;
-            const q = fileBatchesMap[compoundKey] || fileBatchesMap[subSlashKey] || fileBatchesMap[v];
-            if (q) return q;
+            if (sub) {
+                const compoundKey = `${v}___${sub}`;
+                const subSlashKey = `${sub}/${v}`;
+                const q = fileBatchesMap[compoundKey] || fileBatchesMap[subSlashKey];
+                if (q) return q;
+            } else {
+                const q = fileBatchesMap[v];
+                if (q) return q;
+            }
         }
         const cleanBase = getCleanBaseGCodeName(fileObj.name || '');
         if (cleanBase) {
-            const compoundKey = `${cleanBase}___${sub}`;
-            const subSlashKey = `${sub}/${cleanBase}`;
-            const q = fileBatchesMap[compoundKey] || fileBatchesMap[subSlashKey] || fileBatchesMap[cleanBase];
-            if (q) return q;
+            if (sub) {
+                const compoundKey = `${cleanBase}___${sub}`;
+                const subSlashKey = `${sub}/${cleanBase}`;
+                const q = fileBatchesMap[compoundKey] || fileBatchesMap[subSlashKey];
+                if (q) return q;
+            } else {
+                const q = fileBatchesMap[cleanBase];
+                if (q) return q;
+            }
         }
         const fullKeyWin = (fileObj.fullPath || '').toLowerCase().trim();
         const fullKeyFwd = fullKeyWin.replace(/\\/g, '/');
@@ -1075,9 +1105,28 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
         } catch { /* ignore */ }
     }
 
-    // Helper: normaliza o diretório removendo subpastas técnicas (CNC, cod, etc)
+    // Helper: normaliza o diretório removendo subpastas técnicas (CNC, cod, etc) ou de instrução de lote (RODAR 2x)
     function getNormDir(filePath) {
-        return path.dirname(filePath || '').replace(/[\\/](cod|cnc|gcode|cortes)$/i, '');
+        let d = path.dirname(filePath || '');
+        let prev;
+        do {
+            prev = d;
+            d = d.replace(/[\\/](cod|cnc|gcode|cortes|rodar\s*\d+\s*x)$/i, '');
+        } while (d !== prev);
+        return d;
+    }
+
+    // Helper: resolve nome amigável e hierárquico da subpasta (ex: 'PORTA PRINCIPAL - ISOPOR' ao invés de apenas 'ISOPOR')
+    function getSubfolderName(filePath) {
+        const dir = getNormDir(filePath);
+        let sub = path.basename(dir);
+        if (/^(isopor|eps|cnc|router|cod|gcode)$/i.test(sub)) {
+            const parentName = path.basename(path.dirname(dir));
+            if (parentName && !GENERIC_FOLDER_NAMES.has(parentName.toLowerCase())) {
+                sub = `${parentName} - ${sub}`;
+            }
+        }
+        return sub;
     }
 
     // Fallback if running on Railway/Render/Cloud where local Windows drives don't exist
@@ -1109,18 +1158,26 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
 
                 (snap.gcodeProntos || []).concat(snap.gcodeFeitos || []).forEach(gf => {
                     const lower = (gf.name || '').toLowerCase().trim();
-                    const subLower = (gf.subfolderName || '').toLowerCase().trim();
+                    let subfolderName = gf.subfolderName;
+                    if (/^(isopor|eps|cnc|router|cod|gcode)$/i.test(subfolderName || '')) {
+                        const dir = getNormDir(gf.fullPath || '');
+                        const parentName = path.basename(path.dirname(dir));
+                        if (parentName && !GENERIC_FOLDER_NAMES.has(parentName.toLowerCase())) {
+                            subfolderName = `${parentName} - ${subfolderName}`;
+                        }
+                    }
+                    const subLower = (subfolderName || '').toLowerCase().trim();
                     const dedupKey = `${lower}___${subLower}`;
                     if (seenGcodeNames.has(dedupKey)) return;
                     seenGcodeNames.add(dedupKey);
                     seenGcodeNames.add(lower);
 
-                    const execs = getFileExecs(gf, lower);
+                    const execs = getFileExecs({ ...gf, subfolderName }, lower);
                     const completedExecs = execs.filter(j => !isJobActive(j));
-                    const activeExec = findActiveExec(gf, lower);
+                    const activeExec = findActiveExec({ ...gf, subfolderName }, lower);
                     const isCurrentlyRunning = Boolean(activeExec);
-                    let matInfo = gf.matInfo?.tag ? { ...gf.matInfo } : extractMaterialInfo(gf.name, gf.fullPath || gf.subfolderName);
-                    const customQty = getFileBatchQuantity(gf, gf.subfolderName);
+                    let matInfo = gf.matInfo?.tag ? { ...gf.matInfo } : extractMaterialInfo(gf.name, gf.fullPath || subfolderName);
+                    const customQty = getFileBatchQuantity(gf, subfolderName);
                     if (customQty) {
                         matInfo.targetQuantity = customQty;
                     }
@@ -1131,9 +1188,9 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
                         matInfo.quantityLabel = `${completedExecs.length}/${targetQty}`;
                         matInfo.completedCount = completedExecs.length;
                     }
-                    const dbCompRec = isFileCompletedInDb(gf, gf.jobName, gf.subfolderName, completedFilesMap);
+                    const dbCompRec = isFileCompletedInDb(gf, gf.jobName, subfolderName, completedFilesMap);
                     const isDbDone = Boolean(dbCompRec);
-                    const reopenRec = getFileReopenRec(gf, gf.subfolderName);
+                    const reopenRec = getFileReopenRec(gf, subfolderName);
                     const isOk = (!reopenRec && (targetQty > 1 ? completedExecs.length >= targetQty : (completedExecs.length > 0 || isFileMarkedOk(gf.name)))) || isDbDone;
 
                     if (isOk && !isCurrentlyRunning) {
@@ -1142,6 +1199,7 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
                             : (gf.estimatedMinutes || (gf.cutMeters ? Math.max(1, Math.round((gf.cutMeters * 1000 / 1800) * 1.15)) : 15));
                         gcodeFeitos.push({
                             ...gf,
+                            subfolderName,
                             matInfo,
                             estimatedMinutes: gf.estimatedMinutes || dur,
                             cutMeters: gf.cutMeters || null,
@@ -1164,6 +1222,7 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
                         const estMinutes = meta.estimatedMinutes || gf.estimatedMinutes || (gf.cutMeters ? Math.max(1, Math.round((gf.cutMeters * 1000 / (matInfo?.material === 'MDF' ? 1800 : 2500)) * 1.15)) : (gf.name.toLowerCase().includes('isopor') ? 90 : null));
                         gcodeProntos.push({
                             ...gf,
+                            subfolderName,
                             matInfo,
                             execCount: completedExecs.length,
                             targetQuantity: targetQty,
@@ -1340,9 +1399,17 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
         // Deduplicate files by subfolder + filename, keeping the newest mtime first
         const unique = [];
         const seen = new Set();
-        const sortedFiles = [...(jData.files || [])].sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
+        const sortedFiles = [...(jData.files || [])].sort((a, b) => {
+            if ((b.mtime || 0) !== (a.mtime || 0)) {
+                return (b.mtime || 0) - (a.mtime || 0);
+            }
+            const aHasRodar = /rodar\s*\d+\s*x/i.test(a.fullPath || '');
+            const bHasRodar = /rodar\s*\d+\s*x/i.test(b.fullPath || '');
+            if (aHasRodar !== bHasRodar) return bHasRodar ? 1 : -1;
+            return 0;
+        });
         sortedFiles.forEach(f => {
-            const subDir = path.basename(getNormDir(f.fullPath)).toLowerCase().trim();
+            const subDir = getSubfolderName(f.fullPath).toLowerCase().trim();
             const k = `${subDir}___${f.name.toLowerCase().trim()}`;
             if (!seen.has(k)) {
                 seen.add(k);
@@ -1359,9 +1426,12 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
         const folderGroups = {};
         activeFiles.forEach(f => {
             const dir = getNormDir(f.fullPath);
-            const subName = path.basename(dir).toLowerCase().trim();
+            const subfolderName = getSubfolderName(f.fullPath);
+            const subName = subfolderName.toLowerCase().trim();
+            const rawBase = path.basename(dir).toLowerCase().trim();
             const groupKey = subName || dir.toLowerCase();
             if (!folderGroups[groupKey]) folderGroups[groupKey] = { cad: [], aspire: [], crv: [], gcode: [] };
+            if (!folderGroups[rawBase]) folderGroups[rawBase] = folderGroups[groupKey];
             if (f.type === 'cad') folderGroups[groupKey].cad.push(f);
             else if (f.type === 'aspire') folderGroups[groupKey].aspire.push(f);
             else if (f.type === 'crv') folderGroups[groupKey].crv.push(f);
@@ -1379,9 +1449,9 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
 
         cad.forEach(cf => {
             const dir = getNormDir(cf.fullPath);
-            const subfolderName = path.basename(dir);
-            const subName = path.basename(dir).toLowerCase().trim();
-            const folderFiles = folderGroups[subName] || folderGroups[dir] || { cad: [], aspire: [], gcode: [] };
+            const subfolderName = getSubfolderName(cf.fullPath);
+            const subName = subfolderName.toLowerCase().trim();
+            const folderFiles = folderGroups[subName] || folderGroups[path.basename(dir).toLowerCase().trim()] || folderGroups[dir] || { cad: [], aspire: [], gcode: [] };
             const matInfo = extractMaterialInfo(cf.name);
 
             // Arquivos de Aspire na mesma pasta
@@ -1452,9 +1522,9 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
 
         aspire.forEach(af => {
             const dir = getNormDir(af.fullPath);
-            const subfolderName = path.basename(dir);
-            const subName = path.basename(dir).toLowerCase().trim();
-            const folderFiles = folderGroups[subName] || folderGroups[dir] || { cad: [], aspire: [], crv: [], gcode: [] };
+            const subfolderName = getSubfolderName(af.fullPath);
+            const subName = subfolderName.toLowerCase().trim();
+            const folderFiles = folderGroups[subName] || folderGroups[path.basename(dir).toLowerCase().trim()] || folderGroups[dir] || { cad: [], aspire: [], crv: [], gcode: [] };
             let matInfo = extractMaterialInfo(af.name);
 
             // Cruza com G-Codes da mesma pasta pelo Material ou pelo nome base
@@ -1573,7 +1643,7 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
 
         gcode.forEach(gf => {
             const dir = getNormDir(gf.fullPath);
-            const subfolderName = path.basename(dir);
+            const subfolderName = getSubfolderName(gf.fullPath);
             let matInfo = extractMaterialInfo(gf.name, gf.fullPath || subfolderName);
             const customQty = getFileBatchQuantity(gf, subfolderName);
             if (customQty) {
