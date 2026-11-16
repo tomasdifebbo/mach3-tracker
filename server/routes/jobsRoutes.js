@@ -33,8 +33,8 @@ router.post('/api/jobs', authenticateToken, async (req, res) => {
     if (cleanFolder && cleanFolder.includes(' | ')) cleanFolder = cleanFolder.split(' | ').pop();
 
     const lastJob = (await pool.query('SELECT start_time, end_time FROM jobs WHERE "userId" = $1 AND (router_name = $2 OR router_name ILIKE $3) ORDER BY id DESC LIMIT 1', [userId, cleanRouterName || null, `%${cleanRouterName || ''}%`])).rows[0];
-    if (lastJob) {
-        const lastEventTime = new Date(lastJob.end_time || lastJob.start_time);
+    if (lastJob && !lastJob.end_time) {
+        const lastEventTime = new Date(lastJob.start_time);
         const diffSeconds = (dt - lastEventTime) / 1000;
         if (diffSeconds >= 0 && diffSeconds < DEBOUNCE_SECONDS) {
             return res.json({ id: null, success: true, debounced: true });
