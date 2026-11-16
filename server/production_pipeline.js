@@ -249,6 +249,74 @@ function isFileMarkedOk(filename = '') {
     return false;
 }
 
+// Gera variantes equivalentes de nome para casar arquivos regerados ou com tags adicionadas (ex: OK 2X, OK, prefixo de número)
+function getBaseFileVariants(fileName) {
+    if (!fileName) return [];
+    const variants = new Set();
+    const raw = String(fileName).toLowerCase().trim();
+    variants.add(raw);
+
+    const extMatch = raw.match(/\.(txt|nc|tap|gcode|cnc)$/i);
+    const ext = extMatch ? extMatch[0] : '.txt';
+    const withoutExt = raw.replace(/\.(txt|nc|tap|gcode|cnc)$/i, '').trim();
+
+    // Suffixes: ok 2x, ok 2 x, ok 4x, ok, _ok, - ok
+    const cleaned = withoutExt.replace(/(?:[\s\-_]+ok(?:\s*\d+\s*x)?(?:\s*\d+)?|\s+ok\s*\d+\s*x)$/i, '').trim();
+    variants.add(cleaned + ext);
+    variants.add(cleaned);
+
+    // Prefix ok: ok 3...
+    const noPrefixOk = withoutExt.replace(/^ok[\s\-_]+/i, '').trim();
+    variants.add(noPrefixOk + ext);
+    variants.add(noPrefixOk);
+
+    // Omitted tool tag: b10mm, e6mm, etc.
+    const withoutTool = cleaned.replace(/\s+[be]\d+mm/i, '').replace(/\s+/g, ' ').trim();
+    variants.add(withoutTool + ext);
+    variants.add(withoutTool);
+
+    // Transpose number prefix: "3 mdf 9mm..." <-> "mdf 9mm 3..."
+    const numPrefixMatch = withoutExt.match(/^(\d+)\s+([a-zA-Z]+)\s*(\d+mm)?\s*(.*)$/i);
+    if (numPrefixMatch) {
+        const [_, num, mat, thick, rest] = numPrefixMatch;
+        const transposed = `${mat} ${thick || ''} ${num} ${rest}`.replace(/\s+/g, ' ').trim();
+        variants.add(transposed + ext);
+        const transClean = transposed.replace(/(?:[\s\-_]+ok(?:\s*\d+\s*x)?(?:\s*\d+)?|\s+ok\s*\d+\s*x)$/i, '').trim();
+        variants.add(transClean + ext);
+    }
+    const numInsideMatch = withoutExt.match(/^([a-zA-Z]+)\s*(\d+mm)?\s*(\d+)\s+(.*)$/i);
+    if (numInsideMatch) {
+        const [_, mat, thick, num, rest] = numInsideMatch;
+        const transposed = `${num} ${mat} ${thick || ''} ${rest}`.replace(/\s+/g, ' ').trim();
+        variants.add(transposed + ext);
+        const transClean = transposed.replace(/(?:[\s\-_]+ok(?:\s*\d+\s*x)?(?:\s*\d+)?|\s+ok\s*\d+\s*x)$/i, '').trim();
+        variants.add(transClean + ext);
+    }
+
+    return Array.from(variants).filter(Boolean);
+}
+
+// Nome limpo canônico para agrupamento e deduplicação de chapas
+function getCleanBaseGCodeName(fileName) {
+    if (!fileName) return '';
+    const raw = String(fileName).toLowerCase().trim();
+    const extMatch = raw.match(/\.(txt|nc|tap|gcode|cnc)$/i);
+    const ext = extMatch ? extMatch[0] : '.txt';
+    const withoutExt = raw.replace(/\.(txt|nc|tap|gcode|cnc)$/i, '').trim();
+
+    let cleaned = withoutExt.replace(/(?:[\s\-_]+ok(?:\s*\d+\s*x)?(?:\s*\d+)?|\s+ok\s*\d+\s*x)$/i, '').trim();
+    cleaned = cleaned.replace(/^ok[\s\-_]+/i, '').trim();
+    cleaned = cleaned.replace(/\s+[be]\d+mm/i, '').trim();
+
+    const numPrefixMatch = cleaned.match(/^(\d+)\s+([a-zA-Z]+)\s*(\d+mm)?\s*(.*)$/i);
+    if (numPrefixMatch) {
+        const [_, num, mat, thick, rest] = numPrefixMatch;
+        cleaned = `${mat} ${thick || ''} ${num} ${rest}`.replace(/\s+/g, ' ').trim();
+    }
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    return cleaned + ext;
+}
+
 // Regra de Turno Noturno: Todas as operações entre 22:00 e 05:59 pertencem ao operador noturno do tenant
 function isNightShiftHour(date) {
     if (!date) return false;
@@ -368,11 +436,15 @@ function calculateDynamicBatches(dbJobs = [], completedFilesMap = {}, customBatc
             if (seenIds.has(id)) return;
             seenIds.add(id);
 
+            const variants = new Set(getBaseFileVariants(lowerName));
+            const cleanBase = getCleanBaseGCodeName(lowerName);
             const execRuns = dbJobs.filter(j => {
                 const jn = (j.file_name || '').toLowerCase().trim();
-                if (jn !== lowerName) return false;
-                if (lowerSub && j.folder) {
-                    return j.folder.toLowerCase().includes(lowerSub);
+                const jnClean = getCleanBaseGCodeName(jn);
+                if (!variants.has(jn) && (!cleanBase || jnClean !== cleanBase)) return false;
+                if (lowerSub) {
+                    const jf = (j.folder || '').toLowerCase().trim();
+                    if (!jf || !jf.includes(lowerSub)) return false;
                 }
                 return true;
             });
@@ -576,6 +648,27 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
             if (cleanKey && r.target_quantity) {
                 fileBatchesMap[cleanKey.toLowerCase().trim()] = parseInt(r.target_quantity, 10);
             }
+            const fn = (r.file_name || '').toLowerCase().trim();
+            const sub = (r.subfolder || '').toLowerCase().trim();
+            if (fn && r.target_quantity) {
+                const qty = parseInt(r.target_quantity, 10);
+                const variants = getBaseFileVariants(fn);
+                variants.forEach(v => {
+                    fileBatchesMap[v] = qty;
+                    if (sub) {
+                        fileBatchesMap[`${v}___${sub}`] = qty;
+                        fileBatchesMap[`${sub}/${v}`] = qty;
+                    }
+                });
+                const cleanBase = getCleanBaseGCodeName(fn);
+                if (cleanBase) {
+                    fileBatchesMap[cleanBase] = qty;
+                    if (sub) {
+                        fileBatchesMap[`${cleanBase}___${sub}`] = qty;
+                        fileBatchesMap[`${sub}/${cleanBase}`] = qty;
+                    }
+                }
+            }
             const metaKey = `${(r.file_name || '').toLowerCase()}___${(r.subfolder || '').toLowerCase()}`;
             if (r.file_name && !seenMeta.has(metaKey)) {
                 seenMeta.add(metaKey);
@@ -588,19 +681,24 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
 
     const getFileBatchQuantity = (fileObj, subfolderName) => {
         if (!fileObj || !fileBatchesMap) return null;
-        const lower = (fileObj.name || '').toLowerCase().trim();
+        const variants = getBaseFileVariants(fileObj.name || '');
+        const sub = (subfolderName || fileObj.subfolderName || '').toLowerCase().trim();
+        for (const v of variants) {
+            const compoundKey = `${v}___${sub}`;
+            const subSlashKey = `${sub}/${v}`;
+            const q = fileBatchesMap[compoundKey] || fileBatchesMap[subSlashKey] || fileBatchesMap[v];
+            if (q) return q;
+        }
+        const cleanBase = getCleanBaseGCodeName(fileObj.name || '');
+        if (cleanBase) {
+            const compoundKey = `${cleanBase}___${sub}`;
+            const subSlashKey = `${sub}/${cleanBase}`;
+            const q = fileBatchesMap[compoundKey] || fileBatchesMap[subSlashKey] || fileBatchesMap[cleanBase];
+            if (q) return q;
+        }
         const fullKeyWin = (fileObj.fullPath || '').toLowerCase().trim();
         const fullKeyFwd = fullKeyWin.replace(/\\/g, '/');
-        const sub = (subfolderName || fileObj.subfolderName || '').toLowerCase().trim();
-        const compoundKey = `${lower}___${sub}`;
-        const subSlashKey = `${sub}/${lower}`;
-
-        return fileBatchesMap[fullKeyWin] ||
-               fileBatchesMap[fullKeyFwd] ||
-               fileBatchesMap[compoundKey] ||
-               fileBatchesMap[subSlashKey] ||
-               fileBatchesMap[lower] ||
-               null;
+        return fileBatchesMap[fullKeyWin] || fileBatchesMap[fullKeyFwd] || null;
     };
 
     // Detecção real de "RODANDO AGORA": execução sem fim registrado, iniciada há menos de 12h,
@@ -638,7 +736,20 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
     // Execuções de um G-Code: associa execuções registradas no Mach3 garantindo que pertençam
     // à mesma subpasta ou ancestrais do arquivo, sem vazar cortes entre subpastas irmãs ou nomes genéricos.
     const getFileExecs = (fileObj, lower) => {
-        const all = execMap[lower] || [];
+        const variants = getBaseFileVariants(lower || fileObj?.name || '');
+        const cleanBase = getCleanBaseGCodeName(lower || fileObj?.name || '');
+        if (cleanBase && !variants.includes(cleanBase)) variants.push(cleanBase);
+        const seenIds = new Set();
+        const all = [];
+        for (const v of variants) {
+            const list = execMap[v] || [];
+            for (const j of list) {
+                if (!seenIds.has(j.id)) {
+                    seenIds.add(j.id);
+                    all.push(j);
+                }
+            }
+        }
         if (!all.length) return [];
 
         // Só conta execuções feitas DEPOIS que o arquivo foi salvo (margem de 2 min)
@@ -729,7 +840,20 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
 
     // Localiza a execução ativa de um arquivo na Router CNC (Mach3), associando por pasta, subpasta, ancestrais ou nome
     const findActiveExec = (fileObj, lower) => {
-        const list = execMap[lower] || [];
+        const variants = getBaseFileVariants(lower || fileObj?.name || '');
+        const cleanBase = getCleanBaseGCodeName(lower || fileObj?.name || '');
+        if (cleanBase && !variants.includes(cleanBase)) variants.push(cleanBase);
+        const seenIds = new Set();
+        const list = [];
+        for (const v of variants) {
+            const l = execMap[v] || [];
+            for (const j of l) {
+                if (!seenIds.has(j.id)) {
+                    seenIds.add(j.id);
+                    list.push(j);
+                }
+            }
+        }
         if (!list.length) return null;
         const fullAncestors = String(fileObj?.fullPath || '').split(/[\\/]/).slice(0, -1)
             .map(s => s.toLowerCase().trim().replace(/\s+/g, ' '))
@@ -798,13 +922,19 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
     dbJobs.forEach(j => {
         const fn = (j.file_name || '').toLowerCase().trim();
         const fld = (j.folder || '').toLowerCase().trim();
-        if (!execMap[fn]) execMap[fn] = [];
-        execMap[fn].push(j);
+        const variants = getBaseFileVariants(fn);
+        const cleanBase = getCleanBaseGCodeName(fn);
+        if (cleanBase && !variants.includes(cleanBase)) variants.push(cleanBase);
 
-        if (fld) {
-            const compoundKey = `${fn}___${fld}`;
-            if (!execMap[compoundKey]) execMap[compoundKey] = [];
-            execMap[compoundKey].push(j);
+        for (const v of variants) {
+            if (!execMap[v]) execMap[v] = [];
+            execMap[v].push(j);
+
+            if (fld) {
+                const compoundKey = `${v}___${fld}`;
+                if (!execMap[compoundKey]) execMap[compoundKey] = [];
+                execMap[compoundKey].push(j);
+            }
         }
     });
 
@@ -824,32 +954,40 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
 
     // Helper: verifica se o arquivo foi dado baixa no banco, respeitando a data de modificação (se o arquivo foi salvo/modificado DEPOIS da baixa, ele volta a ficar pendente!)
     function isFileCompletedInDb(fileObj, jobName, subfolderName, compMap) {
-        const lower = (fileObj.name || '').toLowerCase().trim();
-        const fullKey = (fileObj.fullPath || `${jobName || ''}_${fileObj.name}`).toLowerCase().trim();
+        const variants = getBaseFileVariants(fileObj?.name || '');
+        const cleanBase = getCleanBaseGCodeName(fileObj?.name || '');
+        if (cleanBase && !variants.includes(cleanBase)) variants.push(cleanBase);
         const subLower = (subfolderName || '').toLowerCase().trim();
-        const compoundKey = `${lower}___${subLower}`;
-        const subSlashKey = `${subLower}/${lower}`;
-
-        const rec = compMap[fullKey] || compMap[compoundKey] || compMap[subSlashKey] || (!subLower ? compMap[lower] : null);
-        if (!rec) return null;
-
-        // Se o arquivo no disco foi modificado/criado DEPOIS do horário em que foi dado baixa no banco (+60s de margem), é um arquivo NOVO/ATUALIZADO!
-        const fileMtime = fileObj.mtime || (fileObj.mtimeDate ? new Date(fileObj.mtimeDate).getTime() : 0);
-        const compTime = rec.completed_at ? new Date(rec.completed_at).getTime() : 0;
-        if (fileMtime && compTime && fileMtime > compTime + 60000) {
-            return null;
-        }
-
-        // Se o arquivo foi reaberto ("rodar novamente") DEPOIS da baixa manual no banco, anula a baixa!
-        const reopenRec = getFileReopenRec(fileObj, subfolderName);
-        if (reopenRec && reopenRec.reopened_at) {
-            const reopenTime = new Date(reopenRec.reopened_at).getTime();
-            if (compTime && compTime <= reopenTime) {
-                return null;
+        for (const v of variants) {
+            const compoundKey = `${v}___${subLower}`;
+            const subSlashKey = `${subLower}/${v}`;
+            const rec = compMap[compoundKey] || compMap[subSlashKey] || (!subLower ? compMap[v] : null);
+            if (rec) {
+                const fileMtime = fileObj.mtime || (fileObj.mtimeDate ? new Date(fileObj.mtimeDate).getTime() : 0);
+                const compTime = rec.completed_at ? new Date(rec.completed_at).getTime() : 0;
+                if (fileMtime && compTime && fileMtime > compTime + 60000) continue;
+                const reopenRec = getFileReopenRec(fileObj, subfolderName);
+                if (reopenRec && reopenRec.reopened_at) {
+                    const reopenTime = new Date(reopenRec.reopened_at).getTime();
+                    if (compTime && compTime <= reopenTime) continue;
+                }
+                return rec;
             }
         }
-
-        return rec;
+        const fullKey = (fileObj?.fullPath || `${jobName || ''}_${fileObj?.name || ''}`).toLowerCase().trim();
+        const rec = compMap[fullKey];
+        if (rec) {
+            const fileMtime = fileObj.mtime || (fileObj.mtimeDate ? new Date(fileObj.mtimeDate).getTime() : 0);
+            const compTime = rec.completed_at ? new Date(rec.completed_at).getTime() : 0;
+            if (fileMtime && compTime && fileMtime > compTime + 60000) return null;
+            const reopenRec = getFileReopenRec(fileObj, subfolderName);
+            if (reopenRec && reopenRec.reopened_at) {
+                const reopenTime = new Date(reopenRec.reopened_at).getTime();
+                if (compTime && compTime <= reopenTime) return null;
+            }
+            return rec;
+        }
+        return null;
     }
 
     // 1. Scan OneDrive / Pasta Nuvem (3 - OFICINA, Nova pasta, e subpastas CNC/ROUTER)
@@ -996,7 +1134,7 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
                     const dbCompRec = isFileCompletedInDb(gf, gf.jobName, gf.subfolderName, completedFilesMap);
                     const isDbDone = Boolean(dbCompRec);
                     const reopenRec = getFileReopenRec(gf, gf.subfolderName);
-                    const isOk = (!reopenRec && isFileMarkedOk(gf.name)) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0) || isDbDone;
+                    const isOk = (!reopenRec && (targetQty > 1 ? completedExecs.length >= targetQty : (completedExecs.length > 0 || isFileMarkedOk(gf.name)))) || isDbDone;
 
                     if (isOk && !isCurrentlyRunning) {
                         const dur = execs.length > 0 
@@ -1091,6 +1229,48 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
                     if (seenGcodeNames.has(lower)) return;
                     seenGcodeNames.add(lower);
                 });
+
+                // Deduplica e reconcilia arquivos variantes da mesma chapa física (ex: OK 2X vs base, sem tool tag, prefixos invertidos)
+                const feitosByCleanKey = new Map();
+                gcodeFeitos.forEach(f => {
+                    const cleanKey = `${getCleanBaseGCodeName(f.name)}___${(f.subfolderName || '').toLowerCase().trim()}`;
+                    if (!feitosByCleanKey.has(cleanKey)) {
+                        feitosByCleanKey.set(cleanKey, f);
+                    } else {
+                        const prev = feitosByCleanKey.get(cleanKey);
+                        const prevTime = prev.lastExec?.start_time ? new Date(prev.lastExec.start_time).getTime() : (prev.mtime || 0);
+                        const currTime = f.lastExec?.start_time ? new Date(f.lastExec.start_time).getTime() : (f.mtime || 0);
+                        if (currTime >= prevTime || (f.name.toLowerCase().includes('ok') && !prev.name.toLowerCase().includes('ok'))) {
+                            feitosByCleanKey.set(cleanKey, f);
+                        }
+                    }
+                });
+
+                const prontosByCleanKey = new Map();
+                gcodeProntos.forEach(p => {
+                    const cleanKey = `${getCleanBaseGCodeName(p.name)}___${(p.subfolderName || '').toLowerCase().trim()}`;
+                    if (feitosByCleanKey.has(cleanKey)) return;
+
+                    if (!prontosByCleanKey.has(cleanKey)) {
+                        prontosByCleanKey.set(cleanKey, p);
+                    } else {
+                        const prev = prontosByCleanKey.get(cleanKey);
+                        if (p.isCurrentlyRunning) {
+                            prontosByCleanKey.set(cleanKey, p);
+                        } else if (!prev.isCurrentlyRunning) {
+                            const pExecs = p.completedExecsCount || 0;
+                            const prevExecs = prev.completedExecsCount || 0;
+                            if (pExecs > prevExecs || (p.name.toLowerCase().includes('ok') && !prev.name.toLowerCase().includes('ok')) || (p.mtime || 0) > (prev.mtime || 0)) {
+                                prontosByCleanKey.set(cleanKey, p);
+                            }
+                        }
+                    }
+                });
+
+                gcodeFeitos.length = 0;
+                gcodeFeitos.push(...Array.from(feitosByCleanKey.values()));
+                gcodeProntos.length = 0;
+                gcodeProntos.push(...Array.from(prontosByCleanKey.values()));
 
                 gcodeProntos.sort((a, b) => (b.isCurrentlyRunning ? 1 : 0) - (a.isCurrentlyRunning ? 1 : 0) || (b.mtime || 0) - (a.mtime || 0));
 
@@ -1419,7 +1599,7 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
             const dbCompRec = isFileCompletedInDb(gf, jName, subfolderName, completedFilesMap);
             const isDbDone = Boolean(dbCompRec);
             const reopenRec = getFileReopenRec(gf, subfolderName);
-            const isOk = (!reopenRec && isFileMarkedOk(gf.name)) || (targetQty > 1 ? completedExecs.length >= targetQty : completedExecs.length > 0) || isDbDone;
+            const isOk = (!reopenRec && (targetQty > 1 ? completedExecs.length >= targetQty : (completedExecs.length > 0 || isFileMarkedOk(gf.name)))) || isDbDone;
 
             if (isOk && !isCurrentlyRunning) {
                 const dur = execs.length > 0 
@@ -1447,7 +1627,6 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
                     isManuallyDone: isDbDone
                 };
                 gcodeFeitos.push(item);
-                allGcodeFeitos.push(item);
             } else {
                 const meta = getGCodeMetadata(gf.fullPath, gf.mtime) || {};
                 const estMinutes = meta.estimatedMinutes || gf.estimatedMinutes || (gf.cutMeters ? Math.max(1, Math.round((gf.cutMeters * 1000 / (matInfo?.material === 'MDF' ? 1800 : 2500)) * 1.15)) : (gf.name.toLowerCase().includes('isopor') ? 90 : null));
@@ -1478,9 +1657,56 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
                             : 'Pronto p/ Usinar na Router')
                 };
                 gcodeProntos.push(item);
-                allGcodeProntos.push(item);
             }
         });
+
+        // Deduplica e reconcilia arquivos variantes da mesma chapa física (ex: OK 2X vs base, sem tool tag, prefixos invertidos)
+        const feitosByCleanKey = new Map();
+        gcodeFeitos.forEach(f => {
+            const cleanKey = `${getCleanBaseGCodeName(f.name)}___${(f.subfolderName || '').toLowerCase().trim()}`;
+            if (!feitosByCleanKey.has(cleanKey)) {
+                feitosByCleanKey.set(cleanKey, f);
+            } else {
+                const prev = feitosByCleanKey.get(cleanKey);
+                const prevTime = prev.lastExec?.start_time ? new Date(prev.lastExec.start_time).getTime() : (prev.mtime || 0);
+                const currTime = f.lastExec?.start_time ? new Date(f.lastExec.start_time).getTime() : (f.mtime || 0);
+                if (currTime >= prevTime || (f.name.toLowerCase().includes('ok') && !prev.name.toLowerCase().includes('ok'))) {
+                    feitosByCleanKey.set(cleanKey, f);
+                }
+            }
+        });
+
+        const prontosByCleanKey = new Map();
+        gcodeProntos.forEach(p => {
+            const cleanKey = `${getCleanBaseGCodeName(p.name)}___${(p.subfolderName || '').toLowerCase().trim()}`;
+            if (feitosByCleanKey.has(cleanKey)) return;
+
+            if (!prontosByCleanKey.has(cleanKey)) {
+                prontosByCleanKey.set(cleanKey, p);
+            } else {
+                const prev = prontosByCleanKey.get(cleanKey);
+                if (p.isCurrentlyRunning) {
+                    prontosByCleanKey.set(cleanKey, p);
+                } else if (!prev.isCurrentlyRunning) {
+                    const pExecs = p.completedExecsCount || 0;
+                    const prevExecs = prev.completedExecsCount || 0;
+                    if (pExecs > prevExecs || (p.name.toLowerCase().includes('ok') && !prev.name.toLowerCase().includes('ok')) || (p.mtime || 0) > (prev.mtime || 0)) {
+                        prontosByCleanKey.set(cleanKey, p);
+                    }
+                }
+            }
+        });
+
+        const finalFeitos = Array.from(feitosByCleanKey.values());
+        const finalProntos = Array.from(prontosByCleanKey.values());
+
+        gcodeFeitos.length = 0;
+        gcodeFeitos.push(...finalFeitos);
+        allGcodeFeitos.push(...finalFeitos);
+
+        gcodeProntos.length = 0;
+        gcodeProntos.push(...finalProntos);
+        allGcodeProntos.push(...finalProntos);
 
         totalCadPreparar += cadPreparar.length;
         totalAspirePreparar += aspirePreparar.length;
