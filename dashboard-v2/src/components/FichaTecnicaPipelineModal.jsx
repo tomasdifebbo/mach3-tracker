@@ -32,6 +32,7 @@ export function FichaTecnicaPipelineModal({
   uniqueJobNames = []
 }) {
   const [selectedJob, setSelectedJob] = useState(initialJob);
+  const [filterMaterial, setFilterMaterial] = useState('todos'); // 'todos' | 'isopor' | 'mdf' | 'compensado'
   const [includeRouter, setIncludeRouter] = useState(true);
   const [includeAspire, setIncludeAspire] = useState(true);
   const [includeCorel, setIncludeCorel] = useState(true);
@@ -82,16 +83,15 @@ export function FichaTecnicaPipelineModal({
     const isFileChecked = (f) => {
       if (!f) return false;
       if (f.isCurrentlyRunning || isFileRunning(f.name, f.jobName)) return false;
+      if (f.isReopened) return false;
       if (f.isManuallyDone) return true;
       const k1 = f.fullPath;
       const k2 = `${f.jobName || ''}_${f.name}`;
       const k3 = `${f.jobName || ''}|${f.subfolderName || ''}|${f.name}`;
-      const k4 = `${f.name || ''}`;
       return Boolean(
         (k1 && fileChecklist[k1]?.done !== false && fileChecklist[k1]) ||
-        (fileChecklist[k2]?.done !== false && fileChecklist[k2]) ||
         (fileChecklist[k3]?.done !== false && fileChecklist[k3]) ||
-        (fileChecklist[k4]?.done !== false && fileChecklist[k4])
+        (!f.subfolderName && fileChecklist[k2]?.done !== false && fileChecklist[k2])
       );
     };
 
@@ -138,7 +138,8 @@ export function FichaTecnicaPipelineModal({
       }
       if (f.totalDurationMinutes && Number(f.totalDurationMinutes) > 2) return Number(f.totalDurationMinutes);
       if (f.lastExec?.duration_minutes && Number(f.lastExec.duration_minutes) > 2) return Number(f.lastExec.duration_minutes);
-      if ((f.name || '').toLowerCase().includes('isopor')) return 90;
+      const isIsopor = (f.matInfo?.material || '').toUpperCase().includes('ISOPOR') || (f.subfolderName || '').toLowerCase().includes('isopor') || (f.name || '').toLowerCase().includes('isopor');
+      if (isIsopor) return 80;
       return null;
     };
 
@@ -148,6 +149,10 @@ export function FichaTecnicaPipelineModal({
     if (includeCorel) {
       (pipelineData.cadPreparar || []).forEach(f => {
         if (selectedJob !== 'todos' && f.jobName !== selectedJob && f.jobName?.replace(/\s+/g, ' ') !== selectedJob?.replace(/\s+/g, ' ')) return;
+        const isIsopor = (f.matInfo?.material || '').toUpperCase().includes('ISOPOR') || (f.subfolderName || '').toLowerCase().includes('isopor') || (f.name || '').toLowerCase().includes('isopor');
+        if (filterMaterial === 'isopor' && !isIsopor) return;
+        if (filterMaterial === 'mdf' && !(f.matInfo?.material || '').toUpperCase().includes('MDF') && !(f.name || '').toUpperCase().includes('MDF')) return;
+        if (filterMaterial === 'compensado' && !(f.matInfo?.material || '').toUpperCase().includes('COMP') && !(f.name || '').toUpperCase().includes('COMP')) return;
         const done = isDone(f, 'corel');
         if (!includeConcluded && done) return;
         items.push({
@@ -176,6 +181,10 @@ export function FichaTecnicaPipelineModal({
       (pipelineData.aspirePreparar || []).forEach(f => {
         if (f.ext === '.crv3d' || f.ext === '.crv' || (f.name || '').toLowerCase().endsWith('.crv3d') || (f.name || '').toLowerCase().endsWith('.crv')) return;
         if (selectedJob !== 'todos' && f.jobName !== selectedJob && f.jobName?.replace(/\s+/g, ' ') !== selectedJob?.replace(/\s+/g, ' ')) return;
+        const isIsopor = (f.matInfo?.material || '').toUpperCase().includes('ISOPOR') || (f.subfolderName || '').toLowerCase().includes('isopor') || (f.name || '').toLowerCase().includes('isopor');
+        if (filterMaterial === 'isopor' && !isIsopor) return;
+        if (filterMaterial === 'mdf' && !(f.matInfo?.material || '').toUpperCase().includes('MDF') && !(f.name || '').toUpperCase().includes('MDF')) return;
+        if (filterMaterial === 'compensado' && !(f.matInfo?.material || '').toUpperCase().includes('COMP') && !(f.name || '').toUpperCase().includes('COMP')) return;
         const done = isDone(f, 'aspire');
         if (!includeConcluded && done) return;
         items.push({
@@ -207,9 +216,14 @@ export function FichaTecnicaPipelineModal({
         const done = isDone(f, 'router');
         if (!includeConcluded && done && !running) return;
 
+        const isIsopor = (f.matInfo?.material || '').toUpperCase().includes('ISOPOR') || (f.subfolderName || '').toLowerCase().includes('isopor') || (f.name || '').toLowerCase().includes('isopor');
+        if (filterMaterial === 'isopor' && !isIsopor) return;
+        if (filterMaterial === 'mdf' && !(f.matInfo?.material || '').toUpperCase().includes('MDF') && !(f.name || '').toUpperCase().includes('MDF')) return;
+        if (filterMaterial === 'compensado' && !(f.matInfo?.material || '').toUpperCase().includes('COMP') && !(f.name || '').toUpperCase().includes('COMP')) return;
+
         // Duração exata do corte calculada via percurso G-Code ou histórico Mach3
         const durationMin = resolveTaskDuration(f);
-        const dim = f.dimensions || (f.widthMm && f.heightMm ? `${f.widthMm}×${f.heightMm}mm` : null);
+        const dim = f.dimensions || (f.widthMm && f.heightMm ? `${f.widthMm}×${f.heightMm}mm` : (isIsopor ? 'Bloco 100mm' : null));
 
         const isTopoColunas = (f.subfolderName || '').toLowerCase().includes('topo isopor colunas') || (f.name || '').toLowerCase().includes('topo isopor colunas');
         const targetQty = f.targetQuantity || f.matInfo?.targetQuantity || (isTopoColunas ? 14 : 1);
@@ -234,7 +248,7 @@ export function FichaTecnicaPipelineModal({
               jobName: f.jobName || 'Geral',
               subfolder: f.subfolderName || 'Raiz',
               ext: f.ext || '.txt',
-              material: f.matInfo?.tag || (f.name.toLowerCase().includes('isopor') ? 'ISOPOR 100mm' : 'MDF / ACM'),
+              material: f.matInfo?.tag || (isIsopor ? 'Isopor EPS 100mm' : 'MDF / ACM'),
               status: pieceStatus,
               statusLabel: pieceStatusLabel,
               durationMinutes: durationMin,
@@ -259,7 +273,7 @@ export function FichaTecnicaPipelineModal({
             jobName: f.jobName || 'Geral',
             subfolder: f.subfolderName || 'Raiz',
             ext: f.ext || '.txt',
-            material: f.matInfo?.tag || (f.name.toLowerCase().includes('isopor') ? 'ISOPOR' : 'MDF / ACM'),
+            material: f.matInfo?.tag || (isIsopor ? 'Isopor EPS 100mm' : 'MDF / ACM'),
             status: running ? 'running' : done ? 'done' : 'pending',
             statusLabel: running ? 'EM MÁQUINA AGORA' : done ? 'Concluído' : 'Pronto para Corte',
             durationMinutes: durationMin,
@@ -279,6 +293,10 @@ export function FichaTecnicaPipelineModal({
       pipelineData.gcodeFeitos.forEach(f => {
         if (selectedJob !== 'todos' && f.jobName !== selectedJob && f.jobName?.replace(/\s+/g, ' ') !== selectedJob?.replace(/\s+/g, ' ')) return;
         if (items.some(it => (it.baseName || it.name) === f.name && it.stage === 'router')) return;
+        const isIsopor = (f.matInfo?.material || '').toUpperCase().includes('ISOPOR') || (f.subfolderName || '').toLowerCase().includes('isopor') || (f.name || '').toLowerCase().includes('isopor');
+        if (filterMaterial === 'isopor' && !isIsopor) return;
+        if (filterMaterial === 'mdf' && !(f.matInfo?.material || '').toUpperCase().includes('MDF') && !(f.name || '').toUpperCase().includes('MDF')) return;
+        if (filterMaterial === 'compensado' && !(f.matInfo?.material || '').toUpperCase().includes('COMP') && !(f.name || '').toUpperCase().includes('COMP')) return;
         const durationMin = resolveTaskDuration(f);
         const dim = f.dimensions || (f.widthMm && f.heightMm ? `${f.widthMm}×${f.heightMm}mm` : null);
 
@@ -350,8 +368,15 @@ export function FichaTecnicaPipelineModal({
       groupsMap[groupKey].tasks.push(it);
     });
 
-    return Object.values(groupsMap);
-  }, [pipelineData, fileChecklist, selectedJob, includeRouter, includeAspire, includeCorel, includeConcluded, operatorName]);
+    // Sobe os grupos de Isopor/EPS com prioridade máxima no topo da Ficha Técnica de Impressão!
+    return Object.values(groupsMap).sort((a, b) => {
+      const aIsIsopor = (a.subfolder || '').toLowerCase().includes('isopor') || a.tasks.some(t => (t.material || '').toLowerCase().includes('isopor') || (t.name || '').toLowerCase().includes('isopor'));
+      const bIsIsopor = (b.subfolder || '').toLowerCase().includes('isopor') || b.tasks.some(t => (t.material || '').toLowerCase().includes('isopor') || (t.name || '').toLowerCase().includes('isopor'));
+      if (aIsIsopor && !bIsIsopor) return -1;
+      if (!aIsIsopor && bIsIsopor) return 1;
+      return 0;
+    });
+  }, [pipelineData, fileChecklist, selectedJob, filterMaterial, includeRouter, includeAspire, includeCorel, includeConcluded, operatorName]);
 
   // Estatísticas da Ficha Técnica somando a duração real de corte de cada arquivo
   const stats = useMemo(() => {
@@ -410,7 +435,7 @@ export function FichaTecnicaPipelineModal({
   // Gerador de Impressão A4 (Print / PDF) com a duração exata de cada chapa
   const handlePrint = () => {
     const nowStr = new Date().toLocaleString('pt-BR');
-    const jobTitle = selectedJob === 'todos' ? 'TODOS OS PROJETOS ATIVOS' : selectedJob.toUpperCase();
+    const jobTitle = selectedJob === 'todos' ? 'TODOS OS PROJETOS ATIVOS' : `${selectedJob.toUpperCase()}${filterMaterial === 'isopor' ? ' · SETOR ISOPOR / EPS 3D' : ''}`;
 
     const groupsHtml = taskGroups.map((g, gIdx) => {
       const subRouterMin = Math.round(g.tasks.filter(t => t.stage === 'router').reduce((sum, t) => sum + (t.durationMinutes || 0), 0));
@@ -785,6 +810,46 @@ export function FichaTecnicaPipelineModal({
                 <span className="font-medium text-slate-600 dark:text-slate-300">Incluir Concluídos</span>
               </label>
             </div>
+          </div>
+
+          {/* Filtro Rápido de Material - Com destaque para Isopor no Topo */}
+          <div className="md:col-span-12 flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-100 dark:border-white/5">
+            <div className="flex items-center gap-1.5 flex-wrap text-xs">
+              <span className="text-[11px] font-black uppercase text-slate-500 dark:text-slate-400 mr-1 flex items-center gap-1">
+                <Filter size={12} /> Material:
+              </span>
+              {[
+                { id: 'todos', label: 'Todos os Materiais' },
+                { id: 'isopor', label: 'Isopor / EPS', badge: 'Prioridade Topo', isSpecial: true },
+                { id: 'mdf', label: 'MDF' },
+                { id: 'compensado', label: 'Compensado' }
+              ].map(mat => (
+                <button
+                  key={mat.id}
+                  type="button"
+                  onClick={() => setFilterMaterial(mat.id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    filterMaterial === mat.id
+                      ? mat.id === 'isopor'
+                        ? 'bg-cyan-500 text-black shadow-sm font-black'
+                        : 'bg-orange-500 text-white shadow-sm font-black'
+                      : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                  }`}
+                >
+                  <span>{mat.label}</span>
+                  {mat.badge && filterMaterial !== mat.id && (
+                    <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-black uppercase">
+                      Topo
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+            {filterMaterial === 'isopor' && (
+              <span className="text-[11px] text-cyan-600 dark:text-cyan-400 font-bold flex items-center gap-1 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
+                <Sparkles size={12} /> Exibindo exclusivamente blocos de Isopor EPS para usinagem
+              </span>
+            )}
           </div>
         </div>
 

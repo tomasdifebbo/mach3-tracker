@@ -2,9 +2,9 @@
   "summary": {
     "totalJobs": 101,
     "totalCadPreparar": 28,
-    "totalAspirePreparar": 35,
-    "totalGcodePronto": 30,
-    "totalConcluidos": 804
+    "totalAspirePreparar": 36,
+    "totalGcodePronto": 43,
+    "totalConcluidos": 811
   },
   "specialBatches": [
     {
@@ -319,18 +319,18 @@
       "name": "2640  - EXPRESSO HOGWARTS CCXP",
       "source": "ARQUIVOS 2026",
       "path": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP",
-      "totalFiles": 591,
-      "cadCount": 61,
+      "totalFiles": 623,
+      "cadCount": 62,
       "cadPrepararCount": 16,
-      "cadComGcodeCount": 45,
+      "cadComGcodeCount": 46,
       "cadComAspireCount": 3,
-      "aspireCount": 72,
-      "aspirePrepararCount": 15,
-      "aspireComGcodeCount": 57,
-      "gcodeCount": 397,
-      "gcodeProntoCount": 28,
-      "gcodeFeitoCount": 357,
-      "progressPercent": 67
+      "aspireCount": 78,
+      "aspirePrepararCount": 16,
+      "aspireComGcodeCount": 62,
+      "gcodeCount": 417,
+      "gcodeProntoCount": 43,
+      "gcodeFeitoCount": 362,
+      "progressPercent": 65
     },
     {
       "name": "2662A - capaacete senna",
@@ -379,9 +379,9 @@
       "aspirePrepararCount": 2,
       "aspireComGcodeCount": 11,
       "gcodeCount": 58,
-      "gcodeProntoCount": 2,
-      "gcodeFeitoCount": 53,
-      "progressPercent": 68
+      "gcodeProntoCount": 0,
+      "gcodeFeitoCount": 55,
+      "progressPercent": 71
     },
     {
       "name": "2667A - EXPO ENTRADA",
@@ -2035,6 +2035,58 @@
   ],
   "cadPreparar": [
     {
+      "name": "ROUTER.cdr",
+      "ext": ".cdr",
+      "type": "cad",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\TEXTURA PAREDE VÁCUO\\ROUTER.cdr",
+      "size": 1017663,
+      "mtime": 1794871038000,
+      "mtimeDate": "2026-11-16T23:17:18.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "TEXTURA PAREDE VÁCUO",
+      "matInfo": {
+        "material": null,
+        "thickness": null,
+        "tag": null,
+        "chapaIndex": null,
+        "targetQuantity": 1
+      },
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Liberado (4 chapas p/ Router)",
+      "hasAspire": true,
+      "hasGcode": true,
+      "chapasCount": 4,
+      "detectedMaterials": [
+        "MDF 15mm"
+      ],
+      "isManuallyDone": false
+    },
+    {
+      "name": "ROUTER PORTA.cdr",
+      "ext": ".cdr",
+      "type": "cad",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\PORTA PRINCIPAL\\MDF PORTA\\ROUTER PORTA.cdr",
+      "size": 1994894,
+      "mtime": 1794865647000,
+      "mtimeDate": "2026-11-16T21:47:27.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "MDF PORTA",
+      "matInfo": {
+        "material": null,
+        "thickness": null,
+        "tag": null,
+        "chapaIndex": null,
+        "targetQuantity": 1
+      },
+      "stageStatus": "aguardando_separar_materiais",
+      "statusLabel": "Aguardando Separar Materiais",
+      "hasAspire": false,
+      "hasGcode": false,
+      "chapasCount": 0,
+      "detectedMaterials": [],
+      "isManuallyDone": false
+    },
+    {
       "name": "ROUTERv2.cdr",
       "ext": ".cdr",
       "type": "cad",
@@ -2052,10 +2104,10 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Liberado (15 chapas p/ Router)",
+      "statusLabel": "Lote Liberado (10 chapas p/ Router)",
       "hasAspire": true,
       "hasGcode": true,
-      "chapasCount": 15,
+      "chapasCount": 10,
       "detectedMaterials": [
         "Compensado 10mm"
       ],
@@ -2133,10 +2185,10 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Liberado (15 chapas p/ Router)",
+      "statusLabel": "Lote Liberado (10 chapas p/ Router)",
       "hasAspire": true,
       "hasGcode": true,
-      "chapasCount": 15,
+      "chapasCount": 10,
       "detectedMaterials": [
         "Compensado 10mm"
       ],
@@ -2168,33 +2220,6 @@
         "MDF 9mm"
       ],
       "isManuallyDone": false
-    },
-    {
-      "name": "ROUTER.cdr",
-      "ext": ".cdr",
-      "type": "cad",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\TEXTURA PAREDE VÁCUO\\ROUTER.cdr",
-      "size": 739051,
-      "mtime": 1794741967000,
-      "mtimeDate": "2026-11-15T11:26:07.000Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "TEXTURA PAREDE VÁCUO",
-      "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
-        "chapaIndex": null,
-        "targetQuantity": 1
-      },
-      "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Liberado (2 chapas p/ Router)",
-      "hasAspire": true,
-      "hasGcode": true,
-      "chapasCount": 2,
-      "detectedMaterials": [
-        "MDF 15mm"
-      ],
-      "isManuallyDone": true
     },
     {
       "name": "ROUTER.cdr",
@@ -2296,11 +2321,11 @@
         "chapaIndex": null,
         "targetQuantity": 1
       },
-      "stageStatus": "aguardando_separar_materiais",
-      "statusLabel": "Aguardando Separar Materiais",
-      "hasAspire": false,
-      "hasGcode": false,
-      "chapasCount": 0,
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Liberado (5 chapas p/ Router)",
+      "hasAspire": true,
+      "hasGcode": true,
+      "chapasCount": 5,
       "detectedMaterials": [],
       "isManuallyDone": false
     },
@@ -4721,6 +4746,182 @@
   ],
   "aspirePreparar": [
     {
+      "name": "mdf 15mm novo vacuo.eps",
+      "ext": ".eps",
+      "type": "aspire",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\TEXTURA PAREDE VÁCUO\\mdf 15mm novo vacuo.eps",
+      "size": 8499150,
+      "mtime": 1794876251138.4404,
+      "mtimeDate": "2026-11-17T00:44:11.138Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "TEXTURA PAREDE VÁCUO",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "15mm",
+        "tag": "MDF 15mm",
+        "chapaIndex": null,
+        "targetQuantity": 1
+      },
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 3 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "mdf 15mm.crv3d",
+      "chapasCount": 3,
+      "chapasList": [
+        "correçao vacuo mdf 15mm_2-° chapa e6mm.txt",
+        "correçao vacuo mdf 15mm_1-° chapa.txt",
+        "mdf 15mm parede vacuo e6mm_1-Corte 2.txt"
+      ],
+      "isManuallyDone": false
+    },
+    {
+      "name": "novo modelo correçao.eps",
+      "ext": ".eps",
+      "type": "aspire",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\TEXTURA PAREDE VÁCUO\\novo modelo correçao.eps",
+      "size": 8499151,
+      "mtime": 1794876207251.0295,
+      "mtimeDate": "2026-11-17T00:43:27.251Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "TEXTURA PAREDE VÁCUO",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "15mm",
+        "tag": "MDF 15mm",
+        "chapaIndex": "2",
+        "targetQuantity": 1
+      },
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 4 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "novo modelo correçao.crv3d",
+      "chapasCount": 4,
+      "chapasList": [
+        "correçao vacuo mdf 15mm_2-° chapa e6mm.txt",
+        "correçao vacuo mdf 15mm_1-° chapa.txt",
+        "mdf 15mm parede vacuo e6mm_1-Corte 2.txt",
+        "parede vacuo vbit_1-Corte 1.txt"
+      ],
+      "isManuallyDone": false
+    },
+    {
+      "name": "123.eps",
+      "ext": ".eps",
+      "type": "aspire",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\BASE COLUNAS\\123.eps",
+      "size": 8500524,
+      "mtime": 1794871192133.7283,
+      "mtimeDate": "2026-11-16T23:19:52.134Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "BASE COLUNAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "5",
+        "targetQuantity": 1
+      },
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 5 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": false,
+      "crvName": null,
+      "chapasCount": 5,
+      "chapasList": [
+        "mdf 9mm e6mm_5-° chapa.txt",
+        "mdf 9mm e6mm_4-° chapa.txt",
+        "mdf 9mm e6mm_3-° chapa.txt",
+        "mdf 9mm e6mm_2-° chapa.txt",
+        "mdf 9mm e6mm_1-° chapa.txt"
+      ],
+      "isManuallyDone": false
+    },
+    {
+      "name": "compensado 10mm.eps",
+      "ext": ".eps",
+      "type": "aspire",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA DE MAGIA\\balcao sala de magia\\compensado 10mm.eps",
+      "size": 8461978,
+      "mtime": 1794869322230.1396,
+      "mtimeDate": "2026-11-16T22:48:42.230Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "balcao sala de magia",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "10mm",
+        "tag": "Compensado 10mm",
+        "chapaIndex": null,
+        "targetQuantity": 1
+      },
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 1 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "compensado 10mm.crv3d",
+      "chapasCount": 1,
+      "chapasList": [
+        "compensado 10mm e6mm_1-° chapa.txt"
+      ],
+      "isManuallyDone": false
+    },
+    {
+      "name": "compensado 15mm.eps",
+      "ext": ".eps",
+      "type": "aspire",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA DE MAGIA\\balcao sala de magia\\compensado 15mm.eps",
+      "size": 8469397,
+      "mtime": 1794869310779.9067,
+      "mtimeDate": "2026-11-16T22:48:30.780Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "balcao sala de magia",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "15mm",
+        "tag": "Compensado 15mm",
+        "chapaIndex": null,
+        "targetQuantity": 1
+      },
+      "stageStatus": "lote_liberado",
+      "statusLabel": "Lote Pronto: 2 chapas geradas",
+      "hasGcode": true,
+      "hasCrv": true,
+      "crvName": "compensado 15mm + cambota de 15.crv3d",
+      "chapasCount": 2,
+      "chapasList": [
+        "compensado 15mm e6mm_2-° chapa.txt",
+        "compensado 15mm e6mm_1-° chapa.txt"
+      ],
+      "isManuallyDone": false
+    },
+    {
+      "name": "compensado 15mm + cambota de 15.eps",
+      "ext": ".eps",
+      "type": "aspire",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA DE MAGIA\\base sala de magia\\compensado 15mm + cambota de 15.eps",
+      "size": 8471785,
+      "mtime": 1794868295230.5918,
+      "mtimeDate": "2026-11-16T22:31:35.231Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "base sala de magia",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "15mm",
+        "tag": "Compensado 15mm",
+        "chapaIndex": null,
+        "targetQuantity": 1
+      },
+      "stageStatus": "aguardando_lote_aspire",
+      "statusLabel": "Aguardando Gerar Chapas no Aspire",
+      "hasGcode": false,
+      "hasCrv": false,
+      "crvName": null,
+      "chapasCount": 0,
+      "chapasList": [],
+      "isManuallyDone": false
+    },
+    {
       "name": "compensado 10mm v2.eps",
       "ext": ".eps",
       "type": "aspire",
@@ -4738,27 +4939,22 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 15 chapas geradas",
+      "statusLabel": "Lote Pronto: 10 chapas geradas",
       "hasGcode": true,
       "hasCrv": true,
-      "crvName": "compensado 10mm.crv3d",
-      "chapasCount": 15,
+      "crvName": "compensado 10mm v2.crv3d",
+      "chapasCount": 10,
       "chapasList": [
-        "compensado 10mm arcos F,G e6mm_4-° CHAPA.txt",
-        "compensado 10mm arcos F,G e6mm_3-° CHAPA.txt",
-        "compensado 10mm arcos F,G e6mm_2-° CHAPA.txt",
-        "compensado 10mm arcos F,G e6mm_1-° CHAPA.txt",
-        "compensado 10mm arcos D,D,E e6mm_5-° chapa.txt",
-        "compensado 10mm arcos D,D,E e6mm_4-° chapa.txt",
-        "compensado 10mm arcos D,D,E e6mm_3-° chapa.txt",
-        "compensado 10mm arcos D,D,E e6mm_2-° chapa.txt",
-        "compensado 10mm arcos D,D,E e6mm_1-° chapa.txt",
-        "compensado 10mm arcos abc e6mm_6-° chapa.txt",
-        "compensado 10mm arcos abc e6mm_5-° chapa.txt",
-        "compensado 10mm arcos abc e6mm_4-° chapa.txt",
-        "compensado 10mm arcos abc e6mm_3-° chapa.txt",
-        "compensado 10mm arcos abc e6mm_2-° chapa.txt",
-        "compensado 10mm arcos abc e6mm_1-° chapa.txt"
+        "compensado 10mm atualizado e6mm_10-° chapa.txt",
+        "compensado 10mm atualizado e6mm_9-° chapa.txt",
+        "compensado 10mm atualizado e6mm_8-° chapa.txt",
+        "compensado 10mm atualizado e6mm_7-° chapa.txt",
+        "compensado 10mm atualizado e6mm_6-° chapa.txt",
+        "compensado 10mm atualizado e6mm_5-° chapa.txt",
+        "compensado 10mm atualizado e6mm_4-° chapa.txt",
+        "compensado 10mm atualizado e6mm_3-° chapa.txt",
+        "compensado 10mm atualizado e6mm_2-° chapa.txt",
+        "compensado 10mm atualizado e6mm_1-° chapa.txt"
       ],
       "isManuallyDone": false
     },
@@ -4918,27 +5114,22 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 15 chapas geradas",
+      "statusLabel": "Lote Pronto: 10 chapas geradas",
       "hasGcode": true,
       "hasCrv": true,
-      "crvName": "compensado 10mm.crv3d",
-      "chapasCount": 15,
+      "crvName": "compensado 10mm v2.crv3d",
+      "chapasCount": 10,
       "chapasList": [
-        "compensado 10mm arcos F,G e6mm_4-° CHAPA.txt",
-        "compensado 10mm arcos F,G e6mm_3-° CHAPA.txt",
-        "compensado 10mm arcos F,G e6mm_2-° CHAPA.txt",
-        "compensado 10mm arcos F,G e6mm_1-° CHAPA.txt",
-        "compensado 10mm arcos D,D,E e6mm_5-° chapa.txt",
-        "compensado 10mm arcos D,D,E e6mm_4-° chapa.txt",
-        "compensado 10mm arcos D,D,E e6mm_3-° chapa.txt",
-        "compensado 10mm arcos D,D,E e6mm_2-° chapa.txt",
-        "compensado 10mm arcos D,D,E e6mm_1-° chapa.txt",
-        "compensado 10mm arcos abc e6mm_6-° chapa.txt",
-        "compensado 10mm arcos abc e6mm_5-° chapa.txt",
-        "compensado 10mm arcos abc e6mm_4-° chapa.txt",
-        "compensado 10mm arcos abc e6mm_3-° chapa.txt",
-        "compensado 10mm arcos abc e6mm_2-° chapa.txt",
-        "compensado 10mm arcos abc e6mm_1-° chapa.txt"
+        "compensado 10mm atualizado e6mm_10-° chapa.txt",
+        "compensado 10mm atualizado e6mm_9-° chapa.txt",
+        "compensado 10mm atualizado e6mm_8-° chapa.txt",
+        "compensado 10mm atualizado e6mm_7-° chapa.txt",
+        "compensado 10mm atualizado e6mm_6-° chapa.txt",
+        "compensado 10mm atualizado e6mm_5-° chapa.txt",
+        "compensado 10mm atualizado e6mm_4-° chapa.txt",
+        "compensado 10mm atualizado e6mm_3-° chapa.txt",
+        "compensado 10mm atualizado e6mm_2-° chapa.txt",
+        "compensado 10mm atualizado e6mm_1-° chapa.txt"
       ],
       "isManuallyDone": false
     },
@@ -4960,12 +5151,14 @@
         "targetQuantity": 1
       },
       "stageStatus": "lote_liberado",
-      "statusLabel": "Lote Pronto: 1 chapas geradas",
+      "statusLabel": "Lote Pronto: 3 chapas geradas",
       "hasGcode": true,
       "hasCrv": true,
       "crvName": "mdf 15mm.crv3d",
-      "chapasCount": 1,
+      "chapasCount": 3,
       "chapasList": [
+        "correçao vacuo mdf 15mm_2-° chapa e6mm.txt",
+        "correçao vacuo mdf 15mm_1-° chapa.txt",
         "mdf 15mm parede vacuo e6mm_1-Corte 2.txt"
       ],
       "isManuallyDone": false
@@ -9252,43 +9445,784 @@
   ],
   "gcodeProntos": [
     {
-      "name": "teste correçao_1-Corte 10_1-Corte 10.txt",
+      "name": "correçao vacuo mdf 15mm_2-° chapa e6mm.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA CASTELO\\MAGIAS PAREDES\\teste correçao_1-Corte 10_1-Corte 10.txt",
-      "size": 188778,
-      "mtime": 1794865105466.3022,
-      "mtimeDate": "2026-11-16T21:38:25.466Z",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\TEXTURA PAREDE VÁCUO\\correçao vacuo mdf 15mm_2-° chapa e6mm.txt",
+      "size": 1843,
+      "mtime": 1794876608494.4292,
+      "mtimeDate": "2026-11-17T00:50:08.494Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "MAGIAS PAREDES",
+      "subfolderName": "TEXTURA PAREDE VÁCUO",
       "matInfo": {
-        "material": null,
-        "thickness": null,
-        "tag": null,
-        "chapaIndex": "1",
+        "material": "MDF",
+        "thickness": "15mm",
+        "tag": "MDF 15mm",
+        "chapaIndex": "2",
         "targetQuantity": 1
       },
-      "estimatedMinutes": 16.3,
-      "cutMeters": 31,
-      "widthMm": 2536,
-      "heightMm": 1830,
+      "estimatedMinutes": 6.8,
+      "cutMeters": 10,
+      "widthMm": 941,
+      "heightMm": 1526,
       "depthMm": null,
       "feeds": [
-        2500,
-        1250
+        1800,
+        750
       ],
       "spindles": [
         15000
       ],
-      "isCurrentlyRunning": true,
+      "isCurrentlyRunning": false,
       "isReopened": false,
-      "runningMachine": "Router 2",
-      "runningStartTime": "2026-11-16T21:38:55.000Z",
+      "runningMachine": null,
+      "runningStartTime": null,
       "targetQuantity": 1,
       "completedExecsCount": 0,
       "execCount": 0,
       "quantityProgress": null,
-      "statusLabel": "Usinando (1/1)"
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "correçao vacuo mdf 15mm_1-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\TEXTURA PAREDE VÁCUO\\correçao vacuo mdf 15mm_1-° chapa.txt",
+      "size": 1307015,
+      "mtime": 1794876608471.0913,
+      "mtimeDate": "2026-11-17T00:50:08.471Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "TEXTURA PAREDE VÁCUO",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "15mm",
+        "tag": "MDF 15mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 39.9,
+      "cutMeters": 76,
+      "widthMm": 854,
+      "heightMm": 1391,
+      "depthMm": 3,
+      "feeds": [
+        2500,
+        1200
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "mdf 9mm e6mm_5-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\BASE COLUNAS\\mdf 9mm e6mm_5-° chapa.txt",
+      "size": 99680,
+      "mtime": 1794872107703.8474,
+      "mtimeDate": "2026-11-16T23:35:07.704Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "BASE COLUNAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "5",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 34.7,
+      "cutMeters": 52,
+      "widthMm": 1845,
+      "heightMm": 1815,
+      "depthMm": 2,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "mdf 9mm e6mm_4-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\BASE COLUNAS\\mdf 9mm e6mm_4-° chapa.txt",
+      "size": 99293,
+      "mtime": 1794872107675.9207,
+      "mtimeDate": "2026-11-16T23:35:07.676Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "BASE COLUNAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "4",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 29.6,
+      "cutMeters": 45,
+      "widthMm": 2620,
+      "heightMm": 1844,
+      "depthMm": 2,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "mdf 9mm e6mm_3-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\BASE COLUNAS\\mdf 9mm e6mm_3-° chapa.txt",
+      "size": 52390,
+      "mtime": 1794872107645.277,
+      "mtimeDate": "2026-11-16T23:35:07.645Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "BASE COLUNAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "3",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 19.6,
+      "cutMeters": 30,
+      "widthMm": 2712,
+      "heightMm": 1843,
+      "depthMm": 2,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "mdf 9mm e6mm_2-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\BASE COLUNAS\\mdf 9mm e6mm_2-° chapa.txt",
+      "size": 19795,
+      "mtime": 1794872107610.3723,
+      "mtimeDate": "2026-11-16T23:35:07.610Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "BASE COLUNAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "2",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 20.3,
+      "cutMeters": 31,
+      "widthMm": 2602,
+      "heightMm": 1794,
+      "depthMm": 2,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "mdf 9mm e6mm_1-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\BASE COLUNAS\\mdf 9mm e6mm_1-° chapa.txt",
+      "size": 19823,
+      "mtime": 1794872107583.3955,
+      "mtimeDate": "2026-11-16T23:35:07.583Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "BASE COLUNAS",
+      "matInfo": {
+        "material": "MDF",
+        "thickness": "9mm",
+        "tag": "MDF 9mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 20.3,
+      "cutMeters": 31,
+      "widthMm": 2620,
+      "heightMm": 1845,
+      "depthMm": 2,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "compensado 10mm atualizado e6mm_10-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm atualizado e6mm_10-° chapa.txt",
+      "size": 24587,
+      "mtime": 1794870512602.9202,
+      "mtimeDate": "2026-11-16T23:08:32.603Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCOS COLUNAS",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "10mm",
+        "tag": "Compensado 10mm",
+        "chapaIndex": "10",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 10.5,
+      "cutMeters": 16,
+      "widthMm": 1553,
+      "heightMm": 1344,
+      "depthMm": null,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "compensado 10mm atualizado e6mm_9-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm atualizado e6mm_9-° chapa.txt",
+      "size": 20648,
+      "mtime": 1794870512580.9788,
+      "mtimeDate": "2026-11-16T23:08:32.581Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCOS COLUNAS",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "10mm",
+        "tag": "Compensado 10mm",
+        "chapaIndex": "9",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 8.5,
+      "cutMeters": 13,
+      "widthMm": 1553,
+      "heightMm": 1344,
+      "depthMm": null,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "compensado 10mm atualizado e6mm_8-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm atualizado e6mm_8-° chapa.txt",
+      "size": 16620,
+      "mtime": 1794870512562.469,
+      "mtimeDate": "2026-11-16T23:08:32.562Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCOS COLUNAS",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "10mm",
+        "tag": "Compensado 10mm",
+        "chapaIndex": "8",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 6.6,
+      "cutMeters": 10,
+      "widthMm": 1553,
+      "heightMm": 1344,
+      "depthMm": null,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "compensado 10mm atualizado e6mm_7-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm atualizado e6mm_7-° chapa.txt",
+      "size": 55940,
+      "mtime": 1794870512546.5112,
+      "mtimeDate": "2026-11-16T23:08:32.547Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCOS COLUNAS",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "10mm",
+        "tag": "Compensado 10mm",
+        "chapaIndex": "7",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 15.4,
+      "cutMeters": 24,
+      "widthMm": 2193,
+      "heightMm": 1480,
+      "depthMm": null,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "compensado 10mm atualizado e6mm_6-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm atualizado e6mm_6-° chapa.txt",
+      "size": 104447,
+      "mtime": 1794870512524.5708,
+      "mtimeDate": "2026-11-16T23:08:32.525Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCOS COLUNAS",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "10mm",
+        "tag": "Compensado 10mm",
+        "chapaIndex": "6",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 26.6,
+      "cutMeters": 42,
+      "widthMm": 2194,
+      "heightMm": 1591,
+      "depthMm": null,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "compensado 10mm atualizado e6mm_5-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm atualizado e6mm_5-° chapa.txt",
+      "size": 100012,
+      "mtime": 1794870512499.23,
+      "mtimeDate": "2026-11-16T23:08:32.499Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCOS COLUNAS",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "10mm",
+        "tag": "Compensado 10mm",
+        "chapaIndex": "5",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 26.2,
+      "cutMeters": 40,
+      "widthMm": 2163,
+      "heightMm": 1584,
+      "depthMm": null,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "compensado 10mm atualizado e6mm_4-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm atualizado e6mm_4-° chapa.txt",
+      "size": 125164,
+      "mtime": 1794870512473.2998,
+      "mtimeDate": "2026-11-16T23:08:32.473Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCOS COLUNAS",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "10mm",
+        "tag": "Compensado 10mm",
+        "chapaIndex": "4",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 32,
+      "cutMeters": 49,
+      "widthMm": 2194,
+      "heightMm": 1586,
+      "depthMm": null,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "compensado 10mm atualizado e6mm_3-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm atualizado e6mm_3-° chapa.txt",
+      "size": 111103,
+      "mtime": 1794870512446.3726,
+      "mtimeDate": "2026-11-16T23:08:32.446Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCOS COLUNAS",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "10mm",
+        "tag": "Compensado 10mm",
+        "chapaIndex": "3",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 30.9,
+      "cutMeters": 47,
+      "widthMm": 2129,
+      "heightMm": 1590,
+      "depthMm": null,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "compensado 10mm atualizado e6mm_2-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm atualizado e6mm_2-° chapa.txt",
+      "size": 74044,
+      "mtime": 1794870512419.4436,
+      "mtimeDate": "2026-11-16T23:08:32.419Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCOS COLUNAS",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "10mm",
+        "tag": "Compensado 10mm",
+        "chapaIndex": "2",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 22.6,
+      "cutMeters": 35,
+      "widthMm": 2121,
+      "heightMm": 1577,
+      "depthMm": null,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "compensado 10mm atualizado e6mm_1-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm atualizado e6mm_1-° chapa.txt",
+      "size": 100401,
+      "mtime": 1794870512392.516,
+      "mtimeDate": "2026-11-16T23:08:32.393Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCOS COLUNAS",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "10mm",
+        "tag": "Compensado 10mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 33.2,
+      "cutMeters": 50,
+      "widthMm": 2184,
+      "heightMm": 1580,
+      "depthMm": null,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "compensado 10mm e6mm_1-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA DE MAGIA\\balcao sala de magia\\compensado 10mm e6mm_1-° chapa.txt",
+      "size": 2515,
+      "mtime": 1794869914177.271,
+      "mtimeDate": "2026-11-16T22:58:34.177Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "balcao sala de magia",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "10mm",
+        "tag": "Compensado 10mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 4.9,
+      "cutMeters": 7,
+      "widthMm": 1613,
+      "heightMm": 759,
+      "depthMm": null,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "compensado 15mm e6mm_2-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA DE MAGIA\\balcao sala de magia\\compensado 15mm e6mm_2-° chapa.txt",
+      "size": 5994,
+      "mtime": 1794869842160.8838,
+      "mtimeDate": "2026-11-16T22:57:22.161Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "balcao sala de magia",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "15mm",
+        "tag": "Compensado 15mm",
+        "chapaIndex": "2",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 12.4,
+      "cutMeters": 19,
+      "widthMm": 2038,
+      "heightMm": 1560,
+      "depthMm": null,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
+    },
+    {
+      "name": "compensado 15mm e6mm_1-° chapa.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\SALA DE MAGIA\\balcao sala de magia\\compensado 15mm e6mm_1-° chapa.txt",
+      "size": 4553,
+      "mtime": 1794869842142.9312,
+      "mtimeDate": "2026-11-16T22:57:22.143Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "balcao sala de magia",
+      "matInfo": {
+        "material": "Compensado",
+        "thickness": "15mm",
+        "tag": "Compensado 15mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 12.6,
+      "cutMeters": 19,
+      "widthMm": 2122,
+      "heightMm": 1584,
+      "depthMm": null,
+      "feeds": [
+        1800,
+        750
+      ],
+      "spindles": [
+        15000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": false,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
     },
     {
       "name": "2 pvc100mm b10mm.txt",
@@ -9303,11 +10237,11 @@
       "matInfo": {
         "material": "Isopor EPS",
         "thickness": "100mm",
-        "tag": "Isopor EPS 100mm (0/2)",
+        "tag": "Isopor EPS 100mm (1/2)",
         "chapaIndex": "2",
         "targetQuantity": 2,
-        "quantityLabel": "0/2",
-        "completedCount": 0
+        "quantityLabel": "1/2",
+        "completedCount": 1
       },
       "estimatedMinutes": 95.4,
       "cutMeters": 507,
@@ -9325,10 +10259,10 @@
       "runningMachine": null,
       "runningStartTime": null,
       "targetQuantity": 2,
-      "completedExecsCount": 0,
-      "execCount": 0,
-      "quantityProgress": "0/2",
-      "statusLabel": "Pendente (0/2)"
+      "completedExecsCount": 1,
+      "execCount": 1,
+      "quantityProgress": "1/2",
+      "statusLabel": "Em progresso (1/2)"
     },
     {
       "name": "1 pvc100mm b10mm.txt",
@@ -9343,11 +10277,11 @@
       "matInfo": {
         "material": "Isopor EPS",
         "thickness": "100mm",
-        "tag": "Isopor EPS 100mm (0/2)",
+        "tag": "Isopor EPS 100mm (1/2)",
         "chapaIndex": "1",
         "targetQuantity": 2,
-        "quantityLabel": "0/2",
-        "completedCount": 0
+        "quantityLabel": "1/2",
+        "completedCount": 1
       },
       "estimatedMinutes": 96.2,
       "cutMeters": 508,
@@ -9365,10 +10299,10 @@
       "runningMachine": null,
       "runningStartTime": null,
       "targetQuantity": 2,
-      "completedExecsCount": 0,
-      "execCount": 0,
-      "quantityProgress": "0/2",
-      "statusLabel": "Pendente (0/2)"
+      "completedExecsCount": 1,
+      "execCount": 1,
+      "quantityProgress": "1/2",
+      "statusLabel": "Em progresso (1/2)"
     },
     {
       "name": "6 pvc100mm b10mm.txt",
@@ -9529,6 +10463,44 @@
       "execCount": 0,
       "quantityProgress": "0/2",
       "statusLabel": "Pendente (0/2)"
+    },
+    {
+      "name": "1 pvc100mm b10mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ISOPOR COLUNAS\\1 pvc100mm b10mm.txt",
+      "size": 907591,
+      "mtime": 1794737495000,
+      "mtimeDate": "2026-11-15T10:11:35.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ISOPOR COLUNAS",
+      "matInfo": {
+        "material": "Isopor EPS",
+        "thickness": "100mm",
+        "tag": "Isopor EPS 100mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 53,
+      "cutMeters": 276,
+      "widthMm": 1876,
+      "heightMm": 849,
+      "depthMm": 100,
+      "feeds": [
+        6000
+      ],
+      "spindles": [
+        18000
+      ],
+      "isCurrentlyRunning": false,
+      "isReopened": true,
+      "runningMachine": null,
+      "runningStartTime": null,
+      "targetQuantity": 1,
+      "completedExecsCount": 0,
+      "execCount": 0,
+      "quantityProgress": null,
+      "statusLabel": "Pronto p/ Usinar na Router"
     },
     {
       "name": "7 pvc 100mm b10mm OK 2X.txt",
@@ -10179,275 +11151,51 @@
       "execCount": 1,
       "quantityProgress": "1/4",
       "statusLabel": "Em progresso (1/4)"
-    },
-    {
-      "name": "1 PVC+ 100mm B10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA CASAS\\ISOPOR\\1 PVC+ 100mm B10mm.txt",
-      "size": 358251,
-      "mtime": 1793650456000,
-      "mtimeDate": "2026-11-02T20:14:16.000Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "FACHADA CASAS - ISOPOR",
-      "matInfo": {
-        "material": "Isopor EPS",
-        "thickness": "100mm",
-        "tag": "Isopor EPS 100mm",
-        "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "estimatedMinutes": 11.3,
-      "cutMeters": 60,
-      "widthMm": 592,
-      "heightMm": 238,
-      "depthMm": 51,
-      "feeds": [
-        6000
-      ],
-      "spindles": [
-        18000
-      ],
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null,
-      "targetQuantity": 1,
-      "completedExecsCount": 0,
-      "execCount": 0,
-      "quantityProgress": null,
-      "statusLabel": "Pronto p/ Usinar na Router"
-    },
-    {
-      "name": "1 PVC+ 100mm B10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA CASTELO\\ISOPOR\\1 PVC+ 100mm B10mm.txt",
-      "size": 358251,
-      "mtime": 1793650456000,
-      "mtimeDate": "2026-11-02T20:14:16.000Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "FACHADA CASTELO - ISOPOR",
-      "matInfo": {
-        "material": "Isopor EPS",
-        "thickness": "100mm",
-        "tag": "Isopor EPS 100mm",
-        "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "estimatedMinutes": 11.3,
-      "cutMeters": 60,
-      "widthMm": 592,
-      "heightMm": 238,
-      "depthMm": 51,
-      "feeds": [
-        6000
-      ],
-      "spindles": [
-        18000
-      ],
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null,
-      "targetQuantity": 1,
-      "completedExecsCount": 0,
-      "execCount": 0,
-      "quantityProgress": null,
-      "statusLabel": "Pronto p/ Usinar na Router"
-    },
-    {
-      "name": "1 pvc+ 100mm b10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\ENTRADA\\ARCO COM PILAR INTERNO\\ISOPOR\\COD\\1 pvc+ 100mm b10mm.txt",
-      "size": 3963724,
-      "mtime": 1793450656000,
-      "mtimeDate": "2026-10-31T12:44:16.000Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCO COM PILAR INTERNO - ISOPOR",
-      "matInfo": {
-        "material": "Isopor EPS",
-        "thickness": "100mm",
-        "tag": "Isopor EPS 100mm",
-        "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "estimatedMinutes": 79.8,
-      "cutMeters": 422,
-      "widthMm": 1701,
-      "heightMm": 692,
-      "depthMm": 100,
-      "feeds": [
-        6000
-      ],
-      "spindles": [
-        18000
-      ],
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null,
-      "targetQuantity": 1,
-      "completedExecsCount": 0,
-      "execCount": 0,
-      "quantityProgress": null,
-      "statusLabel": "Pronto p/ Usinar na Router"
-    },
-    {
-      "name": "2 pvc100mm b10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640 - GALHO\\ISOPOR\\cod\\2 pvc100mm b10mm.txt",
-      "size": 3170444,
-      "mtime": 1792688653798.549,
-      "mtimeDate": "2026-10-22T17:04:13.799Z",
-      "jobName": "2640 - Expresso hogwarts",
-      "subfolderName": "2640 - GALHO - ISOPOR",
-      "matInfo": {
-        "material": "Isopor EPS",
-        "thickness": "100mm",
-        "tag": "Isopor EPS 100mm",
-        "chapaIndex": "2",
-        "targetQuantity": 1
-      },
-      "estimatedMinutes": 68.7,
-      "cutMeters": 362,
-      "widthMm": 1880,
-      "heightMm": 967,
-      "depthMm": 99,
-      "feeds": [
-        6000
-      ],
-      "spindles": [
-        18000
-      ],
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null,
-      "targetQuantity": 1,
-      "completedExecsCount": 0,
-      "execCount": 0,
-      "quantityProgress": null,
-      "statusLabel": "Pronto p/ Usinar na Router"
-    },
-    {
-      "name": "1 pvc100mm b10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640 - GALHO\\ISOPOR\\cod\\1 pvc100mm b10mm.txt",
-      "size": 1068766,
-      "mtime": 1792688635898.6216,
-      "mtimeDate": "2026-10-22T17:03:55.899Z",
-      "jobName": "2640 - Expresso hogwarts",
-      "subfolderName": "2640 - GALHO - ISOPOR",
-      "matInfo": {
-        "material": "Isopor EPS",
-        "thickness": "100mm",
-        "tag": "Isopor EPS 100mm",
-        "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "estimatedMinutes": 31.7,
-      "cutMeters": 165,
-      "widthMm": 1830,
-      "heightMm": 953,
-      "depthMm": 63,
-      "feeds": [
-        6000
-      ],
-      "spindles": [
-        18000
-      ],
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null,
-      "targetQuantity": 1,
-      "completedExecsCount": 0,
-      "execCount": 0,
-      "quantityProgress": null,
-      "statusLabel": "Pronto p/ Usinar na Router"
-    },
-    {
-      "name": "1 pvc100mm b10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\ANTIGOS\\GALHO\\ISOPOR\\cod\\1 pvc100mm b10mm.txt",
-      "size": 1068754,
-      "mtime": 1792652616000,
-      "mtimeDate": "2026-10-22T07:03:36.000Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "GALHO - ISOPOR",
-      "matInfo": {
-        "material": "Isopor EPS",
-        "thickness": "100mm",
-        "tag": "Isopor EPS 100mm",
-        "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "estimatedMinutes": 31.7,
-      "cutMeters": 165,
-      "widthMm": 1830,
-      "heightMm": 953,
-      "depthMm": 63,
-      "feeds": [
-        6000
-      ],
-      "spindles": [
-        18000
-      ],
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null,
-      "targetQuantity": 1,
-      "completedExecsCount": 0,
-      "execCount": 0,
-      "quantityProgress": null,
-      "statusLabel": "Pronto p/ Usinar na Router"
-    },
-    {
-      "name": "2 pvc100mm b10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\ANTIGOS\\GALHO\\ISOPOR\\cod\\2 pvc100mm b10mm.txt",
-      "size": 3170432,
-      "mtime": 1792652579000,
-      "mtimeDate": "2026-10-22T07:02:59.000Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "GALHO - ISOPOR",
-      "matInfo": {
-        "material": "Isopor EPS",
-        "thickness": "100mm",
-        "tag": "Isopor EPS 100mm",
-        "chapaIndex": "2",
-        "targetQuantity": 1
-      },
-      "estimatedMinutes": 68.7,
-      "cutMeters": 362,
-      "widthMm": 1880,
-      "heightMm": 967,
-      "depthMm": 99,
-      "feeds": [
-        6000
-      ],
-      "spindles": [
-        18000
-      ],
-      "isCurrentlyRunning": false,
-      "isReopened": false,
-      "runningMachine": null,
-      "runningStartTime": null,
-      "targetQuantity": 1,
-      "completedExecsCount": 0,
-      "execCount": 0,
-      "quantityProgress": null,
-      "statusLabel": "Pronto p/ Usinar na Router"
     }
   ],
   "gcodeFeitos": [
+    {
+      "name": "teste_1-2-Corte 10.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA CASTELO\\MAGIAS PAREDES\\teste_1-2-Corte 10.txt",
+      "size": 203282,
+      "mtime": 1794872723852.853,
+      "mtimeDate": "2026-11-16T23:45:23.853Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "MAGIAS PAREDES",
+      "matInfo": {
+        "material": null,
+        "thickness": null,
+        "tag": null,
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 25.0167,
+      "cutMeters": null,
+      "widthMm": null,
+      "heightMm": null,
+      "depthMm": null,
+      "feeds": null,
+      "spindles": null,
+      "execCount": 2,
+      "targetQuantity": 1,
+      "completedExecsCount": 2,
+      "quantityProgress": null,
+      "statusLabel": "Concluído",
+      "lastExec": {
+        "id": "11299",
+        "file_name": "teste_1-2-Corte 10.txt",
+        "folder": "MAGIAS PAREDES",
+        "router_name": "Router Central",
+        "operator_name": "Italo",
+        "start_time": "2026-11-16T23:49:49.000Z",
+        "end_time": "2026-11-17T00:13:23.000Z",
+        "duration_minutes": 23.5667
+      },
+      "totalDurationMinutes": 25.0167,
+      "isManuallyDone": false
+    },
     {
       "name": "compensado 10mm e4mm 4x_1-° chapa.txt",
       "ext": ".txt",
@@ -10704,12 +11452,12 @@
       "name": "compensado 10mm arcos F,G e6mm_4-° CHAPA.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm arcos F,G e6mm_4-° CHAPA.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\antigos\\compensado 10mm arcos F,G e6mm_4-° CHAPA.txt",
       "size": 45053,
       "mtime": 1794839771882.4685,
       "mtimeDate": "2026-11-16T14:36:11.882Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCOS COLUNAS",
+      "subfolderName": "antigos",
       "matInfo": {
         "material": "Compensado",
         "thickness": "10mm",
@@ -10746,12 +11494,12 @@
       "name": "compensado 10mm arcos F,G e6mm_3-° CHAPA.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm arcos F,G e6mm_3-° CHAPA.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\antigos\\compensado 10mm arcos F,G e6mm_3-° CHAPA.txt",
       "size": 66564,
       "mtime": 1794839771847.8413,
       "mtimeDate": "2026-11-16T14:36:11.848Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCOS COLUNAS",
+      "subfolderName": "antigos",
       "matInfo": {
         "material": "Compensado",
         "thickness": "10mm",
@@ -10788,12 +11536,12 @@
       "name": "compensado 10mm arcos F,G e6mm_2-° CHAPA.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm arcos F,G e6mm_2-° CHAPA.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\antigos\\compensado 10mm arcos F,G e6mm_2-° CHAPA.txt",
       "size": 105838,
       "mtime": 1794839771826.8975,
       "mtimeDate": "2026-11-16T14:36:11.827Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCOS COLUNAS",
+      "subfolderName": "antigos",
       "matInfo": {
         "material": "Compensado",
         "thickness": "10mm",
@@ -10830,12 +11578,12 @@
       "name": "compensado 10mm arcos F,G e6mm_1-° CHAPA.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm arcos F,G e6mm_1-° CHAPA.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\antigos\\compensado 10mm arcos F,G e6mm_1-° CHAPA.txt",
       "size": 91111,
       "mtime": 1794839771804.3813,
       "mtimeDate": "2026-11-16T14:36:11.804Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCOS COLUNAS",
+      "subfolderName": "antigos",
       "matInfo": {
         "material": "Compensado",
         "thickness": "10mm",
@@ -10872,12 +11620,12 @@
       "name": "compensado 10mm arcos D,D,E e6mm_5-° chapa.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm arcos D,D,E e6mm_5-° chapa.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\antigos\\compensado 10mm arcos D,D,E e6mm_5-° chapa.txt",
       "size": 32967,
       "mtime": 1794834416343.8704,
       "mtimeDate": "2026-11-16T13:06:56.344Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCOS COLUNAS",
+      "subfolderName": "antigos",
       "matInfo": {
         "material": "Compensado",
         "thickness": "10mm",
@@ -10914,12 +11662,12 @@
       "name": "compensado 10mm arcos D,D,E e6mm_4-° chapa.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm arcos D,D,E e6mm_4-° chapa.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\antigos\\compensado 10mm arcos D,D,E e6mm_4-° chapa.txt",
       "size": 80061,
       "mtime": 1794833905219.713,
       "mtimeDate": "2026-11-16T12:58:25.220Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCOS COLUNAS",
+      "subfolderName": "antigos",
       "matInfo": {
         "material": "Compensado",
         "thickness": "10mm",
@@ -10956,12 +11704,12 @@
       "name": "compensado 10mm arcos D,D,E e6mm_3-° chapa.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm arcos D,D,E e6mm_3-° chapa.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\antigos\\compensado 10mm arcos D,D,E e6mm_3-° chapa.txt",
       "size": 140256,
       "mtime": 1794833905195.7783,
       "mtimeDate": "2026-11-16T12:58:25.196Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCOS COLUNAS",
+      "subfolderName": "antigos",
       "matInfo": {
         "material": "Compensado",
         "thickness": "10mm",
@@ -10998,12 +11746,12 @@
       "name": "compensado 10mm arcos D,D,E e6mm_2-° chapa.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm arcos D,D,E e6mm_2-° chapa.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\antigos\\compensado 10mm arcos D,D,E e6mm_2-° chapa.txt",
       "size": 79395,
       "mtime": 1794833905169.2947,
       "mtimeDate": "2026-11-16T12:58:25.169Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCOS COLUNAS",
+      "subfolderName": "antigos",
       "matInfo": {
         "material": "Compensado",
         "thickness": "10mm",
@@ -11040,12 +11788,12 @@
       "name": "compensado 10mm arcos D,D,E e6mm_1-° chapa.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm arcos D,D,E e6mm_1-° chapa.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\antigos\\compensado 10mm arcos D,D,E e6mm_1-° chapa.txt",
       "size": 127478,
       "mtime": 1794833905144.236,
       "mtimeDate": "2026-11-16T12:58:25.144Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCOS COLUNAS",
+      "subfolderName": "antigos",
       "matInfo": {
         "material": "Compensado",
         "thickness": "10mm",
@@ -11082,12 +11830,12 @@
       "name": "compensado 10mm arcos abc e6mm_6-° chapa.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm arcos abc e6mm_6-° chapa.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\antigos\\compensado 10mm arcos abc e6mm_6-° chapa.txt",
       "size": 44191,
       "mtime": 1794830964289.98,
       "mtimeDate": "2026-11-16T12:09:24.290Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCOS COLUNAS",
+      "subfolderName": "antigos",
       "matInfo": {
         "material": "Compensado",
         "thickness": "10mm",
@@ -11124,12 +11872,12 @@
       "name": "compensado 10mm arcos abc e6mm_5-° chapa.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm arcos abc e6mm_5-° chapa.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\antigos\\compensado 10mm arcos abc e6mm_5-° chapa.txt",
       "size": 70639,
       "mtime": 1794830958716.8384,
       "mtimeDate": "2026-11-16T12:09:18.717Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCOS COLUNAS",
+      "subfolderName": "antigos",
       "matInfo": {
         "material": "Compensado",
         "thickness": "10mm",
@@ -11166,12 +11914,12 @@
       "name": "compensado 10mm arcos abc e6mm_4-° chapa.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm arcos abc e6mm_4-° chapa.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\antigos\\compensado 10mm arcos abc e6mm_4-° chapa.txt",
       "size": 55559,
       "mtime": 1794830952146.2576,
       "mtimeDate": "2026-11-16T12:09:12.146Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCOS COLUNAS",
+      "subfolderName": "antigos",
       "matInfo": {
         "material": "Compensado",
         "thickness": "10mm",
@@ -11208,12 +11956,12 @@
       "name": "compensado 10mm arcos abc e6mm_3-° chapa.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm arcos abc e6mm_3-° chapa.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\antigos\\compensado 10mm arcos abc e6mm_3-° chapa.txt",
       "size": 78831,
       "mtime": 1794830944596.724,
       "mtimeDate": "2026-11-16T12:09:04.597Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCOS COLUNAS",
+      "subfolderName": "antigos",
       "matInfo": {
         "material": "Compensado",
         "thickness": "10mm",
@@ -11250,12 +11998,12 @@
       "name": "compensado 10mm arcos abc e6mm_2-° chapa.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm arcos abc e6mm_2-° chapa.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\antigos\\compensado 10mm arcos abc e6mm_2-° chapa.txt",
       "size": 75627,
       "mtime": 1794828986095.5803,
       "mtimeDate": "2026-11-16T11:36:26.096Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCOS COLUNAS",
+      "subfolderName": "antigos",
       "matInfo": {
         "material": "Compensado",
         "thickness": "10mm",
@@ -11292,12 +12040,12 @@
       "name": "compensado 10mm arcos abc e6mm_1-° chapa.txt",
       "ext": ".txt",
       "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\compensado 10mm arcos abc e6mm_1-° chapa.txt",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCOS COLUNAS\\antigos\\compensado 10mm arcos abc e6mm_1-° chapa.txt",
       "size": 95929,
       "mtime": 1794828986055.419,
       "mtimeDate": "2026-11-16T11:36:26.055Z",
       "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ARCOS COLUNAS",
+      "subfolderName": "antigos",
       "matInfo": {
         "material": "Compensado",
         "thickness": "10mm",
@@ -11431,29 +12179,29 @@
         "chapaIndex": "1",
         "targetQuantity": 1
       },
-      "estimatedMinutes": 50.8333,
+      "estimatedMinutes": 106.5666,
       "cutMeters": null,
       "widthMm": null,
       "heightMm": null,
       "depthMm": null,
       "feeds": null,
       "spindles": null,
-      "execCount": 1,
+      "execCount": 4,
       "targetQuantity": 1,
-      "completedExecsCount": 1,
+      "completedExecsCount": 4,
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "11151",
-        "file_name": "1°mdf 9mm 3 PEÇAS SUPERIORES PAREDE 2_1-Fresa 6mm.txt",
+        "id": "11303",
+        "file_name": "1°mdf 9mm 3 PEÇAS SUPERIORES PAREDE 2_1-Fresa 6mm OK.txt",
         "folder": "MAGIAS PAREDES",
-        "router_name": "Router Central",
-        "operator_name": "brenno",
-        "start_time": "2026-11-16T04:31:06.000Z",
-        "end_time": "2026-11-16T05:21:56.000Z",
-        "duration_minutes": 50.8333
+        "router_name": "Router 2",
+        "operator_name": "Italo",
+        "start_time": "2026-11-17T00:17:20.000Z",
+        "end_time": "2026-11-17T00:56:59.000Z",
+        "duration_minutes": 39.65
       },
-      "totalDurationMinutes": 50.8333,
+      "totalDurationMinutes": 106.5666,
       "isManuallyDone": false
     },
     {
@@ -12119,44 +12867,6 @@
       },
       "totalDurationMinutes": 74.1833,
       "isManuallyDone": false
-    },
-    {
-      "name": "1 pvc100mm b10mm.txt",
-      "ext": ".txt",
-      "type": "gcode",
-      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ISOPOR COLUNAS\\1 pvc100mm b10mm.txt",
-      "size": 907591,
-      "mtime": 1794737495000,
-      "mtimeDate": "2026-11-15T10:11:35.000Z",
-      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
-      "subfolderName": "ISOPOR COLUNAS",
-      "matInfo": {
-        "material": "Isopor EPS",
-        "thickness": "100mm",
-        "tag": "Isopor EPS 100mm",
-        "chapaIndex": "1",
-        "targetQuantity": 1
-      },
-      "estimatedMinutes": 15,
-      "cutMeters": null,
-      "widthMm": null,
-      "heightMm": null,
-      "depthMm": null,
-      "feeds": null,
-      "spindles": null,
-      "execCount": 1,
-      "targetQuantity": 1,
-      "completedExecsCount": 1,
-      "quantityProgress": null,
-      "statusLabel": "Concluído",
-      "lastExec": {
-        "operator_name": "Tomas",
-        "machine_name": "Router 2",
-        "start_time": "2026-11-15T12:20:33.730Z",
-        "duration_minutes": 15
-      },
-      "totalDurationMinutes": 15,
-      "isManuallyDone": true
     },
     {
       "name": "6 pvc 100mm b10mm.txt",
@@ -26580,6 +27290,44 @@
       "name": "1 PVC+ 100mm B10mm.txt",
       "ext": ".txt",
       "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA CASAS\\ISOPOR\\1 PVC+ 100mm B10mm.txt",
+      "size": 358251,
+      "mtime": 1793650456000,
+      "mtimeDate": "2026-11-02T20:14:16.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "FACHADA CASAS - ISOPOR",
+      "matInfo": {
+        "material": "Isopor EPS",
+        "thickness": "100mm",
+        "tag": "Isopor EPS 100mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 15,
+      "cutMeters": null,
+      "widthMm": null,
+      "heightMm": null,
+      "depthMm": null,
+      "feeds": null,
+      "spindles": null,
+      "execCount": 1,
+      "targetQuantity": 1,
+      "completedExecsCount": 1,
+      "quantityProgress": null,
+      "statusLabel": "Concluído",
+      "lastExec": {
+        "operator_name": "Tomas",
+        "machine_name": "Router 2",
+        "start_time": "2026-11-17T00:51:29.647Z",
+        "duration_minutes": 15
+      },
+      "totalDurationMinutes": 15,
+      "isManuallyDone": true
+    },
+    {
+      "name": "1 PVC+ 100mm B10mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
       "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA CASTELO\\1 PVC+ 100mm B10mm.txt",
       "size": 358251,
       "mtime": 1793650456000,
@@ -26609,6 +27357,44 @@
         "operator_name": "Tomas",
         "machine_name": "Router 2",
         "start_time": "2026-11-12T13:47:11.916Z",
+        "duration_minutes": 15
+      },
+      "totalDurationMinutes": 15,
+      "isManuallyDone": true
+    },
+    {
+      "name": "1 PVC+ 100mm B10mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\FACHADA CASTELO\\ISOPOR\\1 PVC+ 100mm B10mm.txt",
+      "size": 358251,
+      "mtime": 1793650456000,
+      "mtimeDate": "2026-11-02T20:14:16.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "FACHADA CASTELO - ISOPOR",
+      "matInfo": {
+        "material": "Isopor EPS",
+        "thickness": "100mm",
+        "tag": "Isopor EPS 100mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 15,
+      "cutMeters": null,
+      "widthMm": null,
+      "heightMm": null,
+      "depthMm": null,
+      "feeds": null,
+      "spindles": null,
+      "execCount": 1,
+      "targetQuantity": 1,
+      "completedExecsCount": 1,
+      "quantityProgress": null,
+      "statusLabel": "Concluído",
+      "lastExec": {
+        "operator_name": "Tomas",
+        "machine_name": "Router 2",
+        "start_time": "2026-11-17T00:51:29.427Z",
         "duration_minutes": 15
       },
       "totalDurationMinutes": 15,
@@ -27441,6 +28227,44 @@
       },
       "totalDurationMinutes": 289.483,
       "isManuallyDone": false
+    },
+    {
+      "name": "1 pvc+ 100mm b10mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\ENTRADA\\ARCO COM PILAR INTERNO\\ISOPOR\\COD\\1 pvc+ 100mm b10mm.txt",
+      "size": 3963724,
+      "mtime": 1793450656000,
+      "mtimeDate": "2026-10-31T12:44:16.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "ARCO COM PILAR INTERNO - ISOPOR",
+      "matInfo": {
+        "material": "Isopor EPS",
+        "thickness": "100mm",
+        "tag": "Isopor EPS 100mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 15,
+      "cutMeters": null,
+      "widthMm": null,
+      "heightMm": null,
+      "depthMm": null,
+      "feeds": null,
+      "spindles": null,
+      "execCount": 1,
+      "targetQuantity": 1,
+      "completedExecsCount": 1,
+      "quantityProgress": null,
+      "statusLabel": "Concluído",
+      "lastExec": {
+        "operator_name": "Tomas",
+        "machine_name": "Router 2",
+        "start_time": "2026-11-17T00:51:27.818Z",
+        "duration_minutes": 15
+      },
+      "totalDurationMinutes": 15,
+      "isManuallyDone": true
     },
     {
       "name": "correçao_1-Corte 4.txt",
@@ -30033,6 +30857,82 @@
       "isManuallyDone": false
     },
     {
+      "name": "2 pvc100mm b10mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640 - GALHO\\ISOPOR\\cod\\2 pvc100mm b10mm.txt",
+      "size": 3170444,
+      "mtime": 1792688653798.549,
+      "mtimeDate": "2026-10-22T17:04:13.799Z",
+      "jobName": "2640 - Expresso hogwarts",
+      "subfolderName": "2640 - GALHO - ISOPOR",
+      "matInfo": {
+        "material": "Isopor EPS",
+        "thickness": "100mm",
+        "tag": "Isopor EPS 100mm",
+        "chapaIndex": "2",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 15,
+      "cutMeters": null,
+      "widthMm": null,
+      "heightMm": null,
+      "depthMm": null,
+      "feeds": null,
+      "spindles": null,
+      "execCount": 1,
+      "targetQuantity": 1,
+      "completedExecsCount": 1,
+      "quantityProgress": null,
+      "statusLabel": "Concluído",
+      "lastExec": {
+        "operator_name": "Tomas",
+        "machine_name": "Router 2",
+        "start_time": "2026-11-17T00:51:27.068Z",
+        "duration_minutes": 15
+      },
+      "totalDurationMinutes": 15,
+      "isManuallyDone": true
+    },
+    {
+      "name": "1 pvc100mm b10mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640 - Expresso hogwarts\\2640 - GALHO\\ISOPOR\\cod\\1 pvc100mm b10mm.txt",
+      "size": 1068766,
+      "mtime": 1792688635898.6216,
+      "mtimeDate": "2026-10-22T17:03:55.899Z",
+      "jobName": "2640 - Expresso hogwarts",
+      "subfolderName": "2640 - GALHO - ISOPOR",
+      "matInfo": {
+        "material": "Isopor EPS",
+        "thickness": "100mm",
+        "tag": "Isopor EPS 100mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 15,
+      "cutMeters": null,
+      "widthMm": null,
+      "heightMm": null,
+      "depthMm": null,
+      "feeds": null,
+      "spindles": null,
+      "execCount": 1,
+      "targetQuantity": 1,
+      "completedExecsCount": 1,
+      "quantityProgress": null,
+      "statusLabel": "Concluído",
+      "lastExec": {
+        "operator_name": "Tomas",
+        "machine_name": "Router 2",
+        "start_time": "2026-11-17T00:51:27.392Z",
+        "duration_minutes": 15
+      },
+      "totalDurationMinutes": 15,
+      "isManuallyDone": true
+    },
+    {
       "name": "CORREÇAO RECUO  BALCAO COMPENSADO 10MM E6MM.txt",
       "ext": ".txt",
       "type": "gcode",
@@ -30157,6 +31057,82 @@
       },
       "totalDurationMinutes": 36.2667,
       "isManuallyDone": false
+    },
+    {
+      "name": "1 pvc100mm b10mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\ANTIGOS\\GALHO\\ISOPOR\\cod\\1 pvc100mm b10mm.txt",
+      "size": 1068754,
+      "mtime": 1792652616000,
+      "mtimeDate": "2026-10-22T07:03:36.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "GALHO - ISOPOR",
+      "matInfo": {
+        "material": "Isopor EPS",
+        "thickness": "100mm",
+        "tag": "Isopor EPS 100mm",
+        "chapaIndex": "1",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 15,
+      "cutMeters": null,
+      "widthMm": null,
+      "heightMm": null,
+      "depthMm": null,
+      "feeds": null,
+      "spindles": null,
+      "execCount": 1,
+      "targetQuantity": 1,
+      "completedExecsCount": 1,
+      "quantityProgress": null,
+      "statusLabel": "Concluído",
+      "lastExec": {
+        "operator_name": "Tomas",
+        "machine_name": "Router 2",
+        "start_time": "2026-11-17T00:51:26.846Z",
+        "duration_minutes": 15
+      },
+      "totalDurationMinutes": 15,
+      "isManuallyDone": true
+    },
+    {
+      "name": "2 pvc100mm b10mm.txt",
+      "ext": ".txt",
+      "type": "gcode",
+      "fullPath": "E:\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\ANTIGOS\\GALHO\\ISOPOR\\cod\\2 pvc100mm b10mm.txt",
+      "size": 3170432,
+      "mtime": 1792652579000,
+      "mtimeDate": "2026-10-22T07:02:59.000Z",
+      "jobName": "2640  - EXPRESSO HOGWARTS CCXP",
+      "subfolderName": "GALHO - ISOPOR",
+      "matInfo": {
+        "material": "Isopor EPS",
+        "thickness": "100mm",
+        "tag": "Isopor EPS 100mm",
+        "chapaIndex": "2",
+        "targetQuantity": 1
+      },
+      "estimatedMinutes": 15,
+      "cutMeters": null,
+      "widthMm": null,
+      "heightMm": null,
+      "depthMm": null,
+      "feeds": null,
+      "spindles": null,
+      "execCount": 1,
+      "targetQuantity": 1,
+      "completedExecsCount": 1,
+      "quantityProgress": null,
+      "statusLabel": "Concluído",
+      "lastExec": {
+        "operator_name": "Tomas",
+        "machine_name": "Router 2",
+        "start_time": "2026-11-17T00:51:27.606Z",
+        "duration_minutes": 15
+      },
+      "totalDurationMinutes": 15,
+      "isManuallyDone": true
     },
     {
       "name": "chapa 10 mdf9mm naval e6mm 2x.txt",
@@ -39214,11 +40190,11 @@
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "9007",
+        "id": "7603",
         "file_name": "52 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T20:30:40.000Z",
         "end_time": "2026-10-04T21:00:41.000Z",
         "duration_minutes": 30.0167
@@ -39466,11 +40442,11 @@
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "9001",
+        "id": "7591",
         "file_name": "46 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T19:03:10.000Z",
         "end_time": "2026-10-04T19:33:55.000Z",
         "duration_minutes": 30.75
@@ -39844,7 +40820,7 @@
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "8992",
+        "id": "7571",
         "file_name": "37 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -39886,7 +40862,7 @@
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "8990",
+        "id": "7569",
         "file_name": "36 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -39970,7 +40946,7 @@
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "7564",
+        "id": "8988",
         "file_name": "34 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -40138,7 +41114,7 @@
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "8983",
+        "id": "7555",
         "file_name": "30 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -40348,14 +41324,14 @@
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "8976",
+        "id": "7480",
         "file_name": "25 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
         "operator_name": "brenno",
         "start_time": "2026-10-04T01:30:52.000Z",
-        "end_time": "2026-10-04T01:56:08.800Z",
-        "duration_minutes": 25.28
+        "end_time": "2026-10-04T01:58:43.000Z",
+        "duration_minutes": 27.85
       },
       "totalDurationMinutes": 53.13,
       "isManuallyDone": false
@@ -41338,7 +42314,7 @@
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "8983",
+        "id": "7555",
         "file_name": "30 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -41548,14 +42524,14 @@
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "8976",
+        "id": "7480",
         "file_name": "25 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
         "operator_name": "brenno",
         "start_time": "2026-10-04T01:30:52.000Z",
-        "end_time": "2026-10-04T01:56:08.800Z",
-        "duration_minutes": 25.28
+        "end_time": "2026-10-04T01:58:43.000Z",
+        "duration_minutes": 27.85
       },
       "totalDurationMinutes": 53.13,
       "isManuallyDone": false
@@ -41968,7 +42944,7 @@
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "7564",
+        "id": "8988",
         "file_name": "34 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -42010,7 +42986,7 @@
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "8990",
+        "id": "7569",
         "file_name": "36 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -42052,7 +43028,7 @@
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "8992",
+        "id": "7571",
         "file_name": "37 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
@@ -42430,11 +43406,11 @@
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "9001",
+        "id": "7591",
         "file_name": "46 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T19:03:10.000Z",
         "end_time": "2026-10-04T19:33:55.000Z",
         "duration_minutes": 30.75
@@ -42682,11 +43658,11 @@
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "9007",
+        "id": "7603",
         "file_name": "52 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "brenno",
+        "operator_name": "tomas",
         "start_time": "2026-10-04T20:30:40.000Z",
         "end_time": "2026-10-04T21:00:41.000Z",
         "duration_minutes": 30.0167
@@ -43518,14 +44494,14 @@
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "7379",
+        "id": "8958",
         "file_name": "7 pvc100mm b12mm.txt",
         "folder": "2662A - capaacete senna",
         "router_name": "Router 2",
-        "operator_name": "tomas",
+        "operator_name": "brenno",
         "start_time": "2026-10-03T16:21:45.000Z",
-        "end_time": "2026-10-03T17:11:13.000Z",
-        "duration_minutes": 49.4667
+        "end_time": "2026-10-03T16:42:28.200Z",
+        "duration_minutes": 20.72
       },
       "totalDurationMinutes": 70.1867,
       "isManuallyDone": true
@@ -43812,7 +44788,7 @@
       "quantityProgress": null,
       "statusLabel": "Concluído",
       "lastExec": {
-        "id": "6746",
+        "id": "8948",
         "file_name": "rebaixo e corte e6mm.txt",
         "folder": "2640A - porta castelo",
         "router_name": "Router 2",
@@ -43867,5 +44843,5 @@
       "isManuallyDone": false
     }
   ],
-  "updatedAt": "2026-11-16T21:40:38.383Z"
+  "updatedAt": "2026-11-17T01:12:57.420Z"
 }
