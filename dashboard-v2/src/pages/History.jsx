@@ -14,7 +14,9 @@ import {
   Check,
   X,
   PlusCircle,
-  AlertTriangle
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
@@ -322,6 +324,8 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
   const [selectedSpecificDate, setSelectedSpecificDate] = useState('');
   const [selectedOperator, setSelectedOperator] = useState('all');
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 40;
 
   const availableRouters = Array.from(new Set(jobs.map(j => j.router_name).filter(Boolean)));
   const availableOperators = Array.from(new Set(jobs.map(j => j.operator_name).filter(Boolean)));
@@ -338,6 +342,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
     setSelectedDateRange('all');
     setSelectedSpecificDate('');
     setSelectedOperator('all');
+    setCurrentPage(1);
   };
 
   const filteredJobs = consolidateJobs(jobs).filter(j => {
@@ -379,6 +384,25 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
 
     return matchesText && matchesRouter && matchesOperator && matchesDate;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIdx = (safePage - 1) * ITEMS_PER_PAGE;
+  const paginatedJobs = filteredJobs.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+
+  const getPageNumbers = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages = [1];
+    const start = Math.max(2, safePage - 2);
+    const end = Math.min(totalPages - 1, safePage + 2);
+    if (start > 2) pages.push('...');
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < totalPages - 1) pages.push('...');
+    pages.push(totalPages);
+    return pages;
+  };
 
   const handleExportCSV = () => {
     const headers = ['ID', 'Arquivo', 'Projeto', 'Router', 'Operador', 'Quantidade', 'Inicio', 'Fim', 'Duracao (min)', 'Material', 'm2 Utilizado', 'Custo (R$)', 'Data'];
@@ -510,11 +534,11 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                 type="text" 
                 placeholder="Filtrar por nome do arquivo ou projeto..." 
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 className="bg-transparent border-none outline-none text-sm w-full text-white placeholder-text-muted"
               />
               {searchTerm && (
-                <button onClick={() => setSearchTerm('')} className="text-text-muted hover:text-white">
+                <button onClick={() => { setSearchTerm(''); setCurrentPage(1); }} className="text-text-muted hover:text-white">
                   <X size={14} />
                 </button>
               )}
@@ -528,6 +552,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                 onChange={(e) => {
                   setSelectedSpecificDate(e.target.value);
                   if (e.target.value) setSelectedDateRange('all');
+                  setCurrentPage(1);
                 }}
                 title="Filtrar por data/dia específico"
                 className="bg-transparent border-none outline-none text-xs text-white [color-scheme:dark] cursor-pointer"
@@ -562,7 +587,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
             </button>
 
             <button 
-              onClick={() => setIsConsolidated(!isConsolidated)}
+              onClick={() => { setIsConsolidated(!isConsolidated); setCurrentPage(1); }}
               className={clsx(
                 "flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer whitespace-nowrap",
                 isConsolidated
@@ -620,7 +645,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
               </label>
               <select
                 value={selectedRouter}
-                onChange={(e) => setSelectedRouter(e.target.value)}
+                onChange={(e) => { setSelectedRouter(e.target.value); setCurrentPage(1); }}
                 className="w-full bg-slate-900 border border-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-accent-cyan cursor-pointer"
               >
                 <option value="all">Todas as Máquinas</option>
@@ -651,6 +676,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                 onChange={(e) => {
                   setSelectedSpecificDate(e.target.value);
                   if (e.target.value) setSelectedDateRange('all');
+                  setCurrentPage(1);
                 }}
                 className="w-full bg-slate-900 border border-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-accent-cyan cursor-pointer [color-scheme:dark]"
               />
@@ -666,6 +692,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                 onChange={(e) => {
                   setSelectedDateRange(e.target.value);
                   if (e.target.value !== 'all') setSelectedSpecificDate('');
+                  setCurrentPage(1);
                 }}
                 className="w-full bg-slate-900 border border-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-accent-cyan cursor-pointer"
               >
@@ -684,7 +711,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
               </label>
               <select
                 value={selectedOperator}
-                onChange={(e) => setSelectedOperator(e.target.value)}
+                onChange={(e) => { setSelectedOperator(e.target.value); setCurrentPage(1); }}
                 className="w-full bg-slate-900 border border-border rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-accent-cyan cursor-pointer"
               >
                 <option value="all">Todos os Operadores</option>
@@ -729,7 +756,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
-              {filteredJobs.map((job) => {
+              {paginatedJobs.map((job) => {
                 const mat = materials.find(m => String(m.id) === String(job.material_id) || (job.material_name && m.name.toLowerCase() === job.material_name.toLowerCase()));
                 let effectiveMaterialCost = job.material_price || 0;
                 let effectiveAreaM2 = 0;
@@ -1262,6 +1289,65 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                 <Layers size={40} className="text-text-muted opacity-20" />
               </div>
               <div className="text-text-muted font-bold text-lg">Nenhum registro encontrado</div>
+            </div>
+          )}
+
+          {filteredJobs.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-border/40 bg-white/[0.02]">
+              <div className="text-xs text-text-muted font-semibold">
+                Exibindo <span className="text-white font-bold">{startIdx + 1}</span>–<span className="text-white font-bold">{Math.min(startIdx + ITEMS_PER_PAGE, filteredJobs.length)}</span> de <span className="text-accent-cyan font-bold">{filteredJobs.length}</span> trabalhos
+                {totalPages > 1 && (
+                  <span className="ml-2 text-text-muted/70">
+                    (Página {safePage} de {totalPages})
+                  </span>
+                )}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1 flex-wrap justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage(Math.max(1, safePage - 1))}
+                    disabled={safePage <= 1}
+                    className="px-2.5 py-1.5 rounded-lg text-xs font-bold border border-border bg-white/5 text-text-muted hover:text-white hover:border-accent-cyan/40 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <ChevronLeft size={14} />
+                    <span>Anterior</span>
+                  </button>
+
+                  {getPageNumbers().map((pg, idx) =>
+                    pg === '...' ? (
+                      <span key={`ellipsis-${idx}`} className="px-2 py-1 text-xs text-text-muted font-bold select-none">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={pg}
+                        type="button"
+                        onClick={() => setCurrentPage(pg)}
+                        className={clsx(
+                          "min-w-[32px] h-8 px-2 rounded-lg text-xs font-black border transition-all cursor-pointer",
+                          pg === safePage
+                            ? "bg-accent-cyan text-black border-accent-cyan shadow-lg shadow-accent-cyan/20"
+                            : "bg-white/5 text-text-muted border-border hover:text-white hover:border-accent-cyan/40"
+                        )}
+                      >
+                        {pg}
+                      </button>
+                    )
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage(Math.min(totalPages, safePage + 1))}
+                    disabled={safePage >= totalPages}
+                    className="px-2.5 py-1.5 rounded-lg text-xs font-bold border border-border bg-white/5 text-text-muted hover:text-white hover:border-accent-cyan/40 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Próxima</span>
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
