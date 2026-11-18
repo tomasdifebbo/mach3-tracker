@@ -46,13 +46,17 @@ export function FilaRouterOperador({
   const [copied, setCopied] = useState(false);
   const [copiedKey, setCopiedKey] = useState(null);
 
-  const handleCopyPath = (task) => {
+  const resolveDisplayPath = (task) => {
     let p = task.fullPath || task.fullFile?.fullPath || task.fullFile?.path || '';
     if (!p) {
       const sub = task.subfolder && task.subfolder !== 'Raiz' ? `\\${task.subfolder}` : '';
       p = `E:\\arquivos 2024\\ARQUIVOS 2026\\router\\${task.jobName}${sub}\\${task.baseName || task.name}`;
     }
-    const winPath = p.replace(/\//g, '\\');
+    return p.replace(/\//g, '\\');
+  };
+
+  const handleCopyPath = (task) => {
+    const winPath = resolveDisplayPath(task);
     navigator.clipboard.writeText(winPath);
     setCopiedKey(task.id);
     setTimeout(() => {
@@ -569,7 +573,7 @@ export function FilaRouterOperador({
         const icon = t.status === 'running' ? '▶️' : t.status === 'done' ? '✅' : '⏳';
         const tStr = t.durationMinutes ? `[~${formatHm(t.durationMinutes)}]` : '';
         const dimStr = t.dimensions ? `(${t.dimensions})` : '';
-        lines.push(`  ${icon} ${t.name} ${dimStr} · *${t.material}* ${tStr}`);
+        lines.push(`  ${icon} ${t.name} ${dimStr} · *${t.material}* ${tStr}\n     📂 ${resolveDisplayPath(t)}`);
       });
     });
 
@@ -625,6 +629,7 @@ export function FilaRouterOperador({
             <td class="col-file">
               <strong>${escapeHtml(t.name)}</strong>
               ${t.dimensions ? `<div class="file-dim">${escapeHtml(t.dimensions)}</div>` : ''}
+              <div class="file-path">📂 ${escapeHtml(resolveDisplayPath(t))}</div>
             </td>
             <td class="col-stage">${stageBadge}</td>
             <td class="col-mat">${escapeHtml(t.material)}</td>
@@ -708,6 +713,7 @@ export function FilaRouterOperador({
   .col-num { font-weight: 700; color: #64748b; font-size: 8px; text-align: center; }
   .col-file { word-break: break-all; }
   .file-dim { font-size: 7.4px; color: #64748b; font-family: monospace; }
+  .file-path { font-size: 7.2px; color: #334155; font-family: Consolas, monospace; margin-top: 2px; word-break: break-all; background: #f8fafc; padding: 1.5px 4px; border-radius: 3px; border-left: 2px solid #ea580c; }
   .col-time { white-space: nowrap; }
   .time-highlight { font-size: 9px; color: #c2410c; }
   .time-sub { font-size: 7.3px; color: #64748b; display: block; }
@@ -1121,6 +1127,14 @@ export function FilaRouterOperador({
                                     ({t.dimensions})
                                   </span>
                                 )}
+                              </div>
+                              <div
+                                onClick={() => handleCopyPath(t)}
+                                title="Clique para copiar o caminho completo do arquivo"
+                                className="mt-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 text-[10px] font-mono text-slate-600 dark:text-slate-300 break-all cursor-pointer hover:border-orange-500/50 transition-colors flex items-center gap-1"
+                              >
+                                <span className="text-orange-500 shrink-0">📂</span>
+                                <span>{resolveDisplayPath(t)}</span>
                               </div>
                             </td>
 

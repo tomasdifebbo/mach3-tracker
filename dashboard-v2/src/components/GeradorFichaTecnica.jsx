@@ -346,6 +346,7 @@ export function GeradorFichaTecnica({ jobs = [] }) {
           num: n,
           label: `CHAPA ${String(n).padStart(2, '0')} / ${String(totalGoal).padStart(2, '0')}`,
           fileName: job.file_name || ' corte.txt',
+          filePath: (job.file_path || `E:\\arquivos 2024\\ARQUIVOS 2026\\router\\${job.folder || selectedFolder || docSubtitle}\\${job.file_name || 'corte.txt'}`).replace(/\//g, '\\'),
           dimText: sheetDimLabel,
           durText: isRun ? 'Em corte...' : `${job.unitDuration.toFixed(1).replace('.', ',')} min`,
           status: isRun ? 'running' : 'done',
@@ -368,6 +369,7 @@ export function GeradorFichaTecnica({ jobs = [] }) {
           num: n,
           label: `CHAPA ${String(n).padStart(2, '0')} / ${String(totalGoal).padStart(2, '0')}`,
           fileName: validJobs[validJobs.length - 1]?.file_name || 'chapa_producao.txt',
+          filePath: (validJobs[validJobs.length - 1]?.file_path || `E:\\arquivos 2024\\ARQUIVOS 2026\\router\\${validJobs[validJobs.length - 1]?.folder || selectedFolder || docSubtitle}\\${validJobs[validJobs.length - 1]?.file_name || 'chapa_producao.txt'}`).replace(/\//g, '\\'),
           dimText: sheetDimLabel,
           durText: sugRouter
             ? `${sugRouter.name.replace('Router ', 'R. ')} (~${Math.round(sugRouter.avgCut)}m)`
@@ -394,7 +396,7 @@ export function GeradorFichaTecnica({ jobs = [] }) {
       partialJobs,
       rows
     };
-  }, [matchingJobs, minValidMinutes, targetSheets, setupMinutes, numRoutersProj, shiftStartTime, sheetDimLabel, manualChecks]);
+  }, [matchingJobs, minValidMinutes, targetSheets, setupMinutes, numRoutersProj, shiftStartTime, sheetDimLabel, manualChecks, selectedFolder, docSubtitle]);
 
   // Dados calculados para MODO B: Checklist por Arquivos G-Code (upload ou arquivos únicos do projeto)
   const filesChecklistData = useMemo(() => {
@@ -438,8 +440,10 @@ export function GeradorFichaTecnica({ jobs = [] }) {
       const dimText = dimParts.length > 0 ? dimParts.join(' · ') : sheetDimLabel;
 
       const refJob = activeRun || latestDone;
+      const resolvedPath = (f.filePath || refJob?.file_path || `E:\\arquivos 2024\\ARQUIVOS 2026\\router\\${refJob?.folder || f.groupName || selectedFolder || docSubtitle}\\${f.fileName}`).replace(/\//g, '\\');
       return {
         ...f,
+        filePath: resolvedPath,
         key,
         status,
         dimText,
@@ -492,7 +496,7 @@ export function GeradorFichaTecnica({ jobs = [] }) {
       pendMinMulti,
       projectedEndTimeStr
     };
-  }, [uploadedFiles, matchingJobs, sheetDimLabel, manualChecks, setupMinutes, numRoutersProj, shiftStartTime]);
+  }, [uploadedFiles, matchingJobs, sheetDimLabel, manualChecks, setupMinutes, numRoutersProj, shiftStartTime, selectedFolder, docSubtitle]);
 
   const toggleManualCheck = (key) => {
     setManualChecks(prev => ({ ...prev, [key]: !prev[key] }));
@@ -539,7 +543,10 @@ export function GeradorFichaTecnica({ jobs = [] }) {
             <tr class="${r.status === 'done' ? 'row-done' : r.status === 'running' ? 'row-running' : ''}">
               <td class="col-check">${checkHtml}</td>
               <td class="chapa-num">${escapeHtml(r.label)}</td>
-              <td class="file-name">${escapeHtml(r.fileName)}</td>
+              <td class="file-name">
+                <div>${escapeHtml(r.fileName)}</div>
+                ${r.filePath ? `<div class="file-path">📂 ${escapeHtml(r.filePath)}</div>` : ''}
+              </td>
               <td class="dim-text">${escapeHtml(r.dimText)}</td>
               <td class="time-est">${escapeHtml(r.durText)}</td>
               <td>${badgeHtml}</td>
@@ -682,7 +689,10 @@ export function GeradorFichaTecnica({ jobs = [] }) {
           return `
             <tr class="${r.status === 'done' ? 'row-done' : r.status === 'running' ? 'row-running' : ''}">
               <td class="col-check">${checkHtml}</td>
-              <td class="file-name">${escapeHtml(r.fileName)}</td>
+              <td class="file-name">
+                <div>${escapeHtml(r.fileName)}</div>
+                ${r.filePath ? `<div class="file-path">📂 ${escapeHtml(r.filePath)}</div>` : ''}
+              </td>
               <td class="dim-text">${escapeHtml(r.dimText)}</td>
               <td class="time-est">${escapeHtml(r.estText)}</td>
               <td>${badgeHtml}</td>
@@ -819,7 +829,8 @@ export function GeradorFichaTecnica({ jobs = [] }) {
   .checkbox.checked { background: #16a34a; border-color: #15803d; color: #fff; }
   .checkbox.in-prog { background: #ffedd5; border-color: #ea580c; color: #ea580c; font-size: 8px; }
   .chapa-num { font-weight: 900; color: #0f172a; white-space: nowrap; }
-  .file-name { font-weight: 700; color: #0f172a; white-space: nowrap; }
+  .file-name { font-weight: 700; color: #0f172a; }
+  .file-path { font-size: 7.2px; color: #334155; font-family: Consolas, monospace; font-weight: 500; margin-top: 1.5px; word-break: break-all; background: #f8fafc; padding: 1px 4px; border-radius: 2px; border-left: 2px solid #ea580c; }
   .dim-text { font-size: 8.1px; color: #475569; white-space: nowrap; }
   .time-est { font-weight: 800; color: #0f172a; white-space: nowrap; }
   .badge { display: inline-block; padding: 1px 5px; border-radius: 99px; font-size: 7.4px; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
@@ -1326,7 +1337,14 @@ export function GeradorFichaTecnica({ jobs = [] }) {
                       </button>
                     </td>
                     <td className="p-2.5 font-black text-white whitespace-nowrap">{r.label}</td>
-                    <td className="p-2.5 font-semibold text-slate-200 whitespace-nowrap">{r.fileName}</td>
+                    <td className="p-2.5 font-semibold text-slate-200">
+                      <div>{r.fileName}</div>
+                      {r.filePath && (
+                        <div className="text-[10px] font-mono text-slate-400 mt-0.5 break-all">
+                          📂 {r.filePath}
+                        </div>
+                      )}
+                    </td>
                     <td className="p-2.5 text-text-muted whitespace-nowrap">{r.dimText}</td>
                     <td className="p-2.5 font-bold text-accent-cyan whitespace-nowrap">{r.durText}</td>
                     <td className="p-2.5 whitespace-nowrap">
@@ -1441,7 +1459,14 @@ export function GeradorFichaTecnica({ jobs = [] }) {
                             {r.status === 'done' ? '✓' : r.status === 'running' ? '▶' : ''}
                           </button>
                         </td>
-                        <td className="p-2.5 font-bold text-white">{r.fileName}</td>
+                        <td className="p-2.5 font-bold text-white">
+                          <div>{r.fileName}</div>
+                          {r.filePath && (
+                            <div className="text-[10px] font-mono text-slate-400 font-normal mt-0.5 break-all">
+                              📂 {r.filePath}
+                            </div>
+                          )}
+                        </td>
                         <td className="p-2.5 text-text-muted">{r.dimText}</td>
                         <td className="p-2.5 font-bold text-accent-cyan">{r.estText}</td>
                         <td className="p-2.5">
