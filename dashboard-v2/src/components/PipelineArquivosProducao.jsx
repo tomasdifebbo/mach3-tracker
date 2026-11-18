@@ -1639,6 +1639,16 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                               <span>{isBatch ? `${completedExecs}/${targetQty} Peças` : '1x (Lote)'}</span>
                             </button>
 
+                            {f.errorExecsCount > 0 && (
+                              <span
+                                className="px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-500/20 text-amber-400 border border-amber-500/40 inline-flex items-center gap-1"
+                                title={`⚠️ ${f.errorExecsCount} parada(s)/reload(s) com tempo abaixo da média (~${Math.round(f.avgValidMinutes || f.estimatedMinutes || 0)} min) detectado(s) como erro na operação e desconsiderado(s) da contagem`}
+                              >
+                                <ShieldAlert size={11} className="text-amber-400 shrink-0" />
+                                <span>{f.errorExecsCount}x Erro Operação</span>
+                              </span>
+                            )}
+
                             {singleDur > 0 && (
                               <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
                                 <Clock size={10} />
@@ -1772,6 +1782,15 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                               {((f.targetQuantity || f.matInfo?.targetQuantity || 1) > 1) && (
                                 <span className="px-1.5 py-0.2 rounded text-[10px] font-black bg-amber-500/20 text-amber-500 border border-amber-500/30">
                                   {f.completedExecsCount ?? f.execCount ?? 0}/{f.targetQuantity || f.matInfo?.targetQuantity} usinados
+                                </span>
+                              )}
+                              {f.errorExecsCount > 0 && (
+                                <span
+                                  className="px-1.5 py-0.2 rounded text-[10px] font-black bg-red-500/15 text-amber-400 border border-amber-500/40 inline-flex items-center gap-1 cursor-help"
+                                  title={`⚠️ Alerta: ${f.errorExecsCount} corte(s) interrompido(s) (stop/reload) com tempo menor que a média (~${Math.round(f.avgValidMinutes || f.estimatedMinutes || 0)} min). Desconsiderado(s) da contagem pois foi erro na operação.`}
+                                >
+                                  <ShieldAlert size={11} className="text-amber-400 shrink-0" />
+                                  <span>{f.errorExecsCount}x Erro Operação</span>
                                 </span>
                               )}
                             </div>
@@ -1909,9 +1928,20 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                           {d.subfolderName || d.jobName}
                         </p>
                       </div>
-                      <span className="font-black text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
-                        {d.execCount}x
-                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {d.errorExecsCount > 0 && (
+                          <span
+                            className="font-black text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 inline-flex items-center gap-1"
+                            title={`⚠️ ${d.errorExecsCount} parada(s)/reload(s) abaixo do tempo médio (~${Math.round(d.avgValidMinutes || d.estimatedMinutes || 0)} min) ignorado(s) por erro na operação`}
+                          >
+                            <ShieldAlert size={11} className="text-amber-400 shrink-0" />
+                            <span>{d.errorExecsCount}x Erro</span>
+                          </span>
+                        )}
+                        <span className="font-black text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          {d.execCount}x
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
@@ -1992,9 +2022,20 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                           {d.lastExec?.operator_name || getCurrentShiftOperator()}
                         </td>
                         <td className="py-2 px-3">
-                          <span className="font-black text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                            {d.execCount}x
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-black text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                              {d.execCount}x
+                            </span>
+                            {d.errorExecsCount > 0 && (
+                              <span
+                                className="font-black text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/40 inline-flex items-center gap-1 cursor-help"
+                                title={`⚠️ ${d.errorExecsCount} corte(s) interrompido(s) (stop/reload) abaixo do tempo médio (~${Math.round(d.avgValidMinutes || d.estimatedMinutes || 0)} min) — erro na operação (desconsiderado da contagem)`}
+                              >
+                                <ShieldAlert size={11} className="text-amber-400 shrink-0" />
+                                <span>{d.errorExecsCount}x Erro</span>
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-2 px-3 font-mono font-bold text-slate-300 text-[11px]">
                           {Math.round(d.totalDurationMinutes || 0)} min

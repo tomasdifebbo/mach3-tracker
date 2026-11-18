@@ -13,7 +13,8 @@ import {
   FileDown,
   Check,
   X,
-  PlusCircle
+  PlusCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { api } from '../services/api';
@@ -179,57 +180,141 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
     });
   };
 
+  // Classifica execuções do mesmo arquivo comparando cada corte com o tempo médio do corte anterior
+  const classifyRunsByAvgDuration = (runs) => {
+    const getRunDur = (j) => {
+      const d = parseFloat(j.duration_minutes);
+      if (!isNaN(d) && d > 0) return d;
+      if (j.start_time && j.end_time) {
+        return Math.max(0, (new Date(j.end_time) - new Date(j.start_time)) / 60000);
+      }
+      return 0;
+    };
+
+    const chronological = [...runs].sort((a, b) => new Date(a.start_time || 0) - new Date(b.start_time || 0));
+    const finished = chronological.filter(r => r.end_time || parseFloat(r.duration_minutes) > 0);
+    const jobEst = chronological.map(j => parseFloat(j.estimated_minutes) || 0).find(v => v > 0 && v !== 5.5) || 0;
+    const durs = finished.map(getRunDur).filter(d => d > 0);
+    const maxDur = durs.length > 0 ? Math.max(...durs) : 0;
+
+    let initialRef = jobEst > 0 ? jobEst : maxDur;
+    if (durs.length > 0) {
+      const minSubstantive = jobEst > 0 ? Math.min(jobEst * 0.45, Math.max(maxDur * 0.55, 2.0)) : maxDur * 0.55;
+      const substantive = durs.filter(d => d >= minSubstantive && (jobEst <= 0 || d >= jobEst * 0.45 || maxDur >= 10));
+      if (substantive.length > 0) {
+        const validCandidates = jobEst > 0 ? substantive.filter(d => d >= jobEst * 0.45) : substantive;
+        if (validCandidates.length > 0) {
+          initialRef = validCandidates[0];
+        } else if (maxDur >= 10 && substantive.length >= 2) {
+          initialRef = substantive[0];
+        }
+      }
+    }
+
+    const validDurs = [];
+    const annotatedById = new Map();
+    let validIndex = 0;
+
+    for (const r of chronological) {
+      const dur = getRunDur(r);
+      if (!r.end_time && dur <= 0) {
+        annotatedById.set(r.id, { ...r, _dur: 0, isOpError: false, isValidCut: false, isActiveRun: true });
+        continue;
+      }
+      const currentRef = validDurs.length > 0
+        ? (validDurs.reduce((a, b) => a + b, 0) / validDurs.length)
+        : initialRef;
+      const isShortError = currentRef > 1.5 && dur < currentRef * 0.55;
+      if (isShortError) {
+        annotatedById.set(r.id, {
+          ...r,
+          _dur: dur,
+          isOpError: true,
+          isValidCut: false,
+          expectedMinutes: Math.round(currentRef * 10) / 10
+        });
+      } else {
+        validIndex += 1;
+        annotatedById.set(r.id, {
+          ...r,
+          _dur: dur,
+          isOpError: false,
+          isValidCut: true,
+          validCutNumber: validIndex,
+          expectedMinutes: Math.round(currentRef * 10) / 10
+        });
+        if (dur > 0) validDurs.push(dur);
+      }
+    }
+
+    const avgValidMinutes = validDurs.length > 0
+      ? Math.round((validDurs.reduce((a, b) => a + b, 0) / validDurs.length) * 10) / 10
+      : Math.round(initialRef * 10) / 10;
+
+    return { annotatedById, avgValidMinutes };
+  };
+
   // Helper to group jobs by File + Folder + Day (or return all individual cuts if not consolidated)
   const consolidateJobs = (jobList) => {
-    if (!isConsolidated) {
-      return [...jobList].sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
-    }
-    const groups = jobList.reduce((acc, j) => {
+    const rawGroups = jobList.reduce((acc, j) => {
       const dateKey = j.start_time ? new Date(j.start_time).toLocaleDateString('en-CA') : 'und';
       const key = `${j.file_name}-${j.folder}-${dateKey}`;
-      
-      if (!acc[key]) {
-        acc[key] = { 
-          ...j, 
-          groupKey: key,
-          duration_minutes: 0, 
-          count: 0, 
-          quantity: 0,
-          ids: [],
-          allRuns: [],
-          first_start_time: j.start_time,
-          isSomeActive: false
-        };
-      }
-      
-      const dur = j.duration_minutes || (j.end_time ? (new Date(j.end_time) - new Date(j.start_time)) / 60000 : 0);
-      acc[key].duration_minutes += Math.max(0, dur);
-      acc[key].count += 1;
-      acc[key].quantity += (j.quantity || 1);
-      acc[key].ids.push(j.id);
-      acc[key].allRuns.push(j);
-      if (!j.end_time) acc[key].isSomeActive = true;
-
-      if (!acc[key].first_start_time || new Date(j.start_time) < new Date(acc[key].first_start_time)) {
-        acc[key].first_start_time = j.start_time;
-      }
-      
-      // Keep the most recent data for display
-      if (new Date(j.start_time) > new Date(acc[key].start_time)) {
-        acc[key].id = j.id;
-        acc[key].start_time = j.start_time;
-        acc[key].end_time = j.end_time;
-      }
-      
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(j);
       return acc;
     }, {});
 
-    Object.values(groups).forEach(g => {
-      if (g.allRuns) {
-        g.allRuns.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
-      }
+    if (!isConsolidated) {
+      const annotatedAll = [];
+      Object.values(rawGroups).forEach(runs => {
+        const { annotatedById, avgValidMinutes } = classifyRunsByAvgDuration(runs);
+        runs.forEach(r => {
+          const ann = annotatedById.get(r.id) || r;
+          annotatedAll.push({ ...ann, avgValidMinutes });
+        });
+      });
+      return annotatedAll.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+    }
+
+    const groups = {};
+    Object.entries(rawGroups).forEach(([key, runs]) => {
+      const { annotatedById, avgValidMinutes } = classifyRunsByAvgDuration(runs);
+      const annotatedRuns = runs
+        .map(r => annotatedById.get(r.id) || r)
+        .sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+
+      const validRuns = annotatedRuns.filter(r => r.isValidCut);
+      const errorRuns = annotatedRuns.filter(r => r.isOpError);
+      const activeRuns = annotatedRuns.filter(r => r.isActiveRun);
+      const newest = annotatedRuns[0];
+      const oldest = annotatedRuns[annotatedRuns.length - 1];
+
+      const validDuration = validRuns.reduce((sum, r) => sum + Math.max(0, r._dur || 0), 0);
+      const allDuration = annotatedRuns.reduce((sum, r) => sum + Math.max(0, r._dur || 0), 0);
+      const effectiveValidCount = validRuns.length;
+      const effectiveQty = validRuns.length > 0
+        ? validRuns.reduce((sum, r) => sum + (r.quantity || 1), 0)
+        : 1;
+
+      groups[key] = {
+        ...newest,
+        groupKey: key,
+        duration_minutes: validRuns.length > 0 ? validDuration : allDuration,
+        total_raw_duration_minutes: allDuration,
+        count: effectiveValidCount > 0 ? effectiveValidCount : 1,
+        rawCount: annotatedRuns.length,
+        validCount: effectiveValidCount,
+        errorCount: errorRuns.length,
+        hasOpError: errorRuns.length > 0,
+        avgValidMinutes,
+        quantity: effectiveQty,
+        ids: annotatedRuns.map(r => r.id),
+        allRuns: annotatedRuns,
+        first_start_time: oldest?.start_time || newest?.start_time,
+        isSomeActive: activeRuns.length > 0
+      };
     });
-    
+
     return Object.values(groups).sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
   };
   const [selectedRouter, setSelectedRouter] = useState('all');
@@ -676,17 +761,37 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                         <span className="font-bold text-white text-xs truncate block" title={job.file_name}>
                           {job.file_name}
                         </span>
-                        {job.count > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => toggleExpandGroup(job.groupKey || job.id)}
-                            className="text-[8px] bg-accent-blue/20 hover:bg-accent-blue/30 text-accent-blue border border-accent-blue/30 px-1 py-0.2 rounded font-black tracking-tighter shrink-0 cursor-pointer flex items-center gap-0.5 transition-all"
-                            title="Clique para ver cada início e término individual"
-                          >
-                            <span>{job.count}X</span>
-                            <ChevronDown size={10} className={clsx("transition-transform", isGroupExpanded && "rotate-180")} />
-                          </button>
-                        )}
+                        <div className="flex items-center gap-1 shrink-0">
+                          {job.count > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => toggleExpandGroup(job.groupKey || job.id)}
+                              className="text-[8px] bg-accent-blue/20 hover:bg-accent-blue/30 text-accent-blue border border-accent-blue/30 px-1 py-0.2 rounded font-black tracking-tighter shrink-0 cursor-pointer flex items-center gap-0.5 transition-all"
+                              title="Cortes concluídos dentro do tempo médio. Clique para ver cada início e término individual"
+                            >
+                              <span>{job.count}X</span>
+                              <ChevronDown size={10} className={clsx("transition-transform", isGroupExpanded && "rotate-180")} />
+                            </button>
+                          )}
+                          {(job.hasOpError || job.isOpError) && (
+                            <button
+                              type="button"
+                              onClick={() => isConsolidated && job.allRuns?.length > 1 && toggleExpandGroup(job.groupKey || job.id)}
+                              className="text-[8px] bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 px-1 py-0.2 rounded font-black tracking-tight shrink-0 cursor-pointer flex items-center gap-0.5 transition-all"
+                              title={
+                                job.errorCount > 0
+                                  ? `⚠️ Erro na Operação: ${job.errorCount} parada(s)/reload(s) com tempo abaixo da média (~${Math.round(job.avgValidMinutes || job.estimated_minutes || 0)} min) desconsiderado(s) da contagem de lote. Clique para expandir.`
+                                  : `⚠️ Erro na Operação (Stop/Reload): corte interrompido (${Math.round(job.duration_minutes || 0)} min vs média ~${Math.round(job.expectedMinutes || job.avgValidMinutes || job.estimated_minutes || 0)} min)`
+                              }
+                            >
+                              <AlertTriangle size={9} className="text-amber-400 shrink-0" />
+                              <span>{job.errorCount > 1 ? `${job.errorCount}x Erro` : 'Erro Op.'}</span>
+                              {isConsolidated && job.allRuns?.length > 1 && job.count <= 1 && (
+                                <ChevronDown size={9} className={clsx("transition-transform", isGroupExpanded && "rotate-180")} />
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </div>
                       <div className="text-[8px] text-text-muted opacity-40 font-mono tracking-wider">
                         ID: #{job.id}
@@ -1060,14 +1165,40 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                           {job.allRuns.map((run, idx) => (
-                            <div key={run.id} className="bg-white/5 border border-white/10 rounded-lg p-2.5 flex flex-col gap-1 hover:border-accent-cyan/30 transition-all">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-accent-blue">Corte #{job.allRuns.length - idx} (ID: #{run.id})</span>
+                            <div
+                              key={run.id}
+                              className={clsx(
+                                "rounded-lg p-2.5 flex flex-col gap-1 transition-all border",
+                                run.isOpError
+                                  ? "bg-amber-500/10 border-amber-500/40 hover:border-amber-400"
+                                  : "bg-white/5 border-white/10 hover:border-accent-cyan/30"
+                              )}
+                            >
+                              <div className="flex items-center justify-between gap-1 flex-wrap">
+                                <span className={clsx("text-[10px] font-bold flex items-center gap-1", run.isOpError ? "text-amber-400" : "text-accent-blue")}>
+                                  {run.isOpError ? (
+                                    <>
+                                      <AlertTriangle size={11} className="text-amber-400 shrink-0" />
+                                      <span>Stop / Erro Operação (ID: #{run.id})</span>
+                                    </>
+                                  ) : (
+                                    <span>Corte #{run.validCutNumber || (job.allRuns.length - idx)} (ID: #{run.id})</span>
+                                  )}
+                                </span>
                                 <div className="flex items-center gap-1">
-                                  <span className="text-[9px] font-bold text-purple-300 bg-purple-500/20 px-1 py-0.5 rounded">
-                                    {run.quantity || 1} UN
-                                  </span>
-                                  <span className="text-[9px] font-mono font-bold text-white bg-white/10 px-1.5 py-0.5 rounded">
+                                  {run.isOpError ? (
+                                    <span
+                                      className="text-[8px] font-black text-amber-300 bg-amber-500/20 border border-amber-500/30 px-1.5 py-0.5 rounded"
+                                      title={`Interrompido aos ${Math.round(run._dur || 0)} min (tempo médio esperado: ~${Math.round(run.expectedMinutes || job.avgValidMinutes || 0)} min). Desconsiderado da contagem.`}
+                                    >
+                                      Ignorado (média ~{Math.round(run.expectedMinutes || job.avgValidMinutes || 0)}m)
+                                    </span>
+                                  ) : (
+                                    <span className="text-[9px] font-bold text-purple-300 bg-purple-500/20 px-1 py-0.5 rounded">
+                                      {run.quantity || 1} UN
+                                    </span>
+                                  )}
+                                  <span className={clsx("text-[9px] font-mono font-bold px-1.5 py-0.5 rounded", run.isOpError ? "text-amber-300 bg-amber-500/20" : "text-white bg-white/10")}>
                                     {Math.round(run.duration_minutes || (run.end_time ? (new Date(run.end_time) - new Date(run.start_time))/60000 : 0))} min
                                   </span>
                                 </div>

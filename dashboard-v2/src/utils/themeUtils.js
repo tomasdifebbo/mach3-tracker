@@ -1,6 +1,4 @@
 // Utility for managing system theme, custom colors, and font color modes
-import { api } from '../services/api';
-
 export const THEME_PRESETS = [
   {
     id: 'Escuro',

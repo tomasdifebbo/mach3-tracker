@@ -296,7 +296,7 @@ function getBaseFileVariants(fileName) {
     // Transpose number prefix: "3 mdf 9mm..." <-> "mdf 9mm 3..."
     const numPrefixMatch = withoutExt.match(/^(\d+)\s+([a-zA-Z]+)\s*(\d+mm)?\s*(.*)$/i);
     if (numPrefixMatch) {
-        const [_, num, mat, thick, rest] = numPrefixMatch;
+        const [, num, mat, thick, rest] = numPrefixMatch;
         const transposed = `${mat} ${thick || ''} ${num} ${rest}`.replace(/\s+/g, ' ').trim();
         variants.add(transposed + ext);
         const transClean = transposed.replace(/(?:[\s\-_]+ok(?:\s*\d+\s*x)?(?:\s*\d+)?|\s+ok\s*\d+\s*x)$/i, '').trim();
@@ -304,7 +304,7 @@ function getBaseFileVariants(fileName) {
     }
     const numInsideMatch = withoutExt.match(/^([a-zA-Z]+)\s*(\d+mm)?\s*(\d+)\s+(.*)$/i);
     if (numInsideMatch) {
-        const [_, mat, thick, num, rest] = numInsideMatch;
+        const [, mat, thick, num, rest] = numInsideMatch;
         const transposed = `${num} ${mat} ${thick || ''} ${rest}`.replace(/\s+/g, ' ').trim();
         variants.add(transposed + ext);
         const transClean = transposed.replace(/(?:[\s\-_]+ok(?:\s*\d+\s*x)?(?:\s*\d+)?|\s+ok\s*\d+\s*x)$/i, '').trim();
@@ -328,7 +328,7 @@ function getCleanBaseGCodeName(fileName) {
 
     const numPrefixMatch = cleaned.match(/^(\d+)\s+([a-zA-Z]+)\s*(\d+mm)?\s*(.*)$/i);
     if (numPrefixMatch) {
-        const [_, num, mat, thick, rest] = numPrefixMatch;
+        const [, num, mat, thick, rest] = numPrefixMatch;
         cleaned = `${mat} ${thick || ''} ${num} ${rest}`.replace(/\s+/g, ' ').trim();
     }
     cleaned = cleaned.replace(/\s+/g, ' ').trim();
@@ -369,6 +369,86 @@ function unscopeFileKey(userId, storedKey) {
     if (uId <= 1) return raw;
     const prefix = `u${uId}::`;
     return raw.startsWith(prefix) ? raw.slice(prefix.length) : raw;
+}
+
+/**
+ * Classifica execuções concluídas de um mesmo arquivo G-Code comparando o tempo de corte
+ * com o tempo médio do corte anterior (ou tempo estimado de referência quando ainda não há corte completo).
+ * Cortes abortados precocemente (Stop & Reload / erro na operação) abaixo de 55% do tempo médio
+ * NÃO incrementam a contagem de lote (2x, 3x, 4x) e são sinalizados em errorExecs.
+ */
+function classifyFileExecutions(execs = [], estimatedMinutes = null) {
+    if (!Array.isArray(execs) || execs.length === 0) {
+        return { validExecs: [], errorExecs: [], avgValidMinutes: Number(estimatedMinutes) || 0 };
+    }
+
+    const getDur = (j) => {
+        const d = parseFloat(j.duration_minutes);
+        if (!isNaN(d) && d > 0) return d;
+        if (j.start_time && j.end_time) {
+            return Math.max(0, (new Date(j.end_time) - new Date(j.start_time)) / 60000);
+        }
+        return 0;
+    };
+
+    const chronological = [...execs].sort(
+        (a, b) => new Date(a.start_time || 0).getTime() - new Date(b.start_time || 0).getTime()
+    );
+
+    const jobEst = chronological.map(j => parseFloat(j.estimated_minutes) || 0).find(v => v > 0 && v !== 5.5) || 0;
+    const est = parseFloat(estimatedMinutes) || jobEst || 0;
+    const durs = chronological.map(getDur).filter(d => d > 0);
+    const maxDur = durs.length > 0 ? Math.max(...durs) : 0;
+
+    let initialRef = est > 0 ? est : maxDur;
+    if (durs.length > 0) {
+        const minSubstantive = est > 0 ? Math.min(est * 0.45, Math.max(maxDur * 0.55, 2.0)) : maxDur * 0.55;
+        const substantive = durs.filter(d => d >= minSubstantive && (est <= 0 || d >= est * 0.45 || maxDur >= 10));
+        if (substantive.length > 0) {
+            const validCandidates = est > 0
+                ? substantive.filter(d => d >= est * 0.45)
+                : substantive;
+            if (validCandidates.length > 0) {
+                initialRef = validCandidates[0];
+            } else if (maxDur >= 10 && substantive.length >= 2) {
+                initialRef = substantive[0];
+            }
+        }
+    }
+
+    const validExecs = [];
+    const errorExecs = [];
+    const validDurs = [];
+
+    for (const job of chronological) {
+        const dur = getDur(job);
+        const currentRef = validDurs.length > 0
+            ? (validDurs.reduce((a, b) => a + b, 0) / validDurs.length)
+            : initialRef;
+
+        const isShortError = currentRef > 1.5 && dur < currentRef * 0.55;
+
+        if (isShortError) {
+            errorExecs.push({
+                ...job,
+                duration_minutes: Math.round(dur * 100) / 100,
+                expected_minutes: Math.round(currentRef * 10) / 10,
+                isOpError: true
+            });
+        } else {
+            validExecs.push(job);
+            if (dur > 0) validDurs.push(dur);
+        }
+    }
+
+    validExecs.sort((a, b) => new Date(b.start_time || 0).getTime() - new Date(a.start_time || 0).getTime());
+    errorExecs.sort((a, b) => new Date(b.start_time || 0).getTime() - new Date(a.start_time || 0).getTime());
+
+    const avgValidMinutes = validDurs.length > 0
+        ? Math.round((validDurs.reduce((a, b) => a + b, 0) / validDurs.length) * 10) / 10
+        : (Math.round(initialRef * 10) / 10);
+
+    return { validExecs, errorExecs, avgValidMinutes };
 }
 
 function resolveExecutionMeta(execs, dbCompRec, gf, dur, dayOpName, nightOpName) {
@@ -466,10 +546,12 @@ function calculateDynamicBatches(dbJobs = [], completedFilesMap = {}, customBatc
                 }
                 return true;
             });
-            const doneSheets = Math.min(qty, execRuns.length);
+            const finishedRuns = execRuns.filter(j => j.end_time != null || j.duration_minutes);
+            const { validExecs: validBatchRuns, errorExecs: errorBatchRuns, avgValidMinutes } = classifyFileExecutions(finishedRuns, null);
+            const doneSheets = Math.min(qty, validBatchRuns.length);
             const pendingSheets = Math.max(0, qty - doneSheets);
-            const avgDur = execRuns.length > 0
-                ? Math.max(1, Math.round(execRuns.reduce((s, r) => s + (Number(r.duration_minutes) || 0), 0) / execRuns.length))
+            const avgDur = avgValidMinutes > 0
+                ? Math.max(1, Math.round(avgValidMinutes))
                 : 25;
 
             batches.push({
@@ -484,6 +566,8 @@ function calculateDynamicBatches(dbJobs = [], completedFilesMap = {}, customBatc
                 targetSheets: qty,
                 doneSheets,
                 pendingSheets,
+                errorExecsCount: errorBatchRuns.length,
+                hasOpError: errorBatchRuns.length > 0,
                 status: pendingSheets === 0 ? 'concluido' : (doneSheets > 0 ? 'em_andamento' : 'pronto_router'),
                 estMinutesPerSheet: avgDur,
                 totalEstMinutes: pendingSheets * avgDur,
@@ -575,7 +659,7 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
     let dbJobs = [];
     try {
         const { rows } = await pool.query(`
-            SELECT id, file_name, folder, router_name, operator_name, start_time, end_time, duration_minutes
+            SELECT id, file_name, folder, router_name, operator_name, start_time, end_time, duration_minutes, estimated_minutes
             FROM jobs
             WHERE ("userId" = $1 OR ($1::int = 1 AND "userId" IS NULL))
             ORDER BY start_time DESC
@@ -1173,10 +1257,22 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
                     seenGcodeNames.add(lower);
 
                     const execs = getFileExecs({ ...gf, subfolderName }, lower);
-                    const completedExecs = execs.filter(j => !isJobActive(j));
+                    const rawCompletedExecs = execs.filter(j => !isJobActive(j));
                     const activeExec = findActiveExec({ ...gf, subfolderName }, lower);
                     const isCurrentlyRunning = Boolean(activeExec);
                     let matInfo = gf.matInfo?.tag ? { ...gf.matInfo } : extractMaterialInfo(gf.name, gf.fullPath || subfolderName);
+                    const meta = getGCodeMetadata(gf.fullPath, gf.mtime) || {};
+                    const estMinutes = meta.estimatedMinutes || gf.estimatedMinutes || (gf.cutMeters ? Math.max(1, Math.round((gf.cutMeters * 1000 / (matInfo?.material === 'MDF' ? 1800 : 2500)) * 1.15)) : (gf.name.toLowerCase().includes('isopor') ? 90 : null));
+                    const { validExecs: completedExecs, errorExecs, avgValidMinutes } = classifyFileExecutions(rawCompletedExecs, estMinutes);
+                    const errorExecsSummary = errorExecs.map(e => ({
+                        id: e.id,
+                        start_time: e.start_time,
+                        end_time: e.end_time,
+                        duration_minutes: e.duration_minutes,
+                        expected_minutes: e.expected_minutes,
+                        operator_name: e.operator_name,
+                        router_name: e.router_name
+                    }));
                     const customQty = getFileBatchQuantity(gf, subfolderName);
                     if (customQty) {
                         matInfo.targetQuantity = customQty;
@@ -1194,32 +1290,34 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
                     const isOk = (!reopenRec && (targetQty > 1 ? completedExecs.length >= targetQty : (completedExecs.length > 0 || isFileMarkedOk(gf.name)))) || isDbDone;
 
                     if (isOk && !isCurrentlyRunning) {
-                        const dur = execs.length > 0 
-                            ? execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) 
-                            : (gf.estimatedMinutes || (gf.cutMeters ? Math.max(1, Math.round((gf.cutMeters * 1000 / 1800) * 1.15)) : 15));
+                        const dur = completedExecs.length > 0 
+                            ? completedExecs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) 
+                            : (estMinutes || 15);
                         gcodeFeitos.push({
                             ...gf,
                             subfolderName,
                             matInfo,
-                            estimatedMinutes: gf.estimatedMinutes || dur,
+                            estimatedMinutes: estMinutes || dur,
                             cutMeters: gf.cutMeters || null,
                             widthMm: gf.widthMm || null,
                             heightMm: gf.heightMm || null,
                             depthMm: gf.depthMm || null,
                             feeds: gf.feeds || null,
                             spindles: gf.spindles || null,
-                            execCount: execs.length > 0 ? execs.length : (targetQty > 1 ? targetQty : 1),
+                            execCount: completedExecs.length > 0 ? completedExecs.length : (targetQty > 1 ? targetQty : 1),
                             targetQuantity: targetQty,
                             completedExecsCount: completedExecs.length > 0 ? completedExecs.length : targetQty,
+                            errorExecsCount: errorExecs.length,
+                            hasOpError: errorExecs.length > 0,
+                            errorExecs: errorExecsSummary,
+                            avgValidMinutes,
                             quantityProgress: targetQty > 1 ? `${targetQty}/${targetQty}` : null,
                             statusLabel: targetQty > 1 ? `Concluído (${targetQty}/${targetQty})` : 'Concluído',
-                            lastExec: resolveExecutionMeta(execs, dbCompRec, gf, dur, dayOpName, nightOpName),
+                            lastExec: resolveExecutionMeta(completedExecs.length > 0 ? completedExecs : rawCompletedExecs, dbCompRec, gf, dur, dayOpName, nightOpName),
                             totalDurationMinutes: dur,
                             isManuallyDone: isDbDone
                         });
                     } else {
-                        const meta = getGCodeMetadata(gf.fullPath, gf.mtime) || {};
-                        const estMinutes = meta.estimatedMinutes || gf.estimatedMinutes || (gf.cutMeters ? Math.max(1, Math.round((gf.cutMeters * 1000 / (matInfo?.material === 'MDF' ? 1800 : 2500)) * 1.15)) : (gf.name.toLowerCase().includes('isopor') ? 90 : null));
                         gcodeProntos.push({
                             ...gf,
                             subfolderName,
@@ -1227,6 +1325,10 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
                             execCount: completedExecs.length,
                             targetQuantity: targetQty,
                             completedExecsCount: completedExecs.length,
+                            errorExecsCount: errorExecs.length,
+                            hasOpError: errorExecs.length > 0,
+                            errorExecs: errorExecsSummary,
+                            avgValidMinutes,
                             quantityProgress: targetQty > 1 ? `${completedExecs.length}/${targetQty}` : null,
                             statusLabel: isCurrentlyRunning
                                 ? `Usinando (${completedExecs.length + 1}/${targetQty})`
@@ -1642,7 +1744,6 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
         const seenJobGcodes = new Set();
 
         gcode.forEach(gf => {
-            const dir = getNormDir(gf.fullPath);
             const subfolderName = getSubfolderName(gf.fullPath);
             let matInfo = extractMaterialInfo(gf.name, gf.fullPath || subfolderName);
             const customQty = getFileBatchQuantity(gf, subfolderName);
@@ -1656,9 +1757,21 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
             seenJobGcodes.add(compoundKey);
 
             const execs = getFileExecs({ ...gf, subfolderName, jobName: jName }, lower);
-            const completedExecs = execs.filter(j => !isJobActive(j));
+            const rawCompletedExecs = execs.filter(j => !isJobActive(j));
             const activeExec = findActiveExec({ ...gf, subfolderName, jobName: jName }, lower);
             const isCurrentlyRunning = Boolean(activeExec);
+            const meta = getGCodeMetadata(gf.fullPath, gf.mtime) || {};
+            const estMinutes = meta.estimatedMinutes || gf.estimatedMinutes || (gf.cutMeters ? Math.max(1, Math.round((gf.cutMeters * 1000 / (matInfo?.material === 'MDF' ? 1800 : 2500)) * 1.15)) : (gf.name.toLowerCase().includes('isopor') ? 90 : null));
+            const { validExecs: completedExecs, errorExecs, avgValidMinutes } = classifyFileExecutions(rawCompletedExecs, estMinutes);
+            const errorExecsSummary = errorExecs.map(e => ({
+                id: e.id,
+                start_time: e.start_time,
+                end_time: e.end_time,
+                duration_minutes: e.duration_minutes,
+                expected_minutes: e.expected_minutes,
+                operator_name: e.operator_name,
+                router_name: e.router_name
+            }));
             const targetQty = customQty || matInfo.targetQuantity || 1;
             if (targetQty > 1) {
                 matInfo.targetQuantity = targetQty;
@@ -1672,34 +1785,36 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
             const isOk = (!reopenRec && (targetQty > 1 ? completedExecs.length >= targetQty : (completedExecs.length > 0 || isFileMarkedOk(gf.name)))) || isDbDone;
 
             if (isOk && !isCurrentlyRunning) {
-                const dur = execs.length > 0 
-                    ? execs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) 
-                    : (gf.estimatedMinutes || (gf.cutMeters ? Math.max(1, Math.round((gf.cutMeters * 1000 / 1800) * 1.15)) : 15));
+                const dur = completedExecs.length > 0 
+                    ? completedExecs.reduce((a, b) => a + (parseFloat(b.duration_minutes) || 0), 0) 
+                    : (estMinutes || 15);
                 const item = {
                     ...gf,
                     jobName: jName,
                     subfolderName,
                     matInfo,
-                    estimatedMinutes: gf.estimatedMinutes || dur,
-                    cutMeters: gf.cutMeters || null,
-                    widthMm: gf.widthMm || null,
-                    heightMm: gf.heightMm || null,
-                    depthMm: gf.depthMm || null,
-                    feeds: gf.feeds || null,
-                    spindles: gf.spindles || null,
-                    execCount: execs.length > 0 ? execs.length : (targetQty > 1 ? targetQty : 1),
+                    estimatedMinutes: estMinutes || dur,
+                    cutMeters: meta.cutMeters !== undefined ? meta.cutMeters : (gf.cutMeters || null),
+                    widthMm: meta.widthMm || gf.widthMm || null,
+                    heightMm: meta.heightMm || gf.heightMm || null,
+                    depthMm: meta.depthMm || gf.depthMm || null,
+                    feeds: meta.feeds || gf.feeds || null,
+                    spindles: meta.spindles || gf.spindles || null,
+                    execCount: completedExecs.length > 0 ? completedExecs.length : (targetQty > 1 ? targetQty : 1),
                     targetQuantity: targetQty,
                     completedExecsCount: completedExecs.length > 0 ? completedExecs.length : targetQty,
+                    errorExecsCount: errorExecs.length,
+                    hasOpError: errorExecs.length > 0,
+                    errorExecs: errorExecsSummary,
+                    avgValidMinutes,
                     quantityProgress: targetQty > 1 ? `${targetQty}/${targetQty}` : null,
                     statusLabel: targetQty > 1 ? `Concluído (${targetQty}/${targetQty})` : 'Concluído',
-                    lastExec: resolveExecutionMeta(execs, dbCompRec, gf, dur, dayOpName, nightOpName),
+                    lastExec: resolveExecutionMeta(completedExecs.length > 0 ? completedExecs : rawCompletedExecs, dbCompRec, gf, dur, dayOpName, nightOpName),
                     totalDurationMinutes: dur,
                     isManuallyDone: isDbDone
                 };
                 gcodeFeitos.push(item);
             } else {
-                const meta = getGCodeMetadata(gf.fullPath, gf.mtime) || {};
-                const estMinutes = meta.estimatedMinutes || gf.estimatedMinutes || (gf.cutMeters ? Math.max(1, Math.round((gf.cutMeters * 1000 / (matInfo?.material === 'MDF' ? 1800 : 2500)) * 1.15)) : (gf.name.toLowerCase().includes('isopor') ? 90 : null));
                 const item = {
                     ...gf,
                     jobName: jName,
@@ -1719,6 +1834,10 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
                     targetQuantity: targetQty,
                     completedExecsCount: completedExecs.length,
                     execCount: completedExecs.length,
+                    errorExecsCount: errorExecs.length,
+                    hasOpError: errorExecs.length > 0,
+                    errorExecs: errorExecsSummary,
+                    avgValidMinutes,
                     quantityProgress: targetQty > 1 ? `${completedExecs.length}/${targetQty}` : null,
                     statusLabel: isCurrentlyRunning
                         ? `Usinando (${completedExecs.length + 1}/${targetQty})`
@@ -1848,6 +1967,7 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
 module.exports = {
     getProductionPipeline,
     calculateDynamicBatches,
+    classifyFileExecutions,
     invalidatePipelineCache,
     getGCodeMetadata,
     extractMaterialInfo,

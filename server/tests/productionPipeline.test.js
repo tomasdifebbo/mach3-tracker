@@ -7,7 +7,8 @@ const path = require('node:path');
 const {
     getGCodeMetadata,
     extractMaterialInfo,
-    isFileMarkedOk
+    isFileMarkedOk,
+    classifyFileExecutions
 } = require('../production_pipeline');
 
 test('getGCodeMetadata parses dimensions, feeds, spindles, and Aspire material header', (t) => {
@@ -98,4 +99,27 @@ test('scopeFileKey and unscopeFileKey isolate multi-tenant keys cleanly', () => 
     assert.equal(customBatches[0].doneSheets, 1);
     assert.equal(customBatches[0].pendingSheets, 11);
     assert.equal(customBatches[0].status, 'em_andamento');
+});
+
+test('classifyFileExecutions counts only cuts matching previous average duration and flags stop/reload errors', () => {
+    const runs = [
+        { id: 1, start_time: '2026-11-17T18:01:30Z', end_time: '2026-11-17T18:12:40Z', duration_minutes: 11.17, estimated_minutes: 10.18 },
+        { id: 2, start_time: '2026-11-17T18:31:28Z', end_time: '2026-11-17T18:32:35Z', duration_minutes: 1.12, estimated_minutes: 10.18 },
+        { id: 3, start_time: '2026-11-17T18:32:51Z', end_time: '2026-11-17T18:41:20Z', duration_minutes: 8.48, estimated_minutes: 10.18 }
+    ];
+    const res = classifyFileExecutions(runs, 10.18);
+    assert.equal(res.validExecs.length, 2);
+    assert.equal(res.errorExecs.length, 1);
+    assert.equal(res.errorExecs[0].id, 2);
+    assert.equal(res.errorExecs[0].isOpError, true);
+
+    // Multiple short stops before any full cut completes should all be flagged as operational errors
+    const abortedOnly = [
+        { id: 10, start_time: '2026-11-18T02:03:56Z', end_time: '2026-11-18T02:07:38Z', duration_minutes: 3.70, estimated_minutes: 36.90 },
+        { id: 11, start_time: '2026-11-18T02:07:49Z', end_time: '2026-11-18T02:10:57Z', duration_minutes: 3.13, estimated_minutes: 36.90 },
+        { id: 12, start_time: '2026-11-18T02:11:47Z', end_time: '2026-11-18T02:18:12Z', duration_minutes: 6.42, estimated_minutes: 36.90 }
+    ];
+    const resAborted = classifyFileExecutions(abortedOnly, 36.90);
+    assert.equal(resAborted.validExecs.length, 0);
+    assert.equal(resAborted.errorExecs.length, 3);
 });

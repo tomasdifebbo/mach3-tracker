@@ -28,7 +28,6 @@ function formatHm(mins) {
 export function FilaRouterOperador({
   operatorName = 'Operador',
   routers = [],
-  jobs = [],
   isModal = false,
   onClose = null,
   onOpenModal = null
@@ -40,7 +39,7 @@ export function FilaRouterOperador({
   const [selectedMaterial, setSelectedMaterial] = useState('todos');
   const [includeRouter, setIncludeRouter] = useState(true);
   const [includeAspire, setIncludeAspire] = useState(false);
-  const [includeCorel, setIncludeCorel] = useState(false);
+  const [includeCorel] = useState(false);
   const [includeConcluded, setIncludeConcluded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [assignedMachines, setAssignedMachines] = useState('Router 1 e Router 2');
@@ -308,6 +307,8 @@ export function FilaRouterOperador({
               dimensions: dim,
               operator: operatorName,
               mtime: f.mtimeDate,
+              errorExecsCount: f.errorExecsCount || 0,
+              avgValidMinutes: f.avgValidMinutes || f.estimatedMinutes || 0,
               fullFile: f,
               fullPath: f.fullPath
             });
@@ -333,6 +334,8 @@ export function FilaRouterOperador({
             dimensions: dim,
             operator: operatorName,
             mtime: f.mtimeDate,
+            errorExecsCount: f.errorExecsCount || 0,
+            avgValidMinutes: f.avgValidMinutes || f.estimatedMinutes || 0,
             fullFile: f,
             fullPath: f.fullPath
           });
@@ -1097,9 +1100,20 @@ export function FilaRouterOperador({
 
                             {/* Coluna 2: Arquivo & Medidas da Chapa Destacadas */}
                             <td className="py-2.5 px-3">
-                              <span className="font-bold text-slate-900 dark:text-white block">
-                                {t.name}
-                              </span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-slate-900 dark:text-white">
+                                  {t.name}
+                                </span>
+                                {t.errorExecsCount > 0 && (
+                                  <span
+                                    className="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-500/20 text-amber-400 border border-amber-500/40 inline-flex items-center gap-1"
+                                    title={`⚠️ ${t.errorExecsCount} corte(s) interrompido(s) (stop/reload) abaixo do tempo médio (~${Math.round(t.avgValidMinutes || 0)} min) — erro na operação (não contabilizado)`}
+                                  >
+                                    <AlertCircle size={10} className="text-amber-400 shrink-0" />
+                                    <span>{t.errorExecsCount}x Erro Op.</span>
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono mt-0.5">
                                 <span>{t.subfolder}</span>
                                 {t.dimensions && (
