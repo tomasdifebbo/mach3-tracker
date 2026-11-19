@@ -5,6 +5,8 @@ const CAD_EXTS = ['.cdr']; // Apenas arquivos .CDR do CorelDRAW
 const ASPIRE_EXTS = ['.eps', '.dxf']; // Arquivos vetoriais (.EPS/.DXF) para abrir e preparar no Aspire
 const ASPIRE_CRV_EXTS = ['.crv3d', '.crv']; // Arquivos nativos de projeto do Aspire/VCarve
 const GCODE_EXTS = ['.txt', '.nc', '.tap', '.gcode', '.cnc'];
+const DOC_EXTS = ['.pdf', '.png', '.jpg', '.jpeg', '.webp']; // PDFs e fotos de layout das peças na pasta
+const IGNORED_DOC_RE = /^(ficha[_\s-]*tecnica|relatorio|requisicao|manual[_\s-])/i;
 
 function scanDirRecursive(dir, maxDepth = 8, depth = 0) {
     let files = [];
@@ -21,12 +23,14 @@ function scanDirRecursive(dir, maxDepth = 8, depth = 0) {
                 files = files.concat(scanDirRecursive(full, maxDepth, depth + 1));
             } else if (ent.isFile()) {
                 const ext = path.extname(ent.name).toLowerCase();
-                if (CAD_EXTS.includes(ext) || ASPIRE_EXTS.includes(ext) || ASPIRE_CRV_EXTS.includes(ext) || GCODE_EXTS.includes(ext)) {
+                const isDoc = DOC_EXTS.includes(ext) && !IGNORED_DOC_RE.test(ent.name);
+                if (CAD_EXTS.includes(ext) || ASPIRE_EXTS.includes(ext) || ASPIRE_CRV_EXTS.includes(ext) || GCODE_EXTS.includes(ext) || isDoc) {
                     const stat = fs.statSync(full);
                     let type = 'cad';
                     if (ASPIRE_EXTS.includes(ext)) type = 'aspire';
                     else if (ASPIRE_CRV_EXTS.includes(ext)) type = 'crv';
                     else if (GCODE_EXTS.includes(ext)) type = 'gcode';
+                    else if (isDoc) type = 'doc';
                     files.push({
                         name: ent.name,
                         ext,
@@ -43,6 +47,141 @@ function scanDirRecursive(dir, maxDepth = 8, depth = 0) {
     return files;
 }
 
+// Gera SVG vetorial compacto (vista de cima do percurso de corte) para o operador identificar e anotar peças
+function generateGCodePreviewSvg(rawPaths, bounds, materialSize = null) {
+    if (!Array.isArray(rawPaths) || rawPaths.length === 0) return null;
+    if (!bounds || !isFinite(bounds.minX) || !isFinite(bounds.maxX) || !isFinite(bounds.minY) || !isFinite(bounds.maxY)) {
+        return null;
+    }
+
+    const cutW = Math.max(1, bounds.maxX - bounds.minX);
+    const cutH = Math.max(1, bounds.maxY - bounds.minY);
+    if (cutW < 1 && cutH < 1) return null;
+
+    // Deduplica passes repetidos em Z (mesmo contorno cortado em múltiplas profundidades)
+    const uniquePaths = [];
+    const seenBboxes = [];
+    const bboxTol = Math.max(3, Math.min(cutW, cutH) * 0.005);
+
+    for (let i = 0; i < rawPaths.length; i++) {
+        const pts = rawPaths[i];
+        if (!pts || pts.length < 2) continue;
+        let pMinX = Infinity, pMaxX = -Infinity, pMinY = Infinity, pMaxY = -Infinity;
+        for (let j = 0; j < pts.length; j++) {
+            const x = pts[j][0];
+            const y = pts[j][1];
+            if (x < pMinX) pMinX = x;
+            if (x > pMaxX) pMaxX = x;
+            if (y < pMinY) pMinY = y;
+            if (y > pMaxY) pMaxY = y;
+        }
+        const pw = pMaxX - pMinX;
+        const ph = pMaxY - pMinY;
+        if (pw < 1 && ph < 1) continue;
+
+        let isDup = false;
+        for (let k = 0; k < seenBboxes.length; k++) {
+            const b = seenBboxes[k];
+            if (
+                Math.abs(pMinX - b[0]) <= bboxTol &&
+                Math.abs(pMinY - b[1]) <= bboxTol &&
+                Math.abs(pMaxX - b[2]) <= bboxTol &&
+                Math.abs(pMaxY - b[3]) <= bboxTol &&
+                Math.abs(pts.length - b[4]) <= Math.max(6, Math.round(b[4] * 0.25))
+            ) {
+                isDup = true;
+                break;
+            }
+        }
+        if (!isDup) {
+            seenBboxes.push([pMinX, pMinY, pMaxX, pMaxY, pts.length]);
+            uniquePaths.push(pts);
+            if (uniquePaths.length >= 220) break;
+        }
+    }
+
+    if (uniquePaths.length === 0) return null;
+
+    // Define área da chapa (usa materialSize se cobrir o corte razoavelmente; caso contrário usa bounding box do corte)
+    let viewMinX = bounds.minX;
+    let viewMaxX = bounds.maxX;
+    let viewMinY = bounds.minY;
+    let viewMaxY = bounds.maxY;
+    let showSheetFrame = false;
+    let sheetW = cutW;
+    let sheetH = cutH;
+
+    if (materialSize && materialSize.width > 10 && materialSize.height > 10) {
+        const msW = Number(materialSize.width);
+        const msH = Number(materialSize.height);
+        if (bounds.minX >= -50 && bounds.minY >= -50 && bounds.maxX <= msW + 100 && bounds.maxY <= msH + 100) {
+            viewMinX = Math.min(0, bounds.minX);
+            viewMinY = Math.min(0, bounds.minY);
+            viewMaxX = Math.max(msW, bounds.maxX);
+            viewMaxY = Math.max(msH, bounds.maxY);
+            sheetW = msW;
+            sheetH = msH;
+            showSheetFrame = true;
+        }
+    }
+
+    const spanX = Math.max(1, viewMaxX - viewMinX);
+    const spanY = Math.max(1, viewMaxY - viewMinY);
+
+    // Projeta coordenadas para um canvas SVG normalizado (largura máx 600px, altura proporcional)
+    const targetW = 600;
+    const scale = Math.min(targetW / spanX, 420 / spanY);
+    const pad = 16;
+    const svgW = Math.round(spanX * scale + pad * 2);
+    const svgH = Math.round(spanY * scale + pad * 2);
+
+    const tx = (x) => ((x - viewMinX) * scale + pad).toFixed(1);
+    const ty = (y) => ((viewMaxY - y) * scale + pad).toFixed(1);
+
+    // Limita pontos totais no SVG para manter payload rápido (~2-6 KB) mesmo em arquivos 3D densos
+    const totalPtsRaw = uniquePaths.reduce((s, p) => s + p.length, 0);
+    const step = totalPtsRaw > 1400 ? Math.ceil(totalPtsRaw / 1400) : 1;
+
+    const pathSegments = [];
+    for (let i = 0; i < uniquePaths.length; i++) {
+        const pts = uniquePaths[i];
+        const parts = [`M${tx(pts[0][0])},${ty(pts[0][1])}`];
+        let lastKeptX = pts[0][0];
+        let lastKeptY = pts[0][1];
+        const minSegDist = Math.max(1.2 / Math.max(0.01, scale), 1.5);
+
+        for (let j = step; j < pts.length; j += step) {
+            const px = pts[j][0];
+            const py = pts[j][1];
+            const dx = px - lastKeptX;
+            const dy = py - lastKeptY;
+            if (j === pts.length - 1 || (dx * dx + dy * dy) >= minSegDist * minSegDist) {
+                parts.push(`L${tx(px)},${ty(py)}`);
+                lastKeptX = px;
+                lastKeptY = py;
+            }
+        }
+        const lastPt = pts[pts.length - 1];
+        if (lastPt[0] !== lastKeptX || lastPt[1] !== lastKeptY) {
+            parts.push(`L${tx(lastPt[0])},${ty(lastPt[1])}`);
+        }
+        pathSegments.push(parts.join(''));
+    }
+
+    const dAttr = pathSegments.join(' ');
+    if (!dAttr) return null;
+
+    const sheetRect = showSheetFrame
+        ? `<rect x="${tx(0)}" y="${ty(sheetH)}" width="${(sheetW * scale).toFixed(1)}" height="${(sheetH * scale).toFixed(1)}" fill="#ffffff" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="6,4" rx="2"/>`
+        : `<rect x="${pad}" y="${pad}" width="${(spanX * scale).toFixed(1)}" height="${(spanY * scale).toFixed(1)}" fill="#ffffff" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,4" rx="2"/>`;
+
+    const dimLabel = showSheetFrame
+        ? `Chapa ${Math.round(sheetW)}×${Math.round(sheetH)}mm · Corte ${Math.round(cutW)}×${Math.round(cutH)}mm`
+        : `Área de Corte ${Math.round(cutW)}×${Math.round(cutH)}mm`;
+
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${svgH}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="background:#ffffff;display:block;">${sheetRect}<path d="${dAttr}" fill="rgba(241,245,249,0.55)" stroke="#0f172a" stroke-width="1.35" stroke-linejoin="round" stroke-linecap="round"/><text x="${pad + 4}" y="${svgH - 4}" font-family="Arial,sans-serif" font-size="9.5" font-weight="700" fill="#475569">${dimLabel} (${uniquePaths.length} contornos)</text></svg>`;
+}
+
 // Cache em memória para parser ultrarrápido de arquivos G-Code
 const gcodeMetadataCache = new Map();
 
@@ -56,7 +195,8 @@ function getGCodeMetadata(filePath, mtime = 0) {
     try {
         const text = fs.readFileSync(filePath, 'utf8');
         const lines = text.split(/\r?\n/);
-        let curX = 0, curY = 0, curZ = 0;
+        const hasZ = /Z\s*-?\d+/i.test(text);
+        let curX = 0, curY = 0, curZ = 20;
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
         let hasCoords = false;
         let curFeed = 3000;
@@ -68,6 +208,11 @@ function getGCodeMetadata(filePath, mtime = 0) {
         const feedsSet = new Set();
         const spindlesSet = new Set();
         let materialSize = null;
+
+        // Coleta contornos 2D durante a mesma varredura para gerar preview SVG da chapa
+        const rawPaths = [];
+        let currentPath = [];
+        let isCuttingPath = false;
 
         const numRe = /([XYZFS])([-+]?\d*\.?\d+)/gi;
         const gRe = /G0*([0123])(?=[A-Z\s]|$)/i;
@@ -131,8 +276,34 @@ function getGCodeMetadata(filePath, mtime = 0) {
                         if (nz > maxZ) maxZ = nz;
                     }
                 }
+
+                // Rastreia polilinhas 2D de corte (Z abaixo da superfície segura ou 2D puro)
+                const cuttingNow = hasZ ? (mode === 1 && nz <= 0.5) : (mode === 1);
+                if (cuttingNow) {
+                    if (!isCuttingPath) {
+                        isCuttingPath = true;
+                        currentPath = [[curX, curY]];
+                    }
+                    if (nx !== curX || ny !== curY) {
+                        const last = currentPath[currentPath.length - 1];
+                        if (!last || Math.abs(nx - last[0]) >= 1.5 || Math.abs(ny - last[1]) >= 1.5) {
+                            currentPath.push([nx, ny]);
+                        }
+                    }
+                } else if (isCuttingPath) {
+                    if (currentPath.length >= 2 && rawPaths.length < 1500) {
+                        rawPaths.push(currentPath);
+                    }
+                    currentPath = [];
+                    isCuttingPath = false;
+                }
+
                 curX = nx; curY = ny; curZ = nz;
             }
+        }
+
+        if (isCuttingPath && currentPath.length >= 2 && rawPaths.length < 1500) {
+            rawPaths.push(currentPath);
         }
 
         const widthMm = hasCoords ? Math.round(maxX - minX) : (materialSize ? Math.round(materialSize.width) : 0);
@@ -140,6 +311,7 @@ function getGCodeMetadata(filePath, mtime = 0) {
         const depthMm = minZ !== Infinity && maxZ !== -Infinity ? Math.round(Math.abs(maxZ - minZ)) : (materialSize ? Math.round(materialSize.thickness) : 0);
         const cutMeters = Math.round(cutDistMm / 1000);
         const estimatedMinutes = Math.max(0.5, parseFloat((cutTimeMin + rapidTimeMin).toFixed(1)));
+        const previewSvg = hasCoords ? generateGCodePreviewSvg(rawPaths, { minX, maxX, minY, maxY }, materialSize) : null;
 
         const result = {
             widthMm,
@@ -151,13 +323,102 @@ function getGCodeMetadata(filePath, mtime = 0) {
             rapidTimeMin: parseFloat(rapidTimeMin.toFixed(1)),
             feeds: Array.from(feedsSet).sort((a, b) => b - a).slice(0, 2),
             spindles: Array.from(spindlesSet).sort((a, b) => b - a).slice(0, 1),
-            materialSize
+            materialSize,
+            previewSvg
         };
         gcodeMetadataCache.set(cacheKey, result);
         return result;
     } catch {
         return null;
     }
+}
+
+// Associa automaticamente PDFs e imagens dentro da mesma pasta cujo nome corresponda ao material do G-Code
+function matchFolderDocsForGcode(gf, matInfo, docsInFolder = []) {
+    if (!gf || !Array.isArray(docsInFolder) || docsInFolder.length === 0) return [];
+
+    const normText = (s) => String(s || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/(\d+)\s*mn\b/gi, '$1mm')
+        .replace(/[_\-()[\]]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const gStem = normText(path.parse(gf.name || '').name);
+    const gMat = matInfo?.material ? normText(matInfo.material) : '';
+    const gThick = matInfo?.thickness ? normText(matInfo.thickness) : '';
+
+    const GENERIC_TOKENS = new Set([
+        'de', 'da', 'do', 'dos', 'das', 'em', 'para', 'com', 'ok', 'chapa', 'chapas',
+        'corte', 'cortes', 'todas', 'as', 'os', 'cotadas', 'vetorial', 'escalonada', 'final', 'otimizado'
+    ]);
+
+    const scored = [];
+    for (const d of docsInFolder) {
+        const dStemRaw = path.parse(d.name || '').name;
+        const dStem = normText(dStemRaw);
+        if (!dStem) continue;
+
+        const dMatInfo = extractMaterialInfo(dStemRaw.replace(/(\d+)\s*mn\b/gi, '$1mm'), d.fullPath || '');
+        const dMat = dMatInfo?.material ? normText(dMatInfo.material) : '';
+        const dThick = dMatInfo?.thickness ? normText(dMatInfo.thickness) : '';
+
+        let score = 0;
+
+        // 1. Prefixo exato (ex: "compensado de 6mm.pdf" -> "compensado de 6mm e6mm_1-° chapa 2x.txt")
+        if (gStem === dStem || gStem.startsWith(dStem + ' ') || dStem.startsWith(gStem + ' ')) {
+            score = 100;
+        }
+
+        // 2. Casamento por material + espessura (ex: "MDF 9MM.pdf", "compensado 10mm.pdf", "MDF 9MM RAMPA A.pdf")
+        if (score === 0 && gMat && dMat && gMat === dMat) {
+            const thickCompatible = !dThick || !gThick || dThick === gThick;
+            if (thickCompatible) {
+                // Verifica se o PDF possui qualificadores extras (ex: "rampa a", "escada c", "portas")
+                const matWords = new Set([...dMat.split(' '), dThick, 'mdf', 'compensado', 'comp', 'isopor', 'eps', 'pvc', 'acm', 'acrilico', 'ps']);
+                const extraTokens = dStem.split(' ').filter(t => t && !GENERIC_TOKENS.has(t) && !matWords.has(t) && !/^\d+mm$/.test(t));
+
+                if (extraTokens.length === 0) {
+                    score = dThick && gThick ? 85 : 65;
+                } else {
+                    const matchedExtra = extraTokens.filter(t => gStem.includes(t));
+                    if (matchedExtra.length === extraTokens.length) {
+                        score = 95;
+                    } else if (matchedExtra.length > 0) {
+                        score = 75;
+                    }
+                }
+            }
+        }
+
+        if (score > 0) {
+            const ext = (d.ext || path.extname(d.name || '')).toLowerCase();
+            const mimeType = ext === '.pdf'
+                ? 'application/pdf'
+                : ext === '.png'
+                    ? 'image/png'
+                    : ext === '.webp'
+                        ? 'image/webp'
+                        : 'image/jpeg';
+            scored.push({
+                score,
+                doc: {
+                    name: d.name,
+                    ext,
+                    fullPath: d.fullPath,
+                    size: d.size || 0,
+                    mtime: d.mtime || 0,
+                    mimeType,
+                    autoMatched: true
+                }
+            });
+        }
+    }
+
+    scored.sort((a, b) => b.score - a.score || (b.doc.ext === '.pdf' ? 1 : 0) - (a.doc.ext === '.pdf' ? 1 : 0));
+    return scored.map(s => s.doc);
 }
 
 // Extrai inteligentemente material, espessura e quantidade do nome do arquivo (sem a extensão .eps/.cdr/.txt)
@@ -1342,6 +1603,7 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
                             depthMm: meta.depthMm || gf.depthMm || null,
                             feeds: meta.feeds || gf.feeds || null,
                             spindles: meta.spindles || gf.spindles || null,
+                            previewSvg: meta.previewSvg || gf.previewSvg || null,
                             isCurrentlyRunning,
                             isReopened: Boolean(reopenRec),
                             runningMachine: activeExec?.router_name || null,
@@ -1519,9 +1781,9 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
             }
         });
 
-        // Filtrar apenas arquivos liberados recentemente (a partir de 01/10/2026)
+        // Filtrar apenas arquivos liberados recentemente (a partir de 01/10/2026) — mantendo PDFs/fotos de referência
         const recentCutoff = new Date('2026-10-01T00:00:00Z').getTime();
-        const activeFiles = unique.filter(f => f.mtime && f.mtime >= recentCutoff);
+        const activeFiles = unique.filter(f => f.type === 'doc' || (f.mtime && f.mtime >= recentCutoff));
 
         // Agrupa por pasta normalizada para cruzamento de hierarquia (Corel -> Materiais -> Lote Chapas)
         // Usa a subpasta relativa (ex: 'SALA DE MAGIA') para unificar arquivos do OneDrive (C:) e do Router Local (E:)
@@ -1532,12 +1794,13 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
             const subName = subfolderName.toLowerCase().trim();
             const rawBase = path.basename(dir).toLowerCase().trim();
             const groupKey = subName || dir.toLowerCase();
-            if (!folderGroups[groupKey]) folderGroups[groupKey] = { cad: [], aspire: [], crv: [], gcode: [] };
+            if (!folderGroups[groupKey]) folderGroups[groupKey] = { cad: [], aspire: [], crv: [], gcode: [], docs: [] };
             if (!folderGroups[rawBase]) folderGroups[rawBase] = folderGroups[groupKey];
             if (f.type === 'cad') folderGroups[groupKey].cad.push(f);
             else if (f.type === 'aspire') folderGroups[groupKey].aspire.push(f);
             else if (f.type === 'crv') folderGroups[groupKey].crv.push(f);
             else if (f.type === 'gcode') folderGroups[groupKey].gcode.push(f);
+            else if (f.type === 'doc') folderGroups[groupKey].docs.push(f);
         });
 
         const cad = activeFiles.filter(f => f.type === 'cad');
@@ -1744,6 +2007,7 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
         const seenJobGcodes = new Set();
 
         gcode.forEach(gf => {
+            const normDir = getNormDir(gf.fullPath);
             const subfolderName = getSubfolderName(gf.fullPath);
             let matInfo = extractMaterialInfo(gf.name, gf.fullPath || subfolderName);
             const customQty = getFileBatchQuantity(gf, subfolderName);
@@ -1755,6 +2019,10 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
             const compoundKey = `${lower}___${subLower}`;
             if (seenJobGcodes.has(compoundKey)) return;
             seenJobGcodes.add(compoundKey);
+
+            // Auto-associa PDFs/fotos dentro da pasta cujo nome corresponda ao material do G-Code
+            const folderGroup = folderGroups[subLower] || folderGroups[path.basename(normDir).toLowerCase().trim()] || folderGroups[normDir.toLowerCase()] || null;
+            const folderDocs = matchFolderDocsForGcode(gf, matInfo, folderGroup?.docs || []);
 
             const execs = getFileExecs({ ...gf, subfolderName, jobName: jName }, lower);
             const rawCompletedExecs = execs.filter(j => !isJobActive(j));
@@ -1800,6 +2068,7 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
                     depthMm: meta.depthMm || gf.depthMm || null,
                     feeds: meta.feeds || gf.feeds || null,
                     spindles: meta.spindles || gf.spindles || null,
+                    folderDocs,
                     execCount: completedExecs.length > 0 ? completedExecs.length : (targetQty > 1 ? targetQty : 1),
                     targetQuantity: targetQty,
                     completedExecsCount: completedExecs.length > 0 ? completedExecs.length : targetQty,
@@ -1827,6 +2096,8 @@ async function getProductionPipeline(pool, forceRefresh = false, options = {}) {
                     depthMm: meta.depthMm || gf.depthMm || null,
                     feeds: meta.feeds || gf.feeds || null,
                     spindles: meta.spindles || gf.spindles || null,
+                    previewSvg: meta.previewSvg || gf.previewSvg || null,
+                    folderDocs,
                     isCurrentlyRunning,
                     isReopened: Boolean(reopenRec),
                     runningMachine: activeExec?.router_name || null,
@@ -1970,6 +2241,8 @@ module.exports = {
     classifyFileExecutions,
     invalidatePipelineCache,
     getGCodeMetadata,
+    generateGCodePreviewSvg,
+    matchFolderDocsForGcode,
     extractMaterialInfo,
     isFileMarkedOk,
     scopeFileKey,

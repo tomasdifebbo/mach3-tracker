@@ -396,6 +396,24 @@ async function initDb() {
                 snapshot_data JSONB,
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             );
+
+            CREATE TABLE IF NOT EXISTS pipeline_file_attachments (
+                id SERIAL PRIMARY KEY,
+                file_key TEXT NOT NULL,
+                file_name TEXT,
+                subfolder TEXT,
+                job_name TEXT,
+                attachment_name TEXT NOT NULL,
+                mime_type TEXT NOT NULL,
+                data_url TEXT NOT NULL,
+                notes TEXT,
+                uploaded_by TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                "userId" INTEGER
+            );
+            CREATE INDEX IF NOT EXISTS idx_pipeline_attachments_user ON pipeline_file_attachments ("userId");
+            CREATE INDEX IF NOT EXISTS idx_pipeline_attachments_key ON pipeline_file_attachments (file_key);
         `);
 
         // SEED OFICINA SYNC STATE

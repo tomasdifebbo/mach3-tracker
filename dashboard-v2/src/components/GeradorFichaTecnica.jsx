@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import {
   ClipboardList, Printer, Upload, FolderOpen, Sparkles, CheckSquare,
-  Clock, Layers, Cpu, Wrench, RefreshCw, CheckCircle2, Play, Search
+  Clock, Layers, Cpu, Wrench, RefreshCw, CheckCircle2, Play, Search,
+  Paperclip, Trash2, FileText, Image as ImageIcon
 } from 'lucide-react';
+import { fileToOptimizedAttachment, PIECE_MAPS_PRINT_CSS } from '../utils/attachmentUtils';
 
 // Simulador rápido de G-Code direto no navegador para extrair dimensões, metragem, F/S e tempo estimado
 function parseGCodeContent(text, fileName = '', groupName = 'GERAL') {
@@ -168,6 +170,27 @@ export function GeradorFichaTecnica({ jobs = [] }) {
 
   // Marcações manuais extras (caso o encarregado queira dar baixa manual na tela antes de imprimir)
   const [manualChecks, setManualChecks] = useState({});
+
+  // Fotos / PDFs de referência anexados para impressão junto com a Ficha Técnica
+  const [extraAttachments, setExtraAttachments] = useState([]);
+  const [attError, setAttError] = useState('');
+
+  const handleExtraAttachmentUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (files.length === 0) return;
+    setAttError('');
+    try {
+      const next = [];
+      for (const file of files) {
+        const opt = await fileToOptimizedAttachment(file);
+        next.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, ...opt });
+      }
+      setExtraAttachments(prev => [...prev, ...next]);
+    } catch (err) {
+      setAttError(err?.message || 'Erro ao anexar arquivo de referência.');
+    }
+  };
 
   // Ao selecionar um projeto existente do dropdown, preenche sugestão inteligente
   const handleSelectProject = (folderVal) => {
@@ -782,6 +805,41 @@ export function GeradorFichaTecnica({ jobs = [] }) {
         </div>`;
     }
 
+    let extraMapsHtml = '';
+    if (extraAttachments.length > 0) {
+      const imgCards = extraAttachments
+        .filter(a => (a.mime_type || '').startsWith('image/'))
+        .map((a, idx) => `
+          <div class="map-card">
+            <div class="map-card-header">
+              <div><span class="map-num">ANEXO #${idx + 1}</span><strong>${escapeHtml(a.attachment_name)}</strong></div>
+              <div class="map-meta">${escapeHtml(docTitle)}</div>
+            </div>
+            <div class="map-photo-box">
+              <img src="${a.data_url}" alt="${escapeHtml(a.attachment_name)}" class="map-photo-img" style="max-height:520px;" />
+            </div>
+            <div class="map-notes-area">
+              <div class="map-notes-lbl">✏️ Anotações do Operador / Numeração das Peças:</div>
+              <div class="map-notes-lines"></div>
+              <div class="map-notes-lines"></div>
+            </div>
+          </div>`).join('');
+
+      const pdfRefs = extraAttachments
+        .filter(a => a.mime_type === 'application/pdf')
+        .map(a => `📄 PDF de referência anexado: <strong>${escapeHtml(a.attachment_name)}</strong>`);
+
+      extraMapsHtml = `
+        <div class="maps-section">
+          <div class="maps-section-header">
+            <span>📐 ANEXOS & MAPAS DE PEÇAS PARA ANOTAÇÃO DO OPERADOR</span>
+            <span>${extraAttachments.length} anexo(s)</span>
+          </div>
+          ${imgCards}
+          ${pdfRefs.length > 0 ? `<div class="map-pdf-note">${pdfRefs.join(' &nbsp;|&nbsp; ')}</div>` : ''}
+        </div>`;
+    }
+
     const fullHtml = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -844,9 +902,10 @@ export function GeradorFichaTecnica({ jobs = [] }) {
   .extra-items { font-size: 8.2px; color: #475569; }
   .footer-sigs { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
   .sig-block { text-align: center; padding-top: 16px; border-top: 1px solid #64748b; font-size: 8px; font-weight: 700; color: #475569; text-transform: uppercase; }
+  ${PIECE_MAPS_PRINT_CSS}
 </style>
 </head>
-<body>${pagesHtml}</body>
+<body>${pagesHtml}${extraMapsHtml}</body>
 </html>`;
 
     const printWin = window.open('', '_blank', 'width=980,height=860');
@@ -1234,6 +1293,51 @@ export function GeradorFichaTecnica({ jobs = [] }) {
               placeholder="Ex: 3 chapas de teste do dia 29/10 disponíveis para montagem..."
               className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-orange-500"
             />
+          </div>
+
+          <div className="pt-2 border-t border-white/5 space-y-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                <Paperclip size={12} /> Foto / PDF de Referência das Peças (Impresso na Ficha)
+              </span>
+              <label className="px-3 py-1.5 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 rounded-xl text-[11px] font-bold text-cyan-300 flex items-center gap-1.5 cursor-pointer transition-all">
+                <Upload size={12} />
+                <span>Anexar Foto / PDF</span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,application/pdf"
+                  onChange={handleExtraAttachmentUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+            {attError && <p className="text-[11px] font-bold text-red-400">{attError}</p>}
+            {extraAttachments.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {extraAttachments.map(att => (
+                  <div
+                    key={att.id}
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white"
+                  >
+                    {att.mime_type === 'application/pdf' ? (
+                      <FileText size={13} className="text-red-400 shrink-0" />
+                    ) : (
+                      <ImageIcon size={13} className="text-cyan-400 shrink-0" />
+                    )}
+                    <span className="max-w-[160px] truncate font-semibold">{att.attachment_name}</span>
+                    <button
+                      type="button"
+                      onClick={() => setExtraAttachments(prev => prev.filter(x => x.id !== att.id))}
+                      className="text-red-400 hover:text-red-300 cursor-pointer"
+                      title="Remover anexo"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

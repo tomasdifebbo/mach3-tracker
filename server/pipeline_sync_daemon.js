@@ -28,6 +28,62 @@ let lastSignature = '';
 let isSyncing = false;
 let pendingSync = false;
 let debounceTimer = null;
+const syncedFolderDocsCache = new Map(); // fullPathLower -> mtime
+
+async function syncAutoFolderDocsToDb(data) {
+    const docsToSync = new Map();
+    for (const gf of (data.gcodeProntos || [])) {
+        for (const d of (gf.folderDocs || [])) {
+            if (!d.fullPath || !d.name) continue;
+            if (d.size && d.size > 4 * 1024 * 1024) continue; // Limite 4MB para sync automático na nuvem
+            const key = d.fullPath.replace(/\//g, '\\').toLowerCase().trim();
+            if (syncedFolderDocsCache.get(key) === d.mtime) continue;
+            if (!docsToSync.has(key)) {
+                docsToSync.set(key, { doc: d, gf });
+            }
+        }
+    }
+
+    for (const [normPath, { doc, gf }] of docsToSync.entries()) {
+        try {
+            if (!fs.existsSync(doc.fullPath)) continue;
+            const buf = fs.readFileSync(doc.fullPath);
+            if (buf.length > 4 * 1024 * 1024) continue;
+            const dataUrl = `data:${doc.mimeType || 'application/pdf'};base64,${buf.toString('base64')}`;
+            const fileKey = `auto::${normPath}`;
+            const existing = await pool.query(
+                'SELECT id FROM pipeline_file_attachments WHERE LOWER(file_key) = LOWER($1) AND ("userId" = 1 OR "userId" IS NULL) LIMIT 1',
+                [fileKey]
+            );
+            if (existing.rows.length > 0) {
+                await pool.query(
+                    'UPDATE pipeline_file_attachments SET data_url = $1, attachment_name = $2, mime_type = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4',
+                    [dataUrl, doc.name, doc.mimeType || 'application/pdf', existing.rows[0].id]
+                );
+            } else {
+                await pool.query(
+                    `INSERT INTO pipeline_file_attachments (
+                        file_key, file_name, subfolder, job_name, attachment_name, mime_type, data_url, notes, uploaded_by, "userId", created_at, updated_at
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                    [
+                        fileKey,
+                        gf.name || null,
+                        gf.subfolderName || null,
+                        gf.jobName || null,
+                        doc.name,
+                        doc.mimeType || 'application/pdf',
+                        dataUrl,
+                        'PDF/Imagem carregado automaticamente da pasta do material',
+                        'Auto-Sync Pasta'
+                    ]
+                );
+            }
+            syncedFolderDocsCache.set(normPath, doc.mtime);
+        } catch (docErr) {
+            console.warn('[PipelineDaemon] Aviso ao sincronizar PDF da pasta:', doc.name, docErr.message);
+        }
+    }
+}
 
 async function syncFoldersToCloud(reason = 'interval') {
     if (isSyncing) {
@@ -56,6 +112,8 @@ async function syncFoldersToCloud(reason = 'interval') {
             VALUES (1, $1, CURRENT_TIMESTAMP)
             ON CONFLICT (id) DO UPDATE SET snapshot_data = EXCLUDED.snapshot_data, updated_at = CURRENT_TIMESTAMP
         `, [JSON.stringify(data)]);
+
+        await syncAutoFolderDocsToDb(data);
 
         if (sig !== lastSignature) {
             lastSignature = sig;

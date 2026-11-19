@@ -441,6 +441,34 @@ export const api = {
     return api.patch('/user/workshop-config', payload);
   },
 
+  // Anexos (Fotos/PDFs) e Preview Vetorial G-Code da Ficha Técnica
+  getPipelineAttachments: async () => {
+    return api.get('/pipeline/attachments');
+  },
+  savePipelineAttachment: async (payload) => {
+    return api.post('/pipeline/attachments', payload);
+  },
+  deletePipelineAttachment: async (id) => {
+    return api.deleteCustom(`/pipeline/attachments/${encodeURIComponent(id)}`);
+  },
+  getGcodePreview: async ({ path = '', name = '', subfolder = '' } = {}) => {
+    const qs = new URLSearchParams();
+    if (path) qs.set('path', path);
+    if (name) qs.set('name', name);
+    if (subfolder) qs.set('subfolder', subfolder);
+    return api.get(`/pipeline/gcode-preview?${qs.toString()}`);
+  },
+  fetchLocalDocBlob: async (filePath) => {
+    const token = localStorage.getItem('mach3_token');
+    const resp = await fetch(`${API_URL}/api/pipeline/local-doc?path=${encodeURIComponent(filePath)}`, {
+      headers: { Authorization: token ? `Bearer ${token}` : '' }
+    });
+    if (!resp.ok) throw new Error(`Documento indisponível (${resp.status})`);
+    const blob = await resp.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    return { blob, blobUrl, mimeType: blob.type || 'application/pdf' };
+  },
+
   deleteCustom: async (url) => {
     const resp = await fetch(`${API_URL}/api${url}`, { method: 'DELETE', headers: getAuthHeaders() });
     return safeJson(resp);

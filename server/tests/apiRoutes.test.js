@@ -44,8 +44,8 @@ test('Express API server route integration suite', async (t) => {
         await new Promise((resolve) => server.close(resolve));
     });
 
-    await t.test('registers all 98 modular Express routes', () => {
-        assert.equal(countExpressRoutes(app), 98);
+    await t.test('registers all 103 modular Express routes', () => {
+        assert.equal(countExpressRoutes(app), 103);
     });
 
     await t.test('GET /health responds 200 OK with security headers and strict CORS', async () => {
@@ -83,7 +83,10 @@ test('Express API server route integration suite', async (t) => {
             '/api/jobs',
             '/api/oficina-sync',
             '/api/arquivos-producao',
-            '/api/pipeline/completed-files'
+            '/api/pipeline/completed-files',
+            '/api/pipeline/attachments',
+            '/api/pipeline/gcode-preview?name=test.txt',
+            '/api/pipeline/local-doc?path=test.pdf'
         ];
         for (const ep of protectedGets) {
             const noAuth = await fetch(`${baseUrl}${ep}`);

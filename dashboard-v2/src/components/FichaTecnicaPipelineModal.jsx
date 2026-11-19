@@ -1,9 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   X, Printer, Copy, Play, ClipboardList, CheckSquare, Square, Share2, Check,
-  Clock, Layers, Cpu, Wrench, AlertCircle, Sparkles, Filter, ChevronDown
+  Clock, Layers, Cpu, Wrench, AlertCircle, Sparkles, Filter, ChevronDown,
+  Paperclip, Compass
 } from 'lucide-react';
+import { api } from '../services/api';
 import { isFileMarkedOk } from '../utils/fileChecklistUtils';
+import { AnexoDesenhoModal } from './AnexoDesenhoModal';
+import {
+  matchAttachmentsForTask,
+  buildPieceMapsPrintSectionHtml,
+  PIECE_MAPS_PRINT_CSS
+} from '../utils/attachmentUtils';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -42,6 +50,20 @@ export function FichaTecnicaPipelineModal({
   const [notes, setNotes] = useState('Verificar fixação na mesa a vácuo/parafusos, conferir zeramento em Z na base e sentido do veio do material.');
   const [copied, setCopied] = useState(false);
   const [copiedKey, setCopiedKey] = useState(null);
+  const [attachments, setAttachments] = useState([]);
+  const [includePieceMaps, setIncludePieceMaps] = useState(true);
+  const [activeMapTask, setActiveMapTask] = useState(null);
+
+  const loadAttachments = useCallback(async () => {
+    try {
+      const res = await api.getPipelineAttachments();
+      if (res && Array.isArray(res.attachments)) {
+        setAttachments(res.attachments);
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar anexos da Ficha Técnica:', err);
+    }
+  }, []);
 
   const resolveDisplayPath = (task) => {
     let p = task.fullPath || task.fullFile?.fullPath || task.fullFile?.path || '';
@@ -67,8 +89,9 @@ export function FichaTecnicaPipelineModal({
     if (isOpen) {
       const h = new Date().getHours();
       setOperatorName((h >= 22 || h < 6) ? 'brenno' : 'Tomas');
+      loadAttachments();
     }
-  }, [initialJob, isOpen]);
+  }, [initialJob, isOpen, loadAttachments]);
 
   // Extração e enriquecimento de todas as tarefas da produção com a duração real de cada corte
   const taskGroups = useMemo(() => {
@@ -264,6 +287,8 @@ export function FichaTecnicaPipelineModal({
               dimensions: dim,
               operator: operatorName,
               mtime: f.mtimeDate,
+              previewSvg: f.previewSvg || null,
+              folderDocs: f.folderDocs || [],
               fullFile: f,
               fullPath: f.fullPath
             });
@@ -289,6 +314,8 @@ export function FichaTecnicaPipelineModal({
             dimensions: dim,
             operator: operatorName,
             mtime: f.mtimeDate,
+            previewSvg: f.previewSvg || null,
+            folderDocs: f.folderDocs || [],
             fullFile: f,
             fullPath: f.fullPath
           });
@@ -333,6 +360,8 @@ export function FichaTecnicaPipelineModal({
               dimensions: dim,
               operator: f.lastExec?.operator_name || operatorName,
               mtime: f.lastExec?.start_time || f.mtimeDate,
+              previewSvg: f.previewSvg || null,
+              folderDocs: f.folderDocs || [],
               fullFile: f,
               fullPath: f.fullPath
             });
@@ -358,6 +387,8 @@ export function FichaTecnicaPipelineModal({
             dimensions: dim,
             operator: f.lastExec?.operator_name || operatorName,
             mtime: f.lastExec?.start_time || f.mtimeDate,
+            previewSvg: f.previewSvg || null,
+            folderDocs: f.folderDocs || [],
             fullFile: f,
             fullPath: f.fullPath
           });
@@ -524,6 +555,13 @@ export function FichaTecnicaPipelineModal({
       `;
     }).join('');
 
+    const allTasksForMaps = taskGroups.flatMap(g =>
+      g.tasks.map(t => ({ ...t, _displayPath: resolveDisplayPath(t) }))
+    );
+    const pieceMapsHtml = includePieceMaps
+      ? buildPieceMapsPrintSectionHtml(allTasksForMaps, attachments, escapeHtml)
+      : '';
+
     const fullHtml = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -590,6 +628,7 @@ export function FichaTecnicaPipelineModal({
 
   .footer-sigs { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; page-break-inside: avoid; }
   .sig-block { text-align: center; padding-top: 14px; border-top: 1px solid #64748b; font-size: 7.8px; font-weight: 700; color: #475569; text-transform: uppercase; }
+  ${PIECE_MAPS_PRINT_CSS}
 </style>
 </head>
 <body>
@@ -644,6 +683,7 @@ export function FichaTecnicaPipelineModal({
     <div class="sig-block">Operador Turno / Auxiliar</div>
     <div class="sig-block">Conferência & Liberação / Encarregado</div>
   </div>
+  ${pieceMapsHtml}
 </body>
 </html>`;
 
@@ -823,6 +863,15 @@ export function FichaTecnicaPipelineModal({
                 />
                 <span className="font-medium text-slate-600 dark:text-slate-300">Incluir Concluídos</span>
               </label>
+              <label className="flex items-center gap-1 text-[11px] cursor-pointer select-none" title="Imprimir páginas extras com o desenho das peças (G-Code) e fotos/PDFs anexados para o operador anotar">
+                <input
+                  type="checkbox"
+                  checked={includePieceMaps}
+                  onChange={e => setIncludePieceMaps(e.target.checked)}
+                  className="rounded text-cyan-500 focus:ring-0"
+                />
+                <span className="font-bold text-cyan-600 dark:text-cyan-400">Mapas de Peças</span>
+              </label>
             </div>
           </div>
 
@@ -926,12 +975,21 @@ export function FichaTecnicaPipelineModal({
                       </span>
                       <span>{g.groupTitle}</span>
                     </div>
-                    <div className="flex items-center gap-3 text-[11px]">
+                    <div className="flex items-center gap-2.5 text-[11px] flex-wrap">
                       {subRouterMin > 0 && (
                         <span className="px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">
                           ⏱️ Duração do Conjunto: ~{formatHm(subRouterMin)}
                         </span>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => g.tasks[0] && setActiveMapTask({ task: g.tasks[0], defaultScope: 'group' })}
+                        className="px-2 py-0.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Anexar foto ou PDF de referência para todas as chapas desta subpasta"
+                      >
+                        <Paperclip size={11} />
+                        <span>Anexar Foto/PDF</span>
+                      </button>
                       <span className="text-slate-400 font-medium">
                         {g.tasks.length} {g.tasks.length === 1 ? 'tarefa' : 'tarefas'}
                       </span>
@@ -948,7 +1006,7 @@ export function FichaTecnicaPipelineModal({
                           <th className="py-2 px-3">Etapa</th>
                           <th className="py-2 px-3">Material</th>
                           <th className="py-2 px-3">Duração do Corte</th>
-                          <th className="py-2 px-3">COPIAR CAMINHO</th>
+                          <th className="py-2 px-3">AÇÕES / MAPA DE PEÇAS</th>
                           <th className="py-2 px-3 text-right">Operador</th>
                         </tr>
                       </thead>
@@ -956,6 +1014,9 @@ export function FichaTecnicaPipelineModal({
                         {g.tasks.map((t) => {
                           const isDone = t.status === 'done';
                           const isRunning = t.status === 'running';
+                          const rowManualAtts = matchAttachmentsForTask(attachments, t);
+                          const rowFolderDocs = t.folderDocs || t.fullFile?.folderDocs || [];
+                          const hasSvg = Boolean(t.previewSvg || t.fullFile?.previewSvg);
 
                           return (
                             <tr
@@ -1051,6 +1112,33 @@ export function FichaTecnicaPipelineModal({
                                       </>
                                     )}
                                   </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveMapTask({ task: t, defaultScope: 'file' })}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95 border ${
+                                      rowFolderDocs.length > 0
+                                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25'
+                                        : rowManualAtts.length > 0
+                                          ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/25'
+                                          : hasSvg
+                                            ? 'bg-orange-500/10 border-orange-500/30 text-orange-700 dark:text-orange-300 hover:bg-orange-500/20'
+                                            : 'bg-white dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-cyan-500 hover:text-cyan-500'
+                                    }`}
+                                    title="Abrir PDF automático da pasta, desenho do G-Code ou anexar foto/PDF para o operador anotar as peças"
+                                  >
+                                    <Compass size={13} />
+                                    <span>Mapa / PDF</span>
+                                    {rowFolderDocs.length > 0 && (
+                                      <span className="px-1.5 py-0.2 rounded bg-emerald-500 text-black text-[9px] font-black">
+                                        PDF
+                                      </span>
+                                    )}
+                                    {rowManualAtts.length > 0 && (
+                                      <span className="px-1.5 py-0.2 rounded bg-cyan-500 text-black text-[9px] font-black">
+                                        📎{rowManualAtts.length}
+                                      </span>
+                                    )}
+                                  </button>
                                 </div>
                               </td>
                               <td className="py-2 px-3 text-right font-medium text-slate-700 dark:text-slate-300">
@@ -1108,6 +1196,16 @@ export function FichaTecnicaPipelineModal({
           </div>
         </div>
       </div>
+
+      <AnexoDesenhoModal
+        isOpen={Boolean(activeMapTask)}
+        onClose={() => setActiveMapTask(null)}
+        task={activeMapTask?.task}
+        defaultScope={activeMapTask?.defaultScope || 'file'}
+        attachments={attachments}
+        onAttachmentsChanged={loadAttachments}
+        operatorName={operatorName}
+      />
     </div>
   );
 }

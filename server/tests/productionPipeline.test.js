@@ -6,6 +6,8 @@ const path = require('node:path');
 
 const {
     getGCodeMetadata,
+    generateGCodePreviewSvg,
+    matchFolderDocsForGcode,
     extractMaterialInfo,
     isFileMarkedOk,
     classifyFileExecutions
@@ -122,4 +124,42 @@ test('classifyFileExecutions counts only cuts matching previous average duration
     const resAborted = classifyFileExecutions(abortedOnly, 36.90);
     assert.equal(resAborted.validExecs.length, 0);
     assert.equal(resAborted.errorExecs.length, 3);
+});
+
+test('generateGCodePreviewSvg creates compact top-down SVG and matchFolderDocsForGcode matches material PDFs', () => {
+    const svg = generateGCodePreviewSvg(
+        [
+            [[0, 0], [500, 0], [500, 300], [0, 300], [0, 0]],
+            [[0, 0], [500, 0], [500, 300], [0, 300], [0, 0]] // duplicate Z pass
+        ],
+        { minX: 0, maxX: 500, minY: 0, maxY: 300 },
+        { width: 2750, height: 1850, thickness: 9 }
+    );
+    assert.ok(svg && svg.startsWith('<svg '));
+    assert.ok(svg.includes('2750×1850mm'));
+    assert.ok(svg.includes('(1 contornos)'));
+
+    const docs = [
+        { name: 'compensado de 6mm.pdf', ext: '.pdf', fullPath: 'E:\\router\\TOPO\\compensado de 6mm.pdf', size: 65000, mtime: 100 },
+        { name: 'MDF 9MM.pdf', ext: '.pdf', fullPath: 'E:\\router\\TOPO\\MDF 9MM.pdf', size: 120000, mtime: 100 },
+        { name: 'MDF 15MM.pdf', ext: '.pdf', fullPath: 'E:\\router\\TOPO\\MDF 15MM.pdf', size: 110000, mtime: 100 },
+        { name: 'mdf 9mn fundo isopor.pdf', ext: '.pdf', fullPath: 'E:\\router\\TOPO\\mdf 9mn fundo isopor.pdf', size: 75000, mtime: 100 }
+    ];
+
+    const compMatches = matchFolderDocsForGcode(
+        { name: 'compensado de 6mm e6mm_1-° chapa 2x.txt', fullPath: 'E:\\router\\TOPO\\compensado de 6mm e6mm_1-° chapa 2x.txt' },
+        extractMaterialInfo('compensado de 6mm e6mm_1-° chapa 2x.txt'),
+        docs
+    );
+    assert.equal(compMatches.length, 1);
+    assert.equal(compMatches[0].name, 'compensado de 6mm.pdf');
+
+    const mdf9Matches = matchFolderDocsForGcode(
+        { name: 'mdf 9mm fundo isopor_1-° chapa.txt', fullPath: 'E:\\router\\TOPO\\mdf 9mm fundo isopor_1-° chapa.txt' },
+        extractMaterialInfo('mdf 9mm fundo isopor_1-° chapa.txt'),
+        docs
+    );
+    assert.ok(mdf9Matches.some(d => d.name === 'mdf 9mn fundo isopor.pdf'));
+    assert.ok(mdf9Matches.some(d => d.name === 'MDF 9MM.pdf'));
+    assert.ok(!mdf9Matches.some(d => d.name === 'MDF 15MM.pdf'));
 });

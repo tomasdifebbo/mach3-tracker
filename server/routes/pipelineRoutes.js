@@ -157,6 +157,7 @@ router.post('/api/oficina-sync/patch-gcode', authenticateToken, (req, res) => {
 const {
     getProductionPipeline,
     invalidatePipelineCache,
+    getGCodeMetadata,
     scopeFileKey,
     unscopeFileKey
 } = require('../production_pipeline');
@@ -438,6 +439,300 @@ router.post('/api/pipeline/batch-quantity', authenticateToken, async (req, res) 
     } catch (err) {
         console.error('Erro em POST /api/pipeline/batch-quantity:', err);
         res.status(500).json({ error: 'Erro ao definir quantidade do lote' });
+    }
+});
+
+// ─── ANEXOS (FOTOS / PDFs) E PREVIEW VETORIAL G-CODE PARA FICHA TÉCNICA ───────
+const ALLOWED_ATTACHMENT_MIMES = new Set([
+    'image/png',
+    'image/jpeg',
+    'image/jpg',
+    'image/webp',
+    'application/pdf'
+]);
+
+router.get('/api/pipeline/attachments', authenticateToken, async (req, res) => {
+    try {
+        const userId = Number(req.user.id || 1) || 1;
+        const { rows } = await pool.query(`
+            SELECT id, file_key, file_name, subfolder, job_name, attachment_name, mime_type, data_url, notes, uploaded_by, created_at, updated_at
+            FROM pipeline_file_attachments
+            WHERE ("userId" = $1 OR ($1::int = 1 AND "userId" IS NULL))
+              AND file_key NOT LIKE 'auto::%'
+              AND file_key NOT LIKE 'u%::auto::%'
+            ORDER BY created_at DESC
+        `, [userId]);
+
+        const attachments = rows.map(r => ({
+            ...r,
+            file_key: unscopeFileKey(userId, r.file_key)
+        }));
+
+        res.json({ success: true, count: attachments.length, attachments });
+    } catch (err) {
+        console.error('Erro em GET /api/pipeline/attachments:', err);
+        res.status(500).json({ error: 'Erro ao buscar anexos da ficha técnica' });
+    }
+});
+
+router.post('/api/pipeline/attachments', authenticateToken, async (req, res) => {
+    try {
+        const userId = Number(req.user.id || 1) || 1;
+        const {
+            file_key,
+            file_name,
+            subfolder,
+            job_name,
+            attachment_name,
+            mime_type,
+            data_url,
+            notes,
+            uploaded_by
+        } = req.body || {};
+
+        const cleanKey = String(file_key || file_name || '').trim();
+        const cleanName = String(attachment_name || '').trim();
+        const cleanMime = String(mime_type || '').toLowerCase().trim();
+        const cleanDataUrl = String(data_url || '').trim();
+
+        if (!cleanKey || !cleanName || !cleanDataUrl) {
+            return res.status(400).json({ error: 'file_key, attachment_name e data_url são obrigatórios' });
+        }
+        if (!ALLOWED_ATTACHMENT_MIMES.has(cleanMime)) {
+            return res.status(400).json({ error: 'Tipo de arquivo não suportado. Envie uma imagem (PNG/JPG/WEBP) ou PDF.' });
+        }
+        if (!/^data:(image\/(png|jpeg|jpg|webp)|application\/pdf);base64,[A-Za-z0-9+/=\s]+$/i.test(cleanDataUrl.slice(0, 120))) {
+            return res.status(400).json({ error: 'Formato de arquivo base64 inválido.' });
+        }
+        if (cleanDataUrl.length > 9.5 * 1024 * 1024) {
+            return res.status(413).json({ error: 'Arquivo muito grande. O limite máximo é de 7 MB.' });
+        }
+
+        const scopedKey = scopeFileKey(userId, cleanKey);
+        const uploader = String(uploaded_by || '').trim() || (await resolveDefaultPipelineOperator(userId));
+
+        const result = await pool.query(`
+            INSERT INTO pipeline_file_attachments (
+                file_key, file_name, subfolder, job_name, attachment_name, mime_type, data_url, notes, uploaded_by, "userId", created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            RETURNING id, file_key, file_name, subfolder, job_name, attachment_name, mime_type, data_url, notes, uploaded_by, created_at, updated_at
+        `, [
+            scopedKey,
+            file_name ? String(file_name).trim() : null,
+            subfolder ? String(subfolder).trim() : null,
+            job_name ? String(job_name).trim() : null,
+            cleanName.slice(0, 180),
+            cleanMime,
+            cleanDataUrl,
+            notes ? String(notes).trim().slice(0, 500) : null,
+            uploader.slice(0, 80),
+            userId
+        ]);
+
+        const saved = result.rows[0]
+            ? { ...result.rows[0], file_key: unscopeFileKey(userId, result.rows[0].file_key) }
+            : null;
+        res.status(201).json({ success: true, attachment: saved });
+    } catch (err) {
+        console.error('Erro em POST /api/pipeline/attachments:', err);
+        res.status(500).json({ error: 'Erro ao salvar anexo na ficha técnica' });
+    }
+});
+
+router.delete('/api/pipeline/attachments/:id', authenticateToken, async (req, res) => {
+    try {
+        const userId = Number(req.user.id || 1) || 1;
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+
+        const result = await pool.query(
+            'DELETE FROM pipeline_file_attachments WHERE id = $1 AND ("userId" = $2 OR ($2::int = 1 AND "userId" IS NULL)) RETURNING id',
+            [id, userId]
+        );
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Anexo não encontrado' });
+        }
+        res.json({ success: true, deletedId: id });
+    } catch (err) {
+        console.error('Erro em DELETE /api/pipeline/attachments/:id:', err);
+        res.status(500).json({ error: 'Erro ao remover anexo' });
+    }
+});
+
+router.get('/api/pipeline/gcode-preview', authenticateToken, async (req, res) => {
+    try {
+        const userId = Number(req.user.id || 1) || 1;
+        const reqPath = String(req.query.path || '').trim();
+        const reqName = String(req.query.name || '').trim().toLowerCase();
+        const reqSub = String(req.query.subfolder || '').trim().toLowerCase();
+
+        if (!reqPath && !reqName) {
+            return res.status(400).json({ error: 'Parâmetro path ou name é obrigatório' });
+        }
+
+        // 1. Tenta ler diretamente do disco local se estiver dentro das raízes autorizadas do tenant
+        if (reqPath) {
+            const allowedRoots = [];
+            try {
+                const cfgRes = await pool.query(
+                    'SELECT pipeline_local_root, pipeline_cloud_root FROM users WHERE id = $1 LIMIT 1',
+                    [userId]
+                );
+                const cfg = cfgRes.rows[0] || {};
+                if (cfg.pipeline_local_root) allowedRoots.push(cfg.pipeline_local_root.trim());
+                if (cfg.pipeline_cloud_root) allowedRoots.push(cfg.pipeline_cloud_root.trim());
+            } catch { /* ignore */ }
+            if (userId === 1) {
+                if (process.env.PIPELINE_LOCAL_ROOT) allowedRoots.push(process.env.PIPELINE_LOCAL_ROOT.trim());
+                if (process.env.PIPELINE_ONEDRIVE_ROOT) allowedRoots.push(process.env.PIPELINE_ONEDRIVE_ROOT.trim());
+            }
+
+            const resolvedTarget = path.resolve(reqPath);
+            const isInsideRoot = allowedRoots.some(root => {
+                if (!root) return false;
+                const resolvedRoot = path.resolve(root);
+                return resolvedTarget.toLowerCase().startsWith(resolvedRoot.toLowerCase() + path.sep) ||
+                    resolvedTarget.toLowerCase() === resolvedRoot.toLowerCase();
+            });
+
+            if (isInsideRoot && fs.existsSync(resolvedTarget)) {
+                const stat = fs.statSync(resolvedTarget);
+                const meta = getGCodeMetadata(resolvedTarget, stat.mtimeMs);
+                if (meta && meta.previewSvg) {
+                    return res.json({
+                        ok: true,
+                        source: 'disk',
+                        previewSvg: meta.previewSvg,
+                        widthMm: meta.widthMm,
+                        heightMm: meta.heightMm,
+                        depthMm: meta.depthMm,
+                        cutMeters: meta.cutMeters,
+                        estimatedMinutes: meta.estimatedMinutes,
+                        materialSize: meta.materialSize
+                    });
+                }
+            }
+        }
+
+        // 2. Fallback para nuvem (Railway): busca o previewSvg salvo no snapshot sincronizado do PostgreSQL
+        try {
+            const snapRes = await pool.query('SELECT snapshot_data FROM pipeline_live_snapshot WHERE id = $1', [userId]);
+            const snap = snapRes.rows[0]?.snapshot_data;
+            if (snap) {
+                const candidates = [...(snap.gcodeProntos || []), ...(snap.gcodeFeitos || [])];
+                const normReqPath = reqPath.toLowerCase().replace(/\\/g, '/');
+                const found = candidates.find(f => {
+                    const fp = String(f.fullPath || '').toLowerCase().replace(/\\/g, '/');
+                    if (normReqPath && fp && fp === normReqPath) return true;
+                    const fn = String(f.name || '').toLowerCase().trim();
+                    const sub = String(f.subfolderName || '').toLowerCase().trim();
+                    return reqName && fn === reqName && (!reqSub || sub === reqSub);
+                });
+                if (found && found.previewSvg) {
+                    return res.json({
+                        ok: true,
+                        source: 'snapshot',
+                        previewSvg: found.previewSvg,
+                        widthMm: found.widthMm || null,
+                        heightMm: found.heightMm || null,
+                        depthMm: found.depthMm || null,
+                        cutMeters: found.cutMeters || null,
+                        estimatedMinutes: found.estimatedMinutes || null
+                    });
+                }
+            }
+        } catch { /* ignore */ }
+
+        return res.json({ ok: false, previewSvg: null });
+    } catch (err) {
+        console.error('Erro em GET /api/pipeline/gcode-preview:', err);
+        res.status(500).json({ error: 'Erro ao gerar visualização do G-Code' });
+    }
+});
+
+// Serve PDF ou imagem detectado automaticamente dentro da pasta do arquivo (com fallback via PostgreSQL na nuvem)
+const ALLOWED_LOCAL_DOC_EXTS = new Set(['.pdf', '.png', '.jpg', '.jpeg', '.webp']);
+
+router.get('/api/pipeline/local-doc', authenticateToken, async (req, res) => {
+    try {
+        const userId = Number(req.user.id || 1) || 1;
+        const reqPath = String(req.query.path || '').trim();
+        if (!reqPath) {
+            return res.status(400).json({ error: 'Parâmetro path é obrigatório' });
+        }
+
+        const ext = path.extname(reqPath).toLowerCase();
+        if (!ALLOWED_LOCAL_DOC_EXTS.has(ext)) {
+            return res.status(400).json({ error: 'Tipo de documento não permitido' });
+        }
+
+        const mimeType = ext === '.pdf'
+            ? 'application/pdf'
+            : ext === '.png'
+                ? 'image/png'
+                : ext === '.webp'
+                    ? 'image/webp'
+                    : 'image/jpeg';
+
+        // 1. Tenta servir diretamente do disco local (validando que está dentro das pastas autorizadas do tenant)
+        const allowedRoots = [];
+        try {
+            const cfgRes = await pool.query(
+                'SELECT pipeline_local_root, pipeline_cloud_root FROM users WHERE id = $1 LIMIT 1',
+                [userId]
+            );
+            const cfg = cfgRes.rows[0] || {};
+            if (cfg.pipeline_local_root) allowedRoots.push(cfg.pipeline_local_root.trim());
+            if (cfg.pipeline_cloud_root) allowedRoots.push(cfg.pipeline_cloud_root.trim());
+        } catch { /* ignore */ }
+        if (userId === 1) {
+            if (process.env.PIPELINE_LOCAL_ROOT) allowedRoots.push(process.env.PIPELINE_LOCAL_ROOT.trim());
+            if (process.env.PIPELINE_ONEDRIVE_ROOT) allowedRoots.push(process.env.PIPELINE_ONEDRIVE_ROOT.trim());
+        }
+
+        const resolvedTarget = path.resolve(reqPath);
+        const isInsideRoot = allowedRoots.some(root => {
+            if (!root) return false;
+            const resolvedRoot = path.resolve(root);
+            return resolvedTarget.toLowerCase().startsWith(resolvedRoot.toLowerCase() + path.sep);
+        });
+
+        if (isInsideRoot && fs.existsSync(resolvedTarget)) {
+            const safeName = path.basename(resolvedTarget).replace(/["\r\n]/g, '');
+            res.setHeader('Content-Type', mimeType);
+            res.setHeader('Content-Disposition', `inline; filename="${safeName}"`);
+            res.setHeader('Cache-Control', 'private, max-age=300');
+            return res.sendFile(resolvedTarget);
+        }
+
+        // 2. Fallback na nuvem (Railway): busca o documento sincronizado automaticamente no PostgreSQL
+        const normKey = `auto::${reqPath.replace(/\//g, '\\').toLowerCase().trim()}`;
+        const scopedAutoKey = scopeFileKey(userId, normKey);
+        const dbDoc = await pool.query(
+            `SELECT attachment_name, mime_type, data_url
+             FROM pipeline_file_attachments
+             WHERE ("userId" = $1 OR ($1::int = 1 AND "userId" IS NULL))
+               AND LOWER(file_key) = LOWER($2)
+             ORDER BY updated_at DESC LIMIT 1`,
+            [userId, scopedAutoKey]
+        );
+        if (dbDoc.rows.length > 0 && dbDoc.rows[0].data_url) {
+            const row = dbDoc.rows[0];
+            const b64Idx = row.data_url.indexOf('base64,');
+            if (b64Idx !== -1) {
+                const buf = Buffer.from(row.data_url.slice(b64Idx + 7), 'base64');
+                const safeName = String(row.attachment_name || 'documento.pdf').replace(/["\r\n]/g, '');
+                res.setHeader('Content-Type', row.mime_type || mimeType);
+                res.setHeader('Content-Disposition', `inline; filename="${safeName}"`);
+                res.setHeader('Cache-Control', 'private, max-age=300');
+                return res.send(buf);
+            }
+        }
+
+        return res.status(404).json({ error: 'Documento não encontrado' });
+    } catch (err) {
+        console.error('Erro em GET /api/pipeline/local-doc:', err);
+        res.status(500).json({ error: 'Erro ao carregar documento da pasta' });
     }
 });
 

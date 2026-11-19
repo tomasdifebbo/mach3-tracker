@@ -2,10 +2,17 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   X, Printer, Copy, ClipboardList, CheckSquare, Square, Share2, Check,
   Clock, Layers, Cpu, Wrench, AlertCircle, Sparkles, Filter, ChevronDown,
-  RefreshCw, Flame, ListOrdered, Play, Maximize2, FileText, Search, Disc
+  RefreshCw, Flame, ListOrdered, Play, Maximize2, FileText, Search, Disc,
+  Paperclip, Compass
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { isFileMarkedOk } from '../../utils/fileChecklistUtils';
+import { AnexoDesenhoModal } from '../AnexoDesenhoModal';
+import {
+  matchAttachmentsForTask,
+  buildPieceMapsPrintSectionHtml,
+  PIECE_MAPS_PRINT_CSS
+} from '../../utils/attachmentUtils';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -45,6 +52,9 @@ export function FilaRouterOperador({
   const [assignedMachines, setAssignedMachines] = useState('Router 1 e Router 2');
   const [copied, setCopied] = useState(false);
   const [copiedKey, setCopiedKey] = useState(null);
+  const [attachments, setAttachments] = useState([]);
+  const [includePieceMaps, setIncludePieceMaps] = useState(true);
+  const [activeMapTask, setActiveMapTask] = useState(null);
 
   const resolveDisplayPath = (task) => {
     let p = task.fullPath || task.fullFile?.fullPath || task.fullFile?.path || '';
@@ -113,6 +123,17 @@ export function FilaRouterOperador({
     }
   }, [operatorName]);
 
+  const loadAttachments = useCallback(async () => {
+    try {
+      const res = await api.getPipelineAttachments();
+      if (res && Array.isArray(res.attachments)) {
+        setAttachments(res.attachments);
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar anexos no terminal do operador:', err);
+    }
+  }, []);
+
   const fetchPipeline = useCallback(async (force = false) => {
     setLoading(true);
     try {
@@ -130,12 +151,13 @@ export function FilaRouterOperador({
   useEffect(() => {
     syncCompletedFiles();
     fetchPipeline(false);
+    loadAttachments();
     const interval = setInterval(() => {
       fetchPipeline(false);
       syncCompletedFiles();
     }, 6000);
     return () => clearInterval(interval);
-  }, [fetchPipeline, syncCompletedFiles]);
+  }, [fetchPipeline, syncCompletedFiles, loadAttachments]);
 
   const isFileRunning = useCallback((fileName, jobName) => {
     // 1. Verifica execuções ativas do pipelineData
@@ -313,6 +335,8 @@ export function FilaRouterOperador({
               mtime: f.mtimeDate,
               errorExecsCount: f.errorExecsCount || 0,
               avgValidMinutes: f.avgValidMinutes || f.estimatedMinutes || 0,
+              previewSvg: f.previewSvg || null,
+              folderDocs: f.folderDocs || [],
               fullFile: f,
               fullPath: f.fullPath
             });
@@ -340,6 +364,8 @@ export function FilaRouterOperador({
             mtime: f.mtimeDate,
             errorExecsCount: f.errorExecsCount || 0,
             avgValidMinutes: f.avgValidMinutes || f.estimatedMinutes || 0,
+            previewSvg: f.previewSvg || null,
+            folderDocs: f.folderDocs || [],
             fullFile: f,
             fullPath: f.fullPath
           });
@@ -452,7 +478,10 @@ export function FilaRouterOperador({
           dimensions: dim,
           operator: f.lastExec?.operator_name || operatorName,
           mtime: f.lastExec?.start_time || f.mtimeDate,
-          fullFile: f
+          previewSvg: f.previewSvg || null,
+          folderDocs: f.folderDocs || [],
+          fullFile: f,
+          fullPath: f.fullPath
         });
       });
     }
@@ -669,6 +698,13 @@ export function FilaRouterOperador({
       `;
     }).join('');
 
+    const allTasksForMaps = taskGroups.flatMap(g =>
+      g.tasks.map(t => ({ ...t, _displayPath: resolveDisplayPath(t) }))
+    );
+    const pieceMapsHtml = includePieceMaps
+      ? buildPieceMapsPrintSectionHtml(allTasksForMaps, attachments, escapeHtml)
+      : '';
+
     const fullHtml = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -729,6 +765,7 @@ export function FilaRouterOperador({
   .badge-pend { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
   
   .write-field { color: #94a3b8; font-size: 7.8px; white-space: nowrap; }
+  ${PIECE_MAPS_PRINT_CSS}
 </style>
 </head>
 <body>
@@ -769,6 +806,7 @@ export function FilaRouterOperador({
   </div>
 
   ${groupsHtml}
+  ${pieceMapsHtml}
 </body>
 </html>`;
 
@@ -815,7 +853,7 @@ export function FilaRouterOperador({
 
         <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={() => fetchPipeline(true)}
+            onClick={() => { fetchPipeline(true); loadAttachments(); }}
             disabled={loading}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer disabled:opacity-50"
             title="Atualizar lista da fila"
@@ -972,6 +1010,15 @@ export function FilaRouterOperador({
               />
               <span className="font-medium text-slate-600 dark:text-slate-300 text-[11px]">Incluir Concluídos</span>
             </label>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none" title="Incluir mapas de peças (G-Code + fotos/PDFs) ao imprimir a Ficha A4">
+              <input
+                type="checkbox"
+                checked={includePieceMaps}
+                onChange={e => setIncludePieceMaps(e.target.checked)}
+                className="rounded text-cyan-500 focus:ring-0"
+              />
+              <span className="font-bold text-cyan-600 dark:text-cyan-400 text-[11px]">Mapas na Impressão</span>
+            </label>
           </div>
         </div>
       </div>
@@ -1037,12 +1084,21 @@ export function FilaRouterOperador({
                     <span className="truncate">{g.groupTitle}</span>
                   </div>
 
-                  <div className="flex items-center gap-3 text-[11px]">
+                  <div className="flex items-center gap-2.5 text-[11px] flex-wrap">
                     {subRouterMin > 0 && (
                       <span className="px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30 flex items-center gap-1">
                         <Clock size={11} /> Duração do Conjunto: ~{formatHm(subRouterMin)}
                       </span>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => g.tasks[0] && setActiveMapTask({ task: g.tasks[0], defaultScope: 'group' })}
+                      className="px-2 py-0.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                      title="Anexar foto ou PDF para este conjunto"
+                    >
+                      <Paperclip size={11} />
+                      <span>Anexar Foto/PDF</span>
+                    </button>
                     <span className="text-slate-400 font-medium">
                       {g.tasks.length} {g.tasks.length === 1 ? 'tarefa' : 'tarefas'}
                     </span>
@@ -1059,7 +1115,7 @@ export function FilaRouterOperador({
                         <th className="py-2.5 px-3">Etapa</th>
                         <th className="py-2.5 px-3">Material</th>
                         <th className="py-2.5 px-3">Duração do Corte</th>
-                        <th className="py-2.5 px-3">COPIAR CAMINHO</th>
+                        <th className="py-2.5 px-3">AÇÕES / DESENHO</th>
                         <th className="py-2.5 px-3 text-right">Operador</th>
                       </tr>
                     </thead>
@@ -1068,6 +1124,9 @@ export function FilaRouterOperador({
                         const isDoneState = t.status === 'done';
                         const isRunningState = t.status === 'running';
                         const isToggling = togglingKey === (t.id || t.name);
+                        const rowManualAtts = matchAttachmentsForTask(attachments, t);
+                        const rowFolderDocs = t.folderDocs || t.fullFile?.folderDocs || [];
+                        const hasSvg = Boolean(t.previewSvg || t.fullFile?.previewSvg);
 
                         return (
                           <tr
@@ -1204,6 +1263,33 @@ export function FilaRouterOperador({
                                     </>
                                   )}
                                 </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveMapTask({ task: t, defaultScope: 'file' })}
+                                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95 border ${
+                                    rowFolderDocs.length > 0
+                                      ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25'
+                                      : rowManualAtts.length > 0
+                                        ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/25'
+                                        : hasSvg
+                                          ? 'bg-orange-500/10 border-orange-500/30 text-orange-700 dark:text-orange-300 hover:bg-orange-500/20'
+                                          : 'bg-white dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-cyan-500 hover:text-cyan-500'
+                                  }`}
+                                  title="Visualizar PDF automático do material na pasta, desenho G-Code ou anexar foto/PDF para anotação nas peças"
+                                >
+                                  <Compass size={13} />
+                                  <span>Desenho / PDF</span>
+                                  {rowFolderDocs.length > 0 && (
+                                    <span className="px-1.5 py-0.2 rounded bg-emerald-500 text-black text-[9px] font-black">
+                                      PDF
+                                    </span>
+                                  )}
+                                  {rowManualAtts.length > 0 && (
+                                    <span className="px-1.5 py-0.2 rounded bg-cyan-500 text-black text-[9px] font-black">
+                                      📎{rowManualAtts.length}
+                                    </span>
+                                  )}
+                                </button>
                               </div>
                             </td>
 
@@ -1247,6 +1333,16 @@ export function FilaRouterOperador({
           </button>
         </div>
       </div>
+
+      <AnexoDesenhoModal
+        isOpen={Boolean(activeMapTask)}
+        onClose={() => setActiveMapTask(null)}
+        task={activeMapTask?.task}
+        defaultScope={activeMapTask?.defaultScope || 'file'}
+        attachments={attachments}
+        onAttachmentsChanged={loadAttachments}
+        operatorName={operatorName}
+      />
     </div>
   );
 
