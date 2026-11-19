@@ -715,6 +715,11 @@ export function FilaRouterOperador({
 
   // Impressão A4 Oficial idêntica à modal (com imagens diretas da pasta do material/chapa)
   const handlePrint = async () => {
+    const printWin = window.open('', '_blank');
+    if (!printWin) {
+      alert('Bloqueador de pop-ups impediu a impressão. Por favor, permita pop-ups nesta página.');
+      return;
+    }
     printWin.document.open();
     printWin.document.write('<!DOCTYPE html><html lang="pt-BR"><body style="font-family:Segoe UI,Arial,sans-serif;padding:30px;color:#334155;">Preparando Fila de Corte e carregando imagens das chapas...</body></html>');
     printWin.document.close();
@@ -800,9 +805,14 @@ export function FilaRouterOperador({
     const allTasksForMaps = taskGroups.flatMap(g =>
       g.tasks.map(t => ({ ...t, _displayPath: resolveDisplayPath(t) }))
     );
-    const hydratedTasksForMaps = includePieceMaps
-      ? await hydrateFolderDocImagesForPrint(allTasksForMaps, api.fetchLocalDocBlob)
-      : allTasksForMaps;
+    let hydratedTasksForMaps = allTasksForMaps;
+    if (includePieceMaps) {
+      try {
+        hydratedTasksForMaps = await hydrateFolderDocImagesForPrint(allTasksForMaps, api.fetchLocalDocBlob);
+      } catch (err) {
+        console.warn('Aviso ao carregar imagens/PDFs para impressão no operador:', err);
+      }
+    }
     const pieceMapsHtml = includePieceMaps
       ? buildPieceMapsPrintSectionHtml(hydratedTasksForMaps, attachments, escapeHtml)
       : '';
@@ -912,11 +922,6 @@ export function FilaRouterOperador({
 </body>
 </html>`;
 
-    const printWin = window.open('', '_blank');
-    if (!printWin) {
-      alert('Bloqueador de pop-ups impediu a impressão. Por favor, permita pop-ups nesta página.');
-      return;
-    }
     printWin.document.open();
     printWin.document.write(fullHtml);
     printWin.document.close();

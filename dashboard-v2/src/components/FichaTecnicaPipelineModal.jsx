@@ -566,6 +566,11 @@ export function FichaTecnicaPipelineModal({
 
   // Gerador de Impressão A4 (Print / PDF) com a duração exata de cada chapa e imagens diretas da pasta
   const handlePrint = async () => {
+    const printWin = window.open('', '_blank', 'width=980,height=860');
+    if (!printWin) {
+      alert('Por favor, autorize pop-ups no navegador para emitir a Ficha Técnica para impressão ou PDF.');
+      return;
+    }
     printWin.document.open();
     printWin.document.write('<!DOCTYPE html><html lang="pt-BR"><body style="font-family:Segoe UI,Arial,sans-serif;padding:30px;color:#334155;">Preparando Ficha Técnica e carregando imagens das chapas...</body></html>');
     printWin.document.close();
@@ -651,9 +656,14 @@ export function FichaTecnicaPipelineModal({
     const allTasksForMaps = taskGroups.flatMap(g =>
       g.tasks.map(t => ({ ...t, _displayPath: resolveDisplayPath(t) }))
     );
-    const hydratedTasksForMaps = includePieceMaps
-      ? await hydrateFolderDocImagesForPrint(allTasksForMaps, api.fetchLocalDocBlob)
-      : allTasksForMaps;
+    let hydratedTasksForMaps = allTasksForMaps;
+    if (includePieceMaps) {
+      try {
+        hydratedTasksForMaps = await hydrateFolderDocImagesForPrint(allTasksForMaps, api.fetchLocalDocBlob);
+      } catch (err) {
+        console.warn('Aviso ao carregar imagens/PDFs para impressão:', err);
+      }
+    }
     const pieceMapsHtml = includePieceMaps
       ? buildPieceMapsPrintSectionHtml(hydratedTasksForMaps, attachments, escapeHtml)
       : '';
@@ -783,11 +793,6 @@ export function FichaTecnicaPipelineModal({
 </body>
 </html>`;
 
-    const printWin = window.open('', '_blank', 'width=980,height=860');
-    if (!printWin) {
-      alert('Por favor, autorize pop-ups no navegador para emitir a Ficha Técnica para impressão ou PDF.');
-      return;
-    }
     printWin.document.open();
     printWin.document.write(fullHtml);
     printWin.document.close();
