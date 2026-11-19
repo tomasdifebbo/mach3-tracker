@@ -162,4 +162,38 @@ test('generateGCodePreviewSvg creates compact top-down SVG and matchFolderDocsFo
     assert.ok(mdf9Matches.some(d => d.name === 'mdf 9mn fundo isopor.pdf'));
     assert.ok(mdf9Matches.some(d => d.name === 'MDF 9MM.pdf'));
     assert.ok(!mdf9Matches.some(d => d.name === 'MDF 15MM.pdf'));
+
+    // Casamento específico por material + número da chapa para imagens salvas na pasta
+    const sheetDocs = [
+        { name: 'mdf 6mm chapa 1.png', ext: '.png', fullPath: 'E:\\router\\PORTA\\mdf 6mm chapa 1.png', size: 80000, mtime: 200 },
+        { name: 'mdf 6mm chapa 2.jpg', ext: '.jpg', fullPath: 'E:\\router\\PORTA\\mdf 6mm chapa 2.jpg', size: 82000, mtime: 200 },
+        { name: 'mdf 6mm.pdf', ext: '.pdf', fullPath: 'E:\\router\\PORTA\\mdf 6mm.pdf', size: 120000, mtime: 200 },
+        { name: 'isopor 100mm chapa 1.jpg', ext: '.jpg', fullPath: 'E:\\router\\ISOPOR\\isopor 100mm chapa 1.jpg', size: 90000, mtime: 200 }
+    ];
+
+    const chapa1Matches = matchFolderDocsForGcode(
+        { name: 'mdf 6mm_1-° chapa e6mm.txt', fullPath: 'E:\\router\\PORTA\\mdf 6mm_1-° chapa e6mm.txt' },
+        extractMaterialInfo('mdf 6mm_1-° chapa e6mm.txt'),
+        sheetDocs
+    );
+    assert.equal(chapa1Matches[0].name, 'mdf 6mm chapa 1.png');
+    assert.equal(chapa1Matches[0].exactSheetMatch, true);
+    assert.ok(chapa1Matches.some(d => d.name === 'mdf 6mm.pdf'));
+    assert.ok(!chapa1Matches.some(d => d.name === 'mdf 6mm chapa 2.jpg'));
+
+    const chapa2Matches = matchFolderDocsForGcode(
+        { name: 'mdf 6mm_2-° chapa vbit.txt', fullPath: 'E:\\router\\PORTA\\mdf 6mm_2-° chapa vbit.txt' },
+        extractMaterialInfo('mdf 6mm_2-° chapa vbit.txt'),
+        sheetDocs
+    );
+    assert.equal(chapa2Matches[0].name, 'mdf 6mm chapa 2.jpg');
+    assert.ok(!chapa2Matches.some(d => d.name === 'mdf 6mm chapa 1.png'));
+
+    const isopor1Matches = matchFolderDocsForGcode(
+        { name: '1 pvc 100mm b10mm.txt', fullPath: 'E:\\router\\ISOPOR\\1 pvc 100mm b10mm.txt' },
+        extractMaterialInfo('1 pvc 100mm b10mm.txt', 'E:\\router\\ISOPOR'),
+        sheetDocs
+    );
+    assert.equal(isopor1Matches[0].name, 'isopor 100mm chapa 1.jpg');
+    assert.equal(isopor1Matches[0].exactSheetMatch, true);
 });

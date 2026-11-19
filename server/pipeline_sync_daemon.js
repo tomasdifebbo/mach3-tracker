@@ -104,7 +104,7 @@ async function syncFoldersToCloud(reason = 'interval') {
             s: data.summary,
             c: (data.cadPreparar || []).map(f => `${f.name}_${f.mtime}`),
             a: (data.aspirePreparar || []).map(f => `${f.name}_${f.mtime}_${f.chapasCount}`),
-            g: (data.gcodeProntos || []).map(f => `${f.name}_${f.mtime}_${f.isCurrentlyRunning}`)
+            g: (data.gcodeProntos || []).map(f => `${f.name}_${f.mtime}_${f.isCurrentlyRunning}_${(f.folderDocs || []).map(d => `${d.name}:${d.mtime}`).join(',')}`)
         });
 
         await pool.query(`

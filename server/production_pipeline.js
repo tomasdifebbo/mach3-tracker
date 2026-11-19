@@ -333,7 +333,43 @@ function getGCodeMetadata(filePath, mtime = 0) {
     }
 }
 
-// Associa automaticamente PDFs e imagens dentro da mesma pasta cujo nome corresponda ao material do G-Code
+// Extrai o número da chapa/peça de nomes de G-Code ou imagens/PDFs (ex: "mdf 6mm_2-° chapa e6mm.txt" -> 2, "mdf 6mm chapa 2.png" -> 2, "1 pvc 100mm.jpg" -> 1)
+function extractSheetNumber(fileName) {
+    if (!fileName) return null;
+    let stem = path.parse(String(fileName)).name
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
+    // Remove espessuras (6mm, 9mn, 100mm, 15cm), fresas (e6mm, b10mm), multiplicadores (2x, 4x) e "parte N"
+    stem = stem
+        .replace(/\b[eb]\s*\d+(?:[.,]\d+)?\s*(?:mm|mn)?\b/gi, ' ')
+        .replace(/\b\d+(?:[.,]\d+)?\s*(?:mm|mn|cm)\b/gi, ' ')
+        .replace(/\b\d+\s*x\b/gi, ' ')
+        .replace(/\bparte\s*[-_#]?\s*\d+\b/gi, ' ')
+        .replace(/\b\d+\s*unidades?\b/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    // 1. Padrões explícitos de chapa / corte / folha
+    const explicitBefore = stem.match(/(?:^|[\s_\-(])(\d{1,3})\s*[-°ºª]*\s*(?:chapa|ch|corte|folha)\b/i);
+    if (explicitBefore) return parseInt(explicitBefore[1], 10);
+
+    const explicitAfter = stem.match(/\b(?:chapa|ch|corte|folha)\s*[-_#°ºª]*\s*(\d{1,3})\b/i);
+    if (explicitAfter) return parseInt(explicitAfter[1], 10);
+
+    // 2. Número isolado no final (ex: "mdf 6mm 2", "compensado 6mm_3")
+    const trailingNum = stem.match(/(?:^|[\s_-])(\d{1,3})$/);
+    if (trailingNum) return parseInt(trailingNum[1], 10);
+
+    // 3. Número isolado no início (ex: "1 pvc 100mm", "2 isopor")
+    const leadingNum = stem.match(/^(\d{1,3})(?:[\s_-]|$)/);
+    if (leadingNum) return parseInt(leadingNum[1], 10);
+
+    return null;
+}
+
+// Associa automaticamente PDFs e imagens dentro da mesma pasta cujo nome corresponda ao material (e chapa, quando informada) do G-Code
 function matchFolderDocsForGcode(gf, matInfo, docsInFolder = []) {
     if (!gf || !Array.isArray(docsInFolder) || docsInFolder.length === 0) return [];
 
@@ -342,6 +378,7 @@ function matchFolderDocsForGcode(gf, matInfo, docsInFolder = []) {
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase()
         .replace(/(\d+)\s*mn\b/gi, '$1mm')
+        .replace(/[°ºª]+/g, ' ')
         .replace(/[_\-()[\]]+/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
@@ -349,10 +386,20 @@ function matchFolderDocsForGcode(gf, matInfo, docsInFolder = []) {
     const gStem = normText(path.parse(gf.name || '').name);
     const gMat = matInfo?.material ? normText(matInfo.material) : '';
     const gThick = matInfo?.thickness ? normText(matInfo.thickness) : '';
+    const gSheet = extractSheetNumber(gf.name || '');
+
+    const isSameMaterialFamily = (a, b) => {
+        if (!a || !b) return false;
+        if (a === b) return true;
+        // Na oficina, blocos de Isopor EPS 100mm usam "pvc 100mm" no G-Code e podem ter imagem nomeada "isopor" ou "pvc"
+        const isoporAliases = new Set(['isopor eps', 'isopor', 'eps', 'pvc']);
+        return isoporAliases.has(a) && isoporAliases.has(b);
+    };
 
     const GENERIC_TOKENS = new Set([
-        'de', 'da', 'do', 'dos', 'das', 'em', 'para', 'com', 'ok', 'chapa', 'chapas',
-        'corte', 'cortes', 'todas', 'as', 'os', 'cotadas', 'vetorial', 'escalonada', 'final', 'otimizado'
+        'de', 'da', 'do', 'dos', 'das', 'em', 'para', 'com', 'ok', 'chapa', 'chapas', 'ch', 'folha',
+        'corte', 'cortes', 'todas', 'as', 'os', 'cotadas', 'vetorial', 'escalonada', 'final', 'otimizado',
+        'foto', 'imagem', 'img', 'mapa', 'peca', 'pecas'
     ]);
 
     const scored = [];
@@ -364,29 +411,45 @@ function matchFolderDocsForGcode(gf, matInfo, docsInFolder = []) {
         const dMatInfo = extractMaterialInfo(dStemRaw.replace(/(\d+)\s*mn\b/gi, '$1mm'), d.fullPath || '');
         const dMat = dMatInfo?.material ? normText(dMatInfo.material) : '';
         const dThick = dMatInfo?.thickness ? normText(dMatInfo.thickness) : '';
+        const dSheet = extractSheetNumber(d.name || '');
+
+        // Se a imagem/PDF especificar um número de chapa (ex: "mdf 6mm chapa 2.png"), NÃO associar a outra chapa (ex: chapa 1)!
+        if (dSheet !== null && gSheet !== null && dSheet !== gSheet) {
+            continue;
+        }
+        const exactSheetMatch = dSheet !== null && gSheet !== null && dSheet === gSheet;
 
         let score = 0;
 
         // 1. Prefixo exato (ex: "compensado de 6mm.pdf" -> "compensado de 6mm e6mm_1-° chapa 2x.txt")
         if (gStem === dStem || gStem.startsWith(dStem + ' ') || dStem.startsWith(gStem + ' ')) {
-            score = 100;
+            score = exactSheetMatch ? 125 : 100;
         }
 
-        // 2. Casamento por material + espessura (ex: "MDF 9MM.pdf", "compensado 10mm.pdf", "MDF 9MM RAMPA A.pdf")
-        if (score === 0 && gMat && dMat && gMat === dMat) {
+        // 2. Casamento por material + espessura (+ número da chapa, se informado)
+        if (score === 0 && isSameMaterialFamily(gMat, dMat)) {
             const thickCompatible = !dThick || !gThick || dThick === gThick;
             if (thickCompatible) {
-                // Verifica se o PDF possui qualificadores extras (ex: "rampa a", "escada c", "portas")
-                const matWords = new Set([...dMat.split(' '), dThick, 'mdf', 'compensado', 'comp', 'isopor', 'eps', 'pvc', 'acm', 'acrilico', 'ps']);
-                const extraTokens = dStem.split(' ').filter(t => t && !GENERIC_TOKENS.has(t) && !matWords.has(t) && !/^\d+mm$/.test(t));
+                const matWords = new Set([...dMat.split(' '), ...gMat.split(' '), dThick, gThick, 'mdf', 'compensado', 'comp', 'isopor', 'eps', 'pvc', 'acm', 'acrilico', 'ps']);
+                const extraTokens = dStem.split(' ').filter(t => {
+                    if (!t || GENERIC_TOKENS.has(t) || matWords.has(t)) return false;
+                    if (/^\d+mm$/.test(t) || /^[eb]\d+mm$/.test(t) || /^\d+x$/.test(t)) return false;
+                    // Se o número corresponde exatamente à chapa casada (ex: "1", "01", "ch1"), não tratar como token extra divergente
+                    if (exactSheetMatch && (/^\d{1,3}$/.test(t) && parseInt(t, 10) === dSheet || t === `ch${dSheet}`)) return false;
+                    return true;
+                });
 
                 if (extraTokens.length === 0) {
-                    score = dThick && gThick ? 85 : 65;
+                    if (exactSheetMatch) {
+                        score = dThick && gThick ? 120 : 105;
+                    } else if (dSheet === null) {
+                        score = dThick && gThick ? 85 : 65;
+                    }
                 } else {
                     const matchedExtra = extraTokens.filter(t => gStem.includes(t));
                     if (matchedExtra.length === extraTokens.length) {
-                        score = 95;
-                    } else if (matchedExtra.length > 0) {
+                        score = exactSheetMatch ? 122 : (dSheet === null ? 95 : 0);
+                    } else if (matchedExtra.length > 0 && dSheet === null) {
                         score = 75;
                     }
                 }
@@ -411,13 +474,19 @@ function matchFolderDocsForGcode(gf, matInfo, docsInFolder = []) {
                     size: d.size || 0,
                     mtime: d.mtime || 0,
                     mimeType,
-                    autoMatched: true
+                    autoMatched: true,
+                    exactSheetMatch,
+                    sheetNumber: dSheet
                 }
             });
         }
     }
 
-    scored.sort((a, b) => b.score - a.score || (b.doc.ext === '.pdf' ? 1 : 0) - (a.doc.ext === '.pdf' ? 1 : 0));
+    scored.sort((a, b) =>
+        b.score - a.score ||
+        (b.doc.exactSheetMatch ? 1 : 0) - (a.doc.exactSheetMatch ? 1 : 0) ||
+        (b.doc.ext !== '.pdf' ? 1 : 0) - (a.doc.ext !== '.pdf' ? 1 : 0)
+    );
     return scored.map(s => s.doc);
 }
 
@@ -2240,6 +2309,7 @@ module.exports = {
     invalidatePipelineCache,
     getGCodeMetadata,
     generateGCodePreviewSvg,
+    extractSheetNumber,
     matchFolderDocsForGcode,
     extractMaterialInfo,
     isFileMarkedOk,

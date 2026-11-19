@@ -10,6 +10,8 @@ import {
   fileToOptimizedAttachment,
   dataUrlToBlobUrl,
   matchAttachmentsForTask,
+  isImageDoc,
+  blobToDataUrl,
   PIECE_MAPS_PRINT_CSS
 } from '../utils/attachmentUtils';
 
@@ -113,6 +115,7 @@ export function AnexoDesenhoModal({
         }
         createdUrl = res.blobUrl;
         setFolderDocBlob({
+          blob: res.blob,
           blobUrl: res.blobUrl,
           mimeType: res.mimeType || currentFolderDoc.mimeType,
           path: currentFolderDoc.fullPath
@@ -192,15 +195,43 @@ export function AnexoDesenhoModal({
     }
   };
 
-  // Imprime uma folha A4 dedicada desta chapa (desenho do G-Code + fotos anexadas + espaço para anotações à caneta)
-  const handlePrintSingleMap = () => {
-    const imgAttachments = matchedManual.filter(a => (a.mime_type || '').startsWith('image/'));
+  // Imprime uma folha A4 dedicada desta chapa (imagem da pasta + fotos anexadas + espaço para anotações à caneta)
+  const handlePrintSingleMap = async () => {
+    const win = window.open('', '_blank', 'width=960,height=840');
+    if (!win) {
+      alert('Permita pop-ups para imprimir o mapa da chapa.');
+      return;
+    }
+
+    const folderImgItems = [];
+    for (const d of folderDocs) {
+      if (!isImageDoc(d) || !d.fullPath) continue;
+      try {
+        if (folderDocBlob?.path === d.fullPath && folderDocBlob?.blob) {
+          const url = await blobToDataUrl(folderDocBlob.blob);
+          if (url) folderImgItems.push({ attachment_name: d.name, data_url: url, notes: d.exactSheetMatch ? 'Imagem da pasta (chapa correspondente)' : 'Imagem da pasta do material' });
+        } else {
+          const fetched = await api.fetchLocalDocBlob(d.fullPath);
+          if (fetched?.blob) {
+            const url = await blobToDataUrl(fetched.blob);
+            if (url) folderImgItems.push({ attachment_name: d.name, data_url: url, notes: d.exactSheetMatch ? 'Imagem da pasta (chapa correspondente)' : 'Imagem da pasta do material' });
+          }
+          if (fetched?.blobUrl) {
+            try { URL.revokeObjectURL(fetched.blobUrl); } catch { /* ignore */ }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    const imgAttachments = [...folderImgItems, ...matchedManual.filter(a => (a.mime_type || '').startsWith('image/'))];
     const pdfAttachments = matchedManual.filter(a => (a.mime_type || '') === 'application/pdf');
 
     const imgsHtml = imgAttachments.map(a => `
       <div class="map-photo-box">
-        <div class="map-photo-caption">📎 ${escapeHtml(a.attachment_name)}${a.notes ? ` — ${escapeHtml(a.notes)}` : ''}</div>
-        <img src="${a.data_url}" alt="${escapeHtml(a.attachment_name)}" class="map-photo-img" style="max-height:520px;" />
+        <div class="map-photo-caption">🖼️ ${escapeHtml(a.attachment_name)}${a.notes ? ` — ${escapeHtml(a.notes)}` : ''}</div>
+        <img src="${a.data_url}" alt="${escapeHtml(a.attachment_name)}" class="map-photo-img" style="max-height:540px;" />
       </div>
     `).join('');
 
@@ -256,11 +287,6 @@ export function AnexoDesenhoModal({
 </body>
 </html>`;
 
-    const win = window.open('', '_blank', 'width=960,height=840');
-    if (!win) {
-      alert('Permita pop-ups para imprimir o mapa da chapa.');
-      return;
-    }
     win.document.open();
     win.document.write(html);
     win.document.close();
@@ -316,7 +342,7 @@ export function AnexoDesenhoModal({
                 }`}
               >
                 <Sparkles size={13} />
-                <span>PDF da Pasta ({folderDocs.length})</span>
+                <span>Imagem / PDF da Pasta ({folderDocs.length})</span>
               </button>
             )}
 

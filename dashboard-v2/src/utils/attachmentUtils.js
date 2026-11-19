@@ -118,6 +118,75 @@ export function fileToOptimizedAttachment(file) {
   });
 }
 
+export function isImageDoc(doc) {
+  if (!doc) return false;
+  const ext = String(doc.ext || '').toLowerCase();
+  const mime = String(doc.mimeType || doc.mime_type || '').toLowerCase();
+  return mime.startsWith('image/') || ['.png', '.jpg', '.jpeg', '.webp'].includes(ext);
+}
+
+export function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Erro ao converter imagem para impressão.'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+/**
+ * Baixa e embute em base64 (data URL) todas as imagens da pasta (ex.: "mdf 6mm chapa 1.png")
+ * associadas às chapas para impressão direta na Ficha Técnica A4.
+ */
+export async function hydrateFolderDocImagesForPrint(items = [], fetchLocalDocBlobFn) {
+  if (!Array.isArray(items) || items.length === 0 || typeof fetchLocalDocBlobFn !== 'function') {
+    return items;
+  }
+
+  const uniquePaths = new Set();
+  for (const item of items) {
+    const docs = item?.folderDocs || item?.fullFile?.folderDocs || [];
+    for (const d of docs) {
+      if (d?.fullPath && isImageDoc(d) && !d._dataUrl) {
+        uniquePaths.add(d.fullPath);
+      }
+    }
+  }
+
+  if (uniquePaths.size === 0) return items;
+
+  const dataUrlMap = new Map();
+  await Promise.all(
+    Array.from(uniquePaths).map(async (fullPath) => {
+      try {
+        const res = await fetchLocalDocBlobFn(fullPath);
+        if (res?.blob) {
+          const dataUrl = await blobToDataUrl(res.blob);
+          if (dataUrl) dataUrlMap.set(fullPath, dataUrl);
+        }
+        if (res?.blobUrl) {
+          try { URL.revokeObjectURL(res.blobUrl); } catch { /* ignore */ }
+        }
+      } catch {
+        // Ignora imagem indisponível sem travar a impressão
+      }
+    })
+  );
+
+  if (dataUrlMap.size === 0) return items;
+
+  return items.map((item) => {
+    const docs = item?.folderDocs || item?.fullFile?.folderDocs || [];
+    if (!docs.length) return item;
+    const hydratedDocs = docs.map((d) =>
+      d?.fullPath && dataUrlMap.has(d.fullPath)
+        ? { ...d, _dataUrl: dataUrlMap.get(d.fullPath) }
+        : d
+    );
+    return { ...item, folderDocs: hydratedDocs };
+  });
+}
+
 /**
  * Converte data:application/pdf;base64,... em Blob URL seguro para abrir/visualizar em iframe ou nova aba.
  */
@@ -179,10 +248,17 @@ export function buildPieceMapsPrintSectionHtml(items = [], manualAttachments = [
 
     const pathStr = item._displayPath || item.fullPath || item.fullFile?.fullPath || '';
 
-    const imgsBlock = [...imgAttachments.map(a => ({ name: a.attachment_name, url: a.data_url, notes: a.notes })), ...autoImgs.map(d => ({ name: d.name, url: d._dataUrl, notes: 'Imagem da pasta do material' }))]
+    const imgsBlock = [
+      ...autoImgs.map(d => ({
+        name: d.name,
+        url: d._dataUrl,
+        notes: d.exactSheetMatch ? 'Imagem da pasta (chapa correspondente)' : 'Imagem da pasta do material'
+      })),
+      ...imgAttachments.map(a => ({ name: a.attachment_name, url: a.data_url, notes: a.notes }))
+    ]
       .map(img => `
         <div class="map-photo-box">
-          <div class="map-photo-caption">📎 ${esc(img.name)}${img.notes ? ` — ${esc(img.notes)}` : ''}</div>
+          <div class="map-photo-caption">🖼️ ${esc(img.name)}${img.notes ? ` — ${esc(img.notes)}` : ''}</div>
           <img src="${img.url}" alt="${esc(img.name)}" class="map-photo-img" />
         </div>
       `).join('');
@@ -241,7 +317,7 @@ export const PIECE_MAPS_PRINT_CSS = `
   .map-svg-wrap svg { max-height: 280px; width: 100%; height: auto; }
   .map-photo-box { margin-top: 6px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px; background: #fff; text-align: center; }
   .map-photo-caption { font-size: 7.5px; font-weight: 700; color: #334155; text-align: left; margin-bottom: 3px; }
-  .map-photo-img { max-width: 100%; max-height: 360px; object-fit: contain; display: block; margin: 0 auto; }
+  .map-photo-img { max-width: 100%; max-height: 460px; object-fit: contain; display: block; margin: 0 auto; }
   .map-pdf-note { margin-top: 5px; font-size: 7.8px; color: #1e40af; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 3px 6px; }
   .map-notes-area { margin-top: 6px; padding-top: 4px; border-top: 1px dashed #94a3b8; }
   .map-notes-lbl { font-size: 7.5px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 3px; }

@@ -11,6 +11,8 @@ import { AnexoDesenhoModal } from '../AnexoDesenhoModal';
 import {
   matchAttachmentsForTask,
   buildPieceMapsPrintSectionHtml,
+  isImageDoc,
+  hydrateFolderDocImagesForPrint,
   PIECE_MAPS_PRINT_CSS
 } from '../../utils/attachmentUtils';
 import {
@@ -64,6 +66,8 @@ export function FilaRouterOperador({
   const [groupOrder, setGroupOrder] = useState(() => readCachedGroupOrder());
   const [draggedIdx, setDraggedIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
+  const [folderThumbMap, setFolderThumbMap] = useState({});
+  const folderThumbRef = React.useRef({});
 
   const resolveDisplayPath = (task) => {
     let p = task.fullPath || task.fullFile?.fullPath || task.fullFile?.path || '';
@@ -574,6 +578,54 @@ export function FilaRouterOperador({
     persistGroupOrder([]);
   };
 
+  // Carrega automaticamente miniaturas das imagens salvas na pasta com o nome do material e chapa
+  useEffect(() => {
+    let cancelled = false;
+    const neededPaths = new Set();
+    taskGroups.forEach(g => {
+      g.tasks.forEach(t => {
+        const docs = t.folderDocs || t.fullFile?.folderDocs || [];
+        const imgDoc = docs.find(d => isImageDoc(d) && d.fullPath);
+        if (imgDoc && !folderThumbRef.current[imgDoc.fullPath]) {
+          neededPaths.add(imgDoc.fullPath);
+        }
+      });
+    });
+
+    if (neededPaths.size === 0) return;
+
+    Array.from(neededPaths).forEach(async (fullPath) => {
+      folderThumbRef.current[fullPath] = 'loading';
+      try {
+        const res = await api.fetchLocalDocBlob(fullPath);
+        if (cancelled) {
+          if (res?.blobUrl) URL.revokeObjectURL(res.blobUrl);
+          delete folderThumbRef.current[fullPath];
+          return;
+        }
+        if (res?.blobUrl) {
+          folderThumbRef.current[fullPath] = res.blobUrl;
+          setFolderThumbMap(prev => ({ ...prev, [fullPath]: res.blobUrl }));
+        }
+      } catch {
+        delete folderThumbRef.current[fullPath];
+      }
+    });
+
+    return () => { cancelled = true; };
+  }, [taskGroups]);
+
+  useEffect(() => {
+    const cache = folderThumbRef.current;
+    return () => {
+      Object.values(cache).forEach(url => {
+        if (typeof url === 'string' && url.startsWith('blob:')) {
+          try { URL.revokeObjectURL(url); } catch { /* ignore */ }
+        }
+      });
+    };
+  }, []);
+
   // Estatísticas somadas da fila
   const stats = useMemo(() => {
     let total = 0;
@@ -661,8 +713,12 @@ export function FilaRouterOperador({
     setTimeout(() => setCopied(false), 3000);
   };
 
-  // Impressão A4 Oficial idêntica à modal
-  const handlePrint = () => {
+  // Impressão A4 Oficial idêntica à modal (com imagens diretas da pasta do material/chapa)
+  const handlePrint = async () => {
+    printWin.document.open();
+    printWin.document.write('<!DOCTYPE html><html lang="pt-BR"><body style="font-family:Segoe UI,Arial,sans-serif;padding:30px;color:#334155;">Preparando Fila de Corte e carregando imagens das chapas...</body></html>');
+    printWin.document.close();
+
     const nowStr = new Date().toLocaleString('pt-BR');
     const jobTitle = selectedJob === 'todos' ? 'TODOS OS PROJETOS ATIVOS' : selectedJob.toUpperCase();
 
@@ -744,8 +800,11 @@ export function FilaRouterOperador({
     const allTasksForMaps = taskGroups.flatMap(g =>
       g.tasks.map(t => ({ ...t, _displayPath: resolveDisplayPath(t) }))
     );
+    const hydratedTasksForMaps = includePieceMaps
+      ? await hydrateFolderDocImagesForPrint(allTasksForMaps, api.fetchLocalDocBlob)
+      : allTasksForMaps;
     const pieceMapsHtml = includePieceMaps
-      ? buildPieceMapsPrintSectionHtml(allTasksForMaps, attachments, escapeHtml)
+      ? buildPieceMapsPrintSectionHtml(hydratedTasksForMaps, attachments, escapeHtml)
       : '';
 
     const fullHtml = `<!DOCTYPE html>
@@ -1244,6 +1303,8 @@ export function FilaRouterOperador({
                         const isToggling = togglingKey === (t.id || t.name);
                         const rowManualAtts = matchAttachmentsForTask(attachments, t);
                         const rowFolderDocs = t.folderDocs || t.fullFile?.folderDocs || [];
+                        const rowFolderImgDoc = rowFolderDocs.find(d => isImageDoc(d) && d.fullPath);
+                        const rowFolderThumbUrl = rowFolderImgDoc ? folderThumbMap[rowFolderImgDoc.fullPath] : null;
 
                         return (
                           <tr
@@ -1396,7 +1457,7 @@ export function FilaRouterOperador({
                                   <span>Foto / PDF</span>
                                   {rowFolderDocs.length > 0 && (
                                     <span className="px-1.5 py-0.2 rounded bg-emerald-500 text-black text-[9px] font-black">
-                                      PDF
+                                      {rowFolderImgDoc ? 'IMG' : 'PDF'}
                                     </span>
                                   )}
                                   {rowManualAtts.length > 0 && (
@@ -1405,6 +1466,20 @@ export function FilaRouterOperador({
                                     </span>
                                   )}
                                 </button>
+                                {rowFolderThumbUrl && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveMapTask({ task: t, defaultScope: 'file' })}
+                                    title={`Imagem carregada automaticamente da pasta: ${rowFolderImgDoc.name} (clique para ampliar)`}
+                                    className="rounded-lg border-2 border-emerald-500/60 bg-white p-0.5 shadow-sm hover:scale-105 transition-transform cursor-pointer shrink-0"
+                                  >
+                                    <img
+                                      src={rowFolderThumbUrl}
+                                      alt={rowFolderImgDoc.name}
+                                      className="w-14 h-9 object-contain rounded"
+                                    />
+                                  </button>
+                                )}
                               </div>
                             </td>
 
