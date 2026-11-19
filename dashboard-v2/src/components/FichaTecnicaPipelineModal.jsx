@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import {
   X, Printer, Copy, Play, ClipboardList, CheckSquare, Square, Share2, Check,
   Clock, Layers, Cpu, Wrench, AlertCircle, Sparkles, Filter, ChevronDown,
-  Paperclip, Compass
+  Paperclip
 } from 'lucide-react';
 import { api } from '../services/api';
 import { isFileMarkedOk } from '../utils/fileChecklistUtils';
@@ -863,14 +863,14 @@ export function FichaTecnicaPipelineModal({
                 />
                 <span className="font-medium text-slate-600 dark:text-slate-300">Incluir Concluídos</span>
               </label>
-              <label className="flex items-center gap-1 text-[11px] cursor-pointer select-none" title="Imprimir páginas extras com o desenho das peças (G-Code) e fotos/PDFs anexados para o operador anotar">
+              <label className="flex items-center gap-1 text-[11px] cursor-pointer select-none" title="Imprimir páginas extras com fotos/PDFs anexados e PDFs da pasta do material para o operador anotar">
                 <input
                   type="checkbox"
                   checked={includePieceMaps}
                   onChange={e => setIncludePieceMaps(e.target.checked)}
                   className="rounded text-cyan-500 focus:ring-0"
                 />
-                <span className="font-bold text-cyan-600 dark:text-cyan-400">Mapas de Peças</span>
+                <span className="font-bold text-cyan-600 dark:text-cyan-400">Anexos / PDFs</span>
               </label>
             </div>
           </div>
@@ -1016,7 +1016,6 @@ export function FichaTecnicaPipelineModal({
                           const isRunning = t.status === 'running';
                           const rowManualAtts = matchAttachmentsForTask(attachments, t);
                           const rowFolderDocs = t.folderDocs || t.fullFile?.folderDocs || [];
-                          const hasSvg = Boolean(t.previewSvg || t.fullFile?.previewSvg);
 
                           return (
                             <tr
@@ -1120,14 +1119,12 @@ export function FichaTecnicaPipelineModal({
                                         ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25'
                                         : rowManualAtts.length > 0
                                           ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/25'
-                                          : hasSvg
-                                            ? 'bg-orange-500/10 border-orange-500/30 text-orange-700 dark:text-orange-300 hover:bg-orange-500/20'
-                                            : 'bg-white dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-cyan-500 hover:text-cyan-500'
+                                          : 'bg-white dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-cyan-500 hover:text-cyan-500'
                                     }`}
-                                    title="Abrir PDF automático da pasta, desenho do G-Code ou anexar foto/PDF para o operador anotar as peças"
+                                    title="Abrir PDF automático da pasta do material ou anexar foto/PDF para o operador anotar as peças"
                                   >
-                                    <Compass size={13} />
-                                    <span>Mapa / PDF</span>
+                                    <Paperclip size={13} />
+                                    <span>Foto / PDF</span>
                                     {rowFolderDocs.length > 0 && (
                                       <span className="px-1.5 py-0.2 rounded bg-emerald-500 text-black text-[9px] font-black">
                                         PDF

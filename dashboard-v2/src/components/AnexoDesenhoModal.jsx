@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   X, Printer, Upload, Trash2, FileText, Image as ImageIcon,
-  Layers, Sparkles, ExternalLink, Loader2, Paperclip, Compass
+  Layers, Sparkles, ExternalLink, Loader2, Paperclip
 } from 'lucide-react';
 import { api } from '../services/api';
 import {
@@ -42,9 +42,7 @@ export function AnexoDesenhoModal({
     [attachments, task]
   );
 
-  const [activeTab, setActiveTab] = useState('auto'); // 'auto' | 'gcode' | 'manual'
-  const [previewSvg, setPreviewSvg] = useState(null);
-  const [loadingGcode, setLoadingGcode] = useState(false);
+  const [activeTab, setActiveTab] = useState('auto'); // 'auto' | 'manual'
 
   const [selectedFolderDocIdx, setSelectedFolderDocIdx] = useState(0);
   const [folderDocBlob, setFolderDocBlob] = useState(null); // { blobUrl, mimeType, path }
@@ -88,46 +86,10 @@ export function AnexoDesenhoModal({
       setActiveTab('manual');
     } else if (folderDocs.length > 0) {
       setActiveTab('auto');
-    } else if (matchedManual.length > 0 && !task.previewSvg && !task.fullFile?.previewSvg) {
-      setActiveTab('manual');
     } else {
-      setActiveTab('gcode');
+      setActiveTab('manual');
     }
-  }, [isOpen, task, defaultScope, folderDocs.length, matchedManual.length]);
-
-  // Carrega o desenho vetorial SVG do G-Code (usa cache do pipeline ou busca on-demand)
-  useEffect(() => {
-    if (!isOpen || !task) return;
-    const inlineSvg = task.previewSvg || task.fullFile?.previewSvg || null;
-    if (inlineSvg) {
-      setPreviewSvg(inlineSvg);
-      setLoadingGcode(false);
-      return;
-    }
-
-    let cancelled = false;
-    setPreviewSvg(null);
-    const fullPath = task.fullPath || task.fullFile?.fullPath || '';
-    const name = task.baseName || task.name || '';
-    const sub = task.subfolder || task.subfolderName || '';
-    if (!fullPath && !name) return;
-
-    setLoadingGcode(true);
-    api.getGcodePreview({ path: fullPath, name, subfolder: sub })
-      .then((res) => {
-        if (!cancelled) {
-          setPreviewSvg(res?.previewSvg || null);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setPreviewSvg(null);
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingGcode(false);
-      });
-
-    return () => { cancelled = true; };
-  }, [isOpen, task]);
+  }, [isOpen, task, defaultScope, folderDocs.length]);
 
   // Carrega automaticamente o PDF / imagem encontrado na pasta do material
   const currentFolderDoc = folderDocs[selectedFolderDocIdx] || null;
@@ -282,7 +244,6 @@ export function AnexoDesenhoModal({
     </div>
   </div>
   ${displayPath ? `<div class="map-path">📂 ${escapeHtml(displayPath)}</div>` : ''}
-  ${previewSvg ? `<div class="map-svg-wrap">${previewSvg}</div>` : ''}
   ${imgsHtml}
   ${pdfsList.length > 0 ? `<div class="map-pdf-note">${pdfsList.join(' &nbsp;|&nbsp; ')}</div>` : ''}
   <div class="map-notes-area" style="margin-top:14px;">
@@ -361,19 +322,6 @@ export function AnexoDesenhoModal({
 
             <button
               type="button"
-              onClick={() => setActiveTab('gcode')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
-                activeTab === 'gcode'
-                  ? 'bg-orange-500 text-white shadow-sm'
-                  : 'bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10 hover:border-orange-500/50'
-              }`}
-            >
-              <Compass size={13} />
-              <span>Desenho Automático G-Code</span>
-            </button>
-
-            <button
-              type="button"
               onClick={() => setActiveTab('manual')}
               className={`px-3 py-1.5 rounded-lg text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'manual'
@@ -390,7 +338,7 @@ export function AnexoDesenhoModal({
             type="button"
             onClick={handlePrintSingleMap}
             className="px-3 py-1.5 rounded-lg text-xs font-black bg-slate-900 dark:bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-            title="Imprimir folha A4 com o desenho das peças e linhas para anotação à caneta"
+            title="Imprimir folha A4 com as fotos anexadas e linhas para anotação à caneta"
           >
             <Printer size={13} />
             <span>Imprimir Folha A4</span>
@@ -470,46 +418,7 @@ export function AnexoDesenhoModal({
             </div>
           )}
 
-          {/* TAB 2: DESENHO AUTOMÁTICO DO G-CODE (VISTA DE CIMA) */}
-          {activeTab === 'gcode' && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between flex-wrap gap-2 bg-orange-500/10 border border-orange-500/30 rounded-xl px-3.5 py-2.5 text-xs">
-                <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 font-bold">
-                  <Compass size={15} />
-                  <span>Vista superior automática gerada a partir do percurso G-Code ({task.material || 'Chapa CNC'})</span>
-                </div>
-                {task.dimensions && (
-                  <span className="font-mono font-black text-slate-700 dark:text-slate-200 bg-white/80 dark:bg-black/30 px-2 py-0.5 rounded border border-orange-500/30">
-                    {task.dimensions}
-                  </span>
-                )}
-              </div>
-
-              {loadingGcode ? (
-                <div className="h-[360px] rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] flex flex-col items-center justify-center gap-2 text-slate-400">
-                  <Loader2 size={28} className="animate-spin text-orange-500" />
-                  <span className="text-xs font-bold">Gerando desenho vetorial do G-Code...</span>
-                </div>
-              ) : previewSvg ? (
-                <div
-                  className="rounded-xl border-2 border-slate-300 dark:border-white/20 bg-white p-4 shadow-inner flex items-center justify-center min-h-[340px]"
-                  dangerouslySetInnerHTML={{ __html: previewSvg }}
-                />
-              ) : (
-                <div className="p-10 rounded-xl border border-dashed border-slate-300 dark:border-white/15 text-center space-y-2">
-                  <Compass size={32} className="mx-auto text-slate-400 opacity-50" />
-                  <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                    Desenho automático do G-Code ainda não disponível para este arquivo.
-                  </p>
-                  <p className="text-[11px] text-slate-400">
-                    Você pode anexar manualmente uma foto ou PDF na aba &quot;Anexar Foto / PDF&quot; acima.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 3: ANEXAR FOTO / PDF PRÓPRIO (SALVO NO BANCO) */}
+          {/* TAB 2: ANEXAR FOTO / PDF PRÓPRIO (SALVO NO BANCO) */}
           {activeTab === 'manual' && (
             <div className="space-y-4">
               {/* Formulário de Upload */}

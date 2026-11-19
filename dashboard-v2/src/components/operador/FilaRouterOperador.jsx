@@ -3,7 +3,7 @@ import {
   X, Printer, Copy, ClipboardList, CheckSquare, Square, Share2, Check,
   Clock, Layers, Cpu, Wrench, AlertCircle, Sparkles, Filter, ChevronDown,
   RefreshCw, Flame, ListOrdered, Play, Maximize2, FileText, Search, Disc,
-  Paperclip, Compass
+  Paperclip
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { isFileMarkedOk } from '../../utils/fileChecklistUtils';
@@ -1010,14 +1010,14 @@ export function FilaRouterOperador({
               />
               <span className="font-medium text-slate-600 dark:text-slate-300 text-[11px]">Incluir Concluídos</span>
             </label>
-            <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none" title="Incluir mapas de peças (G-Code + fotos/PDFs) ao imprimir a Ficha A4">
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer select-none" title="Incluir fotos/PDFs anexados e PDFs da pasta ao imprimir a Ficha A4">
               <input
                 type="checkbox"
                 checked={includePieceMaps}
                 onChange={e => setIncludePieceMaps(e.target.checked)}
                 className="rounded text-cyan-500 focus:ring-0"
               />
-              <span className="font-bold text-cyan-600 dark:text-cyan-400 text-[11px]">Mapas na Impressão</span>
+              <span className="font-bold text-cyan-600 dark:text-cyan-400 text-[11px]">Anexos na Impressão</span>
             </label>
           </div>
         </div>
@@ -1126,7 +1126,6 @@ export function FilaRouterOperador({
                         const isToggling = togglingKey === (t.id || t.name);
                         const rowManualAtts = matchAttachmentsForTask(attachments, t);
                         const rowFolderDocs = t.folderDocs || t.fullFile?.folderDocs || [];
-                        const hasSvg = Boolean(t.previewSvg || t.fullFile?.previewSvg);
 
                         return (
                           <tr
@@ -1271,14 +1270,12 @@ export function FilaRouterOperador({
                                       ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25'
                                       : rowManualAtts.length > 0
                                         ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/25'
-                                        : hasSvg
-                                          ? 'bg-orange-500/10 border-orange-500/30 text-orange-700 dark:text-orange-300 hover:bg-orange-500/20'
-                                          : 'bg-white dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-cyan-500 hover:text-cyan-500'
+                                        : 'bg-white dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-cyan-500 hover:text-cyan-500'
                                   }`}
-                                  title="Visualizar PDF automático do material na pasta, desenho G-Code ou anexar foto/PDF para anotação nas peças"
+                                  title="Visualizar PDF automático do material na pasta ou anexar foto/PDF para anotação nas peças"
                                 >
-                                  <Compass size={13} />
-                                  <span>Desenho / PDF</span>
+                                  <Paperclip size={13} />
+                                  <span>Foto / PDF</span>
                                   {rowFolderDocs.length > 0 && (
                                     <span className="px-1.5 py-0.2 rounded bg-emerald-500 text-black text-[9px] font-black">
                                       PDF

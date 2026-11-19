@@ -158,17 +158,16 @@ export function buildPieceMapsPrintSectionHtml(items = [], manualAttachments = [
     if (seen.has(key)) continue;
     seen.add(key);
 
-    const previewSvg = item.previewSvg || item.fullFile?.previewSvg || null;
     const folderDocs = item.folderDocs || item.fullFile?.folderDocs || [];
     const attached = matchAttachmentsForTask(manualAttachments, item);
-    if (previewSvg || attached.length > 0 || folderDocs.length > 0) {
-      uniqueSheets.push({ item, previewSvg, folderDocs, attached });
+    if (attached.length > 0 || folderDocs.length > 0) {
+      uniqueSheets.push({ item, folderDocs, attached });
     }
   }
 
   if (uniqueSheets.length === 0) return '';
 
-  const cardsHtml = uniqueSheets.map(({ item, previewSvg, folderDocs, attached }, idx) => {
+  const cardsHtml = uniqueSheets.map(({ item, folderDocs, attached }, idx) => {
     const imgAttachments = attached.filter(a => (a.mime_type || '').startsWith('image/'));
     const pdfAttachments = attached.filter(a => (a.mime_type || '') === 'application/pdf');
     const autoPdfs = folderDocs.filter(d => d.ext === '.pdf');
@@ -179,10 +178,6 @@ export function buildPieceMapsPrintSectionHtml(items = [], manualAttachments = [
       : '';
 
     const pathStr = item._displayPath || item.fullPath || item.fullFile?.fullPath || '';
-
-    const svgBlock = previewSvg
-      ? `<div class="map-svg-wrap">${previewSvg}</div>`
-      : '';
 
     const imgsBlock = [...imgAttachments.map(a => ({ name: a.attachment_name, url: a.data_url, notes: a.notes })), ...autoImgs.map(d => ({ name: d.name, url: d._dataUrl, notes: 'Imagem da pasta do material' }))]
       .map(img => `
@@ -211,7 +206,6 @@ export function buildPieceMapsPrintSectionHtml(items = [], manualAttachments = [
           <div class="map-meta">${esc(item.material || '')}${item.dimensions ? ` · ${esc(item.dimensions)}` : ''}</div>
         </div>
         ${pathStr ? `<div class="map-path">📂 ${esc(pathStr)}</div>` : ''}
-        ${svgBlock}
         ${imgsBlock}
         ${pdfBlock}
         <div class="map-notes-area">
@@ -226,8 +220,8 @@ export function buildPieceMapsPrintSectionHtml(items = [], manualAttachments = [
   return `
     <div class="maps-section">
       <div class="maps-section-header">
-        <span>📐 MAPAS DE PEÇAS & ANEXOS PARA ANOTAÇÃO DO OPERADOR</span>
-        <span>${uniqueSheets.length} chapa(s) com desenho / anexo</span>
+        <span>📎 ANEXOS & PDFS DAS PEÇAS PARA ANOTAÇÃO DO OPERADOR</span>
+        <span>${uniqueSheets.length} chapa(s) com foto / PDF</span>
       </div>
       ${cardsHtml}
     </div>
