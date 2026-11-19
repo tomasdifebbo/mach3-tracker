@@ -414,6 +414,12 @@ async function initDb() {
             );
             CREATE INDEX IF NOT EXISTS idx_pipeline_attachments_user ON pipeline_file_attachments ("userId");
             CREATE INDEX IF NOT EXISTS idx_pipeline_attachments_key ON pipeline_file_attachments (file_key);
+
+            CREATE TABLE IF NOT EXISTS pipeline_group_order (
+                "userId" INTEGER PRIMARY KEY,
+                order_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         `);
 
         // SEED OFICINA SYNC STATE

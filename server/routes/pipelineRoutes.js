@@ -736,4 +736,60 @@ router.get('/api/pipeline/local-doc', authenticateToken, async (req, res) => {
     }
 });
 
+// ============================================================================
+// ORDEM DE PRIORIDADE DOS CONJUNTOS / CARDS NA FICHA TÉCNICA E FILA DO OPERADOR
+// ============================================================================
+
+// GET /api/pipeline/group-order
+router.get('/api/pipeline/group-order', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const result = await pool.query(
+            `SELECT order_json, updated_at
+             FROM pipeline_group_order
+             WHERE "userId" = $1
+             LIMIT 1`,
+            [userId]
+        );
+        const raw = result.rows[0]?.order_json;
+        const order = Array.isArray(raw) ? raw.filter(k => typeof k === 'string' && k.trim()) : [];
+        res.json({ success: true, order, updated_at: result.rows[0]?.updated_at || null });
+    } catch (err) {
+        console.error('Erro em GET /api/pipeline/group-order:', err);
+        res.status(500).json({ error: 'Erro ao carregar prioridade dos conjuntos' });
+    }
+});
+
+// PUT /api/pipeline/group-order
+router.put('/api/pipeline/group-order', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const rawOrder = req.body?.order;
+        if (!Array.isArray(rawOrder)) {
+            return res.status(400).json({ error: 'order deve ser uma lista de chaves de conjunto' });
+        }
+        const cleaned = [];
+        const seen = new Set();
+        for (const item of rawOrder) {
+            if (typeof item !== 'string') continue;
+            const k = item.trim();
+            if (!k || k.length > 300 || seen.has(k)) continue;
+            seen.add(k);
+            cleaned.push(k);
+            if (cleaned.length >= 500) break;
+        }
+        await pool.query(
+            `INSERT INTO pipeline_group_order ("userId", order_json, updated_at)
+             VALUES ($1, $2::jsonb, CURRENT_TIMESTAMP)
+             ON CONFLICT ("userId") DO UPDATE
+             SET order_json = EXCLUDED.order_json, updated_at = CURRENT_TIMESTAMP`,
+            [userId, JSON.stringify(cleaned)]
+        );
+        res.json({ success: true, order: cleaned });
+    } catch (err) {
+        console.error('Erro em PUT /api/pipeline/group-order:', err);
+        res.status(500).json({ error: 'Erro ao salvar prioridade dos conjuntos' });
+    }
+});
+
 module.exports = router;

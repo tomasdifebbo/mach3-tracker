@@ -469,6 +469,18 @@ export const api = {
     return { blob, blobUrl, mimeType: blob.type || 'application/pdf' };
   },
 
+  getPipelineGroupOrder: async () => {
+    return api.get('/pipeline/group-order');
+  },
+  savePipelineGroupOrder: async (order) => {
+    const resp = await fetch(`${API_URL}/api/pipeline/group-order`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ order })
+    });
+    return safeJson(resp);
+  },
+
   deleteCustom: async (url) => {
     const resp = await fetch(`${API_URL}/api${url}`, { method: 'DELETE', headers: getAuthHeaders() });
     return safeJson(resp);

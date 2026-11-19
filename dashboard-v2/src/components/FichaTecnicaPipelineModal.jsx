@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import {
   X, Printer, Copy, Play, ClipboardList, CheckSquare, Square, Share2, Check,
   Clock, Layers, Cpu, Wrench, AlertCircle, Sparkles, Filter, ChevronDown,
-  Paperclip
+  Paperclip, ArrowUp, ArrowDown, GripVertical, RotateCcw
 } from 'lucide-react';
 import { api } from '../services/api';
 import { isFileMarkedOk } from '../utils/fileChecklistUtils';
@@ -12,6 +12,12 @@ import {
   buildPieceMapsPrintSectionHtml,
   PIECE_MAPS_PRINT_CSS
 } from '../utils/attachmentUtils';
+import {
+  readCachedGroupOrder,
+  writeCachedGroupOrder,
+  sortGroupsByPriority,
+  moveGroupInOrder
+} from '../utils/groupOrderUtils';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -53,6 +59,9 @@ export function FichaTecnicaPipelineModal({
   const [attachments, setAttachments] = useState([]);
   const [includePieceMaps, setIncludePieceMaps] = useState(true);
   const [activeMapTask, setActiveMapTask] = useState(null);
+  const [groupOrder, setGroupOrder] = useState(() => readCachedGroupOrder());
+  const [draggedIdx, setDraggedIdx] = useState(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
 
   const loadAttachments = useCallback(async () => {
     try {
@@ -62,6 +71,28 @@ export function FichaTecnicaPipelineModal({
       }
     } catch (err) {
       console.warn('Erro ao carregar anexos da Ficha Técnica:', err);
+    }
+  }, []);
+
+  const loadGroupOrder = useCallback(async () => {
+    try {
+      const res = await api.getPipelineGroupOrder();
+      if (res && Array.isArray(res.order)) {
+        setGroupOrder(res.order);
+        writeCachedGroupOrder(res.order);
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar prioridade dos conjuntos:', err);
+    }
+  }, []);
+
+  const persistGroupOrder = useCallback(async (nextOrder) => {
+    setGroupOrder(nextOrder);
+    writeCachedGroupOrder(nextOrder);
+    try {
+      await api.savePipelineGroupOrder(nextOrder);
+    } catch (err) {
+      console.warn('Erro ao salvar prioridade dos conjuntos:', err);
     }
   }, []);
 
@@ -90,8 +121,9 @@ export function FichaTecnicaPipelineModal({
       const h = new Date().getHours();
       setOperatorName((h >= 22 || h < 6) ? 'brenno' : 'Tomas');
       loadAttachments();
+      loadGroupOrder();
     }
-  }, [initialJob, isOpen, loadAttachments]);
+  }, [initialJob, isOpen, loadAttachments, loadGroupOrder]);
 
   // Extração e enriquecimento de todas as tarefas da produção com a duração real de cada corte
   const taskGroups = useMemo(() => {
@@ -411,15 +443,19 @@ export function FichaTecnicaPipelineModal({
       groupsMap[groupKey].tasks.push(it);
     });
 
-    // Sobe os grupos de Isopor/EPS com prioridade máxima no topo da Ficha Técnica de Impressão!
-    return Object.values(groupsMap).sort((a, b) => {
-      const aIsIsopor = (a.subfolder || '').toLowerCase().includes('isopor') || a.tasks.some(t => (t.material || '').toLowerCase().includes('isopor') || (t.name || '').toLowerCase().includes('isopor'));
-      const bIsIsopor = (b.subfolder || '').toLowerCase().includes('isopor') || b.tasks.some(t => (t.material || '').toLowerCase().includes('isopor') || (t.name || '').toLowerCase().includes('isopor'));
-      if (aIsIsopor && !bIsIsopor) return -1;
-      if (!aIsIsopor && bIsIsopor) return 1;
-      return 0;
-    });
-  }, [pipelineData, fileChecklist, selectedJob, filterMaterial, includeRouter, includeAspire, includeCorel, includeConcluded, operatorName]);
+    // Ordena pela prioridade manual salva (e mantém Isopor/EPS no topo entre grupos ainda não ordenados)
+    return sortGroupsByPriority(Object.values(groupsMap), groupOrder, true);
+  }, [pipelineData, fileChecklist, selectedJob, filterMaterial, includeRouter, includeAspire, includeCorel, includeConcluded, operatorName, groupOrder]);
+
+  const handleMoveGroup = (fromIdx, toIdx) => {
+    if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0 || toIdx >= taskGroups.length) return;
+    const nextOrder = moveGroupInOrder(taskGroups, groupOrder, fromIdx, toIdx);
+    persistGroupOrder(nextOrder);
+  };
+
+  const handleResetGroupOrder = () => {
+    persistGroupOrder([]);
+  };
 
   // Estatísticas da Ficha Técnica somando a duração real de corte de cada arquivo
   const stats = useMemo(() => {
@@ -946,8 +982,21 @@ export function FichaTecnicaPipelineModal({
             )}
           </div>
 
-          <div className="text-[11px] text-slate-500">
-            {stats.materials.length > 0 && `Materiais: ${stats.materials.slice(0, 3).join(', ')}${stats.materials.length > 3 ? ` +${stats.materials.length - 3}` : ''}`}
+          <div className="flex items-center gap-2.5 text-[11px] text-slate-500 flex-wrap">
+            {stats.materials.length > 0 && (
+              <span>{`Materiais: ${stats.materials.slice(0, 3).join(', ')}${stats.materials.length > 3 ? ` +${stats.materials.length - 3}` : ''}`}</span>
+            )}
+            {groupOrder.length > 0 && (
+              <button
+                type="button"
+                onClick={handleResetGroupOrder}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-200 dark:bg-white/10 hover:bg-orange-500/20 text-slate-700 dark:text-slate-200 hover:text-orange-400 font-bold transition-colors cursor-pointer"
+                title="Voltar para a ordenação padrão automática dos cards"
+              >
+                <RotateCcw size={11} />
+                <span>Resetar Ordem</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -962,18 +1011,80 @@ export function FichaTecnicaPipelineModal({
           ) : (
             taskGroups.map((g, gIdx) => {
               const subRouterMin = Math.round(g.tasks.filter(t => t.stage === 'router').reduce((sum, t) => sum + (t.durationMinutes || 0), 0));
+              const isDragging = draggedIdx === gIdx;
+              const isDragOver = dragOverIdx === gIdx && draggedIdx !== null && draggedIdx !== gIdx;
               return (
                 <div
-                  key={g.groupTitle}
-                  className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm"
+                  key={g.orderKey || g.groupTitle}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (dragOverIdx !== gIdx) setDragOverIdx(gIdx);
+                  }}
+                  onDragLeave={() => {
+                    if (dragOverIdx === gIdx) setDragOverIdx(null);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (draggedIdx !== null && draggedIdx !== gIdx) {
+                      handleMoveGroup(draggedIdx, gIdx);
+                    }
+                    setDraggedIdx(null);
+                    setDragOverIdx(null);
+                  }}
+                  className={`bg-white dark:bg-white/[0.02] border rounded-xl overflow-hidden shadow-sm transition-all ${
+                    isDragOver
+                      ? 'border-orange-500 ring-2 ring-orange-500/40 scale-[1.005]'
+                      : 'border-slate-200 dark:border-white/10'
+                  } ${isDragging ? 'opacity-50' : ''}`}
                 >
-                  {/* Cabeçalho do Grupo com Duração Total do Conjunto */}
-                  <div className="px-3.5 py-2 bg-slate-900 text-white flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 font-bold">
-                      <span className="w-5 h-5 rounded bg-orange-500 text-white text-[11px] font-black flex items-center justify-center">
+                  {/* Cabeçalho do Grupo com Controles de Prioridade e Duração Total do Conjunto */}
+                  <div
+                    draggable={taskGroups.length > 1}
+                    onDragStart={(e) => {
+                      setDraggedIdx(gIdx);
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    onDragEnd={() => {
+                      setDraggedIdx(null);
+                      setDragOverIdx(null);
+                    }}
+                    className="px-3.5 py-2 bg-slate-900 text-white flex items-center justify-between text-xs gap-2 flex-wrap"
+                  >
+                    <div className="flex items-center gap-2 font-bold min-w-0">
+                      {taskGroups.length > 1 && (
+                        <span
+                          className="text-slate-400 hover:text-orange-400 cursor-grab active:cursor-grabbing shrink-0"
+                          title="Arraste para reordenar a prioridade deste card"
+                        >
+                          <GripVertical size={15} />
+                        </span>
+                      )}
+                      {taskGroups.length > 1 && (
+                        <div className="flex items-center gap-0.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveGroup(gIdx, gIdx - 1)}
+                            disabled={gIdx === 0}
+                            className="w-5 h-5 rounded bg-white/10 hover:bg-orange-500 hover:text-black text-slate-200 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center transition-colors cursor-pointer"
+                            title="Subir prioridade"
+                          >
+                            <ArrowUp size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveGroup(gIdx, gIdx + 1)}
+                            disabled={gIdx === taskGroups.length - 1}
+                            className="w-5 h-5 rounded bg-white/10 hover:bg-orange-500 hover:text-black text-slate-200 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center transition-colors cursor-pointer"
+                            title="Descer prioridade"
+                          >
+                            <ArrowDown size={12} />
+                          </button>
+                        </div>
+                      )}
+                      <span className="w-5 h-5 rounded bg-orange-500 text-white text-[11px] font-black flex items-center justify-center shrink-0">
                         {gIdx + 1}
                       </span>
-                      <span>{g.groupTitle}</span>
+                      <span className="truncate">{g.groupTitle}</span>
                     </div>
                     <div className="flex items-center gap-2.5 text-[11px] flex-wrap">
                       {subRouterMin > 0 && (

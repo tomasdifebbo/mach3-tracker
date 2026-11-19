@@ -3,7 +3,7 @@ import {
   X, Printer, Copy, ClipboardList, CheckSquare, Square, Share2, Check,
   Clock, Layers, Cpu, Wrench, AlertCircle, Sparkles, Filter, ChevronDown,
   RefreshCw, Flame, ListOrdered, Play, Maximize2, FileText, Search, Disc,
-  Paperclip
+  Paperclip, ArrowUp, ArrowDown, GripVertical, RotateCcw
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { isFileMarkedOk } from '../../utils/fileChecklistUtils';
@@ -13,6 +13,12 @@ import {
   buildPieceMapsPrintSectionHtml,
   PIECE_MAPS_PRINT_CSS
 } from '../../utils/attachmentUtils';
+import {
+  readCachedGroupOrder,
+  writeCachedGroupOrder,
+  sortGroupsByPriority,
+  moveGroupInOrder
+} from '../../utils/groupOrderUtils';
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -55,6 +61,9 @@ export function FilaRouterOperador({
   const [attachments, setAttachments] = useState([]);
   const [includePieceMaps, setIncludePieceMaps] = useState(true);
   const [activeMapTask, setActiveMapTask] = useState(null);
+  const [groupOrder, setGroupOrder] = useState(() => readCachedGroupOrder());
+  const [draggedIdx, setDraggedIdx] = useState(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
 
   const resolveDisplayPath = (task) => {
     let p = task.fullPath || task.fullFile?.fullPath || task.fullFile?.path || '';
@@ -134,6 +143,28 @@ export function FilaRouterOperador({
     }
   }, []);
 
+  const loadGroupOrder = useCallback(async () => {
+    try {
+      const res = await api.getPipelineGroupOrder();
+      if (res && Array.isArray(res.order)) {
+        setGroupOrder(res.order);
+        writeCachedGroupOrder(res.order);
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar prioridade dos conjuntos no operador:', err);
+    }
+  }, []);
+
+  const persistGroupOrder = useCallback(async (nextOrder) => {
+    setGroupOrder(nextOrder);
+    writeCachedGroupOrder(nextOrder);
+    try {
+      await api.savePipelineGroupOrder(nextOrder);
+    } catch (err) {
+      console.warn('Erro ao salvar prioridade dos conjuntos no operador:', err);
+    }
+  }, []);
+
   const fetchPipeline = useCallback(async (force = false) => {
     setLoading(true);
     try {
@@ -152,12 +183,14 @@ export function FilaRouterOperador({
     syncCompletedFiles();
     fetchPipeline(false);
     loadAttachments();
+    loadGroupOrder();
     const interval = setInterval(() => {
       fetchPipeline(false);
       syncCompletedFiles();
+      loadGroupOrder();
     }, 6000);
     return () => clearInterval(interval);
-  }, [fetchPipeline, syncCompletedFiles, loadAttachments]);
+  }, [fetchPipeline, syncCompletedFiles, loadAttachments, loadGroupOrder]);
 
   const isFileRunning = useCallback((fileName, jobName) => {
     // 1. Verifica execuções ativas do pipelineData
@@ -521,15 +554,25 @@ export function FilaRouterOperador({
     });
 
     return {
-      taskGroups: Object.values(groupsMap),
+      taskGroups: sortGroupsByPriority(Object.values(groupsMap), groupOrder, true),
       allMaterials: Array.from(matSet).sort(),
       uniqueJobs: Array.from(jobsSet).sort()
     };
   }, [
     pipelineData, isFileRunning, isDone, resolveTaskDuration,
     includeRouter, includeAspire, includeCorel, includeConcluded,
-    selectedJob, selectedMaterial, searchTerm, operatorName
+    selectedJob, selectedMaterial, searchTerm, operatorName, groupOrder
   ]);
+
+  const handleMoveGroup = (fromIdx, toIdx) => {
+    if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0 || toIdx >= taskGroups.length) return;
+    const nextOrder = moveGroupInOrder(taskGroups, groupOrder, fromIdx, toIdx);
+    persistGroupOrder(nextOrder);
+  };
+
+  const handleResetGroupOrder = () => {
+    persistGroupOrder([]);
+  };
 
   // Estatísticas somadas da fila
   const stats = useMemo(() => {
@@ -853,7 +896,7 @@ export function FilaRouterOperador({
 
         <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={() => { fetchPipeline(true); loadAttachments(); }}
+            onClick={() => { fetchPipeline(true); loadAttachments(); loadGroupOrder(); }}
             disabled={loading}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer disabled:opacity-50"
             title="Atualizar lista da fila"
@@ -1053,8 +1096,21 @@ export function FilaRouterOperador({
           )}
         </div>
 
-        <div className="text-[11px] text-slate-500 dark:text-slate-400 hidden md:block">
-          {stats.materials.length > 0 && `Materiais: ${stats.materials.slice(0, 3).join(', ')}${stats.materials.length > 3 ? ` +${stats.materials.length - 3}` : ''}`}
+        <div className="flex items-center gap-2.5 text-[11px] text-slate-500 dark:text-slate-400 flex-wrap">
+          {stats.materials.length > 0 && (
+            <span className="hidden md:inline">{`Materiais: ${stats.materials.slice(0, 3).join(', ')}${stats.materials.length > 3 ? ` +${stats.materials.length - 3}` : ''}`}</span>
+          )}
+          {groupOrder.length > 0 && (
+            <button
+              type="button"
+              onClick={handleResetGroupOrder}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-200 dark:bg-white/10 hover:bg-orange-500/20 text-slate-700 dark:text-slate-200 hover:text-orange-400 font-bold transition-colors cursor-pointer"
+              title="Voltar para a ordenação padrão dos cards"
+            >
+              <RotateCcw size={11} />
+              <span>Resetar Ordem</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -1070,14 +1126,76 @@ export function FilaRouterOperador({
           taskGroups.map((g, gIdx) => {
             const subRouterMin = Math.round(g.tasks.filter(t => t.stage === 'router').reduce((sum, t) => sum + (t.durationMinutes || 0), 0));
 
+            const isDragging = draggedIdx === gIdx;
+            const isDragOver = dragOverIdx === gIdx && draggedIdx !== null && draggedIdx !== gIdx;
             return (
               <div
-                key={g.groupTitle}
-                className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden shadow-sm"
+                key={g.orderKey || g.groupTitle}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (dragOverIdx !== gIdx) setDragOverIdx(gIdx);
+                }}
+                onDragLeave={() => {
+                  if (dragOverIdx === gIdx) setDragOverIdx(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (draggedIdx !== null && draggedIdx !== gIdx) {
+                    handleMoveGroup(draggedIdx, gIdx);
+                  }
+                  setDraggedIdx(null);
+                  setDragOverIdx(null);
+                }}
+                className={`bg-white dark:bg-white/[0.02] border rounded-xl overflow-hidden shadow-sm transition-all ${
+                  isDragOver
+                    ? 'border-orange-500 ring-2 ring-orange-500/40 scale-[1.005]'
+                    : 'border-slate-200 dark:border-white/10'
+                } ${isDragging ? 'opacity-50' : ''}`}
               >
-                {/* Cabeçalho do Grupo com Duração Total do Conjunto (Idêntico à foto) */}
-                <div className="px-3.5 py-2.5 bg-slate-900 text-white flex items-center justify-between text-xs flex-wrap gap-2">
+                {/* Cabeçalho do Grupo com Controles de Prioridade e Duração Total do Conjunto */}
+                <div
+                  draggable={taskGroups.length > 1}
+                  onDragStart={(e) => {
+                    setDraggedIdx(gIdx);
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                  onDragEnd={() => {
+                    setDraggedIdx(null);
+                    setDragOverIdx(null);
+                  }}
+                  className="px-3.5 py-2.5 bg-slate-900 text-white flex items-center justify-between text-xs flex-wrap gap-2"
+                >
                   <div className="flex items-center gap-2 font-bold min-w-0">
+                    {taskGroups.length > 1 && (
+                      <span
+                        className="text-slate-400 hover:text-orange-400 cursor-grab active:cursor-grabbing shrink-0"
+                        title="Arraste para reordenar a prioridade deste card"
+                      >
+                        <GripVertical size={15} />
+                      </span>
+                    )}
+                    {taskGroups.length > 1 && (
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleMoveGroup(gIdx, gIdx - 1)}
+                          disabled={gIdx === 0}
+                          className="w-5 h-5 rounded bg-white/10 hover:bg-orange-500 hover:text-black text-slate-200 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center transition-colors cursor-pointer"
+                          title="Subir prioridade"
+                        >
+                          <ArrowUp size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveGroup(gIdx, gIdx + 1)}
+                          disabled={gIdx === taskGroups.length - 1}
+                          className="w-5 h-5 rounded bg-white/10 hover:bg-orange-500 hover:text-black text-slate-200 disabled:opacity-25 disabled:pointer-events-none flex items-center justify-center transition-colors cursor-pointer"
+                          title="Descer prioridade"
+                        >
+                          <ArrowDown size={12} />
+                        </button>
+                      </div>
+                    )}
                     <span className="w-5 h-5 rounded bg-orange-500 text-white text-[11px] font-black flex items-center justify-center shrink-0">
                       {gIdx + 1}
                     </span>
