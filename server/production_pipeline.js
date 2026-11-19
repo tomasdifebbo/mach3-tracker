@@ -465,6 +465,7 @@ function matchFolderDocsForGcode(gf, matInfo, docsInFolder = []) {
                     : ext === '.webp'
                         ? 'image/webp'
                         : 'image/jpeg';
+            const targetPage = (ext === '.pdf' && dSheet === null && gSheet !== null && gSheet >= 1) ? gSheet : null;
             scored.push({
                 score,
                 doc: {
@@ -476,7 +477,8 @@ function matchFolderDocsForGcode(gf, matInfo, docsInFolder = []) {
                     mimeType,
                     autoMatched: true,
                     exactSheetMatch,
-                    sheetNumber: dSheet
+                    sheetNumber: dSheet,
+                    targetPage
                 }
             });
         }

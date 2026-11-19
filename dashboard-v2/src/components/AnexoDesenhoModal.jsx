@@ -47,7 +47,8 @@ export function AnexoDesenhoModal({
   const [activeTab, setActiveTab] = useState('auto'); // 'auto' | 'manual'
 
   const [selectedFolderDocIdx, setSelectedFolderDocIdx] = useState(0);
-  const [folderDocBlob, setFolderDocBlob] = useState(null); // { blobUrl, mimeType, path }
+  const [showFullPdf, setShowFullPdf] = useState(false);
+  const [folderDocBlob, setFolderDocBlob] = useState(null); // { blob, blobUrl, mimeType, path, page, totalPages }
   const [loadingFolderDoc, setLoadingFolderDoc] = useState(false);
   const [folderDocError, setFolderDocError] = useState('');
 
@@ -83,6 +84,7 @@ export function AnexoDesenhoModal({
     setUploadNotes('');
     setUploadError('');
     setSelectedFolderDocIdx(0);
+    setShowFullPdf(false);
 
     if (defaultScope === 'group') {
       setActiveTab('manual');
@@ -107,7 +109,11 @@ export function AnexoDesenhoModal({
     setLoadingFolderDoc(true);
     setFolderDocError('');
 
-    api.fetchLocalDocBlob(currentFolderDoc.fullPath)
+    const requestedPage = (currentFolderDoc.ext === '.pdf' && currentFolderDoc.targetPage && !showFullPdf)
+      ? currentFolderDoc.targetPage
+      : null;
+
+    api.fetchLocalDocBlob(currentFolderDoc.fullPath, requestedPage)
       .then((res) => {
         if (cancelled) {
           if (res?.blobUrl) URL.revokeObjectURL(res.blobUrl);
@@ -118,7 +124,9 @@ export function AnexoDesenhoModal({
           blob: res.blob,
           blobUrl: res.blobUrl,
           mimeType: res.mimeType || currentFolderDoc.mimeType,
-          path: currentFolderDoc.fullPath
+          path: currentFolderDoc.fullPath,
+          page: res.page || 0,
+          totalPages: res.totalPages || 0
         });
       })
       .catch((err) => {
@@ -137,7 +145,7 @@ export function AnexoDesenhoModal({
         try { URL.revokeObjectURL(createdUrl); } catch { /* ignore */ }
       }
     };
-  }, [isOpen, currentFolderDoc]);
+  }, [isOpen, currentFolderDoc, showFullPdf]);
 
   if (!isOpen || !task) return null;
 
@@ -204,10 +212,34 @@ export function AnexoDesenhoModal({
     }
 
     const folderImgItems = [];
+    let renderPdfBlobToImageDataUrl = null;
     for (const d of folderDocs) {
-      if (!isImageDoc(d) || !d.fullPath) continue;
+      if (!d?.fullPath) continue;
+      const isPdf = String(d.ext || '').toLowerCase() === '.pdf';
+      if (!isImageDoc(d) && !isPdf) continue;
       try {
-        if (folderDocBlob?.path === d.fullPath && folderDocBlob?.blob) {
+        if (isPdf) {
+          if (!renderPdfBlobToImageDataUrl) {
+            const mod = await import('../utils/pdfRenderUtils');
+            renderPdfBlobToImageDataUrl = mod.renderPdfBlobToImageDataUrl;
+          }
+          const targetPg = d.targetPage || 1;
+          const fetched = (folderDocBlob?.path === d.fullPath && folderDocBlob?.blob && folderDocBlob?.page === targetPg)
+            ? folderDocBlob
+            : await api.fetchLocalDocBlob(d.fullPath, targetPg);
+          if (fetched?.blob && renderPdfBlobToImageDataUrl) {
+            const url = await renderPdfBlobToImageDataUrl(fetched.blob, { maxWidth: 1500, pageNumber: 1 });
+            if (url) {
+              const pInfo = fetched.totalPages > 1
+                ? `Chapa ${fetched.page || targetPg} (Página ${fetched.page || targetPg} de ${fetched.totalPages} do PDF Aspire)`
+                : 'Folha do PDF Aspire';
+              folderImgItems.push({ attachment_name: d.name, data_url: url, notes: pInfo });
+            }
+          }
+          if (fetched !== folderDocBlob && fetched?.blobUrl) {
+            try { URL.revokeObjectURL(fetched.blobUrl); } catch { /* ignore */ }
+          }
+        } else if (folderDocBlob?.path === d.fullPath && folderDocBlob?.blob) {
           const url = await blobToDataUrl(folderDocBlob.blob);
           if (url) folderImgItems.push({ attachment_name: d.name, data_url: url, notes: d.exactSheetMatch ? 'Imagem da pasta (chapa correspondente)' : 'Imagem da pasta do material' });
         } else {
@@ -398,19 +430,39 @@ export function AnexoDesenhoModal({
                       {currentFolderDoc?.name}
                     </span>
                   )}
+                  {currentFolderDoc?.ext === '.pdf' && folderDocBlob?.totalPages > 1 && (
+                    <span className="px-2 py-0.5 rounded bg-emerald-500 text-black text-[10px] font-black">
+                      {folderDocBlob.page >= 1 && !showFullPdf
+                        ? `Chapa ${folderDocBlob.page} · Página ${folderDocBlob.page} de ${folderDocBlob.totalPages}`
+                        : `PDF Completo (${folderDocBlob.totalPages} págs)`}
+                    </span>
+                  )}
                 </div>
 
-                {folderDocBlob?.blobUrl && (
-                  <a
-                    href={folderDocBlob.blobUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-black flex items-center gap-1.5 transition-all"
-                  >
-                    <ExternalLink size={12} />
-                    <span>Abrir / Imprimir PDF</span>
-                  </a>
-                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {currentFolderDoc?.ext === '.pdf' && currentFolderDoc?.targetPage > 0 && folderDocBlob?.totalPages > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowFullPdf(prev => !prev)}
+                      className="px-2.5 py-1 rounded-lg bg-slate-900/80 dark:bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold border border-white/15 transition-all cursor-pointer"
+                    >
+                      {showFullPdf
+                        ? `Voltar p/ Chapa ${currentFolderDoc.targetPage}`
+                        : `Ver PDF Completo (${folderDocBlob.totalPages} págs)`}
+                    </button>
+                  )}
+                  {folderDocBlob?.blobUrl && (
+                    <a
+                      href={folderDocBlob.blobUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-black flex items-center gap-1.5 transition-all"
+                    >
+                      <ExternalLink size={12} />
+                      <span>{folderDocBlob.page >= 1 && !showFullPdf ? `Abrir / Imprimir Chapa ${folderDocBlob.page}` : 'Abrir / Imprimir PDF'}</span>
+                    </a>
+                  )}
+                </div>
               </div>
 
               {loadingFolderDoc ? (

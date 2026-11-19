@@ -653,10 +653,47 @@ router.get('/api/pipeline/gcode-preview', authenticateToken, async (req, res) =>
 // Serve PDF ou imagem detectado automaticamente dentro da pasta do arquivo (com fallback via PostgreSQL na nuvem)
 const ALLOWED_LOCAL_DOC_EXTS = new Set(['.pdf', '.png', '.jpg', '.jpeg', '.webp']);
 
+const { PDFDocument } = require('pdf-lib');
+
+const splitPdfCache = new Map(); // cacheKey -> { buffer, page, totalPages }
+
+async function maybeSplitPdfBuffer(rawBuf, requestedPage, cacheKey) {
+    if (!rawBuf || !Buffer.isBuffer(rawBuf)) {
+        return { buffer: rawBuf, page: 0, totalPages: 0 };
+    }
+    if (cacheKey && splitPdfCache.has(cacheKey)) {
+        return splitPdfCache.get(cacheKey);
+    }
+
+    const srcDoc = await PDFDocument.load(rawBuf, { ignoreEncryption: true });
+    const totalPages = srcDoc.getPageCount();
+    let result;
+
+    if (requestedPage >= 1 && requestedPage <= totalPages && totalPages > 1) {
+        const singleDoc = await PDFDocument.create();
+        const [copiedPage] = await singleDoc.copyPages(srcDoc, [requestedPage - 1]);
+        singleDoc.addPage(copiedPage);
+        const bytes = await singleDoc.save();
+        result = { buffer: Buffer.from(bytes), page: requestedPage, totalPages };
+    } else {
+        result = { buffer: rawBuf, page: totalPages === 1 ? 1 : 0, totalPages };
+    }
+
+    if (cacheKey) {
+        if (splitPdfCache.size >= 80) {
+            const firstKey = splitPdfCache.keys().next().value;
+            splitPdfCache.delete(firstKey);
+        }
+        splitPdfCache.set(cacheKey, result);
+    }
+    return result;
+}
+
 router.get('/api/pipeline/local-doc', authenticateToken, async (req, res) => {
     try {
         const userId = Number(req.user.id || 1) || 1;
         const reqPath = String(req.query.path || '').trim();
+        const requestedPage = Math.max(0, parseInt(req.query.page, 10) || 0);
         if (!reqPath) {
             return res.status(400).json({ error: 'Parâmetro path é obrigatório' });
         }
@@ -674,7 +711,7 @@ router.get('/api/pipeline/local-doc', authenticateToken, async (req, res) => {
                     ? 'image/webp'
                     : 'image/jpeg';
 
-        // 1. Tenta servir diretamente do disco local (validando que está dentro das pastas autorizadas do tenant)
+        // 1. Tenta ler diretamente do disco local (validando que está dentro das pastas autorizadas do tenant)
         const allowedRoots = [];
         try {
             const cfgRes = await pool.query(
@@ -697,39 +734,75 @@ router.get('/api/pipeline/local-doc', authenticateToken, async (req, res) => {
             return resolvedTarget.toLowerCase().startsWith(resolvedRoot.toLowerCase() + path.sep);
         });
 
-        if (isInsideRoot && fs.existsSync(resolvedTarget)) {
-            const safeName = path.basename(resolvedTarget).replace(/["\r\n]/g, '');
-            res.setHeader('Content-Type', mimeType);
-            res.setHeader('Content-Disposition', `inline; filename="${safeName}"`);
-            res.setHeader('Cache-Control', 'private, max-age=300');
-            return res.sendFile(resolvedTarget);
-        }
+        let rawBuf = null;
+        let outMime = mimeType;
+        let baseFileName = path.basename(resolvedTarget).replace(/["\r\n]/g, '');
+        let cacheVersion = '';
 
-        // 2. Fallback na nuvem (Railway): busca o documento sincronizado automaticamente no PostgreSQL
-        const normKey = `auto::${reqPath.replace(/\//g, '\\').toLowerCase().trim()}`;
-        const scopedAutoKey = scopeFileKey(userId, normKey);
-        const dbDoc = await pool.query(
-            `SELECT attachment_name, mime_type, data_url
-             FROM pipeline_file_attachments
-             WHERE ("userId" = $1 OR ($1::int = 1 AND "userId" IS NULL))
-               AND LOWER(file_key) = LOWER($2)
-             ORDER BY updated_at DESC LIMIT 1`,
-            [userId, scopedAutoKey]
-        );
-        if (dbDoc.rows.length > 0 && dbDoc.rows[0].data_url) {
-            const row = dbDoc.rows[0];
-            const b64Idx = row.data_url.indexOf('base64,');
-            if (b64Idx !== -1) {
-                const buf = Buffer.from(row.data_url.slice(b64Idx + 7), 'base64');
-                const safeName = String(row.attachment_name || 'documento.pdf').replace(/["\r\n]/g, '');
-                res.setHeader('Content-Type', row.mime_type || mimeType);
-                res.setHeader('Content-Disposition', `inline; filename="${safeName}"`);
-                res.setHeader('Cache-Control', 'private, max-age=300');
-                return res.send(buf);
+        if (isInsideRoot && fs.existsSync(resolvedTarget)) {
+            const stat = fs.statSync(resolvedTarget);
+            cacheVersion = `${resolvedTarget.toLowerCase()}_${stat.mtimeMs}_${stat.size}`;
+            if (outMime !== 'application/pdf' || requestedPage === 0) {
+                if (outMime !== 'application/pdf') {
+                    res.setHeader('Content-Type', outMime);
+                    res.setHeader('Content-Disposition', `inline; filename="${baseFileName}"`);
+                    res.setHeader('Cache-Control', 'private, max-age=300');
+                    return res.sendFile(resolvedTarget);
+                }
+            }
+            rawBuf = fs.readFileSync(resolvedTarget);
+        } else {
+            // 2. Fallback na nuvem (Railway): busca o documento sincronizado automaticamente no PostgreSQL
+            const normKey = `auto::${reqPath.replace(/\//g, '\\').toLowerCase().trim()}`;
+            const scopedAutoKey = scopeFileKey(userId, normKey);
+            const dbDoc = await pool.query(
+                `SELECT attachment_name, mime_type, data_url, updated_at
+                 FROM pipeline_file_attachments
+                 WHERE ("userId" = $1 OR ($1::int = 1 AND "userId" IS NULL))
+                   AND LOWER(file_key) = LOWER($2)
+                 ORDER BY updated_at DESC LIMIT 1`,
+                [userId, scopedAutoKey]
+            );
+            if (dbDoc.rows.length > 0 && dbDoc.rows[0].data_url) {
+                const row = dbDoc.rows[0];
+                const b64Idx = row.data_url.indexOf('base64,');
+                if (b64Idx !== -1) {
+                    rawBuf = Buffer.from(row.data_url.slice(b64Idx + 7), 'base64');
+                    outMime = row.mime_type || mimeType;
+                    baseFileName = String(row.attachment_name || 'documento.pdf').replace(/["\r\n]/g, '');
+                    cacheVersion = `db_${scopedAutoKey.toLowerCase()}_${row.updated_at || ''}_${rawBuf.length}`;
+                }
             }
         }
 
-        return res.status(404).json({ error: 'Documento não encontrado' });
+        if (!rawBuf) {
+            return res.status(404).json({ error: 'Documento não encontrado' });
+        }
+
+        if (outMime === 'application/pdf') {
+            try {
+                const splitKey = `${cacheVersion}_p${requestedPage}`;
+                const { buffer: pdfOut, page: servedPage, totalPages } = await maybeSplitPdfBuffer(rawBuf, requestedPage, splitKey);
+                const stem = path.parse(baseFileName).name;
+                const finalName = (servedPage >= 1 && totalPages > 1)
+                    ? `${stem} - Chapa ${servedPage}.pdf`
+                    : baseFileName;
+                res.setHeader('Content-Type', 'application/pdf');
+                res.setHeader('Content-Disposition', `inline; filename="${finalName}"`);
+                res.setHeader('Cache-Control', 'private, max-age=300');
+                res.setHeader('X-PDF-Total-Pages', String(totalPages));
+                res.setHeader('X-PDF-Page', String(servedPage));
+                res.setHeader('Access-Control-Expose-Headers', 'X-PDF-Total-Pages, X-PDF-Page');
+                return res.send(pdfOut);
+            } catch (pdfErr) {
+                console.warn('[local-doc] Fallback para PDF completo:', pdfErr.message);
+            }
+        }
+
+        res.setHeader('Content-Type', outMime);
+        res.setHeader('Content-Disposition', `inline; filename="${baseFileName}"`);
+        res.setHeader('Cache-Control', 'private, max-age=300');
+        return res.send(rawBuf);
     } catch (err) {
         console.error('Erro em GET /api/pipeline/local-doc:', err);
         res.status(500).json({ error: 'Erro ao carregar documento da pasta' });

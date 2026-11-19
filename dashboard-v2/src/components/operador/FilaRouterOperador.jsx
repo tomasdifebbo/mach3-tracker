@@ -1304,6 +1304,7 @@ export function FilaRouterOperador({
                         const rowManualAtts = matchAttachmentsForTask(attachments, t);
                         const rowFolderDocs = t.folderDocs || t.fullFile?.folderDocs || [];
                         const rowFolderImgDoc = rowFolderDocs.find(d => isImageDoc(d) && d.fullPath);
+                        const rowFolderPdfDoc = rowFolderDocs.find(d => String(d.ext || '').toLowerCase() === '.pdf' && d.fullPath);
                         const rowFolderThumbUrl = rowFolderImgDoc ? folderThumbMap[rowFolderImgDoc.fullPath] : null;
 
                         return (
@@ -1457,7 +1458,7 @@ export function FilaRouterOperador({
                                   <span>Foto / PDF</span>
                                   {rowFolderDocs.length > 0 && (
                                     <span className="px-1.5 py-0.2 rounded bg-emerald-500 text-black text-[9px] font-black">
-                                      {rowFolderImgDoc ? 'IMG' : 'PDF'}
+                                      {rowFolderImgDoc ? 'IMG' : (rowFolderPdfDoc?.targetPage ? `PDF Pág.${rowFolderPdfDoc.targetPage}` : 'PDF')}
                                     </span>
                                   )}
                                   {rowManualAtts.length > 0 && (

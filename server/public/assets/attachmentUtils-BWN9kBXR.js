@@ -1,0 +1,52 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/pdfRenderUtils-LLwXGc1-.js","assets/vendor-pdf-C6CwZ-24.js","assets/rolldown-runtime-COnpUsM8.js","assets/vendor-canvas-CzgmnLSD.js"])))=>i.map(i=>d[i]);
+import{r as e}from"./vendor-pdf-C6CwZ-24.js";function t(e){return String(e||``).replace(/\\/g,`/`).toLowerCase().trim()}function n(e,t){return`group::${String(e||`geral`).toLowerCase().trim()}___${String(t||`raiz`).toLowerCase().trim()}`}function r(e){let t=e?.fullPath||e?.fullFile?.fullPath||e?.fullFile?.path||``;return t?t.replace(/\//g,`\\`).trim():`${e?.baseName||e?.name||``}___${e?.subfolder||e?.subfolderName||``}`.trim()}function i(e=[],r){if(!Array.isArray(e)||e.length===0||!r)return[];let i=t(r.fullPath||r.fullFile?.fullPath||r.fullFile?.path||``),a=String(r.baseName||r.name||``).toLowerCase().trim(),o=String(r.subfolder||r.subfolderName||``).toLowerCase().trim(),s=String(r.jobName||``).toLowerCase().trim(),c=n(r.jobName,r.subfolder||r.subfolderName);return e.filter(e=>{if(!e)return!1;let n=t(e.file_key);if(n===c||i&&n&&n===i)return!0;let r=String(e.file_name||``).toLowerCase().trim(),l=String(e.subfolder||``).toLowerCase().trim(),u=String(e.job_name||``).toLowerCase().trim();return!!(r&&a&&r===a&&(!o||!l||o===l)||!r&&l&&o&&l===o&&(!u||!s||u===s))})}function a(e){return new Promise((t,n)=>{if(!e)return n(Error(`Nenhum arquivo selecionado`));let r=(e.type||``).toLowerCase(),i=r===`application/pdf`||e.name.toLowerCase().endsWith(`.pdf`),a=r.startsWith(`image/`);if(!i&&!a)return n(Error(`Envie uma imagem (JPG, PNG, WEBP) ou um arquivo PDF.`));if(i){if(e.size>7*1024*1024)return n(Error(`O PDF excede o limite de 7 MB.`));let r=new FileReader;r.onload=()=>{t({attachment_name:e.name,mime_type:`application/pdf`,data_url:String(r.result||``)})},r.onerror=()=>n(Error(`Erro ao ler o arquivo PDF.`)),r.readAsDataURL(e);return}let o=new FileReader;o.onload=()=>{let r=new Image;r.onload=()=>{let n=1600,{width:i,height:a}=r;if(i>n||a>n){let e=Math.min(n/i,n/a);i=Math.round(i*e),a=Math.round(a*e)}let o=document.createElement(`canvas`);o.width=i,o.height=a;let s=o.getContext(`2d`);s.fillStyle=`#ffffff`,s.fillRect(0,0,i,a),s.drawImage(r,0,0,i,a);let c=`image/jpeg`,l=o.toDataURL(c,.85);t({attachment_name:e.name,mime_type:c,data_url:l})},r.onerror=()=>n(Error(`Erro ao processar a imagem selecionada.`)),r.src=String(o.result||``)},o.onerror=()=>n(Error(`Erro ao ler a imagem.`)),o.readAsDataURL(e)})}function o(e){if(!e)return!1;let t=String(e.ext||``).toLowerCase();return String(e.mimeType||e.mime_type||``).toLowerCase().startsWith(`image/`)||[`.png`,`.jpg`,`.jpeg`,`.webp`].includes(t)}function s(e){return new Promise((t,n)=>{let r=new FileReader;r.onloadend=()=>t(String(r.result||``)),r.onerror=()=>n(Error(`Erro ao converter imagem para impressão.`)),r.readAsDataURL(e)})}async function c(t=[],n){if(!Array.isArray(t)||t.length===0||typeof n!=`function`)return t;let r=new Map;for(let e of t){let t=e?.folderDocs||e?.fullFile?.folderDocs||[];for(let e of t)if(!(!e?.fullPath||e._dataUrl)){if(o(e)){let t=`${e.fullPath}::img`;r.has(t)||r.set(t,{fullPath:e.fullPath,page:null,isPdf:!1})}else if(String(e.ext||``).toLowerCase()===`.pdf`){let t=e.targetPage&&Number(e.targetPage)>0?Number(e.targetPage):1,n=`${e.fullPath}::p${t}`;r.has(n)||r.set(n,{fullPath:e.fullPath,page:t,isPdf:!0})}}}if(r.size===0)return t;let i=Array.from(r.values()).some(e=>e.isPdf),a=null;if(i)try{a=(await e(()=>import(`./pdfRenderUtils-LLwXGc1-.js`),__vite__mapDeps([0,1,2,3]))).renderPdfBlobToImageDataUrl}catch{a=null}let c=new Map;return await Promise.all(Array.from(r.entries()).map(async([e,t])=>{try{let r=await n(t.fullPath,t.isPdf?t.page:null);if(r?.blob)if(t.isPdf){if(a&&(r.page>=1||r.totalPages===1)){let n=await a(r.blob,{maxWidth:1400,pageNumber:1});n&&c.set(e,{dataUrl:n,page:r.page||t.page||1,totalPages:r.totalPages||1})}}else{let t=await s(r.blob);t&&c.set(e,{dataUrl:t,page:0,totalPages:0})}if(r?.blobUrl)try{URL.revokeObjectURL(r.blobUrl)}catch{}}catch{}})),c.size===0?t:t.map(e=>{let t=e?.folderDocs||e?.fullFile?.folderDocs||[];if(!t.length)return e;let n=t.map(e=>{if(!e?.fullPath)return e;let t=String(e.ext||``).toLowerCase()===`.pdf`,n=e.targetPage&&Number(e.targetPage)>0?Number(e.targetPage):1,r=t?`${e.fullPath}::p${n}`:`${e.fullPath}::img`,i=c.get(r);return i?{...e,_dataUrl:i.dataUrl,_pdfPage:i.page,_pdfTotalPages:i.totalPages}:e});return{...e,folderDocs:n}})}function l(e){try{let t=String(e||``).split(`,`);if(t.length<2)return null;let n=t[0].match(/data:([^;]+);base64/i),r=n?n[1]:`application/octet-stream`,i=atob(t[1]),a=new Uint8Array(i.length);for(let e=0;e<i.length;e++)a[e]=i.charCodeAt(e);let o=new Blob([a],{type:r});return URL.createObjectURL(o)}catch{return null}}function u(e=[],t=[],n){let r=n||(e=>String(e||``).replace(/&/g,`&amp;`).replace(/</g,`&lt;`).replace(/>/g,`&gt;`).replace(/"/g,`&quot;`).replace(/'/g,`&#039;`)),a=new Set,o=new Map,s=[];for(let n of e){let e=String(n.baseName||n.name||``).trim(),r=`${String(n.jobName||``).toLowerCase()}___${String(n.subfolder||``).toLowerCase()}___${e.toLowerCase()}`;if(a.has(r))continue;a.add(r);let c=n.folderDocs||n.fullFile?.folderDocs||[],l=i(t,n);if(l.length===0&&c.length===0)continue;let u=c.find(e=>e.ext===`.pdf`&&e._dataUrl&&e._pdfPage>=1),d=c.find(e=>e.ext!==`.pdf`&&e._dataUrl&&e.exactSheetMatch),f=u?`pdf::${String(u.fullPath||u.name).toLowerCase()}::p${u._pdfPage}`:d?`img::${String(d.fullPath||d.name).toLowerCase()}`:r;if(o.has(f)&&l.length===0){let t=o.get(f);t.extraNames.includes(e)||t.extraNames.push(e);continue}let p={item:n,folderDocs:c,attached:l,extraNames:[e]};o.set(f,p),s.push(p)}if(s.length===0)return``;let c=s.map(({item:e,folderDocs:t,attached:n,extraNames:i},a)=>{let o=n.filter(e=>(e.mime_type||``).startsWith(`image/`)),s=n.filter(e=>(e.mime_type||``)===`application/pdf`),c=t.filter(e=>!!e._dataUrl),l=t.filter(e=>e.ext===`.pdf`&&!e._dataUrl),u=(e.targetQuantity||1)>1?`<span class="map-qty">Lote ${e.targetQuantity}x</span>`:``,d=e._displayPath||e.fullPath||e.fullFile?.fullPath||``,f=i.length>1?i.join(` + `):e.baseName||e.name,p=[...c.map(e=>({name:e.name,url:e._dataUrl,isPdfPage:e.ext===`.pdf`,notes:e.ext===`.pdf`?e._pdfTotalPages>1?`Chapa ${e._pdfPage} (Página ${e._pdfPage} de ${e._pdfTotalPages} do PDF Aspire)`:`Folha do PDF Aspire`:e.exactSheetMatch?`Imagem da pasta (chapa correspondente)`:`Imagem da pasta do material`})),...o.map(e=>({name:e.attachment_name,url:e.data_url,isPdfPage:!1,notes:e.notes}))].map(e=>`
+        <div class="map-photo-box">
+          <div class="map-photo-caption">${e.isPdfPage?`📄`:`🖼️`} ${r(e.name)}${e.notes?` — ${r(e.notes)}`:``}</div>
+          <img src="${e.url}" alt="${r(e.name)}" class="map-photo-img" />
+        </div>
+      `).join(``),m=[...l.map(e=>`📄 PDF automático na pasta: <strong>${r(e.name)}</strong>${e.targetPage?` (Chapa ${e.targetPage})`:``}`),...s.map(e=>`📄 PDF anexado: <strong>${r(e.attachment_name)}</strong>${e.notes?` (${r(e.notes)})`:``}`)],h=m.length>0?`<div class="map-pdf-note">${m.join(` &nbsp;|&nbsp; `)}</div>`:``;return`
+      <div class="map-card">
+        <div class="map-card-header">
+          <div>
+            <span class="map-num">#${a+1}</span>
+            <strong>${r(f)}</strong>
+            ${u}
+          </div>
+          <div class="map-meta">${r(e.material||``)}${e.dimensions?` · ${r(e.dimensions)}`:``}</div>
+        </div>
+        ${d?`<div class="map-path">📂 ${r(d)}</div>`:``}
+        ${p}
+        ${h}
+        <div class="map-notes-area">
+          <div class="map-notes-lbl">✏️ Anotações do Operador / Numeração das Peças:</div>
+          <div class="map-notes-lines"></div>
+          <div class="map-notes-lines"></div>
+        </div>
+      </div>
+    `}).join(``);return`
+    <div class="maps-section">
+      <div class="maps-section-header">
+        <span>📎 ANEXOS & PDFS DAS PEÇAS PARA ANOTAÇÃO DO OPERADOR</span>
+        <span>${s.length} chapa(s) com foto / PDF</span>
+      </div>
+      ${c}
+    </div>
+  `}var d=`
+  .maps-section { page-break-before: always; }
+  .maps-section-header { display: flex; justify-content: space-between; align-items: center; background: #0f172a; color: #fff; padding: 6px 10px; border-radius: 5px; font-weight: 900; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+  .map-card { border: 1.4px solid #334155; border-radius: 6px; padding: 7px 9px; margin-bottom: 10px; page-break-inside: avoid; background: #fff; }
+  .map-card-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 4px; font-size: 9.2px; }
+  .map-num { display: inline-block; background: #ea580c; color: #fff; font-weight: 900; font-size: 8px; padding: 1px 5px; border-radius: 3px; margin-right: 5px; }
+  .map-qty { display: inline-block; background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; font-weight: 800; font-size: 7.5px; padding: 0.5px 5px; border-radius: 99px; margin-left: 5px; }
+  .map-meta { font-size: 8px; font-weight: 700; color: #475569; }
+  .map-path { font-size: 7.2px; font-family: Consolas, monospace; color: #334155; background: #f8fafc; padding: 2px 5px; border-left: 2px solid #ea580c; margin-bottom: 5px; word-break: break-all; }
+  .map-svg-wrap { border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px; background: #fff; max-height: 290px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .map-svg-wrap svg { max-height: 280px; width: 100%; height: auto; }
+  .map-photo-box { margin-top: 6px; border: 1px solid #cbd5e1; border-radius: 4px; padding: 4px; background: #fff; text-align: center; }
+  .map-photo-caption { font-size: 7.5px; font-weight: 700; color: #334155; text-align: left; margin-bottom: 3px; }
+  .map-photo-img { max-width: 100%; max-height: 460px; object-fit: contain; display: block; margin: 0 auto; }
+  .map-pdf-note { margin-top: 5px; font-size: 7.8px; color: #1e40af; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 3px 6px; }
+  .map-notes-area { margin-top: 6px; padding-top: 4px; border-top: 1px dashed #94a3b8; }
+  .map-notes-lbl { font-size: 7.5px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 3px; }
+  .map-notes-lines { border-bottom: 1px dotted #94a3b8; height: 15px; }
+`;export{u as a,c,n as i,o as l,s as n,l as o,r,a as s,d as t,i as u};

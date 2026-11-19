@@ -188,6 +188,9 @@ test('generateGCodePreviewSvg creates compact top-down SVG and matchFolderDocsFo
     );
     assert.equal(chapa2Matches[0].name, 'mdf 6mm chapa 2.jpg');
     assert.ok(!chapa2Matches.some(d => d.name === 'mdf 6mm chapa 1.png'));
+    const chapa2Pdf = chapa2Matches.find(d => d.name === 'mdf 6mm.pdf');
+    assert.ok(chapa2Pdf);
+    assert.equal(chapa2Pdf.targetPage, 2);
 
     const isopor1Matches = matchFolderDocsForGcode(
         { name: '1 pvc 100mm b10mm.txt', fullPath: 'E:\\router\\ISOPOR\\1 pvc 100mm b10mm.txt' },

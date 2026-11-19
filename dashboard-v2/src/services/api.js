@@ -458,15 +458,24 @@ export const api = {
     if (subfolder) qs.set('subfolder', subfolder);
     return api.get(`/pipeline/gcode-preview?${qs.toString()}`);
   },
-  fetchLocalDocBlob: async (filePath) => {
+  fetchLocalDocBlob: async (filePath, page = null) => {
     const token = localStorage.getItem('mach3_token');
-    const resp = await fetch(`${API_URL}/api/pipeline/local-doc?path=${encodeURIComponent(filePath)}`, {
+    const pageParam = page && Number(page) > 0 ? `&page=${encodeURIComponent(page)}` : '';
+    const resp = await fetch(`${API_URL}/api/pipeline/local-doc?path=${encodeURIComponent(filePath)}${pageParam}`, {
       headers: { Authorization: token ? `Bearer ${token}` : '' }
     });
     if (!resp.ok) throw new Error(`Documento indisponível (${resp.status})`);
     const blob = await resp.blob();
     const blobUrl = URL.createObjectURL(blob);
-    return { blob, blobUrl, mimeType: blob.type || 'application/pdf' };
+    const totalPages = parseInt(resp.headers.get('X-PDF-Total-Pages') || '0', 10) || 0;
+    const servedPage = parseInt(resp.headers.get('X-PDF-Page') || '0', 10) || 0;
+    return {
+      blob,
+      blobUrl,
+      mimeType: blob.type || 'application/pdf',
+      page: servedPage,
+      totalPages
+    };
   },
 
   getPipelineGroupOrder: async () => {
