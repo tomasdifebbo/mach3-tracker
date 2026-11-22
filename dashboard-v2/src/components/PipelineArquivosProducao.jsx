@@ -1754,7 +1754,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                               : 'hover:bg-slate-50 dark:hover:bg-white/[0.02]'
                           }`}
                         >
-                          <td className="py-1.5 px-2 text-center">
+                          <td className="py-1 px-2 text-center">
                             <button
                               type="button"
                               onClick={() => toggleFileCheck(f, 'router')}
@@ -1768,19 +1768,19 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                               <Check size={13} className="stroke-[3]" />
                             </button>
                           </td>
-                          <td className="py-1.5 px-2 hidden 2xl:table-cell">
+                          <td className="py-1 px-2 hidden 2xl:table-cell">
                             <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-orange-500/20 text-orange-400 border border-orange-500/30">
                               {f.ext}
                             </span>
                           </td>
-                          <td className="py-1.5 px-2 max-w-[230px] xl:max-w-[290px]">
+                          <td className="py-1 px-2 max-w-[230px] xl:max-w-[290px]">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="2xl:hidden px-1 py-0.2 rounded text-[8px] font-black bg-orange-500/20 text-orange-400 border border-orange-500/30 shrink-0">
                                 {f.ext}
                               </span>
                               <p className={`font-bold truncate max-w-[200px] xl:max-w-[260px] transition-all ${
                                 isChecked ? 'line-through text-emerald-700 dark:text-emerald-300 opacity-80' : 'text-slate-900 dark:text-white'
-                              }`}>
+                              }`} title={`${f.fullPath || f.name} (${formatBytes(f.size)})`}>
                                 {f.name}
                               </p>
                               {((f.targetQuantity || f.matInfo?.targetQuantity || 1) > 1) && (
@@ -1798,20 +1798,16 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                                 </span>
                               )}
                             </div>
-                            <p className="text-[9px] text-slate-500 truncate max-w-[210px] xl:max-w-[270px] font-mono" title={f.fullPath}>
-                              <span className="2xl:hidden text-slate-400 mr-1">{formatBytes(f.size)} ·</span>{f.fullPath}
-                            </p>
                           </td>
-                          <td className="py-1.5 px-2 max-w-[140px]">
-                            <p className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[130px]" title={f.subfolderName || 'Geral'}>{f.subfolderName || 'Geral'}</p>
-                            <p className="text-[10px] text-slate-400 truncate max-w-[130px]" title={f.jobName}>{f.jobName}</p>
+                          <td className="py-1 px-2 max-w-[160px]">
+                            <p className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[150px]" title={`${f.subfolderName || 'Geral'} — ${f.jobName || ''}`}>{f.subfolderName || 'Geral'}</p>
                           </td>
-                          <td className="py-1.5 px-2 whitespace-nowrap">
+                          <td className="py-1 px-2 whitespace-nowrap">
                             {renderMaterialBadge(f.matInfo?.tag) || (
                               <span className="text-[10px] text-slate-400 italic">-</span>
                             )}
                           </td>
-                          <td className="py-1.5 px-2 text-center whitespace-nowrap">
+                          <td className="py-1 px-2 text-center whitespace-nowrap">
                             {((f.targetQuantity || f.matInfo?.targetQuantity || 1) > 1) ? (
                               <button
                                 type="button"
@@ -1834,9 +1830,9 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                               </button>
                             )}
                           </td>
-                          <td className="py-1.5 px-2 font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                          <td className="py-1 px-2 font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                             {f.estimatedMinutes || f.cutMeters ? (
-                              <div className="flex flex-col">
+                              <div className="flex items-baseline gap-1.5" title={f.cutMeters > 0 ? `${f.cutMeters}m de corte` : undefined}>
                                 {(() => {
                                   const qty = f.targetQuantity || f.matInfo?.targetQuantity || (((f.subfolderName || '').toLowerCase().includes('topo isopor colunas') || (f.name || '').toLowerCase().includes('topo isopor colunas')) ? 14 : 1);
                                   const singleDur = f.estimatedMinutes || Math.max(1, Math.round((f.cutMeters * 1000 / 1800) * 1.15));
@@ -1857,10 +1853,10 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                               <span className="text-slate-400 italic text-[10px]">-</span>
                             )}
                           </td>
-                          <td className="py-1.5 px-2 font-mono text-slate-500 text-[11px] hidden 2xl:table-cell whitespace-nowrap">
+                          <td className="py-1 px-2 font-mono text-slate-500 text-[11px] hidden 2xl:table-cell whitespace-nowrap">
                             {formatBytes(f.size)}
                           </td>
-                          <td className="py-1.5 px-2 whitespace-nowrap">
+                          <td className="py-1 px-2 whitespace-nowrap">
                             {f.isCurrentlyRunning ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 shadow-sm animate-pulse">
                                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
@@ -1883,7 +1879,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                               </span>
                             )}
                           </td>
-                          <td className="py-1.5 px-2 text-right whitespace-nowrap">
+                          <td className="py-1 px-2 text-right whitespace-nowrap">
                             <button
                               onClick={() => handleCopy(f.fullPath)}
                               className="px-2 py-1 rounded text-[10px] font-bold bg-slate-100 dark:bg-white/5 hover:bg-orange-500 hover:text-white transition-all inline-flex items-center gap-1 cursor-pointer"

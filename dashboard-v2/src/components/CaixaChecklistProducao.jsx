@@ -471,7 +471,7 @@ export function CaixaChecklistProducao({
               <div
                 key={item.id}
                 onClick={() => handleToggleItem(item)}
-                className={`py-1.5 px-2.5 rounded-lg flex items-center justify-between gap-2.5 transition-all cursor-pointer group ${
+                className={`py-1 px-2.5 rounded-lg flex items-center justify-between gap-2.5 transition-all cursor-pointer group ${
                   isRunning
                     ? 'bg-sky-500/10 border border-sky-500/30'
                     : isDone
@@ -503,7 +503,7 @@ export function CaixaChecklistProducao({
                     )}
                   </button>
 
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex flex-col lg:flex-row lg:items-center lg:gap-3">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`text-xs font-bold leading-tight ${
                         isDone ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'
@@ -512,7 +512,7 @@ export function CaixaChecklistProducao({
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5 flex-wrap">
+                    <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5 lg:mt-0 flex-wrap">
                       <span className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 font-bold text-slate-600 dark:text-slate-300">
                         {item.machine}
                       </span>
