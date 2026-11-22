@@ -21,7 +21,7 @@ function cn(...inputs) {
 }
 
 export function Sidebar({ activeSection, onSectionChange, user, maintenance = [], isMobileOpen, setIsMobileOpen, isTrialExpired }) {
-  const [isOpen, setIsOpen] = React.useState(true);
+  const [isOpen, setIsOpen] = React.useState(true); React.useEffect(() => { if (activeSection === 'encarregado') setIsOpen(false); }, [activeSection]);
 
   // Check if there is an urgent maintenance
   const hasUrgentMaintenance = React.useMemo(() => {

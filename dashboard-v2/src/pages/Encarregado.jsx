@@ -33,8 +33,8 @@ const NAV_SECTIONS = [
 ];
 
 export function Encarregado({ jobs = [], routers = [], user = null }) {
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [isNavCollapsed, setIsNavCollapsed] = useState(false);
+  const [activeTab, setActiveTab] = useState('pipeline_arquivos');
+  const [isNavCollapsed, setIsNavCollapsed] = useState(true);
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);

@@ -62,7 +62,7 @@ function renderMaterialBadge(tag) {
 export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
   const [pipelineData, setPipelineData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('lotes'); // start on active priorities / lotes
+  const [activeTab, setActiveTab] = useState('fila_router'); // abre direto na lista principal da Fila Router
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJob, setSelectedJob] = useState('todos');
   const [selectedExt] = useState('todas');
@@ -600,163 +600,19 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
       : 'flex flex-col min-h-full bg-slate-50 dark:bg-[#0c0d10] text-slate-900 dark:text-slate-100 p-1.5 sm:p-2 gap-1.5 rounded-xl'
     }>
       <div className={isFullscreen ? 'flex flex-col gap-1.5 w-full' : 'contents'}>
-      {/* Top Header (Slim) */}
-      <div
-        className="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-white/[0.03] py-1.5 px-2.5 sm:px-3 rounded-xl border border-slate-200 dark:border-white/5 shadow-sm"
-        title="Lógica por pasta: CDR mestre gera arquivos por material para corte na Router"
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-7 h-7 rounded-lg bg-orange-500/15 text-orange-500 flex items-center justify-center shrink-0">
-            <Layers size={15} />
-          </div>
-          <div className="flex items-center gap-2 flex-wrap min-w-0">
-            <h1 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-tight truncate">
-              Pipeline de Arquivos & Produção
-            </h1>
-            <span className="hidden lg:inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 whitespace-nowrap">
-              Corel (.CDR) ➔ Aspire (.EPS/.DXF) ➔ Router (.TXT)
-            </span>
-            {pipelineData?.updatedAt && (
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
-                · Sinc. {formatDate(pipelineData.updatedAt)}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-          <button
-            onClick={() => setIsFichaModalOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-black bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-sm transition-all shrink-0 active:scale-95 cursor-pointer"
-            title="Emitir Ficha Técnica com relação das tarefas (Impressão / PDF / WhatsApp)"
-          >
-            <ClipboardList size={13} />
-            <span>Gerar Ficha Técnica</span>
-          </button>
-
-          <button
-            onClick={() => fetchPipeline(true)}
-            disabled={loading}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-orange-500 hover:text-orange-500 transition-all shrink-0 disabled:opacity-50 cursor-pointer"
-            title="Atualizar lista de arquivos"
-          >
-            <RefreshCw size={12} className={loading ? 'animate-spin text-orange-500' : ''} />
-            <span>{loading ? 'Escaneando...' : 'Atualizar'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsFullscreen(prev => !prev)}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all shrink-0 cursor-pointer ${
-              isFullscreen
-                ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-orange-500 hover:text-orange-500'
-            }`}
-            title={isFullscreen ? 'Sair da tela cheia (Esc)' : 'Expandir para tela cheia'}
-          >
-            {isFullscreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-            <span className="hidden sm:inline">{isFullscreen ? 'Sair Tela Cheia' : 'Tela Cheia'}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* KPI Cards Row - Slim compact grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5">
-        {[
-          {
-            tab: 'preparar',
-            label: '1. Corel (.CDR)',
-            count: summary.totalCadPreparar,
-            unit: 'desenhos',
-            icon: Sparkles,
-            activeCls: 'bg-gradient-to-br from-amber-500/20 via-amber-500/5 to-transparent border-amber-500/60 shadow-sm shadow-amber-500/10 ring-1 ring-amber-500/30',
-            idleCls: 'bg-white dark:bg-white/[0.03] border-slate-200/80 dark:border-white/5 hover:border-amber-500/40',
-            labelCls: 'text-amber-500',
-            iconCls: 'bg-amber-500/20 text-amber-400',
-          },
-          {
-            tab: 'aspire',
-            label: '2. Aspire CAM',
-            count: summary.totalAspirePreparar || filteredAspire.length,
-            unit: 'vetores CAM',
-            icon: Compass,
-            activeCls: 'bg-gradient-to-br from-sky-500/20 via-sky-500/5 to-transparent border-sky-500/60 shadow-sm shadow-sky-500/10 ring-1 ring-sky-500/30',
-            idleCls: 'bg-white dark:bg-white/[0.03] border-slate-200/80 dark:border-white/5 hover:border-sky-500/40',
-            labelCls: 'text-sky-400',
-            iconCls: 'bg-sky-500/20 text-sky-400',
-          },
-          {
-            tab: 'fila_router',
-            label: '3. Chapas na Fila',
-            count: summary.totalGcodePronto,
-            unit: 'G-Codes',
-            icon: Cpu,
-            activeCls: 'bg-gradient-to-br from-orange-500/20 via-orange-500/5 to-transparent border-orange-500/60 shadow-sm shadow-orange-500/10 ring-1 ring-orange-500/30',
-            idleCls: 'bg-white dark:bg-white/[0.03] border-slate-200/80 dark:border-white/5 hover:border-orange-500/40',
-            labelCls: 'text-orange-500',
-            iconCls: 'bg-orange-500/20 text-orange-400',
-          },
-          {
-            tab: 'concluidos',
-            label: '4. Já Usinado',
-            count: summary.totalConcluidos,
-            unit: 'execuções',
-            icon: CheckCircle2,
-            activeCls: 'bg-gradient-to-br from-emerald-500/20 via-emerald-500/5 to-transparent border-emerald-500/60 shadow-sm shadow-emerald-500/10 ring-1 ring-emerald-500/30',
-            idleCls: 'bg-white dark:bg-white/[0.03] border-slate-200/80 dark:border-white/5 hover:border-emerald-500/40',
-            labelCls: 'text-emerald-500',
-            iconCls: 'bg-emerald-500/20 text-emerald-400',
-          },
-          {
-            tab: 'lotes',
-            label: '5. Lotes Seriados',
-            count: specialBatches.length,
-            unit: 'metas ativas',
-            icon: Award,
-            extraSpan: 'col-span-2 sm:col-span-2 lg:col-span-1',
-            activeCls: 'bg-gradient-to-br from-violet-500/20 via-violet-500/5 to-transparent border-violet-500/60 shadow-sm shadow-violet-500/10 ring-1 ring-violet-500/30',
-            idleCls: 'bg-white dark:bg-white/[0.03] border-slate-200/80 dark:border-white/5 hover:border-violet-500/40',
-            labelCls: 'text-violet-400',
-            iconCls: 'bg-violet-500/20 text-violet-400',
-          },
-        ].map(kpi => {
-          const KpiIcon = kpi.icon;
-          return (
-            <div
-              key={kpi.tab}
-              onClick={() => setActiveTab(kpi.tab)}
-              className={`py-1.5 px-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between min-w-0 hover:scale-[1.01] active:scale-[0.99] ${kpi.extraSpan || ''} ${
-                activeTab === kpi.tab ? kpi.activeCls : kpi.idleCls
-              }`}
-            >
-              <div className="min-w-0">
-                <p className={`text-[9px] font-bold uppercase tracking-wider truncate ${kpi.labelCls}`}>{kpi.label}</p>
-                <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-none tracking-tight">{kpi.count}</span>
-                  <span className="text-[10px] text-slate-500 whitespace-nowrap">{kpi.unit}</span>
-                </div>
-              </div>
-              <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ml-1.5 shadow-inner ${kpi.iconCls}`}>
-                <KpiIcon size={13} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Modern Control Bar: Tabs & Search/Filter (Slim) */}
-      <div className="flex flex-col gap-1.5 bg-white dark:bg-white/[0.03] p-1.5 sm:p-2 rounded-xl border border-slate-200/80 dark:border-white/5 shadow-sm">
-        {/* Row 1: Segmented Horizontal Tabs */}
-        <div className="relative w-full">
-          <div className="flex items-center gap-1 overflow-x-auto md:overflow-visible md:flex-wrap py-0.5 w-full no-scrollbar snap-x snap-mandatory">
+      {/* Barra Unificada Ultra-Compacta (Abas + Ações + Busca + Filtros em ~68px para a lista ocupar a tela toda) */}
+      <div className="flex flex-col gap-1 bg-white dark:bg-white/[0.03] p-1.5 rounded-xl border border-slate-200/80 dark:border-white/5 shadow-sm">
+        {/* Linha 1: Abas com contadores + Status Routers + Botões de Ação */}
+        <div className="flex flex-wrap items-center justify-between gap-1">
+          <div className="flex items-center gap-1 overflow-x-auto md:overflow-visible md:flex-wrap no-scrollbar">
             {[
-              { id: 'fila_router', label: '3. Fila Router (.TXT)', shortLabel: 'Router (.TXT)', icon: Cpu, count: routerCounts.pendentes, total: routerCounts.total },
-              { id: 'lotes', label: 'Lotes Seriados', shortLabel: 'Lotes Seriados', icon: Award, count: specialBatches.length },
-              { id: 'aspire', label: '2. Aspire (.EPS)', shortLabel: 'Aspire (.EPS)', icon: Compass, count: aspireCounts.pendentes, total: aspireCounts.total },
-              { id: 'preparar', label: '1. Corel (.CDR)', shortLabel: 'Corel (.CDR)', icon: Sparkles, count: cadCounts.pendentes, total: cadCounts.total },
+              { id: 'fila_router', label: '3. Fila Router (.TXT)', shortLabel: 'Router (.TXT)', icon: Cpu, count: routerCounts.pendentes },
+              { id: 'lotes', label: 'Lotes Seriados', shortLabel: 'Lotes', icon: Award, count: specialBatches.length },
+              { id: 'aspire', label: '2. Aspire (.EPS)', shortLabel: 'Aspire', icon: Compass, count: aspireCounts.pendentes },
+              { id: 'preparar', label: '1. Corel (.CDR)', shortLabel: 'Corel', icon: Sparkles, count: cadCounts.pendentes },
               { id: 'concluidos', label: '4. Já Feito', shortLabel: 'Histórico', icon: CheckCircle2, count: pipelineData?.gcodeFeitos?.length || summary.totalConcluidos },
-              { id: 'checklist', label: 'Painel Geral', shortLabel: 'Painel Geral', icon: CheckSquare, count: cadCounts.concluidos + aspireCounts.concluidos + routerCounts.concluidos },
-              { id: 'visao_geral', label: 'Visão por Jobs', shortLabel: 'Jobs', icon: FolderCheck, count: allJobs.length }
+              { id: 'checklist', label: 'Painel Geral', shortLabel: 'Painel', icon: CheckSquare, count: cadCounts.concluidos + aspireCounts.concluidos + routerCounts.concluidos },
+              { id: 'visao_geral', label: 'Jobs', shortLabel: 'Jobs', icon: FolderCheck, count: allJobs.length }
             ].map(t => {
               const Icon = t.icon;
               const active = activeTab === t.id;
@@ -764,7 +620,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                 <button
                   key={t.id}
                   onClick={() => setActiveTab(t.id)}
-                  className={`snap-start flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+                  className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
                     active
                       ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm shadow-orange-500/25 ring-1 ring-white/20'
                       : 'bg-slate-100/90 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-white/[0.08] border border-slate-200/60 dark:border-white/[0.06]'
@@ -773,7 +629,7 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                   <Icon size={12} className={`shrink-0 ${active ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
                   <span className="hidden sm:inline">{t.label}</span>
                   <span className="sm:hidden">{t.shortLabel}</span>
-                  <span className={`text-[10px] px-1.5 py-0 rounded-full font-black font-mono leading-tight transition-colors ${
+                  <span className={`text-[10px] px-1.5 py-0 rounded-full font-black font-mono leading-tight ${
                     active ? 'bg-black/25 text-white' : 'bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300'
                   }`}>
                     {t.count}
@@ -782,59 +638,205 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
               );
             })}
           </div>
+
+          <div className="flex items-center gap-1 shrink-0 ml-auto">
+            {runningGcodes.length > 0 && (
+              <span
+                className="hidden xl:inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-black bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 max-w-[320px] truncate"
+                title={runningGcodes.map(r => `${r.runningMachine || 'Router'}: ${r.name}`).join(' | ')}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping shrink-0"></span>
+                <span className="truncate">⚡ {runningGcodes.map(r => `${r.runningMachine || 'R'}: ${r.name}`).join(' | ')}</span>
+              </span>
+            )}
+
+            <button
+              onClick={() => setIsFichaModalOpen(true)}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-black bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-sm transition-all shrink-0 cursor-pointer"
+              title="Emitir Ficha Técnica (Impressão / PDF / WhatsApp)"
+            >
+              <ClipboardList size={12} />
+              <span className="hidden md:inline">Ficha Técnica</span>
+            </button>
+
+            <button
+              onClick={() => fetchPipeline(true)}
+              disabled={loading}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-orange-500 hover:text-orange-500 transition-all shrink-0 disabled:opacity-50 cursor-pointer"
+              title={pipelineData?.updatedAt ? `Sincronizado ${formatDate(pipelineData.updatedAt)} — Clique para atualizar` : 'Atualizar lista de arquivos'}
+            >
+              <RefreshCw size={12} className={loading ? 'animate-spin text-orange-500' : ''} />
+              <span className="hidden md:inline">{loading ? 'Lendo...' : 'Atualizar'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsFullscreen(prev => !prev)}
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold border transition-all shrink-0 cursor-pointer ${
+                isFullscreen
+                  ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                  : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:border-orange-500 hover:text-orange-500'
+              }`}
+              title={isFullscreen ? 'Sair da tela cheia (Esc)' : 'Expandir para tela cheia'}
+            >
+              {isFullscreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+              <span className="hidden sm:inline">{isFullscreen ? 'Sair' : 'Tela Cheia'}</span>
+            </button>
+          </div>
         </div>
 
-        {/* Row 2: Sleek Search & Job Selector */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 pt-1 border-t border-slate-100 dark:border-white/5">
-          {/* Search Box with Clear Button */}
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" size={13} />
+        {/* Linha 2: Busca + Filtro de Serviço + Sub-filtros de Status da Aba Ativa */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-100 dark:border-white/5">
+          <div className="relative flex-1 min-w-[180px]">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" size={12} />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar arquivo, O.S., material..."
-              className="w-full pl-8 pr-7 py-1.5 text-xs rounded-lg bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30 transition-all"
+              className="w-full pl-7 pr-6 py-1 text-xs rounded-lg bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-orange-500 transition-all"
             />
             {searchTerm && (
               <button
                 type="button"
                 onClick={() => setSearchTerm('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white p-0.5 rounded-md hover:bg-slate-200 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10 cursor-pointer"
                 title="Limpar busca"
               >
-                <X size={12} />
+                <X size={11} />
               </button>
             )}
           </div>
 
-          {/* Job Filter Selector */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <select
-              value={selectedJob}
-              onChange={(e) => setSelectedJob(e.target.value)}
-              className="w-full sm:w-56 px-2.5 py-1.5 text-xs rounded-lg bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30 transition-all cursor-pointer truncate"
-            >
-              <option value="todos">Todos Serviços ({uniqueJobNames.length})</option>
-              {uniqueJobNames.map(j => (
-                <option key={j} value={j}>{j}</option>
-              ))}
-            </select>
+          <select
+            value={selectedJob}
+            onChange={(e) => setSelectedJob(e.target.value)}
+            className="w-44 sm:w-52 px-2 py-1 text-xs rounded-lg bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-orange-500 transition-all cursor-pointer truncate shrink-0"
+          >
+            <option value="todos">Todos Serviços ({uniqueJobNames.length})</option>
+            {uniqueJobNames.map(j => (
+              <option key={j} value={j}>{j}</option>
+            ))}
+          </select>
 
-            {(searchTerm || selectedJob !== 'todos') && (
+          {(searchTerm || selectedJob !== 'todos') && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedJob('todos');
+              }}
+              className="px-2 py-1 text-[11px] font-bold text-orange-500 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 rounded-lg cursor-pointer whitespace-nowrap shrink-0"
+            >
+              Limpar
+            </button>
+          )}
+
+          {activeTab === 'fila_router' && (
+            <div className="flex items-center gap-1 ml-auto shrink-0">
+              <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-500 border border-amber-500/25 whitespace-nowrap">
+                <Clock size={11} />
+                {formatHm(displayedGcodes.reduce((sum, f) => {
+                  const qty = f.matInfo?.targetQuantity || (((f.subfolderName || '').toLowerCase().includes('topo isopor colunas') || (f.name || '').toLowerCase().includes('topo isopor colunas')) ? 14 : 1);
+                  const est = f.estimatedMinutes || (f.cutMeters ? Math.max(1, Math.round((f.cutMeters * 1000 / 1800) * 1.15)) : (f.name?.toLowerCase().includes('isopor') ? 90 : 0));
+                  return sum + (est * qty);
+                }, 0))} ({displayedGcodes.length})
+              </span>
+              <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-white/5 p-0.5 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setRouterCheckFilter('pendentes')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap cursor-pointer ${
+                    routerCheckFilter === 'pendentes' ? 'bg-orange-500 text-white' : 'text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  ⏳ Fila ({routerCounts.pendentes})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRouterCheckFilter('todos')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap cursor-pointer ${
+                    routerCheckFilter === 'todos' ? 'bg-orange-500 text-white' : 'text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  Todos ({routerCounts.total})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRouterCheckFilter('concluidos')}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap cursor-pointer ${
+                    routerCheckFilter === 'concluidos' ? 'bg-emerald-500 text-white' : 'text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  ✓ Usinados ({routerCounts.concluidos})
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'aspire' && (
+            <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-white/5 p-0.5 rounded-lg ml-auto shrink-0">
               <button
                 type="button"
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedJob('todos');
-                }}
-                className="px-2 py-1.5 text-xs font-bold text-orange-500 hover:text-orange-600 dark:text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 rounded-lg transition-all cursor-pointer whitespace-nowrap shrink-0"
-                title="Limpar todos os filtros"
+                onClick={() => setAspireCheckFilter('pendentes')}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap cursor-pointer ${
+                  aspireCheckFilter === 'pendentes' ? 'bg-sky-500 text-white' : 'text-slate-600 dark:text-slate-300'
+                }`}
               >
-                Limpar
+                ⏳ Aguardando ({aspireCounts.pendentes})
               </button>
-            )}
-          </div>
+              <button
+                type="button"
+                onClick={() => setAspireCheckFilter('todos')}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap cursor-pointer ${
+                  aspireCheckFilter === 'todos' ? 'bg-sky-500 text-white' : 'text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                Todos ({aspireCounts.total})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAspireCheckFilter('concluidos')}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap cursor-pointer ${
+                  aspireCheckFilter === 'concluidos' ? 'bg-emerald-500 text-white' : 'text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                ✓ Prontos ({aspireCounts.concluidos})
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'preparar' && (
+            <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-white/5 p-0.5 rounded-lg ml-auto shrink-0">
+              <button
+                type="button"
+                onClick={() => setCadCheckFilter('pendentes')}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap cursor-pointer ${
+                  cadCheckFilter === 'pendentes' ? 'bg-amber-500 text-white' : 'text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                ⏳ Pendentes ({cadCounts.pendentes})
+              </button>
+              <button
+                type="button"
+                onClick={() => setCadCheckFilter('todos')}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap cursor-pointer ${
+                  cadCheckFilter === 'todos' ? 'bg-amber-500 text-white' : 'text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                Todos ({cadCounts.total})
+              </button>
+              <button
+                type="button"
+                onClick={() => setCadCheckFilter('concluidos')}
+                className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap cursor-pointer ${
+                  cadCheckFilter === 'concluidos' ? 'bg-emerald-500 text-white' : 'text-slate-600 dark:text-slate-300'
+                }`}
+              >
+                ✓ Concluídos ({cadCounts.concluidos})
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -944,48 +946,6 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         {/* TAB 1: ARQUIVOS COREL A PREPARAR (.CDR MESTRE) */}
         {activeTab === 'preparar' && (
           <div className="bg-white dark:bg-white/[0.03] rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm">
-            <div className="p-2 sm:p-3 bg-amber-500/5 border-b border-slate-200 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
-              <div className="flex items-center gap-2 flex-wrap min-w-0">
-                <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-500 border border-amber-500/30 whitespace-nowrap shrink-0">
-                  Etapa CAD: Corel (.CDR)
-                </span>
-                <p className="text-xs text-slate-600 dark:text-slate-300">
-                  Dê <strong>OK</strong> quando salvar os materiais para o Aspire.
-                </p>
-              </div>
-
-              {/* Filtros rápidos do checklist */}
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-lg overflow-x-auto no-scrollbar flex-nowrap w-full md:w-auto shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setCadCheckFilter('pendentes')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
-                    cadCheckFilter === 'pendentes' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-                  }`}
-                >
-                  ⏳ Pendentes ({cadCounts.pendentes})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCadCheckFilter('todos')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
-                    cadCheckFilter === 'todos' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-                  }`}
-                >
-                  Todos ({cadCounts.total})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCadCheckFilter('concluidos')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
-                    cadCheckFilter === 'concluidos' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-                  }`}
-                >
-                  ✓ Concluídos ({cadCounts.concluidos})
-                </button>
-              </div>
-            </div>
-
             {/* Mobile Cards (telas pequenas) */}
             <div className="md:hidden divide-y divide-slate-100 dark:divide-white/5 p-2 space-y-2">
               {displayedCad.length === 0 ? (
@@ -1133,17 +1093,15 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                               {f.ext}
                             </span>
                           </td>
-                          <td className="py-2 px-3">
+                          <td className="py-1 px-2">
                             <p className={`font-bold truncate max-w-[210px] xl:max-w-[280px] transition-all ${
                               isChecked ? 'line-through text-emerald-700 dark:text-emerald-300 opacity-80' : 'text-slate-900 dark:text-white'
-                            }`}>
+                            }`} title={f.fullPath}>
                               {f.name}
                             </p>
-                            <p className="text-[9px] text-slate-500 truncate max-w-[220px] xl:max-w-[300px] font-mono">{f.fullPath}</p>
                           </td>
-                          <td className="py-2 px-3">
-                            <p className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[150px]">{f.subfolderName || 'Geral'}</p>
-                            <p className="text-[10px] text-slate-400 truncate max-w-[150px]">{f.jobName}</p>
+                          <td className="py-1 px-2">
+                            <p className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[150px]" title={`${f.subfolderName || 'Geral'} — ${f.jobName || ''}`}>{f.subfolderName || 'Geral'}</p>
                           </td>
                           <td className="py-2 px-3">
                             {f.matInfo?.tag ? renderMaterialBadge(f.matInfo.tag) : (
@@ -1213,48 +1171,6 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         {/* TAB 2: ARQUIVOS DE MATERIAIS PARA O ASPIRE (.EPS / .DXF) */}
         {activeTab === 'aspire' && (
           <div className="bg-white dark:bg-white/[0.03] rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm">
-            <div className="p-2 sm:p-3 bg-sky-500/5 border-b border-slate-200 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
-              <div className="flex items-center gap-2 flex-wrap min-w-0">
-                <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-sky-500/20 text-sky-400 border border-sky-500/30 whitespace-nowrap shrink-0">
-                  Etapa CAM: Aspire
-                </span>
-                <p className="text-xs text-slate-600 dark:text-slate-300">
-                  Dê <strong>OK</strong> quando você já tiver gerado o lote de chapas e salvo o arquivo no Aspire.
-                </p>
-              </div>
-
-              {/* Filtros rápidos do checklist */}
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-lg overflow-x-auto no-scrollbar flex-nowrap w-full md:w-auto shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setAspireCheckFilter('pendentes')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
-                    aspireCheckFilter === 'pendentes' ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-                  }`}
-                >
-                  ⏳ Aguardando Aspire ({aspireCounts.pendentes})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAspireCheckFilter('todos')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
-                    aspireCheckFilter === 'todos' ? 'bg-sky-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-                  }`}
-                >
-                  Todos ({aspireCounts.total})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAspireCheckFilter('concluidos')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
-                    aspireCheckFilter === 'concluidos' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-                  }`}
-                >
-                  ✓ Lotes Prontos ({aspireCounts.concluidos})
-                </button>
-              </div>
-            </div>
-
             {/* Mobile Cards (telas pequenas) */}
             <div className="md:hidden divide-y divide-slate-100 dark:divide-white/5 p-2 space-y-2">
               {displayedAspire.length === 0 ? (
@@ -1406,17 +1322,15 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
                               {f.ext}
                             </span>
                           </td>
-                          <td className="py-2 px-3">
+                          <td className="py-1 px-2">
                             <p className={`font-bold truncate max-w-[210px] xl:max-w-[280px] transition-all ${
                               isChecked ? 'line-through text-emerald-700 dark:text-emerald-300 opacity-80' : 'text-slate-900 dark:text-white'
-                            }`}>
+                            }`} title={f.fullPath}>
                               {f.name}
                             </p>
-                            <p className="text-[9px] text-slate-500 truncate max-w-[220px] xl:max-w-[300px] font-mono">{f.fullPath}</p>
                           </td>
-                          <td className="py-2 px-3">
-                            <p className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[150px]">{f.subfolderName || 'Geral'}</p>
-                            <p className="text-[10px] text-slate-400 truncate max-w-[150px]">{f.jobName}</p>
+                          <td className="py-1 px-2">
+                            <p className="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[150px]" title={`${f.subfolderName || 'Geral'} — ${f.jobName || ''}`}>{f.subfolderName || 'Geral'}</p>
                           </td>
                           <td className="py-2 px-3">
                             {renderMaterialBadge(f.matInfo?.tag) || (
@@ -1481,74 +1395,6 @@ export function PipelineArquivosProducao({ jobs = [], routers = [], user }) {
         {/* TAB 3: PRONTO PARA ROUTER (CHAPAS G-CODE LIBERADAS) */}
         {activeTab === 'fila_router' && (
           <div className="bg-white dark:bg-white/[0.03] rounded-xl border border-slate-200 dark:border-white/5 overflow-hidden shadow-sm">
-            <div className="p-2 sm:p-3 bg-orange-500/5 border-b border-slate-200 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
-              <div className="flex items-center gap-2 flex-wrap min-w-0">
-                <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-orange-500/20 text-orange-400 border border-orange-500/30 whitespace-nowrap shrink-0">
-                  Fila Router (.TXT)
-                </span>
-                <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-500 border border-amber-500/25 flex items-center gap-1.5 whitespace-nowrap shrink-0">
-                  <Clock size={12} />
-                  Fila: {formatHm(displayedGcodes.reduce((sum, f) => {
-                    const qty = f.matInfo?.targetQuantity || (((f.subfolderName || '').toLowerCase().includes('topo isopor colunas') || (f.name || '').toLowerCase().includes('topo isopor colunas')) ? 14 : 1);
-                    const est = f.estimatedMinutes || (f.cutMeters ? Math.max(1, Math.round((f.cutMeters * 1000 / 1800) * 1.15)) : (f.name?.toLowerCase().includes('isopor') ? 90 : 0));
-                    return sum + (est * qty);
-                  }, 0))} ({displayedGcodes.length} arqs)
-                </span>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden xl:block">
-                  ⚡ <strong>Baixa Automática:</strong> Conforme os arquivos rodam nas Routers (Mach3), o sistema detecta a conclusão automaticamente sem precisar de OK manual.
-                </p>
-              </div>
-
-              {/* Filtros rápidos do checklist */}
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-lg overflow-x-auto no-scrollbar flex-nowrap w-full md:w-auto shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setRouterCheckFilter('pendentes')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
-                    routerCheckFilter === 'pendentes' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-                  }`}
-                >
-                  ⏳ Fila ({routerCounts.pendentes})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRouterCheckFilter('todos')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
-                    routerCheckFilter === 'todos' ? 'bg-orange-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-                  }`}
-                >
-                  Todos ({routerCounts.total})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRouterCheckFilter('concluidos')}
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shrink-0 transition-all ${
-                    routerCheckFilter === 'concluidos' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
-                  }`}
-                >
-                  ✓ Usinados ({routerCounts.concluidos})
-                </button>
-              </div>
-            </div>
-
-            {/* Banner de status ativo quando houver máquina cortando agora */}
-            {runningGcodes.length > 0 && (
-              <div className="mx-2 sm:mx-3 my-2 sm:my-2.5 p-2 sm:p-2.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-between">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="relative flex h-2.5 w-2.5 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
-                  </span>
-                  <span className="text-xs font-black text-cyan-400 uppercase tracking-wider shrink-0">
-                    {runningGcodes.length === 1 ? '⚡ 1 Router Trabalhando' : `⚡ ${runningGcodes.length} Routers Trabalhando`}:
-                  </span>
-                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
-                    {runningGcodes.map(r => `${r.runningMachine || 'Router'}: ${r.name}`).join(' | ')}
-                  </span>
-                </div>
-              </div>
-            )}
-
             {/* Mobile Cards (telas pequenas) */}
             <div className="md:hidden divide-y divide-slate-100 dark:divide-white/5 p-2 space-y-2">
               {displayedGcodes.length === 0 ? (

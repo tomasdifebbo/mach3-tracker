@@ -280,68 +280,6 @@ export function CaixaChecklistProducao({
 
   return (
     <div className="bg-white dark:bg-[#12141a] rounded-xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden flex flex-col">
-      {/* Banner Principal (Slim) */}
-      <div
-        className="px-2.5 py-2 sm:px-3 bg-gradient-to-r from-emerald-500/10 via-sky-500/5 to-transparent border-b border-slate-200 dark:border-white/10"
-        title="Arquivos usinados no Mach3 ou nomeados com OK ganham baixa automática. Clique em qualquer chapa para dar ou retirar OK."
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shadow-sm shadow-emerald-500/30 shrink-0">
-              <Zap size={14} />
-            </div>
-            <div className="flex items-center gap-2 flex-wrap min-w-0">
-              <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-tight">
-                Controle de Fila & Baixa de Produção CNC
-              </h2>
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-500 border border-emerald-500/25">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                Sincronizado
-              </span>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setIsAddingOpen(prev => !prev)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-800 hover:bg-slate-700 active:bg-slate-900 dark:bg-white/10 dark:hover:bg-white/15 text-white transition-all cursor-pointer shrink-0"
-          >
-            <Plus size={13} />
-            <span>Anotação</span>
-          </button>
-        </div>
-
-        {/* Barra de Progresso e Métricas Inline */}
-        <div className="mt-1.5 space-y-1">
-          <div className="flex flex-wrap items-center justify-between gap-1.5 text-[11px] font-bold">
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-500 dark:text-slate-400">Progresso:</span>
-              <span className="text-emerald-500 font-black">{metrics.done} de {metrics.total} concluídos</span>
-              <span className="text-[10px] text-slate-400">({metrics.percent}%)</span>
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-500 border border-amber-500/30">
-                {metrics.pending} Restantes
-              </span>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
-                ✓ {metrics.done} OK
-              </span>
-            </div>
-          </div>
-          <div className="w-full h-1.5 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                metrics.percent >= 100
-                  ? 'bg-emerald-500'
-                  : metrics.percent >= 50
-                  ? 'bg-emerald-500'
-                  : 'bg-amber-500'
-              }`}
-              style={{ width: `${Math.min(100, metrics.percent)}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Form Anotação Manual (Opcional) */}
       {isAddingOpen && (
         <form onSubmit={handleAddCustom} className="p-3 bg-slate-50 dark:bg-white/[0.02] border-b border-slate-200 dark:border-white/5 space-y-2.5 animate-in fade-in duration-200">
@@ -387,23 +325,22 @@ export function CaixaChecklistProducao({
         </form>
       )}
 
-      {/* Barra de Filtros */}
-      <div className="p-2 bg-slate-50/50 dark:bg-white/[0.01] border-b border-slate-200 dark:border-white/5 flex flex-wrap items-center justify-between gap-2">
-        {/* Status Tabs */}
+      {/* Barra Unificada Ultra-Compacta do Checklist */}
+      <div className="p-1.5 bg-slate-50/50 dark:bg-white/[0.02] border-b border-slate-200 dark:border-white/5 flex flex-wrap items-center justify-between gap-1.5">
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setFilterStatus('pendentes')}
-            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap cursor-pointer ${
               filterStatus === 'pendentes'
                 ? 'bg-amber-500 text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5'
             }`}
           >
-            ⏳ Pendentes na Fila ({metrics.pending})
+            ⏳ Pendentes ({metrics.pending})
           </button>
           <button
             onClick={() => setFilterStatus('todos')}
-            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap cursor-pointer ${
               filterStatus === 'todos'
                 ? 'bg-slate-800 dark:bg-white/20 text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5'
@@ -413,22 +350,21 @@ export function CaixaChecklistProducao({
           </button>
           <button
             onClick={() => setFilterStatus('concluidos')}
-            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap cursor-pointer ${
               filterStatus === 'concluidos'
                 ? 'bg-emerald-500 text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5'
             }`}
           >
-            ✓ Concluídos / OK ({metrics.done})
+            ✓ Concluídos ({metrics.done} · {metrics.percent}%)
           </button>
         </div>
 
-        {/* Grupo e Busca */}
-        <div className="flex items-center gap-1.5 flex-1 max-w-md justify-end">
+        <div className="flex items-center gap-1.5 flex-1 max-w-lg justify-end ml-auto">
           <select
             value={selectedGroup}
             onChange={(e) => setSelectedGroup(e.target.value)}
-            className="px-2.5 py-1 text-xs rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer min-w-[120px]"
+            className="px-2 py-1 text-xs rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-emerald-500 cursor-pointer min-w-[110px]"
           >
             <option value="todos">Todos Grupos</option>
             {groups.map(g => (
@@ -436,16 +372,25 @@ export function CaixaChecklistProducao({
             ))}
           </select>
 
-          <div className="relative flex-1 min-w-[120px]">
+          <div className="relative flex-1 min-w-[110px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar..."
-              className="w-full pl-7 pr-2.5 py-1 text-xs rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 placeholder:text-slate-400"
+              className="w-full pl-7 pr-2.5 py-1 text-xs rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500 placeholder:text-slate-400"
             />
           </div>
+
+          <button
+            onClick={() => setIsAddingOpen(prev => !prev)}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold bg-slate-800 hover:bg-slate-700 dark:bg-white/10 dark:hover:bg-white/15 text-white transition-all cursor-pointer shrink-0"
+            title="Adicionar anotação ou tarefa manual"
+          >
+            <Plus size={12} />
+            <span className="hidden sm:inline">Anotação</span>
+          </button>
         </div>
       </div>
 

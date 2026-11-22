@@ -33,13 +33,13 @@ function PageFallback() {
 }
 
 function App() {
-  const [activeSection, setActiveSection] = useState('dashboard');
+  const [activeSection, setActiveSection] = useState(() => new URLSearchParams(window.location.search).get('section') || 'dashboard');
   const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [routers, setRouters] = useState([]);
   const [maintenance, setMaintenance] = useState([]);
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('mach3_token'));
+  const [isLoggedIn, setIsLoggedIn] = useState(() => { const t = new URLSearchParams(window.location.search).get('token'); if (t) { localStorage.setItem('mach3_token', t); window.history.replaceState({}, '', window.location.pathname); return true; } return !!localStorage.getItem('mach3_token'); });
   const [loading, setLoading] = useState(() => !!localStorage.getItem('mach3_token'));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isTrialExpired, setIsTrialExpired] = useState(false);
