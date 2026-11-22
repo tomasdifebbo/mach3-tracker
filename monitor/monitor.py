@@ -524,9 +524,9 @@ def processa_inicio(caminho, nome_arquivo, iso_time, origem, estimated_minutes=N
         folder_parts = full_parts[:-1] if len(full_parts) > 1 else full_parts
         def is_generic_folder(folder_name):
             f_upper = folder_name.upper().strip()
-            if f_upper in ("ROUTER", "ISOPOR", "ARQUIVO", "ARQUIVOS", "CNC", "TOMAS", "MACH3", "2024", "2025", "2026", "2027"):
+            if f_upper in ("ROUTER", "ISOPOR", "COD", "GCODE", "G-CODE", "CORTES", "ARQUIVO", "ARQUIVOS", "CNC", "TOMAS", "MACH3", "2024", "2025", "2026", "2027"):
                 return True
-            if re.match(r'^(ARQUIVOS?|ROUTER|CNC|ISOPOR|MACH3|TOMAS)\s*\d{0,4}$', f_upper):
+            if re.match(r'^(ARQUIVOS?|ROUTER|CNC|ISOPOR|COD|GCODE|CORTES|MACH3|TOMAS)\s*\d{0,4}$', f_upper):
                 return True
             if re.match(r'^[A-Z]:$', f_upper):
                 return True
@@ -645,10 +645,10 @@ def processa_fim(iso_time, origem):
         
     enqueue_request("PATCH", PATCH_URL, payload)
 
-def parse_mach3_time(data_str, hora_str):
+def parse_mach3_time(data_str, hora_str, live_event=False):
+    now = datetime.datetime.now().astimezone()
     try:
         dt = datetime.datetime.strptime(f"{data_str.strip()} {hora_str.strip()}", "%d/%m/%Y %H:%M:%S").astimezone()
-        now = datetime.datetime.now().astimezone()
         diff_sec = (dt - now).total_seconds()
         
         # Se o relogio da maquina CNC estiver adiantado no futuro:
@@ -660,10 +660,18 @@ def parse_mach3_time(data_str, hora_str):
             else:
                 print(f"[!] Timestamp da CNC no futuro ({diff_sec:.0f}s a frente). Ajustando para hora atual.")
                 dt = now
+        elif dt.year < 2024 or (now - dt).total_seconds() > 7 * 86400:
+            # Relogio da CNC resetado no passado (ex: bateria CMOS fraca / ano 2002)
+            print(f"[!] Timestamp da CNC desatualizado no passado ({dt.strftime('%Y-%m-%d %H:%M:%S')}). Usando hora atual.")
+            dt = now
+        elif live_event and (now - dt).total_seconds() > 3600:
+            # Evento gravado em tempo real no log, mas o relogio local da CNC esta atrasado (>1h)
+            print(f"[!] Relogio da CNC atrasado em evento ao vivo ({dt.strftime('%Y-%m-%d %H:%M:%S')}). Usando hora atual.")
+            dt = now
                 
         return dt.isoformat()
     except Exception:
-        return datetime.datetime.now().astimezone().isoformat()
+        return now.isoformat()
 
 def main():
     print("==================================================")
@@ -708,6 +716,7 @@ def main():
 
     last_heartbeat = 0
     HEARTBEAT_INTERVAL = 300  # 5 minutos
+    synced_routers = set()
 
     while True:
         try:
@@ -772,6 +781,7 @@ def main():
                         print(f"[!] Erro ao ler log de {name}: {e}")
                         continue
                     
+                    live_batch = (name in synced_routers) and (len(lines) <= 5)
                     for line in lines:
                         if not line.strip(): continue
                         parts = line.strip().split(',')
@@ -811,7 +821,7 @@ def main():
                             nome_arquivo = caminho_completo.split("\\")[-1] if "\\" in caminho_completo else caminho_completo
                             # Clean trailing whitespace/tabs from file name
                             nome_arquivo = nome_arquivo.strip()
-                            iso_time = parse_mach3_time(data_str, hora_str)
+                            iso_time = parse_mach3_time(data_str, hora_str, live_event=live_batch)
                             
                             log_msg = f"[{iso_time}] {identidade_router} | {tipo} | {nome_arquivo}"
                             with open(os.path.join(os.path.dirname(__file__), "monitor.log"), "a", encoding="utf-8") as lf:
@@ -825,6 +835,7 @@ def main():
                                     processa_fim(iso_time, identidade_router)
                             except Exception as e:
                                 print(f"[!] Erro ao processar evento {tipo} de {name}: {e}")
+                synced_routers.add(name)
             
             if changed:
                 save_state({n: {"last_pos": s["last_pos"]} for n, s in router_states.items()})

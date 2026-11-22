@@ -191,20 +191,37 @@ class RoboNotificador:
         self.state = None
 
     # ---- API pública
-    def show(self, title: str, message: str, on_click=None, play_sound: bool = True, action_label: str | None = None) -> None:
-        self.action_label = action_label or "📁 Clique no balão para abrir a pasta"
+    def show(
+        self,
+        title: str,
+        message: str,
+        on_click=None,
+        play_sound: bool = True,
+        action_label: str | None = None,
+        sound_kind: str = "chegada",
+        accent_color: str | None = None,
+    ) -> None:
+        eff_action = action_label or "📁 Clique no balão para abrir a pasta"
+        eff_accent = accent_color or AMBER
         msg_flat = message.replace("\n", " • ")
         logging.info(f"RoboNotificador.show: {title} | {msg_flat}")
         if self.win is not None and self.win.winfo_exists():
             if self.state in ("out_trans", "out_slide"):
-                self.pending.append((title, message, on_click, play_sound, self.action_label))
+                self.pending.append((title, message, on_click, play_sound, eff_action, sound_kind, eff_accent))
                 return
-            # Já está na tela: só troca a fala
+            # Já está na tela: só troca a fala e renova tempo na tela
             self.title, self.message, self.on_click = title, message, on_click
+            self.action_label = eff_action
+            self.accent_color = eff_accent
+            self.sound_kind = sound_kind or "chegada"
+            self.state_t0 = time.perf_counter()
             self.text_t0 = time.perf_counter() + 0.1
             if play_sound:
-                self._sound("chegada")
+                self._sound(self.sound_kind)
             return
+        self.action_label = eff_action
+        self.accent_color = eff_accent
+        self.sound_kind = sound_kind or "chegada"
         self._start(title, message, on_click, play_sound)
 
     def demo(self, on_click=None) -> None:
@@ -255,7 +272,7 @@ class RoboNotificador:
         self.win, self.canvas = win, cv
         self._goto("in")
         if play_sound:
-            self._sound("chegada")
+            self._sound(getattr(self, "sound_kind", "chegada"))
         self._tick()
 
     def _goto(self, state):
@@ -272,12 +289,15 @@ class RoboNotificador:
         self.state = None
         if self.pending:
             item = self.pending.pop(0)
-            if len(item) == 5:
+            if len(item) >= 7:
+                t, m, c, s, a, sk, ac = item[:7]
+            elif len(item) == 5:
                 t, m, c, s, a = item
+                sk, ac = "chegada", None
             else:
                 t, m, c, s = item
-                a = None
-            self.master.after(150, lambda: self.show(t, m, c, s, a))
+                a, sk, ac = None, "chegada", None
+            self.master.after(150, lambda: self.show(t, m, c, s, a, sound_kind=sk, accent_color=ac))
 
     def _on_motion(self, event):
         if self.state != "talk":
@@ -337,6 +357,7 @@ class RoboNotificador:
             return
         seqs = {
             "chegada": [(392, 70), (523, 70), (659, 110)],
+            "corte_fim": [(523, 75), (659, 75), (784, 85), (1046, 150)],
             "trans": [(180, 45), (240, 45), (200, 40), (320, 45), (260, 40), (420, 50), (640, 60), (880, 90)],
         }
         seq = seqs.get(kind, [])
@@ -517,12 +538,13 @@ class RoboNotificador:
             (x2, y2 - r), (x2, y2), (x2 - r, y2), (x1 + r, y2), (x1, y2), (x1, y2 - r), (x1, y1 + r), (x1, y1),
         ]
         pts = [sc(x, y) for x, y in rr]
-        border_col = CYAN if getattr(self, "balloon_hover", False) else AMBER
+        base_accent = getattr(self, "accent_color", None) or AMBER
+        border_col = CYAN if getattr(self, "balloon_hover", False) else base_accent
         cv.create_polygon(flat(pts), fill="#1e293b", outline=border_col, width=2, smooth=True)
         if k < 0.95:
             return
 
-        cv.create_text(24, 24, anchor="nw", text="🤖 " + self.title, fill=AMBER,
+        cv.create_text(24, 24, anchor="nw", text="🤖 " + self.title, fill=base_accent,
                        font=("Segoe UI Bold", 10), width=232)
         shown = 0
         if self.text_t0 is not None:

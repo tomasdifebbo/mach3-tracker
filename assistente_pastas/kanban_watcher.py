@@ -3,11 +3,10 @@ Kanban Watcher — Monitora em segundo plano a coluna 'A Fazer' (todo) do Kanban
 e aciona o Robô Router sempre que uma nova tarefa for adicionada ou atualizada.
 """
 
-import json
 import logging
 import threading
 import time
-import urllib.request
+from api_client import fetch_json
 from config import load_config
 
 
@@ -33,24 +32,9 @@ class KanbanWatcher:
         self._stop_event.set()
 
     def _fetch_todo_tasks(self) -> list[dict] | None:
-        urls = [
-            "http://localhost:3000/api/kanban/todo-updates",
-            "https://mach3tracker.up.railway.app/api/kanban/todo-updates"
-        ]
-        for url in urls:
-            try:
-                req = urllib.request.Request(
-                    url,
-                    headers={"User-Agent": "RoboRouterKanban/1.0", "Accept": "application/json"}
-                )
-                with urllib.request.urlopen(req, timeout=4) as response:
-                    if response.status == 200:
-                        data = json.loads(response.read().decode("utf-8"))
-                        if data.get("success") and isinstance(data.get("tasks"), list):
-                            return data["tasks"]
-            except Exception as e:
-                logging.debug(f"Falha ao consultar Kanban em {url}: {e}")
-                continue
+        data = fetch_json(["/api/kanban/todo-updates"], user_agent="RoboRouterKanban/1.0", timeout=4.0)
+        if isinstance(data, dict) and data.get("success") and isinstance(data.get("tasks"), list):
+            return data["tasks"]
         return None
 
     def _loop(self) -> None:

@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 import config
+import cut_watcher
 import engine
 import icon_helper
 import painel_oficina
@@ -141,6 +142,35 @@ def run_tests():
 
     assert hasattr(painel_oficina, "FolderAssistantApp")
     print("4. Native Tkinter UI module PASSED!")
+
+    # --- ETAPA 7: CutWatcher & Deteccao de Corte Finalizado ---
+    from datetime import datetime, timezone, timedelta
+    now_utc = datetime(2026, 11, 22, 13, 0, 0, tzinfo=timezone.utc)
+    cw = cut_watcher.CutWatcher(on_cut_callback=None, max_age_seconds=900)
+
+    # Primeiro scan apenas cataloga historico existente (nao dispara enxurrada)
+    initial_batch = [
+        {"id": 100, "file_name": "antigo.txt", "end_time": (now_utc - timedelta(minutes=2)).isoformat(), "duration_minutes": 25.0},
+    ]
+    assert cw.process_snapshot(initial_batch, now_utc=now_utc) == []
+
+    # Novo corte concluido agora + corte < 0.4m + corte stale de 2h atras
+    next_batch = initial_batch + [
+        {"id": 101, "file_name": "micro.txt", "end_time": (now_utc - timedelta(seconds=10)).isoformat(), "duration_minutes": 0.2},
+        {"id": 102, "file_name": "stale.txt", "end_time": (now_utc - timedelta(hours=2)).isoformat(), "duration_minutes": 40.0},
+        {"id": 103, "file_name": "2 pvc100mm b10mm.txt", "router_name": "Router Central", "end_time": (now_utc - timedelta(seconds=20)).isoformat(), "duration_minutes": 32.4},
+    ]
+    detected = cw.process_snapshot(next_batch, now_utc=now_utc)
+    assert [d["id"] for d in detected] == [103], f"Esperado [103], obteve {detected}"
+    # Re-processar o mesmo snapshot nao duplica notificacao
+    assert cw.process_snapshot(next_batch, now_utc=now_utc) == []
+
+    proj, _ = painel_oficina.FolderAssistantApp._resolve_cut_display_and_dir({
+        "folder": "cod",
+        "file_path": r"\\TOMAS\arquivos 2024\ARQUIVOS 2026\router\2640  - EXPRESSO HOGWARTS CCXP\ROUTER\GRANDE HALL\ARCO VITRAL\ISOPOR\cod\2 pvc100mm b10mm.txt",
+    })
+    assert proj == "ARCO VITRAL", f"Esperado ARCO VITRAL, obteve {proj}"
+    print("5. CutWatcher & Cut Completion Notification PASSED!")
 
 
 if __name__ == "__main__":

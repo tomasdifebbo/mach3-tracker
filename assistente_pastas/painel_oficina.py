@@ -34,6 +34,7 @@ from engine import FolderAssistantEngine
 from icon_helper import ensure_app_icon
 from robo_notificador import RoboNotificador
 from kanban_watcher import KanbanWatcher
+from cut_watcher import CutWatcher
 
 LOCK_FILE = DATA_DIR / "instance.lock"
 SHOW_SIGNAL = DATA_DIR / "show_window.signal"
@@ -107,6 +108,8 @@ class FolderAssistantApp:
         self.engine.start()
         self.kanban_watcher = KanbanWatcher(on_task_callback=self._enqueue_kanban_task)
         self.kanban_watcher.start()
+        self.cut_watcher = CutWatcher(on_cut_callback=self._enqueue_cut_completed)
+        self.cut_watcher.start()
         self.root.after(300, self._poll_loop)
 
     def _enqueue_notification(
@@ -120,6 +123,9 @@ class FolderAssistantApp:
 
     def _enqueue_kanban_task(self, task: dict) -> None:
         self.ui_queue.put(("kanban_notify", task))
+
+    def _enqueue_cut_completed(self, job: dict) -> None:
+        self.ui_queue.put(("cut_done_notify", job))
 
     def _setup_styles(self) -> None:
         style = ttk.Style(self.root)
@@ -246,6 +252,7 @@ class FolderAssistantApp:
         self._make_btn(controls_box, "⟳ Verificar Agora", self._on_scan_now).pack(side="left", padx=(0, 8))
         self._make_btn(controls_box, "🤖 Testar Robô", self._on_test_robo).pack(side="left", padx=(0, 8))
         self._make_btn(controls_box, "📋 Testar Kanban", self._on_test_kanban_robo).pack(side="left", padx=(0, 8))
+        self._make_btn(controls_box, "✅ Testar Corte", self._on_test_cut_done_robo).pack(side="left", padx=(0, 8))
         self._make_btn(controls_box, "◱ Modo Mini-Barra", self._enter_mini_mode).pack(side="left", padx=(0, 8))
         self._make_btn(controls_box, "⚙ Configurações", self._open_settings_dialog).pack(side="left")
 
@@ -531,6 +538,14 @@ class FolderAssistantApp:
                 pass
             self._on_test_kanban_robo()
 
+        test_cut_sig = DATA_DIR / "test_cut_done.signal"
+        if test_cut_sig.exists():
+            try:
+                test_cut_sig.unlink()
+            except OSError:
+                pass
+            self._on_test_cut_done_robo()
+
         while not self.ui_queue.empty():
             try:
                 kind, payload = self.ui_queue.get_nowait()
@@ -546,6 +561,8 @@ class FolderAssistantApp:
                     self._show_toast_popup(title, msg, folder_path=folder_path, job_name=job_name)
                 elif kind == "kanban_notify":
                     self._show_kanban_popup(payload)
+                elif kind == "cut_done_notify":
+                    self._show_cut_completed_popup(payload)
                 elif kind == "msg":
                     title, msg, is_err = payload
                     if is_err:
@@ -949,6 +966,121 @@ class FolderAssistantApp:
         except Exception:
             logging.exception("Falha ao invocar robo para tarefa kanban")
 
+    def _on_test_cut_done_robo(self) -> None:
+        """Testa o Robô Transformer anunciando que um corte terminou na máquina."""
+        sample_job = {
+            "id": 9998,
+            "file_name": "2 pvc100mm b10mm.txt",
+            "folder": "ARCO VITRAL",
+            "file_path": r"E:\arquivos 2024\ARQUIVOS 2026\router\2640  - EXPRESSO HOGWARTS CCXP\ROUTER\GRANDE HALL\ARCO VITRAL\ISOPOR\cod\2 pvc100mm b10mm.txt",
+            "router_name": "Router Central",
+            "operator_name": "Tomas",
+            "duration_minutes": 32.4,
+        }
+        self._show_cut_completed_popup(sample_job)
+
+    @staticmethod
+    def _resolve_cut_display_and_dir(job: dict) -> tuple[str, Path | None]:
+        import re
+        generic = {
+            "", "DESCONHECIDO", "ROUTER", "ROUTER 1", "ROUTER 2", "ROUTER CENTRAL",
+            "LASER RUIDA", "LASERCAD", "CNC", "ISOPOR", "COD", "GCODE", "G-CODE",
+            "CORTES", "ARQUIVO", "ARQUIVOS", "TOMAS", "MACH3", "3 - OFICINA", "OFICINA", "GERAL",
+        }
+        raw_folder = (job.get("folder") or "").strip()
+        raw_path = (job.get("file_path") or "").strip()
+        local_dir = None
+
+        if raw_path and raw_path.lower() != "desconhecido":
+            mapped = raw_path
+            for unc_prefix, local_prefix in (
+                (r"\\TOMAS\arquivos 2024", r"E:\arquivos 2024"),
+                (r"\\DESKTOP-1CSKMNT\Mach3", r"C:\mach3"),
+            ):
+                if mapped.lower().startswith(unc_prefix.lower()):
+                    mapped = local_prefix + mapped[len(unc_prefix):]
+                    break
+            try:
+                p = Path(mapped)
+                cand = p.parent if ("." in p.name) else p
+                if cand.exists():
+                    local_dir = cand
+            except Exception:
+                pass
+
+        def _is_gen(seg: str) -> bool:
+            up = seg.upper().strip()
+            if up in generic:
+                return True
+            if re.match(r"^(?:ARQUIVOS?|ROUTER|CNC|ISOPOR|COD|GCODE|G-CODE|CORTES|MACH3|TOMAS)\s*\d{0,4}$", up):
+                return True
+            return bool(re.match(r"^(?:[A-Z]:|20\d{2})$", up))
+
+        if raw_folder and not _is_gen(raw_folder):
+            return raw_folder, local_dir
+
+        if raw_path and raw_path.lower() != "desconhecido":
+            parts = [seg.strip() for seg in raw_path.replace("/", "\\").split("\\") if seg.strip()]
+            if parts and "." in parts[-1]:
+                parts = parts[:-1]
+            for seg in reversed(parts):
+                if not _is_gen(seg):
+                    return seg, local_dir
+
+        return raw_folder or "Produção Geral", local_dir
+
+    def _show_cut_completed_popup(self, job: dict) -> None:
+        """Aciona o Robô Transformer para informar na tela do PC que um corte terminou."""
+        cfg = load_config()
+        if not cfg.get("notify_cut_done", True) or not cfg.get("notify_popup", True):
+            return
+
+        router_name = (job.get("router_name") or "Router CNC").strip()
+        file_name = (job.get("file_name") or "Corte").strip()
+        op_name = (job.get("operator_name") or "Operador").strip()
+        try:
+            dur_val = float(job.get("duration_minutes") or 0)
+        except (TypeError, ValueError):
+            dur_val = 0.0
+        if dur_val >= 60:
+            dur_str = f"{int(dur_val // 60)}h {int(round(dur_val % 60)):02d}m"
+        else:
+            dur_str = f"{max(1, round(dur_val))} min"
+
+        proj_name, local_dir = self._resolve_cut_display_and_dir(job)
+        short_file = file_name if len(file_name) <= 32 else file_name[:30] + "…"
+        short_proj = proj_name if len(proj_name) <= 20 else proj_name[:18] + "…"
+
+        title = "Corte Terminou!"
+        msg = f"🛠️ {router_name} • ⏱️ {dur_str}\n📄 {short_file}\n📁 {short_proj} • 👤 {op_name}"
+
+        def _on_cut_click():
+            if local_dir and local_dir.exists():
+                try:
+                    os.startfile(str(local_dir))
+                    logging.info(f"Pasta do corte concluído aberta: {local_dir}")
+                    return
+                except Exception as exc:
+                    logging.warning(f"Falha ao abrir pasta {local_dir}: {exc}")
+            try:
+                import webbrowser
+                webbrowser.open("http://localhost:3000")
+            except Exception as exc:
+                logging.warning(f"Erro ao abrir painel no navegador: {exc}")
+
+        try:
+            self.robo.show(
+                title=title,
+                message=msg,
+                on_click=_on_cut_click,
+                play_sound=True,
+                action_label="📁 Clique para abrir a pasta do corte" if local_dir else "🌐 Clique para abrir o Painel",
+                sound_kind="corte_fim",
+                accent_color=EMERALD,
+            )
+        except Exception:
+            logging.exception("Falha ao invocar robo para fim de corte")
+
     # ---------------- Corner Toast Notification & Mini Mode ----------------
     def _show_toast_popup(
         self,
@@ -1178,7 +1310,7 @@ class FolderAssistantApp:
         cfg = load_config()
         dlg = tk.Toplevel(self.root)
         dlg.title("Configurações do Assistente")
-        dlg.geometry("580x410")
+        dlg.geometry("580x450")
         dlg.configure(bg=BG_CARD)
         dlg.transient(self.root)
         dlg.grab_set()
@@ -1228,6 +1360,17 @@ class FolderAssistantApp:
             activebackground=BG_CARD,
         ).pack(anchor="w", pady=(0, 4))
 
+        v_cut_done = tk.BooleanVar(value=bool(cfg.get("notify_cut_done", True)))
+        tk.Checkbutton(
+            body,
+            text="Mostrar alerta visual (Robô Router) quando um corte terminar nas máquinas",
+            variable=v_cut_done,
+            bg=BG_CARD,
+            fg=EMERALD,
+            selectcolor=BG_MAIN,
+            activebackground=BG_CARD,
+        ).pack(anchor="w", pady=(0, 4))
+
         v_gcode = tk.BooleanVar(value=bool(cfg.get("patch_gcode_macros", True)))
         tk.Checkbutton(
             body,
@@ -1261,6 +1404,7 @@ class FolderAssistantApp:
             cfg["scan_interval_seconds"] = iv
             cfg["notify_popup"] = v_pop.get()
             cfg["notify_kanban"] = v_kanban.get()
+            cfg["notify_cut_done"] = v_cut_done.get()
             cfg["patch_gcode_macros"] = v_gcode.get()
             cfg["target_spindle_speed"] = v_speed.get().strip() or "18000"
             save_config(cfg)
@@ -1287,6 +1431,8 @@ class FolderAssistantApp:
             self.engine.stop()
             if hasattr(self, "kanban_watcher"):
                 self.kanban_watcher.stop()
+            if hasattr(self, "cut_watcher"):
+                self.cut_watcher.stop()
             self.root.destroy()
 
 

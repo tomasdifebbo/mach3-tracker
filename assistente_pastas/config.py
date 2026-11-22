@@ -19,6 +19,7 @@ DEFAULT_CONFIG = {
     "auto_copy_new": False,
     "notify_popup": True,
     "notify_kanban": True,
+    "notify_cut_done": True,
     "sound_alert": True,
     "patch_gcode_macros": True,
     "target_spindle_speed": "18000",
