@@ -1,7 +1,7 @@
 import React, { Suspense, useState } from 'react';
 import {
   LayoutGrid, Calendar, Columns3, CheckSquare2, Package, TrendingUp,
-  FileCode, Box, ClipboardList, FolderSync, Layers
+  FileCode, Box, ClipboardList, FolderSync, Layers, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { DAYS } from '../components/encarregado/encarregadoConstants';
 import { lazyNamed } from '../utils/lazyNamed';
@@ -34,6 +34,14 @@ const NAV_SECTIONS = [
 
 export function Encarregado({ jobs = [], routers = [], user = null }) {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isNavCollapsed, setIsNavCollapsed] = useState(false);
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    if (tabId === 'pipeline_arquivos') {
+      setIsNavCollapsed(true);
+    }
+  };
   const today = new Date();
   const dayName = DAYS[today.getDay()];
 
@@ -95,39 +103,56 @@ export function Encarregado({ jobs = [], routers = [], user = null }) {
       </div>
 
       {/* Mini sidebar interna (Desktop Only) */}
-      <aside className="hidden md:flex w-60 flex-shrink-0 bg-slate-100/90 dark:bg-black/30 border-r border-slate-200 dark:border-white/5 flex-col overflow-y-auto">
+      <aside className={`hidden md:flex ${isNavCollapsed ? 'w-14' : 'w-56'} flex-shrink-0 bg-slate-100/90 dark:bg-black/30 border-r border-slate-200 dark:border-white/5 flex-col overflow-y-auto no-scrollbar transition-all duration-200`}>
         {/* Header */}
-        <div className="p-5 border-b border-slate-200 dark:border-white/5">
-          <p className="text-[9px] font-black uppercase tracking-[0.25em] text-orange-500 dark:text-orange-400 mb-1">Planner Operacional</p>
-          <h2 className="font-black text-slate-900 dark:text-white text-lg leading-tight">Painel do <span className="text-orange-500 dark:text-orange-400">Encarregado</span></h2>
+        <div className={`${isNavCollapsed ? 'p-2.5 flex justify-center' : 'p-4 flex items-center justify-between gap-2'} border-b border-slate-200 dark:border-white/5`}>
+          {!isNavCollapsed && (
+            <div className="min-w-0">
+              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-orange-500 dark:text-orange-400 mb-0.5 truncate">Planner Operacional</p>
+              <h2 className="font-black text-slate-900 dark:text-white text-base leading-tight truncate">Painel do <span className="text-orange-500 dark:text-orange-400">Encarregado</span></h2>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setIsNavCollapsed(prev => !prev)}
+            className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-orange-500 hover:bg-slate-200/70 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+            title={isNavCollapsed ? 'Expandir menu do Encarregado' : 'Recolher menu do Encarregado'}
+          >
+            {isNavCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
         </div>
 
         {/* Dia atual */}
-        <div className="mx-4 my-3 px-3 py-2 bg-orange-500/10 border border-orange-500/20 rounded-xl flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 dark:bg-orange-400 animate-pulse"></span>
-          <span className="text-xs font-bold text-orange-600 dark:text-orange-400">{dayName}-feira</span>
-        </div>
+        {!isNavCollapsed && (
+          <div className="mx-3 my-2.5 px-3 py-1.5 bg-orange-500/10 border border-orange-500/20 rounded-xl flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 dark:bg-orange-400 animate-pulse"></span>
+            <span className="text-xs font-bold text-orange-600 dark:text-orange-400">{dayName}-feira</span>
+          </div>
+        )}
 
         {/* Nav */}
-        <nav className="flex-1 px-2 pb-4">
+        <nav className={`flex-1 ${isNavCollapsed ? 'px-1.5 py-2 space-y-1' : 'px-2 pb-4'}`}>
           {groups.map(group => (
-            <div key={group} className="mb-2">
-              <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-white/20 px-3 py-2">{group}</p>
+            <div key={group} className={isNavCollapsed ? 'space-y-1' : 'mb-2'}>
+              {!isNavCollapsed && (
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 dark:text-white/20 px-3 py-2">{group}</p>
+              )}
               {NAV_SECTIONS.filter(s => s.group === group).map(s => {
                 const Icon = s.icon;
                 const active = activeTab === s.id;
                 return (
                   <button
                     key={s.id}
-                    onClick={() => setActiveTab(s.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold mb-0.5 transition-all cursor-pointer ${
+                    onClick={() => handleTabChange(s.id)}
+                    title={s.label}
+                    className={`w-full flex items-center ${isNavCollapsed ? 'justify-center px-0 py-2.5' : 'gap-2.5 px-3 py-2'} rounded-xl text-sm font-semibold mb-0.5 transition-all cursor-pointer ${
                       active 
-                        ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400 font-bold border-l-2 border-orange-500' 
+                        ? `bg-orange-500/15 text-orange-600 dark:text-orange-400 font-bold ${isNavCollapsed ? 'ring-1 ring-orange-500/40' : 'border-l-2 border-orange-500'}`
                         : 'text-slate-600 dark:text-text-muted hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5'
                     }`}
                   >
                     <Icon size={16} className="flex-shrink-0" />
-                    <span className="text-xs leading-tight">{s.label}</span>
+                    {!isNavCollapsed && <span className="text-xs leading-tight text-left">{s.label}</span>}
                   </button>
                 );
               })}
@@ -136,28 +161,30 @@ export function Encarregado({ jobs = [], routers = [], user = null }) {
         </nav>
 
         {/* KPIs Sidebar */}
-        <div className="m-4 p-4 bg-white/80 dark:bg-white/[0.03] rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
-          <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 dark:text-text-muted mb-3">Progresso da Semana</p>
-          {[
-            { label: 'OS Entregues', val: 87 },
-            { label: 'Qualidade', val: 96 },
-            { label: 'Prazo', val: 92 },
-          ].map(k => (
-            <div key={k.label} className="mb-3 last:mb-0">
-              <div className="flex justify-between text-[10px] mb-1">
-                <span className="text-slate-600 dark:text-text-muted">{k.label}</span>
-                <span className="font-black text-slate-900 dark:text-white">{k.val}%</span>
+        {!isNavCollapsed && (
+          <div className="m-3 p-3.5 bg-white/80 dark:bg-white/[0.03] rounded-xl border border-slate-200 dark:border-white/5 shadow-sm">
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-600 dark:text-text-muted mb-2.5">Progresso da Semana</p>
+            {[
+              { label: 'OS Entregues', val: 87 },
+              { label: 'Qualidade', val: 96 },
+              { label: 'Prazo', val: 92 },
+            ].map(k => (
+              <div key={k.label} className="mb-2.5 last:mb-0">
+                <div className="flex justify-between text-[10px] mb-1">
+                  <span className="text-slate-600 dark:text-text-muted">{k.label}</span>
+                  <span className="font-black text-slate-900 dark:text-white">{k.val}%</span>
+                </div>
+                <div className="h-1 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-orange-500 rounded-full" style={{ width: `${k.val}%` }}></div>
+                </div>
               </div>
-              <div className="h-1 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-orange-500 rounded-full" style={{ width: `${k.val}%` }}></div>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </aside>
 
       {/* Conteúdo */}
-      <main className={`flex-1 overflow-y-auto ${activeTab === 'pipeline_arquivos' ? 'p-1 sm:p-3 md:p-6' : 'p-2 sm:p-4 md:p-8'}`}>
+      <main className={`flex-1 overflow-y-auto custom-scrollbar ${activeTab === 'pipeline_arquivos' ? 'p-1 sm:p-1.5 md:p-2' : 'p-2 sm:p-4 md:p-8'}`}>
         <Suspense fallback={
           <div className="h-64 flex items-center justify-center text-xs font-bold uppercase tracking-widest text-orange-400">
             Carregando módulo do encarregado...

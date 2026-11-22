@@ -5,6 +5,7 @@ const pool = require('../db/pool');
 const { DEFAULT_PLAN_FEATURES, getEffectiveFeatures } = require('../config/constants');
 const { normalizeStr, matchKanbanTitle, autoSyncKanban } = require('../services/kanbanSyncService');
 const { isNightShift, getNightOperator, getDayOperator, applyShiftAllocationRule } = require('../services/shiftService');
+const { isGenericFolderSegment, resolveProjectFolder, sanitizeMach3Timestamp } = require('../services/jobFolderService');
 
 test('getEffectiveFeatures merges overrides safely and handles invalid JSON', () => {
     assert.deepEqual(getEffectiveFeatures('starter', null), DEFAULT_PLAN_FEATURES.starter);
@@ -129,4 +130,44 @@ test('shiftService resolves configured tenant operators and falls back safely wi
     } finally {
         pool.query = origQuery;
     }
+});
+
+test('jobFolderService ignores cod/isopor generic segments and sanitizes broken CMOS dates', () => {
+    assert.equal(isGenericFolderSegment('cod'), true);
+    assert.equal(isGenericFolderSegment('COD'), true);
+    assert.equal(isGenericFolderSegment('ISOPOR'), true);
+    assert.equal(isGenericFolderSegment('ARCO VITRAL'), false);
+
+    assert.equal(
+        resolveProjectFolder(
+            'cod',
+            '\\\\TOMAS\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCO VITRAL\\ISOPOR\\cod\\2 pvc100mm b10mm.txt'
+        ),
+        'ARCO VITRAL'
+    );
+    assert.equal(
+        resolveProjectFolder(
+            'Router Central | GRANDE HALL | ARCO VITRAL | cod',
+            'E:\\ARQUIVOS 2026\\ROUTER\\GRANDE HALL\\ARCO VITRAL\\ISOPOR\\cod\\chapa1.txt'
+        ),
+        'ARCO VITRAL'
+    );
+    assert.equal(
+        resolveProjectFolder(
+            'COD',
+            '\\\\TOMAS\\arquivos 2024\\ARQUIVOS 2026\\router\\2663A e B - PINGUINS HELLA REVESTIDOS\\ROUTER\\ISOPOR\\COD\\1PVC 100mm b10.txt'
+        ),
+        '2663A e B - PINGUINS HELLA REVESTIDOS'
+    );
+
+    const fallbackNow = new Date('2026-11-22T12:35:00Z');
+    const fixedPast = sanitizeMach3Timestamp('2002-01-01T00:16:19-03:00', { fallbackDate: fallbackNow });
+    assert.equal(fixedPast.toISOString(), fallbackNow.toISOString());
+
+    const startDt = new Date('2026-11-22T12:00:00Z');
+    const fixedEnd = sanitizeMach3Timestamp('2002-01-01T01:35:00-03:00', { minBoundDate: startDt, fallbackDate: fallbackNow });
+    assert.equal(fixedEnd.toISOString(), fallbackNow.toISOString());
+
+    const validDt = sanitizeMach3Timestamp('2026-11-22T12:15:00Z', { minBoundDate: startDt, fallbackDate: fallbackNow });
+    assert.equal(validDt.toISOString(), '2026-11-22T12:15:00.000Z');
 });

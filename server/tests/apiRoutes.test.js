@@ -44,8 +44,8 @@ test('Express API server route integration suite', async (t) => {
         await new Promise((resolve) => server.close(resolve));
     });
 
-    await t.test('registers all 105 modular Express routes', () => {
-        assert.equal(countExpressRoutes(app), 105);
+    await t.test('registers all 106 modular Express routes', () => {
+        assert.equal(countExpressRoutes(app), 106);
     });
 
     await t.test('GET /health responds 200 OK with security headers and strict CORS', async () => {
@@ -81,6 +81,7 @@ test('Express API server route integration suite', async (t) => {
             '/api/kanban',
             '/api/kanban/todo-updates',
             '/api/jobs',
+            '/api/jobs/completed-updates',
             '/api/oficina-sync',
             '/api/arquivos-producao',
             '/api/pipeline/completed-files',
@@ -469,6 +470,42 @@ test('Express API server route integration suite', async (t) => {
         });
         assert.equal(toggleRes.status, 200);
         assert.equal(insertedKeys[0], 'u2::Projeto Y/chapa2.txt');
+    });
+
+    await t.test('GET /api/jobs/completed-updates returns recent finished cuts scoped to tenant', async () => {
+        const tenantToken = jwt.sign({ id: 5, email: 'oficina5@teste.com', role: 'user' }, JWT_SECRET, { expiresIn: '1h' });
+        let capturedParams = null;
+
+        pool.query = async (sql, params) => {
+            if (sql.includes('FROM jobs') && sql.includes('end_time IS NOT NULL')) {
+                capturedParams = params;
+                return {
+                    rows: [
+                        {
+                            id: 301,
+                            file_name: '1 pvc100mm b10mm.txt',
+                            folder: 'ARCO VITRAL',
+                            router_name: 'Router 2',
+                            operator_name: 'tomas',
+                            start_time: '2026-11-22T11:50:00.000Z',
+                            end_time: '2026-11-22T13:08:00.000Z',
+                            duration_minutes: 78.0
+                        }
+                    ]
+                };
+            }
+            return { rows: [], rowCount: 0 };
+        };
+
+        const res = await fetch(`${baseUrl}/api/jobs/completed-updates?limit=15&since_id=200`, {
+            headers: { Authorization: `Bearer ${tenantToken}` }
+        });
+        assert.equal(res.status, 200);
+        const data = await res.json();
+        assert.equal(data.success, true);
+        assert.equal(data.count, 1);
+        assert.equal(data.jobs[0].router_name, 'Router 2');
+        assert.deepEqual(capturedParams, [5, 200, 15]);
     });
 
     await t.test('POST /api/auth/login triggers 429 rate limiting after excessive requests', async () => {

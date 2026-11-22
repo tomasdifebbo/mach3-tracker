@@ -131,7 +131,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
   const groupedJobs = jobs.reduce((acc, j) => {
     const name = j.file_name || 'Desconhecido';
     
-    const projectName = extractProjectName(j.folder, 'Produção Geral');
+    const projectName = extractProjectName(j.folder, 'Produção Geral', j.file_path);
     
     const key = `${name}-${projectName}-${j.router_name || 'Central'}`;
     
@@ -154,7 +154,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
   
   // Group by folder and sum duration
   const groupedFolders = jobs.reduce((acc, j) => {
-    const projectName = extractProjectName(j.folder, 'Produção Geral');
+    const projectName = extractProjectName(j.folder, 'Produção Geral', j.file_path);
                  
     if (!acc[projectName]) {
       acc[projectName] = { name: projectName, count: 0, totalMinutes: 0 };
@@ -216,7 +216,7 @@ export function Dashboard({ jobs = [], user, routers = [], onRefresh }) {
                     </span>
                     <h3 className="text-lg font-bold text-white uppercase truncate max-w-xs">{job.file_name}</h3>
                   </div>
-                  <p className="text-xs text-text-muted font-medium opacity-60 truncate max-w-[200px] sm:max-w-sm">{job.folder}</p>
+                  <p className="text-xs text-text-muted font-medium opacity-60 truncate max-w-[200px] sm:max-w-sm">{extractProjectName(job.folder, job.folder || 'Produção Geral', job.file_path)}</p>
                 </div>
               </div>
               <div className="text-left md:text-right">

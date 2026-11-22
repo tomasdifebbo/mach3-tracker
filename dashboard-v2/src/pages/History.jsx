@@ -420,7 +420,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
       return [
         j.id,
         j.file_name,
-        j.folder?.split('|').pop()?.split('\\').pop() || '-',
+        extractProjectName(j.folder, '-', j.file_path),
         j.router_name || 'Central',
         j.operator_name || 'Desconhecido',
         j.quantity || 1,
@@ -827,9 +827,7 @@ export function History({ jobs = [], materials = [], onRefresh, user }) {
                   </td>
                   <td className="px-2 py-2 min-w-[130px] max-w-[220px]">
                     {(() => {
-                      const projectName = (job.folder && !job.folder.includes('\\') && !job.folder.includes('/'))
-                        ? job.folder
-                        : extractProjectName(job.folder, 'Produção Geral');
+                      const projectName = extractProjectName(job.folder, 'Produção Geral', job.file_path);
                       
                       const isEditing = editingJobId === job.id;
                       

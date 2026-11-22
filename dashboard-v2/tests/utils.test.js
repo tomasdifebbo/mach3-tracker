@@ -173,4 +173,32 @@ test('tenantUtils resolves shift operators and normalizes project names dynamica
     extractProjectName('D:\\CLIENTES\\LOJA BETA\\chapa2.txt'),
     'CLIENTES'
   );
+  assert.equal(
+    extractProjectName('E:\\ARQUIVOS 2026\\ROUTER\\COD\\STAND ALPHA\\ISOPOR\\chapa1.txt'),
+    'STAND ALPHA'
+  );
+  assert.equal(
+    extractProjectName(
+      'cod',
+      'Produção Geral',
+      '\\\\TOMAS\\arquivos 2024\\ARQUIVOS 2026\\router\\2640  - EXPRESSO HOGWARTS CCXP\\ROUTER\\GRANDE HALL\\ARCO VITRAL\\ISOPOR\\cod\\2 pvc100mm b10mm.txt'
+    ),
+    'ARCO VITRAL'
+  );
+  assert.equal(
+    extractProjectName(
+      'COD',
+      'Produção Geral',
+      '\\\\TOMAS\\arquivos 2024\\ARQUIVOS 2026\\router\\2663A e B - PINGUINS HELLA REVESTIDOS\\ROUTER\\ISOPOR\\COD\\1PVC 100mm b10.txt'
+    ),
+    '2663A e B - PINGUINS HELLA REVESTIDOS'
+  );
+  assert.equal(
+    extractProjectName('Router Central | ARCO VITRAL | cod', 'Produção Geral'),
+    'ARCO VITRAL'
+  );
+  assert.equal(
+    extractProjectName('cod', 'Produção Geral', ''),
+    'Produção Geral'
+  );
 });

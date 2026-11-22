@@ -12,18 +12,71 @@ const GENERIC_PROJECT_SEGMENTS = new Set([
   'ROUTER 2',
   'ROUTER CENTRAL',
   'ISOPOR',
+  'COD',
+  'GCODE',
+  'G-CODE',
+  'CORTES',
   'CNC',
   'PROGRAMA',
   'FILES',
   'USERS',
   'ATELIER',
+  'TOMAS',
+  'MACH3',
   'JOBS ATIVOS',
   'DADOS2',
   'DADOS2 - JOBS ATIVOS',
   '3 - OFICINA',
   'OFICINA',
+  'DESCONHECIDO',
   'GERAL'
 ]);
+
+const GENERIC_SEGMENT_REGEX = /^(?:ARQUIVOS?|ROUTER|CNC|ISOPOR|COD|GCODE|G-CODE|CORTES|MACH3|TOMAS)\s*\d{0,4}$/i;
+const FILE_EXT_REGEX = /\.(txt|tap|nc|gcode|cnc|cdr|eps|dxf|crv3d|crv|stl|v3d|ai|pdf)$/i;
+
+export function isGenericProjectSegment(segment = '') {
+  const up = String(segment || '').toUpperCase().trim();
+  if (!up) return true;
+  if (GENERIC_PROJECT_SEGMENTS.has(up)) return true;
+  if (/^[A-Z]:$/.test(up)) return true;
+  if (GENERIC_SEGMENT_REGEX.test(up)) return true;
+  if (/^20\d{2}$/.test(up)) return true;
+  if (up.includes('ARQUIVOS') || up.includes('ROUTER')) return true;
+  return false;
+}
+
+function resolveProjectFromRaw(rawInput, preferLast = false) {
+  const raw = String(rawInput || '').trim();
+  if (!raw) return null;
+
+  const hasPipeHierarchy = raw.includes(' | ');
+  const cleaned = raw
+    .replace(/^Router \d+\s*\|\s*/i, '')
+    .replace(/^Router Central\s*\|\s*/i, '')
+    .replace(/^Laser Ruida\s*\|\s*/i, '')
+    .replace(/^\\\\[^\\/]+[\\/]?/, '')
+    .replace(/^[A-Z]:[\\/]?/i, '');
+
+  const segments = cleaned
+    .split(/[\\/]|(?:\s*\|\s*)/)
+    .map(s => s.trim())
+    .filter(s => s && !FILE_EXT_REGEX.test(s));
+
+  const routerIdx = segments.findIndex(s => s.toUpperCase() === 'ROUTER');
+  if (routerIdx !== -1 && routerIdx < segments.length - 1) {
+    const afterRouter = segments.slice(routerIdx + 1).filter(s => !isGenericProjectSegment(s));
+    if (afterRouter.length > 0) {
+      return preferLast ? afterRouter[afterRouter.length - 1] : afterRouter[0];
+    }
+  }
+
+  const specific = segments.filter(s => !isGenericProjectSegment(s));
+  if (specific.length > 0) {
+    return (preferLast || hasPipeHierarchy) ? specific[specific.length - 1] : specific[0];
+  }
+  return null;
+}
 
 /**
  * Indica se o horário informado pertence ao turno noturno (22:00 às 05:59).
@@ -56,27 +109,15 @@ export function resolveShiftOperator({ user = null, operators = [], date = new D
 /**
  * Extrai o nome legível do projeto/cliente a partir de caminhos Windows/rede salvos nos registros do Mach3.
  */
-export function extractProjectName(folder = 'Geral', fallbackLabel = 'Geral') {
-  const raw = String(folder || fallbackLabel || 'Geral');
-  const pathParts = raw.replace(/^Router \d+ \| /i, '').split(/[\\/]/).filter(Boolean);
-  const routerIdx = pathParts.findIndex(p => p.toUpperCase() === 'ROUTER');
+export function extractProjectName(folder = 'Geral', fallbackLabel = 'Geral', filePath = '') {
+  const fromFolder = resolveProjectFromRaw(folder, false);
+  if (fromFolder) return fromFolder;
 
-  if (routerIdx !== -1 && routerIdx < pathParts.length - 1) {
-    return pathParts[routerIdx + 1];
-  }
+  const fromFilePath = resolveProjectFromRaw(filePath, true);
+  if (fromFilePath) return fromFilePath;
 
-  const folderOnlyParts = pathParts.filter(
-    p => !/\.(txt|tap|nc|gcode|cnc)$/i.test(p)
-  );
-  const cleanPath = folderOnlyParts.join('\\').replace(/^\\\\.*?\\/, '').replace(/^[A-Z]:\\/i, '');
-  const parts = cleanPath.split('\\').filter(p => {
-    const up = p.toUpperCase().trim();
-    if (!up) return false;
-    if (GENERIC_PROJECT_SEGMENTS.has(up)) return false;
-    if (/^ARQUIVOS\s*\d{4}$/i.test(up) || /^20\d{2}$/.test(up)) return false;
-    if (up.includes('ARQUIVOS') || up.includes('ROUTER')) return false;
-    return true;
-  });
+  const rawFolder = String(folder || '').trim();
+  if (rawFolder && !isGenericProjectSegment(rawFolder)) return rawFolder;
 
-  return parts.length > 0 ? parts[0] : (folderOnlyParts.pop() || fallbackLabel);
+  return fallbackLabel;
 }

@@ -1,11 +1,12 @@
 const express = require('express');
 const pool = require('../db/pool');
 const { detectMaterialForJob, calculateMaterialCost } = require('../material_matcher');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, authenticateSyncOrToken } = require('../middleware/auth');
 const { closeStaleJobs } = require('../db/initDb');
 const { isNightShift, getNightOperator } = require('../services/shiftService');
 const { sendPushToUser } = require('../services/pushService');
 const { autoSyncKanban, syncJobToTimeline } = require('../services/kanbanSyncService');
+const { resolveProjectFolder, sanitizeMach3Timestamp } = require('../services/jobFolderService');
 
 const router = express.Router();
 
@@ -13,8 +14,8 @@ router.post('/api/jobs', authenticateToken, async (req, res) => {
     const body = req.body || {};
     const { file_name, folder, file_path, start_time, router_name, estimated_minutes } = body;
     const userId = req.user.id;
-    let dt = start_time ? new Date(start_time) : new Date();
-    let cleanFolder = folder || 'Desconhecido';
+    let dt = sanitizeMach3Timestamp(start_time);
+    let cleanFolder = resolveProjectFolder(folder, file_path);
     let cleanFileName = file_name || 'Desconhecido';
     let cleanRouterName = router_name;
     const DEBOUNCE_SECONDS = 2;
@@ -30,7 +31,6 @@ router.post('/api/jobs', authenticateToken, async (req, res) => {
         const pathParts = cleanFileName.replace(/\\/g, '/').split('/').filter(p => p.length > 0);
         if (pathParts.length > 0) cleanFileName = pathParts[pathParts.length - 1];
     }
-    if (cleanFolder && cleanFolder.includes(' | ')) cleanFolder = cleanFolder.split(' | ').pop();
 
     const lastJob = (await pool.query('SELECT start_time, end_time FROM jobs WHERE "userId" = $1 AND (router_name = $2 OR router_name ILIKE $3) ORDER BY id DESC LIMIT 1', [userId, cleanRouterName || null, `%${cleanRouterName || ''}%`])).rows[0];
     if (lastJob && !lastJob.end_time) {
@@ -243,7 +243,6 @@ router.patch('/api/jobs/latest', authenticateToken, async (req, res) => {
     const body = req.body || {};
     const { end_time, router_name } = body;
     const userId = req.user.id;
-    const dt = end_time ? new Date(end_time) : new Date();
 
     const isLaser = router_name && router_name.toLowerCase().includes('laser');
     const cleanName = router_name ? router_name.replace(/ruida/i, '').replace(/co2|co₂/i, '').trim() : '';
@@ -266,6 +265,7 @@ router.patch('/api/jobs/latest', authenticateToken, async (req, res) => {
     }
 
     const startDt = new Date(row.start_time);
+    const dt = sanitizeMach3Timestamp(end_time, { minBoundDate: startDt });
     const durationMinutes = (dt - startDt) / (1000 * 60);
 
     if (durationMinutes < 0.4) {
@@ -395,6 +395,40 @@ router.patch('/api/jobs/latest', authenticateToken, async (req, res) => {
     }
 
     res.json({ id: row.id, duration_minutes: durationMinutes, success: true });
+});
+
+// Endpoint protegido (JWT ou X-Sync-Key) para o Robô da Oficina (assistente_pastas) detectar cortes recém-finalizados
+router.get('/api/jobs/completed-updates', authenticateSyncOrToken, async (req, res) => {
+    try {
+        const { since_id, since_time, limit } = req.query;
+        const maxLimit = Math.min(100, Math.max(1, parseInt(limit, 10) || 25));
+        const params = [req.user.id];
+        let query = `
+            SELECT id, file_name, folder, file_path, router_name, operator_name,
+                   start_time, end_time, duration_minutes, estimated_minutes, quantity
+            FROM jobs
+            WHERE "userId" = $1
+              AND end_time IS NOT NULL
+        `;
+        if (since_id && !isNaN(parseInt(since_id, 10))) {
+            params.push(parseInt(since_id, 10));
+            query += ` AND id > $${params.length}`;
+        }
+        if (since_time) {
+            const sinceDt = new Date(since_time);
+            if (!Number.isNaN(sinceDt.getTime())) {
+                params.push(sinceDt.toISOString());
+                query += ` AND end_time > $${params.length}`;
+            }
+        }
+        params.push(maxLimit);
+        query += ` ORDER BY end_time DESC, id DESC LIMIT $${params.length}`;
+        const { rows } = await pool.query(query, params);
+        res.json({ success: true, count: rows.length, jobs: rows });
+    } catch (err) {
+        console.error('Erro em GET /api/jobs/completed-updates:', err.message);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 router.get('/api/jobs', authenticateToken, async (req, res) => {

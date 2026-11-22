@@ -279,63 +279,59 @@ export function CaixaChecklistProducao({
   }, [dynamicItems, filterStatus, selectedGroup, searchTerm]);
 
   return (
-    <div className="bg-white dark:bg-[#12141a] rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden flex flex-col">
-      {/* Banner Principal */}
-      <div className="p-3.5 md:p-4.5 bg-gradient-to-r from-emerald-500/10 via-sky-500/5 to-transparent border-b border-slate-200 dark:border-white/10">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-md shadow-emerald-500/30 shrink-0">
-              <Zap size={20} />
+    <div className="bg-white dark:bg-[#12141a] rounded-xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden flex flex-col">
+      {/* Banner Principal (Slim) */}
+      <div
+        className="px-2.5 py-2 sm:px-3 bg-gradient-to-r from-emerald-500/10 via-sky-500/5 to-transparent border-b border-slate-200 dark:border-white/10"
+        title="Arquivos usinados no Mach3 ou nomeados com OK ganham baixa automática. Clique em qualquer chapa para dar ou retirar OK."
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shadow-sm shadow-emerald-500/30 shrink-0">
+              <Zap size={14} />
             </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-sm md:text-base font-black text-slate-900 dark:text-white leading-tight">
-                  Controle de Fila & Baixa de Produção CNC
-                </h2>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Sincronizado com Mach3 & Tags OK
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Arquivos usinados no Mach3 ou nomeados com <strong>OK</strong> ganham baixa automática. Você também pode clicar em qualquer chapa para dar ou retirar OK!
-              </p>
+            <div className="flex items-center gap-2 flex-wrap min-w-0">
+              <h2 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-tight">
+                Controle de Fila & Baixa de Produção CNC
+              </h2>
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-500 border border-emerald-500/25">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Sincronizado
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsAddingOpen(prev => !prev)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 active:bg-slate-900 dark:bg-white/10 dark:hover:bg-white/15 text-white transition-all cursor-pointer"
-            >
-              <Plus size={14} />
-              <span>+ Anotação Manual</span>
-            </button>
-          </div>
+          <button
+            onClick={() => setIsAddingOpen(prev => !prev)}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-800 hover:bg-slate-700 active:bg-slate-900 dark:bg-white/10 dark:hover:bg-white/15 text-white transition-all cursor-pointer shrink-0"
+          >
+            <Plus size={13} />
+            <span>Anotação</span>
+          </button>
         </div>
 
-        {/* Barra de Progresso e Métricas */}
-        <div className="mt-3.5 space-y-1.5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs font-bold">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-slate-600 dark:text-slate-300">Progresso Geral:</span>
+        {/* Barra de Progresso e Métricas Inline */}
+        <div className="mt-1.5 space-y-1">
+          <div className="flex flex-wrap items-center justify-between gap-1.5 text-[11px] font-bold">
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-500 dark:text-slate-400">Progresso:</span>
               <span className="text-emerald-500 font-black">{metrics.done} de {metrics.total} concluídos</span>
               <span className="text-[10px] text-slate-400">({metrics.percent}%)</span>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-500 border border-amber-500/30">
-                {metrics.pending} Restantes na Fila
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                {metrics.pending} Restantes
               </span>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
-                ✓ {metrics.done} Concluídos / OK
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                ✓ {metrics.done} OK
               </span>
             </div>
           </div>
-          <div className="w-full h-2.5 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden p-0.5 border border-slate-200 dark:border-white/5">
+          <div className="w-full h-1.5 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
                 metrics.percent >= 100
-                  ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50'
+                  ? 'bg-emerald-500'
                   : metrics.percent >= 50
                   ? 'bg-emerald-500'
                   : 'bg-amber-500'
@@ -392,9 +388,9 @@ export function CaixaChecklistProducao({
       )}
 
       {/* Barra de Filtros */}
-      <div className="p-2.5 md:p-3 bg-slate-50/50 dark:bg-white/[0.01] border-b border-slate-200 dark:border-white/5 flex flex-wrap items-center justify-between gap-2">
+      <div className="p-2 bg-slate-50/50 dark:bg-white/[0.01] border-b border-slate-200 dark:border-white/5 flex flex-wrap items-center justify-between gap-2">
         {/* Status Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setFilterStatus('pendentes')}
             className={`px-3 py-1 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
@@ -453,8 +449,8 @@ export function CaixaChecklistProducao({
         </div>
       </div>
 
-      {/* Lista de Chapas e Tarefas */}
-      <div className="p-2.5 md:p-3 divide-y divide-slate-100 dark:divide-white/5 max-h-[500px] overflow-y-auto custom-scrollbar">
+      {/* Lista de Chapas e Tarefas (Sem caixa limitada nem barra interna — preenche a tela) */}
+      <div className="p-1.5 sm:p-2 divide-y divide-slate-100 dark:divide-white/5">
         {filteredItems.length === 0 ? (
           <div className="p-8 text-center space-y-2">
             <CheckCircle2 size={36} className="mx-auto text-emerald-500 opacity-60" />
@@ -475,7 +471,7 @@ export function CaixaChecklistProducao({
               <div
                 key={item.id}
                 onClick={() => handleToggleItem(item)}
-                className={`py-2 px-3 rounded-xl flex items-center justify-between gap-3 transition-all cursor-pointer group ${
+                className={`py-1.5 px-2.5 rounded-lg flex items-center justify-between gap-2.5 transition-all cursor-pointer group ${
                   isRunning
                     ? 'bg-sky-500/10 border border-sky-500/30'
                     : isDone

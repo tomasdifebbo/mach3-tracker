@@ -2,6 +2,7 @@ import React from 'react';
 import { UserCheck, Play, CheckCircle2 } from 'lucide-react';
 import { api } from '../../services/api';
 import { formatDuration } from './operadorUtils';
+import { extractProjectName } from '../../utils/tenantUtils';
 
 export function OperatorActiveMachines({
   jobs, routers, operatorName, kanbanTasks, isManagerOrEncarregado,
@@ -69,7 +70,7 @@ export function OperatorActiveMachines({
                           <h3 className="text-lg font-bold text-white uppercase truncate max-w-xs md:max-w-md">{job.file_name}</h3>
                         </div>
                         <div className="flex items-center gap-3 mt-1 flex-wrap">
-                          <p className="text-xs text-text-muted font-medium opacity-70 truncate max-w-[180px] sm:max-w-xs">{job.folder || 'Sem pasta / O.S. vinculada'}</p>
+                          <p className="text-xs text-text-muted font-medium opacity-70 truncate max-w-[180px] sm:max-w-xs">{job.folder ? extractProjectName(job.folder, 'Sem pasta / O.S. vinculada', job.file_path) : 'Sem pasta / O.S. vinculada'}</p>
                           <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                             <span className="text-[11px] font-bold text-white flex items-center gap-1 shrink-0">
                               <UserCheck size={13} className="text-accent-cyan" /> Operador:

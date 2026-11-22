@@ -143,7 +143,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
   // Group by project
   const projectMap = {};
   filtered.forEach(j => {
-    const pName = extractProjectName(j.folder);
+    const pName = extractProjectName(j.folder, 'Geral', j.file_path);
     if (!projectMap[pName]) projectMap[pName] = { name: pName, count: 0, totalMinutes: 0, cost: 0 };
     const dur = j.duration_minutes || (j.end_time ? (new Date(j.end_time) - new Date(j.start_time)) / 60000 : 0);
     projectMap[pName].count += 1;
@@ -295,7 +295,7 @@ export function generateProductionReport({ jobs = [], user = {}, filterType = 'a
       const endDt = j.end_time ? new Date(j.end_time) : null;
       const dur = j.duration_minutes || (endDt ? (endDt - startDt) / 60000 : 0);
       const cost = (Math.max(0, dur) / 60) * costPerHour + (j.material_price || 0);
-      const pName = extractProjectName(j.folder);
+      const pName = extractProjectName(j.folder, 'Geral', j.file_path);
 
       return [
         `${idx + 1}`,
